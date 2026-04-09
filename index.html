@@ -154,16 +154,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .transforms-header{text-align:center;max-width:680px;margin:0 auto 60px}
 .stat-cards-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:20px}
 .stat-cards-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.stat-card-wrap{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;background:var(--bg1)}
-.stat-card-wrap::before{content:'';position:absolute;inset:-2px;border-radius:8px;background:conic-gradient(from var(--angle,0deg),transparent 20%,rgba(201,168,76,0.8) 40%,rgba(192,57,43,0.9) 60%,transparent 80%);z-index:0;opacity:0;transition:opacity .4s ease;animation:border-spin 3s linear infinite paused}
-.stat-card-wrap::after{content:'';position:absolute;inset:2px;border-radius:4px;background:var(--bg1);z-index:1}
+.stat-card-wrap{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;background:var(--bg1);padding:4px}
+.stat-card-wrap::before{content:'';position:absolute;inset:-3px;border-radius:10px;background:conic-gradient(from var(--angle,0deg),transparent 10%,#ffcc00 30%,#ff4500 45%,#c0392b 55%,#ff4500 65%,#ffcc00 75%,transparent 90%);z-index:0;opacity:0;transition:opacity .3s ease;animation:border-spin 2s linear infinite paused;filter:blur(1px)}
 .stat-card-wrap:hover::before{opacity:1;animation-play-state:running}
-.stat-card-wrap:hover{transform:translateY(-8px)}
+.stat-card-wrap:hover{transform:translateY(-10px);box-shadow:0 30px 80px rgba(0,0,0,.7),0 0 40px rgba(192,57,43,.3)}
 @property --angle{syntax:'<angle>';initial-value:0deg;inherits:false}
 @keyframes border-spin{to{--angle:360deg}}
-.stat-card-img{width:100%;display:block;border-radius:4px;position:relative;z-index:2;transition:transform .4s ease}
+.stat-card-inner{position:relative;z-index:2;border-radius:4px;overflow:hidden;background:var(--bg1)}
+.stat-card-img{width:100%;display:block;position:relative;z-index:2;transition:transform .4s ease}
 .stat-card-wrap:hover .stat-card-img{transform:scale(1.03)}
-.stat-overlay{position:absolute;bottom:0;left:0;right:0;padding:20px;background:linear-gradient(transparent,rgba(0,0,0,.92));opacity:0;transition:opacity .3s ease;border-radius:0 0 4px 4px;z-index:3}
+.stat-overlay{position:absolute;bottom:0;left:0;right:0;padding:20px;background:linear-gradient(transparent,rgba(0,0,0,.92));opacity:0;transition:opacity .3s ease;z-index:3}
 .stat-card-wrap:hover .stat-overlay{opacity:1}
 .stat-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);letter-spacing:.05em}
 .stat-tag{font-size:12px;font-weight:300;color:var(--tdim);margin-top:2px}
@@ -490,13 +490,13 @@ document.addEventListener('DOMContentLoaded',function(){
       <p class="sec-body">These are real people who showed up, followed the system, and leveled up. The stats don't lie — but ask any of them what actually changed and they'll tell you it goes much deeper than the numbers.</p>
     </div>
     <div class="stat-cards-grid">
-      <div class="stat-card-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/rorytransformation.png" alt="Rory Longman" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">Rory Longman — Lv. 28</div><div class="stat-tag">566 RT workouts · 807 cardio · The Bladesinger</div></div></div>
-      <div class="stat-card-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/jt.png" alt="JT" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">JT — Lv. 12</div><div class="stat-tag">260 RT workouts · 145 cardio · 3 books read</div></div></div>
-      <div class="stat-card-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/jeff.png" alt="Jeffrey Hein" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">Jeffrey Hein — Lv. 19</div><div class="stat-tag">380 RT workouts · 342 cardio · Berserker Worgen</div></div></div>
+      <div class="stat-card-wrap"><div class="stat-card-inner"><img src="https://gamerascension103.github.io/gamer-ascension/rorytransformation.png" alt="Rory Longman" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">Rory Longman — Lv. 28</div><div class="stat-tag">566 RT workouts · 807 cardio · The Bladesinger</div></div></div></div>
+      <div class="stat-card-wrap"><div class="stat-card-inner"><img src="https://gamerascension103.github.io/gamer-ascension/jt.png" alt="JT" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">JT — Lv. 12</div><div class="stat-tag">260 RT workouts · 145 cardio · 3 books read</div></div></div></div>
+      <div class="stat-card-wrap"><div class="stat-card-inner"><img src="https://gamerascension103.github.io/gamer-ascension/jeff.png" alt="Jeffrey Hein" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">Jeffrey Hein — Lv. 19</div><div class="stat-tag">380 RT workouts · 342 cardio · Berserker Worgen</div></div></div></div>
     </div>
     <div class="stat-cards-bottom">
-      <div class="stat-card-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/david.png" alt="David Hall" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">David Hall — Lv. 19</div><div class="stat-tag">Strength 105.9 · Agility 137.1 · Stamina 91.4</div></div></div>
-      <div class="stat-card-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/jarek.png" alt="Jarek Pantoja" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">Jarek Pantoja</div><div class="stat-tag">215 workouts · 256 cardio · Strength 78.6</div></div></div>
+      <div class="stat-card-wrap"><div class="stat-card-inner"><img src="https://gamerascension103.github.io/gamer-ascension/david.png" alt="David Hall" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">David Hall — Lv. 19</div><div class="stat-tag">Strength 105.9 · Agility 137.1 · Stamina 91.4</div></div></div></div>
+      <div class="stat-card-wrap"><div class="stat-card-inner"><img src="https://gamerascension103.github.io/gamer-ascension/jarek.png" alt="Jarek Pantoja" class="stat-card-img"/><div class="stat-overlay"><div class="stat-name">Jarek Pantoja</div><div class="stat-tag">215 workouts · 256 cardio · Strength 78.6</div></div></div></div>
       <div class="stat-card-wrap" style="display:flex;align-items:center;justify-content:center;background:var(--bg1);border:1px solid rgba(201,168,76,.1);border-radius:4px;min-height:200px;padding:32px;text-align:center"><div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);margin-bottom:12px;line-height:1.1">Your transformation<br>starts here.</div><a href="https://calendly.com/straincoaching/insightcall" class="btn" style="font-size:13px;padding:12px 24px">Begin My Character Build →</a></div></div>
     </div>
     <p class="transforms-disc">Transformations happened over various timeframes. Everyone starts at a different point. What stays consistent is the system and the progression.</p>
