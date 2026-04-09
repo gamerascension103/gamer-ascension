@@ -65,6 +65,12 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .hero-layout{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start}
 .hero-reasons{animation:fadeUp .7s ease forwards .5s;opacity:0}
 .rl{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--tmuted);margin-bottom:28px}
+.reasons-heading{margin-bottom:32px}
+.rh-eyebrow{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.rh-eyebrow::before{content:'';display:inline-block;width:20px;height:1px;background:var(--red)}
+.rh-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,3.5vw,42px);line-height:1;letter-spacing:.02em;color:var(--text);margin-bottom:16px}
+.rh-title span{color:var(--red)}
+.rh-line{height:2px;width:60px;background:var(--red);border-radius:1px}
 .reason{display:flex;gap:18px;padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--border)}
 .reason:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 .rnum{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;color:rgba(192,57,43,.25);min-width:38px;padding-top:1px}
@@ -163,9 +169,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .screenshot-card{background:var(--bg2);border-radius:4px;overflow:hidden;border:1px solid var(--border);transition:border-color .3s,transform .3s}
 .screenshot-card:hover{border-color:rgba(192,57,43,.3);transform:translateY(-4px)}
 .screenshot-card.featured{grid-column:1/-1}
-.sc-img-wrap{overflow:hidden;background:#000;position:relative}
-.sc-img-wrap::after{content:'';position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(transparent,var(--bg2))}
-.sc-img{width:100%;display:block;filter:saturate(.9)}
+.sc-img-wrap{overflow:hidden;background:#0d0d0d;position:relative;display:flex;align-items:flex-start;justify-content:center;max-height:320px;border-bottom:1px solid var(--border)}
+.sc-img-wrap.tall{max-height:500px}
+.sc-img-wrap::after{content:'';position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(transparent,var(--bg2))}
+.sc-img{width:100%;max-width:100%;display:block;filter:saturate(.95) contrast(1.02);object-fit:cover;object-position:top center}
 .sc-body{padding:20px 24px}
 .sc-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:8px}
 .sc-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:6px}
@@ -279,7 +286,10 @@ document.addEventListener('DOMContentLoaded',function(){
     <p class="hero-sub">10 years of coaching. 300+ clients transformed. And one pattern that changed everything I thought I knew about who builds the best physiques.</p>
     <div class="hero-layout">
       <div class="hero-reasons">
-        <div class="rl">Here's exactly why</div>
+        <div class="reasons-heading">
+          <div class="rh-title">4 core reasons gamers are just <span>better</span> at it.</div>
+          <div class="rh-line"></div>
+        </div>
         <div class="reason"><div class="rnum">01</div><div><div class="rt">Gamers carry bigger fuel.</div><div class="rb">A lifetime of studying heroes creates a gap between who you are and who you know you could become. That pain makes gamers unreasonably consistent — more than people who just want to look better.</div></div></div>
         <div class="reason"><div class="rnum">02</div><div><div class="rt">Gamers already know how to grind.</div><div class="rb">Farming loot for hours with no immediate payoff? That's delayed gratification. In fitness, delayed gratification is the only thing that separates people who transform from people who don't.</div></div></div>
         <div class="reason"><div class="rnum">03</div><div><div class="rt">Gamers understand progression systems.</div><div class="rb">Skills build on each other over time. You don't become OP in a week. Gamers already know this — which makes them patient enough to go the distance when everyone else quits.</div></div></div>
@@ -431,21 +441,21 @@ document.addEventListener('DOMContentLoaded',function(){
     <div class="proof-grid">
       <div class="proof-card">
         <div class="proof-img-wrap">
-          <img src="https://gamerascension103.github.io/gamer-ascension/Gabemedinaconversation.png" alt="Gabe Medina feedback" class="proof-img"/>
+          <img src="https://gamerascension103.github.io/gamer-ascension/Gabemedinaconversation.jpg" alt="Gabe Medina feedback" class="proof-img"/>
         </div>
         <div class="proof-quote">"Honestly by far exceeding expectations. I brag on the knowledge you give me all the time to my girl. Your check in feedback is levels ahead of what I'm used to. There's more trust in your plan and adjustments."</div>
         <div class="proof-name">Gabe Medina — Active Client</div>
       </div>
       <div class="proof-card">
         <div class="proof-img-wrap">
-          <img src="https://gamerascension103.github.io/gamer-ascension/Chrisdunnquickwin.png" alt="Chris Dunn feedback" class="proof-img"/>
+          <img src="https://gamerascension103.github.io/gamer-ascension/Chrisdunnquickwin.jpg" alt="Chris Dunn feedback" class="proof-img"/>
         </div>
         <div class="proof-quote">"Haven't seen that weight since maybe junior year of high school when I was lifting. That's cool af."</div>
         <div class="proof-name">Chris Dunn — Active Client</div>
       </div>
       <div class="proof-card">
         <div class="proof-img-wrap">
-          <img src="https://gamerascension103.github.io/gamer-ascension/Melissaquickwinconvo.png" alt="Melissa Salado feedback" class="proof-img"/>
+          <img src="https://gamerascension103.github.io/gamer-ascension/Melissaquickwinconvo.jpg" alt="Melissa Salado feedback" class="proof-img"/>
         </div>
         <div class="proof-quote">"Thanks coach! I'm feeling better than I have in a long time."</div>
         <div class="proof-name">Melissa Salado — Active Client</div>
