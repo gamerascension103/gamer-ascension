@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gamer Ascension — Transform Your Body. Become the Hero.</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red: #c0392b;
+    --red-dim: rgba(192,57,43,0.15);
+    --red-glow: rgba(192,57,43,0.08);
+    --bg: #0a0a0a;
+    --bg-1: #111111;
+    --bg-2: #161616;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0ece4;
+    --text-dim: rgba(240,236,228,0.55);
+    --text-muted: rgba(240,236,228,0.35);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,10,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .nav-logo span { color: var(--red); }
+
+  .nav-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--red);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 20px;
+    border-radius: 3px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .nav-cta:hover { background: #a93226; transform: translateY(-1px); }
+
+  /* ── SHARED ── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    width: 100%;
+  }
+
+  .section { padding: 100px 0; }
+
+  .section-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 20px;
+  }
+
+  .eyebrow-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--red);
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 5vw, 64px);
+    line-height: 1;
+    letter-spacing: 0.01em;
+    margin-bottom: 16px;
+  }
+
+  .section-body {
+    font-size: 16px;
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.75;
+  }
+
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 120px 24px 80px;
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 52px 52px;
+    z-index: 0;
+  }
+
+  .hero-glow {
+    position: absolute;
+    top: -150px; right: -150px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(192,57,43,0.1) 0%, transparent 65%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .hero-glow-2 {
+    position: absolute;
+    bottom: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(80,60,200,0.06) 0%, transparent 65%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 24px;
+    animation: fadeUp 0.6s ease forwards 0.1s;
+    opacity: 0;
+  }
+
+  .hero-eyebrow-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: blink 2s ease infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .hero-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 9vw, 108px);
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    margin-bottom: 24px;
+    animation: fadeUp 0.7s ease forwards 0.2s;
+    opacity: 0;
+  }
+
+  .hero-headline-accent { color: var(--red); display: block; }
+
+  .hero-sub {
+    font-size: clamp(15px, 2vw, 18px);
+    font-weight: 300;
+    color: var(--text-dim);
+    max-width: 560px;
+    line-height: 1.65;
+    margin-bottom: 52px;
+    animation: fadeUp 0.7s ease forwards 0.35s;
+    opacity: 0;
+  }
+
+  .hero-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 52px;
+    align-items: start;
+  }
+
+  .hero-reasons {
+    animation: fadeUp 0.7s ease forwards 0.5s;
+    opacity: 0;
+  }
+
+  .reasons-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+  }
+
+  .reason {
+    display: flex;
+    gap: 18px;
+    padding-bottom: 28px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .reason:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .reason-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    line-height: 1;
+    color: rgba(192,57,43,0.25);
+    min-width: 38px;
+    padding-top: 1px;
+  }
+
+  .reason-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 5px;
+  }
+
+  .reason-body {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .hero-proof {
+    animation: fadeUp 0.7s ease forwards 0.65s;
+    opacity: 0;
+  }
+
+  .trans-tags {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .trans-tag {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 2px;
+  }
+
+  .trans-tag.before {
+    background: rgba(255,255,255,0.05);
+    color: var(--text-muted);
+  }
+
+  .trans-tag.after {
+    background: var(--red-dim);
+    color: var(--red);
+  }
+
+  .trans-img {
+    width: 100%;
+    border-radius: 4px;
+    display: block;
+    border: 1px solid var(--border);
+    filter: contrast(1.05) saturate(0.9);
+  }
+
+  .trans-caption {
+    margin-top: 16px;
+    padding: 16px 18px;
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid var(--red);
+    border-radius: 0 3px 3px 0;
+  }
+
+  .trans-caption-text {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .trans-caption-name {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-top: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .hero-cta-row {
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.7s ease forwards 0.8s;
+    opacity: 0;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--red);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 15px 30px;
+    border-radius: 3px;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-primary:hover { background: #a93226; transform: translateY(-2px); }
+
+  .btn-note {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .hero-stats {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.7s ease forwards 0.95s;
+    opacity: 0;
+  }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 44px;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 3px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SYSTEM SECTION ── */
+  .system-section {
+    background: var(--bg-1);
+    padding: 100px 0;
+  }
+
+  .system-intro {
+    text-align: center;
+    max-width: 680px;
+    margin: 0 auto 72px;
+  }
+
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+  }
+
+  .pillar {
+    background: var(--bg-2);
+    padding: 40px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pillar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .pillar:hover::before { transform: scaleX(1); }
+
+  .pillar-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    line-height: 0.85;
+    color: rgba(192,57,43,0.08);
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .pillar-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .pillar-subtitle {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+  }
+
+  .pillar-body {
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  /* ── TRANSFORMATIONS ── */
+  .transforms-section { padding: 100px 0; }
+
+  .transforms-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-top: 52px;
+  }
+
+  .transform-card {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .transform-card:hover { border-color: rgba(192,57,43,0.3); }
+
+  .transform-card-img {
+    width: 100%;
+    display: block;
+    filter: contrast(1.05) saturate(0.85);
+  }
+
+  .transform-card-body {
+    padding: 20px 24px;
+  }
+
+  .transform-card-name {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 8px;
+  }
+
+  .transform-card-text {
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  .transforms-disclaimer {
+    margin-top: 24px;
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+  }
+
+  /* ── WHAT YOU GET ── */
+  .program-section {
+    background: var(--bg-1);
+    padding: 100px 0;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    margin-top: 52px;
+  }
+
+  .feature {
+    background: var(--bg-2);
+    padding: 32px;
+    transition: background 0.2s;
+  }
+
+  .feature:hover { background: #1a1a1a; }
+
+  .feature-icon {
+    width: 36px; height: 36px;
+    background: var(--red-dim);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    font-size: 16px;
+  }
+
+  .feature-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .feature-body {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  /* ── STORY ── */
+  .story-section { padding: 100px 0; }
+
+  .story-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .story-quote {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(32px, 4vw, 52px);
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 32px;
+  }
+
+  .story-quote span { color: var(--red); }
+
+  .story-body {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.8;
+    margin-bottom: 20px;
+  }
+
+  .story-aside {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 32px;
+  }
+
+  .story-aside-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  .story-aside-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .story-aside-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .aside-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    margin-top: 8px;
+    flex-shrink: 0;
+  }
+
+  .aside-text {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ── FAQ ── */
+  .faq-section {
+    background: var(--bg-1);
+    padding: 100px 0;
+  }
+
+  .faq-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    margin-top: 52px;
+  }
+
+  .faq-item {
+    background: var(--bg-2);
+    padding: 32px;
+  }
+
+  .faq-q {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .faq-a {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  /* ── GUARANTEE ── */
+  .guarantee-section { padding: 100px 0; }
+
+  .guarantee-box {
+    background: var(--bg-1);
+    border: 1px solid rgba(192,57,43,0.2);
+    border-radius: 4px;
+    padding: 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .guarantee-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+  }
+
+  .guarantee-icon {
+    font-size: 48px;
+    margin-bottom: 24px;
+    display: block;
+  }
+
+  .guarantee-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 4vw, 56px);
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  .guarantee-body {
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--text-dim);
+    max-width: 560px;
+    margin: 0 auto 12px;
+    line-height: 1.75;
+  }
+
+  .guarantee-fine {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ── FINAL CTA ── */
+  .final-cta-section {
+    background: var(--bg-1);
+    padding: 120px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .final-cta-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, rgba(192,57,43,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .final-cta-inner { position: relative; z-index: 1; }
+
+  .final-cta-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: 0.95;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  .final-cta-headline span { color: var(--red); }
+
+  .final-cta-body {
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--text-dim);
+    max-width: 480px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+
+  .final-cta-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .ig-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .ig-link:hover { color: var(--text-dim); }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 32px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    text-decoration: none;
+  }
+
+  .footer-logo span { color: var(--red); }
+
+  .footer-text {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--text-muted);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .hero-layout { grid-template-columns: 1fr; gap: 40px; }
+    .hero-proof { order: -1; }
+    .pillars { grid-template-columns: 1fr; }
+    .transforms-grid { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .story-layout { grid-template-columns: 1fr; gap: 40px; }
+    .faq-grid { grid-template-columns: 1fr; }
+    .guarantee-box { padding: 40px 24px; }
+    .hero-stats { gap: 28px; }
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 14px 20px; }
+    .hero { padding: 100px 20px 60px; }
+    .section { padding: 72px 0; }
+    .hero-headline { font-size: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Gamer<span>Ascension</span></a>
+  <a href="https://calendly.com/straincoaching/insightcall" class="nav-cta">Start My Character Build →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
+
+  <div class="hero-inner">
+
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-dot"></div>
+      Unpopular opinion
+    </div>
+
+    <h1 class="hero-headline">
+      Gamers make
+      <span class="hero-headline-accent">better athletes</span>
+      than almost everyone.
+    </h1>
+
+    <p class="hero-sub">
+      10 years of coaching. 300+ clients transformed. And one pattern that changed everything I thought I knew about who builds the best physiques.
+    </p>
+
+    <div class="hero-layout">
+
+      <div class="hero-reasons">
+        <div class="reasons-label">Here's exactly why</div>
+
+        <div class="reason">
+          <div class="reason-num">01</div>
+          <div>
+            <div class="reason-title">Gamers carry bigger fuel.</div>
+            <div class="reason-body">A lifetime of studying heroes creates a gap between who you are and who you know you could become. That pain makes gamers unreasonably consistent — more than people who just want to look better.</div>
+          </div>
+        </div>
+
+        <div class="reason">
+          <div class="reason-num">02</div>
+          <div>
+            <div class="reason-title">Gamers already know how to grind.</div>
+            <div class="reason-body">Farming loot for hours with no immediate payoff? That's delayed gratification. In fitness, delayed gratification is the only thing that separates people who transform from people who don't.</div>
+          </div>
+        </div>
+
+        <div class="reason">
+          <div class="reason-num">03</div>
+          <div>
+            <div class="reason-title">Gamers understand progression systems.</div>
+            <div class="reason-body">Skills build on each other over time. You don't become OP in a week. Gamers already know this — which makes them patient enough to go the distance when everyone else quits.</div>
+          </div>
+        </div>
+
+        <div class="reason">
+          <div class="reason-num">04</div>
+          <div>
+            <div class="reason-title">Gamers love understanding the mechanics.</div>
+            <div class="reason-body">They don't just want the result — they want to understand the system behind it. The people who enjoy the process never stop.</div>
+          </div>
+        </div>
+
+        <div class="hero-cta-row">
+          <a href="https://calendly.com/straincoaching/insightcall" class="btn-primary">
+            Start My Character Build →
+          </a>
+          <div class="btn-note">Free 15-min call.<br>No pressure. Just see if it fits.</div>
+        </div>
+
+      </div>
+
+      <div class="hero-proof">
+        <div class="trans-tags">
+          <span class="trans-tag before">Before</span>
+          <span class="trans-tag after">After</span>
+        </div>
+        <!-- REPLACE THE src BELOW WITH YOUR ACTUAL CLIENT TRANSFORMATION IMAGE URL -->
+        <img
+          src="YOUR_TRANSFORMATION_IMAGE_URL_HERE"
+          alt="Gamer Ascension client transformation"
+          class="trans-img"
+        />
+        <div class="trans-caption">
+          <div class="trans-caption-text">"This is what happens when a gamer finally gets a system built for the way his brain works."</div>
+          <div class="trans-caption-name">— Gamer Ascension client</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">300+</div>
+        <div class="stat-label">Clients transformed</div>
+      </div>
+      <div>
+        <div class="stat-num">10</div>
+        <div class="stat-label">Years coaching</div>
+      </div>
+      <div>
+        <div class="stat-num">90</div>
+        <div class="stat-label">Day program</div>
+      </div>
+      <div>
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Money back guarantee</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- SYSTEM -->
+<section class="system-section">
+  <div class="container">
+    <div class="system-intro">
+      <div class="section-eyebrow"><div class="eyebrow-dot"></div>The framework</div>
+      <h2 class="section-title">Real transformation isn't just physical.<br>It never was.</h2>
+      <p class="section-body">Think about every character arc in every story you've loved. The ones that hit hardest weren't about getting stronger muscles. They were about becoming someone different. Someone worthy of the life they were living. That's what this program is built around.</p>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar">
+        <span class="pillar-num">I</span>
+        <div class="pillar-title">Vitality</div>
+        <div class="pillar-subtitle">The physical foundation</div>
+        <div class="pillar-body">Building muscle. Increasing strength. Lowering body fat. A stronger body creates new capabilities, new confidence, and a foundation to operate from that you've never had before. There's also deep neuroscience connecting physical training to reduced anxiety and depression — so this pillar does more than change what you see in the mirror.</div>
+      </div>
+      <div class="pillar">
+        <span class="pillar-num">II</span>
+        <div class="pillar-title">Spirit</div>
+        <div class="pillar-subtitle">The internal game</div>
+        <div class="pillar-body">Discipline. Consistency. Mindset. Understanding your values and what you actually believe about yourself and the world. This is how you stop drifting. This is how you start doing things that matter. This is the work most programs skip entirely.</div>
+      </div>
+      <div class="pillar">
+        <span class="pillar-num">III</span>
+        <div class="pillar-title">Alignment</div>
+        <div class="pillar-subtitle">Your direction</div>
+        <div class="pillar-body">The kind of person you want to become. Your purpose. Your vision. The ability to look at your future and feel genuinely excited to build it. When all three pillars are working together — you don't just get in shape. You ascend to a version of yourself you actually respect.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRANSFORMATIONS -->
+<section class="transforms-section">
+  <div class="container">
+    <div class="section-eyebrow"><div class="eyebrow-dot"></div>Proof</div>
+    <h2 class="section-title">Real Gamer Ascension<br>transformations.</h2>
+    <p class="section-body">These are real people who showed up, followed the system, and built something they're proud of. The physical changes are significant — but ask any of them what actually changed and they'll tell you it goes much deeper.</p>
+
+    <div class="transforms-grid">
+      <div class="transform-card">
+        <!-- REPLACE src WITH RORY'S ACTUAL IMAGE URL -->
+        <img src="YOUR_RORY_IMAGE_URL_HERE" alt="Rory transformation" class="transform-card-img" />
+        <div class="transform-card-body">
+          <div class="transform-card-name">Rory</div>
+          <div class="transform-card-text">Came in struggling with food focus, unsure how to build muscle effectively, and having a difficult time with daily habits and routines. With consistent support, new habit frameworks, and a clear plan to follow — he rebuilt himself completely.</div>
+        </div>
+      </div>
+      <div class="transform-card">
+        <!-- REPLACE src WITH JT'S ACTUAL IMAGE URL -->
+        <img src="YOUR_JT_IMAGE_URL_HERE" alt="JT transformation" class="transform-card-img" />
+        <div class="transform-card-body">
+          <div class="transform-card-name">JT</div>
+          <div class="transform-card-text">Came in with heavy burnout from his career. He needed a pick-me-up and someone to hold him accountable to his vision. The program gave him both the structure and the identity clarity he was missing.</div>
+        </div>
+      </div>
+      <div class="transform-card">
+        <!-- REPLACE src WITH JEFF'S ACTUAL IMAGE URL -->
+        <img src="YOUR_JEFF_IMAGE_URL_HERE" alt="Jeff transformation" class="transform-card-img" />
+        <div class="transform-card-body">
+          <div class="transform-card-name">Jeff</div>
+          <div class="transform-card-text">Came in with a ton of passion but not much knowledge on how to build muscle effectively. With a structured plan and consistent education, he changed — and kept changing.</div>
+        </div>
+      </div>
+      <div class="transform-card">
+        <!-- REPLACE src WITH MIKE'S ACTUAL IMAGE URL -->
+        <img src="YOUR_MIKE_IMAGE_URL_HERE" alt="Mike transformation" class="transform-card-img" />
+        <div class="transform-card-body">
+          <div class="transform-card-name">Mike</div>
+          <div class="transform-card-text">Struggled with believing he could ever be strong. Now his confidence is through the roof and he can bench press 315 lbs. The transformation started in his head before it showed up in his body.</div>
+        </div>
+      </div>
+    </div>
+    <p class="transforms-disclaimer">Transformations happened over various timeframes. Everyone starts at a different point. What stays consistent is the system and the progression.</p>
+  </div>
+</section>
+
+<!-- WHAT YOU GET -->
+<section class="program-section">
+  <div class="container">
+    <div class="section-eyebrow"><div class="eyebrow-dot"></div>The program</div>
+    <h2 class="section-title">What's inside Gamer Ascension.</h2>
+    <p class="section-body">A 90-day, fully custom, 1-on-1 coaching program built to guide your transformation step by step. No templates. No guesswork. No RNG.</p>
+
+    <div class="features-grid">
+      <div class="feature">
+        <div class="feature-icon">⚔</div>
+        <div class="feature-title">Custom Training Program</div>
+        <div class="feature-body">Designed specifically for your body, your goals, and your starting point. Clear progression every single session. You'll always know exactly what to do and why.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🍖</div>
+        <div class="feature-title">Custom Nutrition Plan</div>
+        <div class="feature-body">Structured eating that supports muscle growth, fat loss, and sustained energy — without eliminating the foods you enjoy. You need structure, not restriction.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Coaching Software</div>
+        <div class="feature-body">Track your workouts, log your progress, and communicate with me — all in one place. Everything you need, nothing you don't.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💬</div>
+        <div class="feature-title">Direct Daily Messaging</div>
+        <div class="feature-body">A direct line to me. Every day. Any time you need it. You're never grinding alone.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📚</div>
+        <div class="feature-title">Exclusive Education Library</div>
+        <div class="feature-body">The science of resistance training, mental health, and identity development — built into resources I created myself and use personally. I'm passing the torch to you.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">Mindset & Habit Coaching</div>
+        <div class="feature-body">Behavioral frameworks that make discipline sustainable. Systems I've used myself and refined across 300+ clients. This is the layer most programs skip.</div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📅</div>
+        <div class="feature-title">Weekly Formal Check-Ins</div>
+        <div class="feature-body">Every week we review your data, assess your progress, and build your next action plan together. No drifting. No guessing. Just clear forward progression.</div>
+      </div>
+      <div class="feature" style="display:flex; align-items:center; justify-content:center; background: var(--red-dim); border: 1px solid rgba(192,57,43,0.2);">
+        <div style="text-align:center;">
+          <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--text); margin-bottom:8px;">Ready to begin?</div>
+          <a href="https://calendly.com/straincoaching/insightcall" class="btn-primary" style="margin-top:8px;">Start My Character Build →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STORY -->
+<section class="story-section">
+  <div class="container">
+    <div class="story-layout">
+      <div>
+        <div class="section-eyebrow"><div class="eyebrow-dot"></div>Why this exists</div>
+        <div class="story-quote">Built by a gamer.<br>For <span>gamers.</span></div>
+        <p class="story-body">After coaching for nearly 10 years and working with over 300 clients, I realized something that changed the direction of everything I was doing.</p>
+        <p class="story-body">Helping people build muscle and lose body fat — that part worked. But it wasn't enough. Because the deeper problems people carried weren't physical.</p>
+        <p class="story-body">They were things like confidence. Self-respect. Feeling proud of who they were. Feeling aligned with who they wanted to become.</p>
+        <p class="story-body">So I asked myself one question: if I could solve problems for the rest of my life — what problems would I choose?</p>
+        <p class="story-body">The answer was immediate. And when I thought about the people I resonated with most deeply — it was gamers. People who love systems, mastery, and growth. People who already understand what it means to commit to a progression.</p>
+        <p class="story-body" style="color: var(--text); font-weight: 400;">So I combined everything I'd built over a decade — training science, mental health frameworks, identity development — and designed a system specifically for people who think like we do. That system is Gamer Ascension.</p>
+      </div>
+      <div class="story-aside">
+        <div class="story-aside-title">What I realized about gamers</div>
+        <div class="story-aside-item">
+          <div class="aside-dot"></div>
+          <div class="aside-text">Gamers were the most consistent clients I had ever coached — by a significant margin — once they connected the dots between gaming progression and physical progression.</div>
+        </div>
+        <div class="story-aside-item">
+          <div class="aside-dot"></div>
+          <div class="aside-text">The identity gap between the heroes they admired and who they were in real life created a fuel source more powerful than any external motivation.</div>
+        </div>
+        <div class="story-aside-item">
+          <div class="aside-dot"></div>
+          <div class="aside-text">Once they had a system that spoke their language — they didn't just transform physically. They became people they actually respected.</div>
+        </div>
+        <div class="story-aside-item">
+          <div class="aside-dot"></div>
+          <div class="aside-text">The games and the books didn't go away. The relationship with them changed. From needing them to feel like the hero — to simply enjoying them as one.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="container">
+    <div class="section-eyebrow"><div class="eyebrow-dot"></div>Common questions</div>
+    <h2 class="section-title">Things you're probably wondering.</h2>
+
+    <div class="faq-grid">
+      <div class="faq-item">
+        <div class="faq-q">What if it doesn't work for me?</div>
+        <div class="faq-a">The program is built around structured progression, accountability, and weekly adjustment. If you follow the system, it works. And to remove the risk entirely — see the guarantee below.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What if I've never been to a gym before?</div>
+        <div class="faq-a">The program works for complete beginners and experienced lifters alike. Everything is customized to your starting point. You don't need to know anything going in — that's what the coaching is for.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">I love food. Do I have to give everything up?</div>
+        <div class="faq-a">No. You need structure and intelligent planning — not restriction. We build a nutrition approach around your life, not the other way around. You don't have to stop enjoying food.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">I have social anxiety. How do I handle the gym?</div>
+        <div class="faq-a">We address this directly. We can build mindset and exposure strategies into your coaching, or design a full home-based program if that fits your situation better. There's no one-size-fits-all here.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GUARANTEE -->
+<section class="guarantee-section">
+  <div class="container">
+    <div class="guarantee-box">
+      <span class="guarantee-icon">🛡</span>
+      <h2 class="guarantee-title">The Gamer Ascension Guarantee</h2>
+      <p class="guarantee-body">Complete the full 90 days. Follow the system. If you don't see real, measurable change in your body and in how you feel about yourself — I'll refund every dollar. No hoops. No arguments.</p>
+      <p class="guarantee-fine">I've spent 10 years building and refining this. I back it completely.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta-section">
+  <div class="final-cta-glow"></div>
+  <div class="container">
+    <div class="final-cta-inner">
+      <h2 class="final-cta-headline">
+        Stop admiring<br>
+        <span>the hero.</span><br>
+        Become one.
+      </h2>
+      <p class="final-cta-body">Many gamers spend years admiring powerful characters. Transformation happens when you stop admiring them — and start becoming one.</p>
+      <div class="final-cta-options">
+        <a href="https://calendly.com/straincoaching/insightcall" class="btn-primary" style="font-size:16px; padding:18px 36px;">
+          Start My Character Build →
+        </a>
+        <p class="btn-note" style="text-align:center;">Book a free 15-minute PlayBook Call. We'll talk about your goals and whether Gamer Ascension is the right fit.<br>If it is — we start building your transformation. If it isn't — you'll walk away with clarity on your next steps.</p>
+        <a href="https://www.instagram.com/the.jake.strain/" class="ig-link">
+          Or message me directly on Instagram → @the.jake.strain
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer style="max-width:1100px; margin:0 auto; padding:32px 24px;">
+  <a href="#" class="footer-logo">Gamer<span>Ascension</span></a>
+  <div class="footer-text">© 2026 Gamer Ascension · Join the ranks · Ascend.</div>
+</footer>
+
+</body>
+</html>
