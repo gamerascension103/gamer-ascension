@@ -675,7 +675,14 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
 </div>
 
 <script>
-(function(){
+document.addEventListener('DOMContentLoaded', function(){
+
+  document.querySelectorAll('a[href*="calendly"]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      fbq('track', 'Lead');
+    });
+  });
+
   var lb = document.getElementById('lightbox');
   var lbImg = document.getElementById('lightboxImg');
   var lbClose = document.getElementById('lightboxClose');
@@ -708,7 +715,8 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
   document.addEventListener('keydown', function(e){
     if(e.key === 'Escape') closeLightbox();
   });
-})();
+
+});
 </script>
 </body>
 </html>
