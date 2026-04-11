@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gamer Ascension — Transform Your Body. Become the Hero.</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <!-- Meta Pixel Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -139,7 +139,26 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .od3{animation-delay:-4s}
 @keyframes orbit{from{transform:rotate(0deg) translateX(30px) rotate(0deg)}to{transform:rotate(360deg) translateX(30px) rotate(-360deg)}}
 
-/* SOCIAL PROOF BAR */
+/* SKILL TREE SECTION */
+.skilltree-section{position:relative;padding:100px 0;background:var(--bg);overflow:hidden}
+.skilltree-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(80,0,140,.12) 0%,rgba(192,57,43,.06) 40%,transparent 70%);pointer-events:none}
+.skilltree-header{text-align:center;max-width:700px;margin:0 auto 52px}
+.skilltree-preview{position:relative;max-width:1000px;margin:0 auto}
+.skilltree-frame{position:relative;width:100%;height:580px;border-radius:8px;overflow:hidden;border:1px solid rgba(201,168,76,.2);box-shadow:0 0 80px rgba(80,0,140,.15),0 0 40px rgba(192,57,43,.08)}
+.skilltree-overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.75);backdrop-filter:blur(4px);transition:opacity .4s,backdrop-filter .4s;border-radius:8px}
+.skilltree-overlay.hidden{opacity:0;pointer-events:none;backdrop-filter:blur(0px)}
+.skilltree-overlay-inner{text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.skilltree-overlay-title{font-family:'Cinzel',serif;font-size:clamp(24px,3vw,40px);color:var(--text);letter-spacing:.06em;font-weight:600}
+.skilltree-overlay-sub{font-size:12px;font-weight:300;color:var(--tmuted);letter-spacing:.1em;text-transform:uppercase}
+.skilltree-enter-btn{display:inline-flex;align-items:center;gap:10px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;border:none;cursor:pointer;transition:background .2s,transform .15s;margin-top:8px}
+.skilltree-enter-btn:hover{background:#a93226;transform:translateY(-2px)}
+.skilltree-overlay-note{font-size:11px;font-weight:300;color:var(--tmuted)}
+.skilltree-pills{display:flex;justify-content:center;gap:12px;margin-top:20px;flex-wrap:wrap}
+.skilltree-pill{font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:6px 16px;border-radius:20px;border:1px solid}
+.skilltree-pill.vitality{color:#ff6644;border-color:rgba(255,100,68,.3);background:rgba(255,100,68,.06)}
+.skilltree-pill.spirit{color:#bb99ff;border-color:rgba(187,153,255,.3);background:rgba(187,153,255,.06)}
+.skilltree-pill.alignment{color:#55ffaa;border-color:rgba(85,255,170,.3);background:rgba(85,255,170,.06)}
+@media(max-width:600px){.skilltree-frame{height:420px}}
 .proof-bar{background:var(--bg2);padding:60px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .proof-card{padding:32px;background:var(--bg1);position:relative}
@@ -327,6 +346,36 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
       <div><div class="snum">10</div><div class="slbl">Years coaching</div></div>
       <div><div class="snum">90</div><div class="slbl">Day program</div></div>
       <div><div class="snum">100%</div><div class="slbl">Money back guarantee</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILL TREE SECTION -->
+<section class="skilltree-section">
+  <div class="skilltree-bg"></div>
+  <div class="container">
+    <div class="skilltree-header">
+      <div class="eyebrow"><div class="edot"></div>The curriculum</div>
+      <h2 class="sec-title">You've never seen a coaching<br>program built like <span style="color:var(--red)">this.</span></h2>
+      <p class="sec-body">29 skill nodes across three pillars. A living system that grows with you. No other coach in this space has built anything like it — because no other coach built it for gamers.</p>
+    </div>
+    <div class="skilltree-preview">
+      <div class="skilltree-frame" id="skillTreeFrame">
+        <div class="skilltree-overlay" id="skillTreeOverlay">
+          <div class="skilltree-overlay-inner">
+            <div class="skilltree-overlay-title">Pillars of Ascension</div>
+            <div class="skilltree-overlay-sub">29 skill nodes · 3 pillars · 16 weeks</div>
+            <button class="skilltree-enter-btn" id="skillTreeEnterBtn">Enter the Skill Tree →</button>
+            <div class="skilltree-overlay-note">The first 5 modules are free — no account needed</div>
+          </div>
+        </div>
+        <iframe id="skillTreeIframe" src="" style="width:100%;height:100%;border:none;opacity:0;transition:opacity .6s" scrolling="no"></iframe>
+      </div>
+      <div class="skilltree-pills">
+        <div class="skilltree-pill vitality">Vitality · 7 nodes</div>
+        <div class="skilltree-pill spirit">Spirit · 10 nodes</div>
+        <div class="skilltree-pill alignment">Alignment · 7 nodes</div>
+      </div>
     </div>
   </div>
 </section>
@@ -682,6 +731,34 @@ document.addEventListener('DOMContentLoaded', function(){
       fbq('track', 'Lead');
     });
   });
+
+  // Skill tree lazy load
+  var frame = document.getElementById('skillTreeFrame');
+  var iframe = document.getElementById('skillTreeIframe');
+  var overlay = document.getElementById('skillTreeOverlay');
+  var enterBtn = document.getElementById('skillTreeEnterBtn');
+  var loaded = false;
+
+  function loadIframe(){
+    if(loaded) return;
+    loaded = true;
+    iframe.src = 'https://ascension-1.live/pregame.html';
+    iframe.addEventListener('load', function(){ iframe.style.opacity = '1'; });
+  }
+
+  if(frame && 'IntersectionObserver' in window){
+    new IntersectionObserver(function(entries){
+      if(entries[0].isIntersecting) loadIframe();
+    },{threshold:0.2}).observe(frame);
+  }
+
+  if(enterBtn){
+    enterBtn.addEventListener('click', function(){
+      loadIframe();
+      if(iframe.style.opacity === '1') overlay.classList.add('hidden');
+      else iframe.addEventListener('load', function(){ overlay.classList.add('hidden'); });
+    });
+  }
 
   var lb = document.getElementById('lightbox');
   var lbImg = document.getElementById('lightboxImg');
