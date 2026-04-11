@@ -138,6 +138,7 @@ canvas#stars{display:none}
 .members-panel-btn:hover{background:#a93226}
 .members-panel-close{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--tdim);font-size:13px;font-weight:300;padding:11px 22px;border-radius:3px;cursor:pointer;transition:all .2s}
 .members-panel-close:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
+.node-panel-close-row{margin-top:12px;text-align:center}
 
 /* RESPONSIVE */
 @media(max-width:600px){
@@ -220,16 +221,24 @@ canvas#stars{display:none}
   <div class="node-tooltip-action" id="ttAction"></div>
 </div>
 
-<!-- MEMBERS PANEL -->
-<div class="members-panel" id="membersPanel">
+<!-- NODE PANEL -->
+<div class="members-panel" id="nodePanel">
   <div class="members-panel-inner">
-    <div class="members-panel-icon">🔒</div>
-    <div class="members-panel-node" id="membersPanelNode"></div>
-    <div class="members-panel-title">Members Only</div>
-    <div class="members-panel-body">This skill tree unlocks when you join the program. Book a free 15-minute call to see if Gamer Ascension is the right fit.</div>
+    <div class="members-panel-node" id="nodePanelPillar"></div>
+    <div class="members-panel-title" id="nodePanelName"></div>
+    <div class="members-panel-body" id="nodePanelDesc"></div>
     <div class="members-panel-actions">
-      <a href="https://calendly.com/straincoaching/insightcall" class="members-panel-btn">Book a call →</a>
-      <button class="members-panel-close" onclick="closeMembersPanel()">Maybe later</button>
+      <button class="members-panel-btn" id="nodePanelAction" style="border:none;cursor:pointer"></button>
+      <div id="nodePanelLock" style="display:none">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+          <div style="font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:rgba(192,57,43,.7)">Members Only</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+            <a href="https://calendly.com/straincoaching/insightcall" class="members-panel-btn">Book a call →</a>
+            <button class="members-panel-close" onclick="closeNodePanel()">Maybe later</button>
+          </div>
+        </div>
+      </div>
+      <button class="members-panel-close" id="nodePanelClose" onclick="closeNodePanel()">Close</button>
     </div>
   </div>
 </div>
@@ -896,13 +905,16 @@ function drawNode(svg,id,node){
   g.setAttribute('id','tnode-'+id);
   if(isPregame){
     g.style.cursor='pointer';
-    g.addEventListener('click',function(){ if(!drag.active) openLesson(id); });
-    g.addEventListener('mouseenter',function(e){ showTooltip(e,id,node,isDone); });
+    g.addEventListener('click',function(){ openNodePanel(id); });
+    g.addEventListener('mouseenter',function(e){ showTooltip(e,id,isDone); });
     g.addEventListener('mouseleave',function(){ hideTooltip(); });
     g.addEventListener('mousemove',function(e){ moveTooltip(e); });
   } else {
     g.style.cursor='pointer';
-    g.addEventListener('click',function(){ if(!drag.active) openMembersPanel(id,node); });
+    g.addEventListener('click',function(){ openNodePanel(id); });
+    g.addEventListener('mouseenter',function(e){ showTooltip(e,id,false); });
+    g.addEventListener('mouseleave',function(){ hideTooltip(); });
+    g.addEventListener('mousemove',function(e){ moveTooltip(e); });
   }
 
   if(!isLocked){
@@ -963,48 +975,13 @@ function drawNode(svg,id,node){
   if(!isLocked) dot.setAttribute('filter','url(#glow-white)');
   g.appendChild(dot);
 
-  // Label
-  var lines=node.label.split('\n');
-  var lh=isPregame?12:9.5, fs=isPregame?'10':'8';
-  var startY=node.y-(lines.length*lh)/2+lh*0.75;
-  lines.forEach(function(line,i){
-    var txt=document.createElementNS('http://www.w3.org/2000/svg','text');
-    txt.setAttribute('x',node.x); txt.setAttribute('y',startY+i*lh);
-    txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-family','DM Sans, sans-serif');
-    txt.setAttribute('font-size',fs); txt.setAttribute('font-weight','500'); txt.setAttribute('letter-spacing','0.05');
-    txt.setAttribute('fill',isLocked?'rgba(240,236,228,0.16)':(isDone?'#ffaa88':bright));
-    txt.textContent=line;
-    g.appendChild(txt);
-  });
-
+  // Done checkmark only — no labels on nodes
   if(isDone&&isPregame){
     var ck=document.createElementNS('http://www.w3.org/2000/svg','text');
-    ck.setAttribute('x',node.x+r*0.62); ck.setAttribute('y',node.y-r*0.62+3);
-    ck.setAttribute('text-anchor','middle'); ck.setAttribute('font-size','12'); ck.setAttribute('fill','#ff7755');
+    ck.setAttribute('x',node.x); ck.setAttribute('y',node.y+5);
+    ck.setAttribute('text-anchor','middle'); ck.setAttribute('font-size','16'); ck.setAttribute('fill','#ff7755');
     ck.setAttribute('filter','url(#glow-red)'); ck.textContent='✓';
     g.appendChild(ck);
-  }
-
-  // Permanent label below locked nodes
-  if(isLocked){
-    var labelLines = node.label.split('\n');
-    var fullLabel = labelLines.join(' ');
-    var lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
-    lbl.setAttribute('x',node.x); lbl.setAttribute('y',node.y+r+14);
-    lbl.setAttribute('text-anchor','middle'); lbl.setAttribute('font-family','DM Sans, sans-serif');
-    lbl.setAttribute('font-size','8.5'); lbl.setAttribute('font-weight','400');
-    lbl.setAttribute('fill','rgba(240,236,228,0.22)'); lbl.setAttribute('letter-spacing','0.04');
-    lbl.textContent=fullLabel;
-    g.appendChild(lbl);
-    // Members only tag
-    var tag=document.createElementNS('http://www.w3.org/2000/svg','text');
-    tag.setAttribute('x',node.x); tag.setAttribute('y',node.y+r+25);
-    tag.setAttribute('text-anchor','middle'); tag.setAttribute('font-family','DM Sans, sans-serif');
-    tag.setAttribute('font-size','7'); tag.setAttribute('font-weight','500');
-    tag.setAttribute('letter-spacing','0.08'); tag.setAttribute('text-transform','uppercase');
-    tag.setAttribute('fill','rgba(192,57,43,0.45)');
-    tag.textContent='MEMBERS ONLY';
-    g.appendChild(tag);
   }
   svg.appendChild(g);
 }
@@ -1150,18 +1127,48 @@ function drawStars(){
   }
 }
 
+// ---- NODE DATA ----
+var NODE_DATA = {
+  gap:       {name:'The Gap & The Skill Curve', pillar:'Pre-game · Module 01', type:'pregame', desc:'Why you feel the distance between who you are and who you know you could be. Where that feeling comes from, why it won\'t go away on its own, and what the next 16 weeks are actually designed to do about it.'},
+  training:  {name:'Training', pillar:'Pre-game · Module 02', type:'pregame', desc:'What resistance training actually is and why most people have the model completely wrong. How your body builds muscle during a workout, what makes a rep effective versus wasted effort, and the one shift in how you approach every session that changes everything.'},
+  nutrition: {name:'Nutrition', pillar:'Pre-game · Module 03', type:'pregame', desc:'The two things that actually control your body composition and how to hit them consistently. How to track your food without obsessing over it. And how to tell the difference between real hunger, habit, and eating your feelings.'},
+  journaling:{name:'Journaling', pillar:'Pre-game · Module 04', type:'pregame', desc:'What journaling actually is — and what it isn\'t. Why venting and gratitude listing are not this practice. The two-step method that turns a hard week into something useful, and how to finish the entries that feel uncomfortable to write.'},
+  reading:   {name:'Reading', pillar:'Pre-game · Module 05', type:'pregame', desc:'Why the ceiling you keep hitting was built from what you\'ve been exposed to — and how reading breaks it. How to pick the right book for where you are right now. And how to read in a way that actually changes how you think.'},
+  energy:    {name:'Energy Management', pillar:'Vitality', type:'vitality', desc:'What calories actually are and how your body uses them. What it means to eat in a deficit, at maintenance, or in a surplus — and how each one changes your body over time. How to think about food as fuel for both your workouts and your everyday life.'},
+  recovery:  {name:'Recovery', pillar:'Vitality', type:'vitality', desc:'What your body actually needs to recover between workouts. Sleep, stress, nutrition, and movement all play a role. This lesson explains what happens when recovery is good — and what goes wrong when it isn\'t.'},
+  perfstate: {name:'Performance State', pillar:'Vitality', type:'vitality', desc:'Why you show up to some workouts ready to go and others feeling like nothing is working. What controls your mental and physical state before a session — and simple ways to show up more consistently ready to train.'},
+  biomech:   {name:'Biomechanics', pillar:'Vitality', type:'vitality', desc:'How your body moves when you lift. Where to position your joints, how to set up each exercise, and why small changes in technique make a big difference in how much muscle you build and how safe your joints stay over time.'},
+  fuelsys:   {name:'Fuel Systems', pillar:'Vitality', type:'vitality', desc:'How your body uses food as fuel specifically during training. What to eat before and after workouts, how carbs and fat work during exercise, and how to time your nutrition around your sessions to get the most out of every rep.'},
+  neuro:     {name:'Neuroscience & Exercise', pillar:'Vitality', type:'vitality', desc:'Why working out makes you feel better mentally — not just physically. The science behind how resistance training reduces anxiety and depression. Why this pillar does a lot more than change what you see in the mirror.'},
+  hormones:  {name:'Hormones', pillar:'Vitality', type:'vitality', desc:'The chemicals your body produces that control how you build muscle, store fat, recover, sleep, and feel. What they are, what affects them, and how your training and lifestyle either support them or work against them.'},
+  mindset:   {name:'Mindset', pillar:'Spirit', type:'spirit', desc:'The beliefs you carry about what you\'re capable of — and how those beliefs either open doors or close them before you even try. Where those beliefs came from and how to start changing them through repeated action.'},
+  identity:  {name:'Identity', pillar:'Spirit', type:'spirit', desc:'Who you currently believe yourself to be. How that self-image drives your behaviour without you noticing. And what it actually takes to close the gap between who you are now and the person you\'re becoming.'},
+  motivation:{name:'Motivation Systems', pillar:'Spirit', type:'spirit', desc:'Why motivation comes and goes — and why that\'s not the problem. What actually keeps people moving when they don\'t feel like it. How to build a system that works even on the days you\'d rather do nothing.'},
+  emreg:     {name:'Emotional Regulation', pillar:'Spirit', type:'spirit', desc:'How to feel difficult emotions without letting them run your decisions. The skills that let you stay in the program when things get hard — instead of shutting down, numbing out, or quitting.'},
+  intent:    {name:'Intentionality', pillar:'Spirit', type:'spirit', desc:'The gap between knowing what you should do and actually doing it. How to act from your values instead of your impulses — and what that looks like in the small daily moments that add up to who you become.'},
+  action:    {name:'Action Taking', pillar:'Spirit', type:'spirit', desc:'Why knowing what to do and actually doing it are two completely different skills. What gets in the way between intention and execution — and the practical systems that close that gap consistently.'},
+  reflect:   {name:'Reflection', pillar:'Spirit', type:'spirit', desc:'The ability to look at your own experience clearly without being swept away by it. The skill underneath journaling, meditation, and every other self-observation practice — and how to develop it deliberately.'},
+  idealism:  {name:'Idealisms & Culture', pillar:'Spirit', type:'spirit', desc:'Where your idea of your ideal self actually came from. The cultural stories, belief systems, and inherited messages that shaped your hero — including the ones that make you feel like you shouldn\'t want what you want. How to sort through them and give yourself permission to follow the drive that was always there.'},
+  hope:      {name:'Hope', pillar:'Spirit', type:'spirit', desc:'How to use the evidence from your own progress to keep believing in a future that isn\'t fully real yet. The skill that takes over from Faith once the results start arriving — and how to build it deliberately instead of waiting for it to show up on its own.'},
+  faith:     {name:'Faith', pillar:'Spirit', type:'spirit', desc:'How to move toward a future you can\'t yet prove is possible. The capacity to act before the evidence exists — and why this is the only engine available in the early weeks when nothing has changed yet and everything still feels uncertain.'},
+  values:    {name:'Values Clarity', pillar:'Alignment', type:'alignment', desc:'What you actually care about underneath everything else. Your core values made explicit — not the ones you think you should have, but the ones already running your decisions. The foundation everything in Phase 4 is built from.'},
+  goalarch:  {name:'Goal Architecture', pillar:'Alignment', type:'alignment', desc:'The difference between a goal and a wish. How to build goals that are connected to what you actually value, structured so they create momentum, and designed to survive real life when it gets complicated.'},
+  envdesign: {name:'Environment Design', pillar:'Alignment', type:'alignment', desc:'How the spaces you live in and the people around you shape your behaviour without you realising it. How to audit your environment and redesign it so the right actions become easier and the old patterns have less to grab onto.'},
+  execsys:   {name:'Executive Systems', pillar:'Alignment', type:'alignment', desc:'How your day is actually structured — your routines, your schedule, and how much mental energy you spend making decisions. The systems that reduce drift and make showing up feel automatic instead of like a constant battle.'},
+  bounds:    {name:'Boundaries', pillar:'Alignment', type:'alignment', desc:'How to protect your time and energy from the demands that pull you away from who you\'re becoming. Boundaries as a practical skill — not a personality trait — and how to build them without blowing up your relationships.'},
+  relations: {name:'Relationships', pillar:'Alignment', type:'alignment', desc:'How the people closest to you either support your transformation or quietly work against it. What it looks like to build connections that align with who you\'re becoming — and how to navigate the ones that don\'t.'},
+  career:    {name:'Career & Legacy', pillar:'Alignment', type:'alignment', desc:'The biggest picture. Your work, your purpose, and the mark you want to leave. What it looks like to design a life and a career around the person you\'ve become — instead of tolerating one built around who you used to be.'},
+};
+
 // ---- TOOLTIP ----
 var tooltipEl = null;
-function showTooltip(e, id, node, isDone){
+function showTooltip(e, id, isDone){
   tooltipEl = document.getElementById('nodeTooltip');
-  var labels = {
-    gap:'The Gap & The Skill Curve', training:'Training', nutrition:'Nutrition',
-    journaling:'Journaling', reading:'Reading'
-  };
-  var nums = {gap:'Module 01',training:'Module 02',nutrition:'Module 03',journaling:'Module 04',reading:'Module 05'};
-  document.getElementById('ttNum').textContent = nums[id] || '';
-  document.getElementById('ttName').textContent = labels[id] || node.label.replace('\n',' ');
-  document.getElementById('ttAction').textContent = isDone ? 'Completed ✓' : 'Click to read';
+  var data = NODE_DATA[id];
+  if(!data) return;
+  document.getElementById('ttNum').textContent = data.pillar;
+  document.getElementById('ttName').textContent = data.name;
+  document.getElementById('ttAction').textContent = isDone ? 'Completed ✓' : 'Click to open';
   moveTooltip(e);
   tooltipEl.classList.add('visible');
 }
@@ -1179,20 +1186,40 @@ function hideTooltip(){
   tooltipEl = null;
 }
 
-// ---- MEMBERS PANEL ----
-function openMembersPanel(id, node){
-  var label = node.label.replace('\n',' ');
-  document.getElementById('membersPanelNode').textContent = label;
-  document.getElementById('membersPanel').classList.add('open');
+// ---- NODE PANEL ----
+function openNodePanel(id){
+  if(drag.active) return;
+  var data = NODE_DATA[id];
+  if(!data) return;
+  var isPregame = data.type === 'pregame';
+  var isDone = completed.includes(id);
+  var panel = document.getElementById('nodePanel');
+  var pillarColors = {pregame:'var(--gold)', vitality:'#ff6644', spirit:'#bb99ff', alignment:'#55ffaa'};
+  var color = pillarColors[data.type] || 'var(--gold)';
+  document.getElementById('nodePanelPillar').textContent = data.pillar;
+  document.getElementById('nodePanelPillar').style.color = color;
+  document.getElementById('nodePanelName').textContent = data.name;
+  document.getElementById('nodePanelDesc').textContent = data.desc;
+  var actionEl = document.getElementById('nodePanelAction');
+  var lockEl = document.getElementById('nodePanelLock');
+  if(isPregame){
+    actionEl.style.display = '';
+    lockEl.style.display = 'none';
+    actionEl.textContent = isDone ? 'Read again →' : 'Read this module →';
+    actionEl.onclick = function(){ closeNodePanel(); openLesson(id); };
+  } else {
+    actionEl.style.display = 'none';
+    lockEl.style.display = '';
+  }
+  panel.classList.add('open');
 }
-function closeMembersPanel(){
-  document.getElementById('membersPanel').classList.remove('open');
+function closeNodePanel(){
+  document.getElementById('nodePanel').classList.remove('open');
 }
-// Close on canvas click outside panel
 document.addEventListener('click', function(e){
-  var panel = document.getElementById('membersPanel');
+  var panel = document.getElementById('nodePanel');
   if(panel.classList.contains('open') && !panel.contains(e.target)){
-    closeMembersPanel();
+    closeNodePanel();
   }
 });
 
