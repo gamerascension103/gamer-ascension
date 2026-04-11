@@ -16,16 +16,23 @@ html,body{height:100%;overflow:hidden;background:var(--bg)}
 body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 /* HEADER */
-.header{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(8,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
-.header-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.05em;color:var(--text);text-decoration:none}
+.header{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(8,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.05em;color:var(--text);text-decoration:none;white-space:nowrap}
 .header-logo span{color:var(--red)}
-.header-right{display:flex;align-items:center;gap:16px}
-.progress-label{font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.06em}
-.progress-pips{display:flex;gap:4px;margin-left:8px}
-.pip{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);transition:all .4s ease}
+.header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.progress-label{font-size:10px;font-weight:300;color:var(--tmuted);letter-spacing:.06em;display:none}
+.progress-pips{display:flex;gap:4px;margin-left:4px}
+.pip{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);transition:all .4s ease;flex-shrink:0}
 .pip.done{background:var(--red);border-color:var(--red);box-shadow:0 0 6px rgba(192,57,43,.6)}
-.header-btn{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:8px 16px;border-radius:3px;text-decoration:none;transition:background .2s}
+.header-btn{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:7px 12px;border-radius:3px;text-decoration:none;transition:background .2s;white-space:nowrap}
 .header-btn:hover{background:#a93226}
+@media(min-width:500px){
+  .header{padding:0 24px}
+  .header-logo{font-size:20px}
+  .header-right{gap:16px}
+  .progress-label{display:block}
+  .header-btn{font-size:12px;padding:8px 16px}
+}
 
 /* CANVAS */
 .nebula-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
