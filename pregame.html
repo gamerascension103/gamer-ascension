@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Hero Education — Pre-Game Briefing | Gamer Ascension</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#c0392b;--red-dim:rgba(192,57,43,0.15);
+  --gold:#c9a84c;--gold-dim:rgba(201,168,76,0.12);
+  --purple:#7f77dd;--green:#1d9e75;
+  --bg:#07070f;--bg1:#0d0d1a;--bg2:#111122;
+  --border:rgba(255,255,255,0.06);
+  --text:#f0ece4;--tdim:rgba(240,236,228,0.55);--tmuted:rgba(240,236,228,0.28);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
+
+/* HEADER */
+.header{position:fixed;top:0;left:0;right:0;z-index:50;height:56px;background:rgba(7,7,15,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:.05em;color:var(--text);text-decoration:none}
+.header-logo span{color:var(--red)}
+.header-right{display:flex;align-items:center;gap:16px}
+.header-progress{display:flex;align-items:center;gap:10px}
+.progress-label{font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.06em}
+.progress-pips{display:flex;gap:4px}
+.pip{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);transition:all .4s ease}
+.pip.done{background:var(--red);border-color:var(--red);box-shadow:0 0 6px rgba(192,57,43,.6)}
+.header-btn{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:8px 16px;border-radius:3px;text-decoration:none;transition:background .2s}
+.header-btn:hover{background:#a93226}
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--tmuted);font-size:12px;font-weight:300;text-decoration:none;transition:color .2s;background:none;border:none;cursor:pointer;padding:0}
+.back-btn:hover{color:var(--text)}
+
+/* CANVAS WRAPPER */
+.canvas-wrap{position:fixed;top:56px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab}
+.canvas-wrap.dragging{cursor:grabbing}
+.canvas-inner{position:absolute;transform-origin:0 0;will-change:transform}
+canvas#stars{position:absolute;top:0;left:0;pointer-events:none}
+
+/* HINT */
+.hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.08em;z-index:40;pointer-events:none;transition:opacity .5s}
+.hint.hidden{opacity:0}
+
+/* ZOOM CONTROLS */
+.zoom-controls{position:fixed;bottom:24px;right:24px;z-index:50;display:flex;flex-direction:column;gap:6px}
+.zoom-btn{width:36px;height:36px;background:rgba(13,13,26,.9);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;backdrop-filter:blur(8px)}
+.zoom-btn:hover{background:rgba(30,30,50,.9)}
+
+/* LEGEND */
+.legend{position:fixed;top:72px;left:16px;z-index:50;background:rgba(7,7,15,.9);border:1px solid var(--border);border-radius:4px;padding:12px 16px;backdrop-filter:blur(8px)}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:300;color:var(--tmuted);margin-bottom:6px}
+.legend-item:last-child{margin-bottom:0}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* LESSON OVERLAY */
+.lesson-overlay{position:fixed;inset:0;z-index:200;background:rgba(7,7,15,.97);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.lesson-overlay.open{transform:translateY(0)}
+.lesson-header{flex-shrink:0;padding:20px 32px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:rgba(13,13,26,.8)}
+.lesson-header-left{}
+.lesson-eyebrow{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.lesson-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,4vw,44px);color:var(--text);line-height:1}
+.lesson-close{width:40px;height:40px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
+.lesson-close:hover{background:rgba(255,255,255,.1)}
+.lesson-progress-bar{height:2px;background:rgba(255,255,255,.06);flex-shrink:0}
+.lesson-progress-fill{height:100%;background:var(--gold);width:0%;transition:width .3s}
+.lesson-body{flex:1;overflow-y:auto;padding:40px 32px;max-width:800px;margin:0 auto;width:100%}
+.lesson-footer{flex-shrink:0;padding:20px 32px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.complete-btn{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:#0a0a0a;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;border:none;cursor:pointer;transition:background .2s,transform .15s}
+.complete-btn:hover{background:#b8952e;transform:translateY(-1px)}
+.complete-btn.done{background:var(--red);color:#fff}
+.complete-btn:disabled{opacity:.6;cursor:default;transform:none}
+.lesson-nav{display:flex;gap:10px}
+.lesson-nav-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--border);color:var(--tdim);font-size:12px;font-weight:300;padding:10px 16px;border-radius:3px;cursor:pointer;transition:all .2s}
+.lesson-nav-btn:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
+
+/* LESSON CONTENT STYLES */
+.lc-intro{font-size:16px;font-weight:300;color:var(--tdim);line-height:1.8;margin-bottom:40px;padding-bottom:32px;border-bottom:1px solid var(--border);font-style:italic}
+.lc-section{margin-bottom:40px}
+.lc-section-num{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.lc-section-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(20px,3vw,32px);color:var(--text);margin-bottom:16px;line-height:1}
+.lc-body{font-size:15px;font-weight:300;color:var(--tdim);line-height:1.85;margin-bottom:16px}
+.lc-body strong{font-weight:500;color:var(--text)}
+.lc-callout{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;padding:20px 24px;margin:20px 0}
+.lc-callout-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.lc-callout-text{font-size:14px;font-weight:300;color:var(--text);line-height:1.7;font-style:italic}
+.lc-red-callout{background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.2);border-left:3px solid var(--red);border-radius:0 4px 4px 0;padding:20px 24px;margin:20px 0}
+.lc-red-label{font-size:10px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:8px}
+.lc-red-text{font-size:14px;font-weight:300;color:var(--text);line-height:1.7}
+.lc-phase-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}
+.lc-phase-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:4px;padding:16px 20px}
+.lc-phase-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.lc-phase-name{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);margin-bottom:6px}
+.lc-phase-body{font-size:13px;font-weight:300;color:var(--tdim);line-height:1.6}
+.lc-steps{margin:16px 0}
+.lc-step{display:flex;gap:16px;margin-bottom:20px;align-items:flex-start}
+.lc-step-num{width:28px;height:28px;border-radius:50%;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--gold);flex-shrink:0;margin-top:2px}
+.lc-step-content{}
+.lc-step-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:4px}
+.lc-step-body{font-size:13px;font-weight:300;color:var(--tdim);line-height:1.65}
+.lc-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+.lc-table th{text-align:left;padding:10px 12px;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(201,168,76,.2)}
+.lc-table td{padding:10px 12px;color:var(--tdim);border-bottom:1px solid var(--border);line-height:1.5}
+.lc-table tr:last-child td{border-bottom:none}
+.lc-divider{height:1px;background:var(--border);margin:32px 0}
+.lc-two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.lc-col-card{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:4px;padding:16px}
+.lc-col-label{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--tmuted);margin-bottom:8px}
+.lc-col-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:6px}
+.lc-col-body{font-size:13px;font-weight:300;color:var(--tdim);line-height:1.6}
+.lc-practice-stack{margin:20px 0}
+.lc-practice-item{display:flex;align-items:center;gap:16px;padding:14px 16px;background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:4px;margin-bottom:8px}
+.lc-practice-icon{width:36px;height:36px;border-radius:3px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.lc-practice-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px}
+.lc-practice-desc{font-size:12px;font-weight:300;color:var(--tdim)}
+.lc-complete-section{text-align:center;padding:40px 0 20px;border-top:1px solid var(--border);margin-top:40px}
+.lc-complete-text{font-size:14px;font-weight:300;color:var(--tdim);margin-bottom:8px}
+.lc-complete-sub{font-size:12px;font-weight:300;color:var(--tmuted);margin-bottom:24px}
+
+/* COMPLETION ANIMATION */
+.completion-flash{position:fixed;inset:0;z-index:300;background:rgba(201,168,76,.08);pointer-events:none;opacity:0;transition:opacity .3s}
+.completion-flash.active{opacity:1}
+
+/* RESPONSIVE */
+@media(max-width:600px){
+  .lesson-body{padding:24px 20px}
+  .lesson-header{padding:16px 20px}
+  .lesson-footer{padding:16px 20px}
+  .lc-phase-grid{grid-template-columns:1fr}
+  .lc-two-col{grid-template-columns:1fr}
+  .legend{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="/" class="header-logo">Gamer<span>Ascension</span></a>
+  <div class="header-right">
+    <div class="header-progress">
+      <span class="progress-label">Pre-game</span>
+      <div class="progress-pips">
+        <div class="pip" id="pip-0"></div>
+        <div class="pip" id="pip-1"></div>
+        <div class="pip" id="pip-2"></div>
+        <div class="pip" id="pip-3"></div>
+        <div class="pip" id="pip-4"></div>
+      </div>
+    </div>
+    <a href="https://calendly.com/straincoaching/insightcall" class="header-btn">Book a call →</a>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--gold);box-shadow:0 0 6px rgba(201,168,76,.5)"></div>Available</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--red);box-shadow:0 0 6px rgba(192,57,43,.5)"></div>Completed</div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)"></div>Members only</div>
+  <div class="legend-item" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span style="font-size:10px;color:var(--tmuted)">Pinch / scroll to zoom<br>Drag to pan</span></div>
+</div>
+
+<div class="canvas-wrap" id="canvasWrap">
+  <canvas id="stars"></canvas>
+  <div class="canvas-inner" id="canvasInner">
+    <svg id="treeSvg" xmlns="http://www.w3.org/2000/svg" style="overflow:visible"></svg>
+  </div>
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" id="zoomIn">+</button>
+  <button class="zoom-btn" id="zoomOut">−</button>
+  <button class="zoom-btn" id="zoomReset" style="font-size:12px;font-weight:500">⌂</button>
+</div>
+
+<div class="hint" id="hint">Drag to explore · Click nodes to open lessons</div>
+
+<!-- LESSON OVERLAY -->
+<div class="lesson-overlay" id="lessonOverlay">
+  <div class="lesson-header">
+    <div class="lesson-header-left">
+      <div class="lesson-eyebrow" id="lessonEyebrow"></div>
+      <div class="lesson-title" id="lessonTitle"></div>
+    </div>
+    <button class="lesson-close" onclick="closeLesson()">✕</button>
+  </div>
+  <div class="lesson-progress-bar"><div class="lesson-progress-fill" id="lessonProgressFill"></div></div>
+  <div class="lesson-body" id="lessonBody" onscroll="updateReadProgress()"></div>
+  <div class="lesson-footer">
+    <div class="lesson-nav">
+      <button class="lesson-nav-btn" id="prevBtn" onclick="navLesson(-1)">← Previous</button>
+      <button class="lesson-nav-btn" id="nextBtn" onclick="navLesson(1)">Next →</button>
+    </div>
+    <button class="complete-btn" id="completeBtn" onclick="markComplete()">Mark as complete ✓</button>
+  </div>
+</div>
+
+<div class="completion-flash" id="completionFlash"></div>
+
+<script>
+var W = 1600, H = 2200;
+var completed = JSON.parse(localStorage.getItem('ga_pregame_completed') || '[]');
+var currentLesson = null;
+
+var NODES = {
+  gap:       {x:800, y:120,  label:'The Gap &\nSkill Curve', num:'01', type:'pregame', color:'#c9a84c'},
+  training:  {x:800, y:300,  label:'Training',               num:'02', type:'pregame', color:'#c9a84c'},
+  nutrition: {x:800, y:480,  label:'Nutrition',              num:'03', type:'pregame', color:'#c9a84c'},
+  journaling:{x:800, y:660,  label:'Journaling',             num:'04', type:'pregame', color:'#c9a84c'},
+  reading:   {x:800, y:840,  label:'Reading',                num:'05', type:'pregame', color:'#c9a84c'},
+
+  // Vitality branch (left)
+  energy:    {x:280, y:1100, label:'Energy\nManagement',     type:'vitality', color:'#c0392b'},
+  recovery:  {x:160, y:1280, label:'Recovery',               type:'vitality', color:'#c0392b'},
+  perfstate: {x:320, y:1280, label:'Performance\nState',     type:'vitality', color:'#c0392b'},
+  biomech:   {x:100, y:1460, label:'Biomechanics',           type:'vitality', color:'#c0392b'},
+  fuelsys:   {x:260, y:1460, label:'Fuel Systems',           type:'vitality', color:'#c0392b'},
+  neuro:     {x:160, y:1640, label:'Neuroscience\n& Exercise',type:'vitality',color:'#c0392b'},
+  hormones:  {x:340, y:1640, label:'Hormones',               type:'vitality', color:'#c0392b'},
+
+  // Spirit branch (center)
+  mindset:   {x:700, y:1100, label:'Mindset',                type:'spirit',   color:'#7f77dd'},
+  identity:  {x:580, y:1280, label:'Identity',               type:'spirit',   color:'#7f77dd'},
+  motivation:{x:720, y:1280, label:'Motivation\nSystems',    type:'spirit',   color:'#7f77dd'},
+  emreg:     {x:860, y:1280, label:'Emotional\nRegulation',  type:'spirit',   color:'#7f77dd'},
+  intent:    {x:540, y:1460, label:'Intentionality',         type:'spirit',   color:'#7f77dd'},
+  action:    {x:670, y:1460, label:'Action Taking',          type:'spirit',   color:'#7f77dd'},
+  reflect:   {x:800, y:1460, label:'Reflection',             type:'spirit',   color:'#7f77dd'},
+  idealism:  {x:930, y:1460, label:'Idealisms\n& Culture',   type:'spirit',   color:'#7f77dd'},
+  hope:      {x:700, y:1640, label:'Hope',                   type:'spirit',   color:'#7f77dd'},
+  faith:     {x:860, y:1640, label:'Faith',                  type:'spirit',   color:'#7f77dd'},
+
+  // Alignment branch (right)
+  values:    {x:1320,y:1100, label:'Values Clarity',         type:'alignment',color:'#1d9e75'},
+  goalarch:  {x:1180,y:1280, label:'Goal\nArchitecture',     type:'alignment',color:'#1d9e75'},
+  envdesign: {x:1340,y:1280, label:'Environment\nDesign',    type:'alignment',color:'#1d9e75'},
+  execsys:   {x:1500,y:1280, label:'Executive\nSystems',     type:'alignment',color:'#1d9e75'},
+  bounds:    {x:1200,y:1460, label:'Boundaries',             type:'alignment',color:'#1d9e75'},
+  relations: {x:1360,y:1460, label:'Relationships',          type:'alignment',color:'#1d9e75'},
+  career:    {x:1520,y:1460, label:'Career &\nLegacy',       type:'alignment',color:'#1d9e75'},
+};
+
+var TRUNK_ORDER = ['gap','training','nutrition','journaling','reading'];
+var PILLAR_ROOTS = {vitality:'energy', spirit:'mindset', alignment:'values'};
+var BRANCHES = {
+  vitality: {from:'energy', children:['recovery','perfstate'], grandchildren:{recovery:['biomech','fuelsys'], perfstate:['neuro','hormones']}},
+  spirit: {from:'mindset', children:['identity','motivation','emreg'], grandchildren:{identity:['intent','action'], motivation:['reflect'], emreg:['idealism'], reflect:['hope','faith']}},
+  alignment: {from:'values', children:['goalarch','envdesign','execsys'], grandchildren:{goalarch:['bounds'], envdesign:['relations'], execsys:['career']}}
+};
+
+var PILLAR_COLORS = {vitality:'#c0392b', spirit:'#7f77dd', alignment:'#1d9e75'};
+var PILLAR_LABELS = {vitality:'VITALITY', spirit:'SPIRIT', alignment:'ALIGNMENT'};
+
+// LESSON CONTENT
+var LESSONS = {
+  gap: {
+    eyebrow: 'Pre-game briefing · Module 01 of 05 · Read this first',
+    title: 'The Gap & The Skill Curve',
+    subtitle: 'Before training, nutrition, journaling, or reading — read this. Everything else follows from here.',
+    content: `
+<p class="lc-intro">This module names the thing you have been feeling and gives it a framework. The program makes more sense after you read it.</p>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 01</div>
+<div class="lc-section-title">You have already built a hero</div>
+<p class="lc-body">You did not do it on purpose. You probably never sat down and described this person clearly. But they exist.</p>
+<p class="lc-body">Over your lifetime your mind has been quietly building an image of who you need to become. Not a specific person you are trying to copy. Not someone else's version of success. A composite — assembled from every story that moved you, every character you admired, every moment you witnessed strength or courage or purpose and felt something stir.</p>
+<p class="lc-body">Gaming gave you some of it. The characters you played, the worlds you inhabited, the moments where you were capable and decisive and effective — those left marks. Culture gave you some of it. Family gave you some of it. Your own glimpses of your best self gave you some of it.</p>
+<p class="lc-body"><strong>This is your hero. Your ideal self.</strong> The person your mind has decided you need to become.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">Why this drive is not optional</div>
+<div class="lc-callout-text">The hero you built is your mind's best answer to the question every human being is always quietly asking: who do I need to become to fully belong to my own life? This drive is biological. The same force that drives survival drives the movement toward your ideal self. It does not switch off.</div>
+</div>
+<p class="lc-body">Most people have never examined this figure clearly. It runs silently. But it is never passive. You feel its presence most clearly in the moments when something is missing. When you know you could have handled that better. When you look at your life and feel the distance between what it is and what it could be.</p>
+<p class="lc-body"><strong>That distance is the gap.</strong></p>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 02</div>
+<div class="lc-section-title">The Hero's Journey — you already know this story</div>
+<p class="lc-body">In the 1940s a scholar named Joseph Campbell spent years studying the myths, stories, and legends of cultures from every corner of the world. He found that across all of human history every great story follows the same arc. He called it the Hero's Journey. You already know it. You have lived it hundreds of times in every game that ever mattered to you.</p>
+<div class="lc-steps">
+<div class="lc-step"><div class="lc-step-num">1</div><div class="lc-step-content"><div class="lc-step-title">The ordinary world</div><div class="lc-step-body">Everyday life — familiar, safe, but somehow incomplete. The hero knows something is missing.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">2</div><div class="lc-step-content"><div class="lc-step-title">The call</div><div class="lc-step-body">An invitation to something greater that would require growth, change, and facing difficulty they have never faced before.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">3</div><div class="lc-step-content"><div class="lc-step-title">The refusal</div><div class="lc-step-body">Almost always, the hero resists first. The ordinary world is known. The journey is uncertain.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">4</div><div class="lc-step-content"><div class="lc-step-title">The threshold crossing</div><div class="lc-step-body">The hero steps out of the ordinary world and into the journey. There is no going back to who they were.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">5</div><div class="lc-step-content"><div class="lc-step-title">The trials</div><div class="lc-step-body">Challenges, setbacks, moments of failure and doubt. The hero is tested and changed by what they go through.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">6</div><div class="lc-step-content"><div class="lc-step-title">The transformation and return</div><div class="lc-step-body">If they stay in it, they are transformed — returning not as who they were, but as the hero the story always suggested they could be.</div></div></div>
+</div>
+<div class="lc-red-callout">
+<div class="lc-red-label">Where you are right now</div>
+<div class="lc-red-text">You are the hero of your own journey. Reading this, standing at the beginning of this program — you are at the threshold. The ordinary world is behind you. The call has been answered. The trials are ahead.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 03</div>
+<div class="lc-section-title">The failure of the hero story</div>
+<p class="lc-body">When the call goes unanswered long enough, something happens. Not just disappointment. Something deeper and more serious than that.</p>
+<p class="lc-body">When the gap between who you are and who your hero is stays wide — when you feel the distance but cannot find a way to close it — the result is a specific kind of suffering. Not the suffering of a single bad event. The suffering of a story that is not being lived.</p>
+<p class="lc-body">Gamers feel the gap with particular sharpness. Gaming gives you a space where the hero story does get lived — where you are capable, decisive, and moving toward something that matters. You log off and the contrast is real.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">This is not weakness</div>
+<div class="lc-callout-text">This is what happens to a person whose drive toward their ideal self has found no adequate outlet. It is one of the most human experiences there is. If at any point during this program the weight of the gap feels like more than you can carry — reach out directly to your coach. That is what the relationship is for.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 04</div>
+<div class="lc-section-title">You are here because the drive is still alive</div>
+<p class="lc-body">You have not given up on the story. The drive toward your hero — toward the person you have spent a lifetime quietly building — is still running in you. That is not nothing. That is everything this program needs to work with.</p>
+<p class="lc-body">This program exists for one reason: to give that drive somewhere to go. To take the force that has been generating the gap and turn it into the force that closes it. Systematically. Daily. Over 16 weeks.</p>
+<p class="lc-body"><strong>The gap does not have to be permanent.</strong></p>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 05</div>
+<div class="lc-section-title">The skill curve — what each phase actually feels like</div>
+<div class="lc-phase-grid">
+<div class="lc-phase-card"><div class="lc-phase-label">Weeks 1–3</div><div class="lc-phase-name">Clunky</div><div class="lc-phase-body">Everything feels harder and less coordinated than it should. Nothing flows yet. This is where most people quit — not because the program is not working, but because they mistake discomfort for failure. Stay in it.</div></div>
+<div class="lc-phase-card"><div class="lc-phase-label">Weeks 4–8</div><div class="lc-phase-name">Clicking</div><div class="lc-phase-body">The habits start to feel like yours. The movements become familiar. Something is shifting — you can feel it even if you cannot fully name it yet.</div></div>
+<div class="lc-phase-card"><div class="lc-phase-label">Weeks 9–12</div><div class="lc-phase-name">Compounding</div><div class="lc-phase-body">Identity and practice converge. The things you have been doing start to feel like expressions of who you are. The gap is visibly closing.</div></div>
+<div class="lc-phase-card"><div class="lc-phase-label">Weeks 13–16</div><div class="lc-phase-name">Choosing</div><div class="lc-phase-body">You turn outward. Now you begin designing the life that matches the person you have become. The hero returns.</div></div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 06</div>
+<div class="lc-section-title">Friction as data</div>
+<p class="lc-body">Every difficult moment in this program is information. Not a verdict. Information.</p>
+<p class="lc-body">The missed workout is telling you something about your planning or your energy. The food plan slip is telling you something about where the friction lives. The journal entry that gets uncomfortable is telling you something true about yourself you have not fully seen yet.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">When friction appears</div>
+<div class="lc-callout-text">The question is not: what is wrong with me? The question is: what is this telling me? Note it. Use it. Move on. Next rep.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 07</div>
+<div class="lc-section-title">What this is going to ask of you</div>
+<p class="lc-body">Every day this program runs you are committing to five things:</p>
+<div class="lc-practice-stack">
+<div class="lc-practice-item"><div class="lc-practice-icon">⚔</div><div><div class="lc-practice-title">Prescribed workouts</div><div class="lc-practice-desc">Daily training sessions</div></div></div>
+<div class="lc-practice-item"><div class="lc-practice-icon">🍖</div><div><div class="lc-practice-title">Food plan</div><div class="lc-practice-desc">Protein and calories — every day</div></div></div>
+<div class="lc-practice-item"><div class="lc-practice-icon">📓</div><div><div class="lc-practice-title">Journaling</div><div class="lc-practice-desc">Observe. Extract. Move on.</div></div></div>
+<div class="lc-practice-item"><div class="lc-practice-icon">📚</div><div><div class="lc-practice-title">Reading</div><div class="lc-practice-desc">10 minutes minimum — no ceiling</div></div></div>
+<div class="lc-practice-item"><div class="lc-practice-icon">🧠</div><div><div class="lc-practice-title">Curriculum</div><div class="lc-practice-desc">The lessons that give the stack meaning</div></div></div>
+</div>
+<p class="lc-body">This is a significant daily commitment. There will be days where you do not want to do any of it. Do it anyway. Because the gap does not have to be permanent. Because the trials are the structure of the journey — and you have already crossed the threshold.</p>
+</div>
+`
+  },
+  training: {
+    eyebrow: 'Pre-game briefing · Module 02 of 05 · Vitality',
+    title: 'Training',
+    subtitle: 'Understanding your body\'s upgrade system. Read this before your first session.',
+    content: `
+<p class="lc-intro">Most people train on the wrong model. They think suffering is the point. It is not. This module gives you the actual system — so every session produces the maximum stimulus for the effort you put in.</p>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 01</div>
+<div class="lc-section-title">What training actually is</div>
+<p class="lc-body">Most people walk into a gym with the wrong model. They think the goal is to suffer — to feel the burn, to destroy themselves and rebuild. That model produces a lot of exhausted people who are not making much progress.</p>
+<p class="lc-body">Here is the actual model. <strong>Muscle grows in response to one thing: mechanical tension</strong> — the internal force your muscle fibres produce when they contract against resistance. When that tension is high enough, your body activates Muscle Protein Synthesis — the biological mechanism that builds and reinforces muscle tissue.</p>
+<p class="lc-body">Your muscle tissue does not respond to elapsed time. It does not respond to discomfort. It does not respond to how much you sweat. <strong>It responds to force demand placed on muscle fibres.</strong></p>
+<div class="lc-callout">
+<div class="lc-callout-label">Think of it like this</div>
+<div class="lc-callout-text">In a game, grinding low-level content for hours gives you almost no XP. You need the right difficulty — hard enough to trigger adaptation, manageable enough to repeat. Training works exactly the same way. The goal is not to be destroyed. It is to produce the right stimulus, recover, and repeat it consistently.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 02</div>
+<div class="lc-section-title">How your body recruits muscle</div>
+<p class="lc-body">Your muscles are not a single on/off switch. They are a hierarchy of motor units — bundles of muscle fibres controlled by a single nerve. Your body recruits them in order, from smallest to largest.</p>
+<p class="lc-body">The large high-threshold motor units are the ones that grow the most. Your body only recruits them when it has to — when the load is heavy, or when fatigue has accumulated and the smaller fibres can no longer keep up.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">The RPG parallel</div>
+<div class="lc-callout-text">Think of your motor units like a party roster. Your body always sends the weakest party members in first. The high-damage units only get deployed when things get hard enough to need them. You cannot access the best fighters without pushing far enough into the challenge.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 03</div>
+<div class="lc-section-title">What an effective rep actually is</div>
+<p class="lc-body">Not all reps are equal. The reps that actually drive muscle growth — <strong>effective reps</strong> — are the ones performed under full motor unit recruitment and high mechanical tension. Based on current evidence, this is approximately the final five reps before failure on any given set.</p>
+<p class="lc-body">Early reps prepare the conditions. The growth stimulus is concentrated at the end of the set. <strong>Getting to those final reps is the job.</strong></p>
+<div class="lc-red-callout">
+<div class="lc-red-label">The most common mistake</div>
+<div class="lc-red-text">Stopping too early. If you end a set at 4 or 5 reps in reserve because it is uncomfortable, you never reach the reps that actually trigger adaptation. You spent resources on a dungeon run and left before the boss fight.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 04</div>
+<div class="lc-section-title">Working sets vs warm-up sets</div>
+<div class="lc-two-col">
+<div class="lc-col-card"><div class="lc-col-label">Warm-up sets</div><div class="lc-col-title">Loading the game</div><div class="lc-col-body">Raise temperature, rehearse the movement, prime the nervous system. Do not produce meaningful stimulus. If your warm-ups feel hard, your loads are wrong.</div></div>
+<div class="lc-col-card"><div class="lc-col-label">Working sets</div><div class="lc-col-title">Actually playing</div><div class="lc-col-body">Performed at a load that brings you to 0–2 RIR by the final rep. This is where progress happens. Everything else is preparation.</div></div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 05</div>
+<div class="lc-section-title">Reps in reserve — your target zone</div>
+<p class="lc-body">RIR — Reps in Reserve — is an estimate of how many more reps you could complete before genuine mechanical failure. <strong>Your target in this program is 0–2 RIR on every working set.</strong></p>
+<table class="lc-table">
+<tr><th>RIR</th><th>What it feels like</th><th>Your target?</th></tr>
+<tr><td>4–5</td><td>Manageable. Could clearly keep going.</td><td>Too easy</td></tr>
+<tr><td>3</td><td>Noticeably challenging. Capacity remains.</td><td>Short of target</td></tr>
+<tr><td>2</td><td>Hard. Form requires active attention.</td><td>Entry point ✓</td></tr>
+<tr><td>1</td><td>Very hard. Next rep is maximum effort.</td><td>In the zone ✓</td></tr>
+<tr><td>0</td><td>Could not do another with good form.</td><td>In the zone ✓</td></tr>
+</table>
+<p class="lc-body">RIR awareness is a skill you build. Beginners consistently stop at 4–5 RIR thinking they are close to failure. In weeks 1–3 your job is not to nail it perfectly — it is to start paying attention.</p>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 06</div>
+<div class="lc-section-title">Tempo</div>
+<p class="lc-body">Tempo is the speed and rhythm of your repetition. It exists to standardise how you execute each rep so your muscles receive a consistent, controlled stimulus every time.</p>
+<div class="lc-steps">
+<div class="lc-step"><div class="lc-step-num" style="background:rgba(192,57,43,.15);border-color:rgba(192,57,43,.3);color:var(--red)">E</div><div class="lc-step-content"><div class="lc-step-title">Eccentric — 2 to 3 seconds</div><div class="lc-step-body">Fight gravity on the way down. Do not drop or surrender to the load. The eccentric phase is where a significant portion of mechanical tension lives.</div></div></div>
+<div class="lc-step"><div class="lc-step-num" style="background:rgba(192,57,43,.15);border-color:rgba(192,57,43,.3);color:var(--red)">T</div><div class="lc-step-content"><div class="lc-step-title">Transition — pause and own the position</div><div class="lc-step-body">At the bottom before you drive up, and at the top before the next eccentric. No bouncing. No momentum shortcuts.</div></div></div>
+<div class="lc-step"><div class="lc-step-num" style="background:rgba(192,57,43,.15);border-color:rgba(192,57,43,.3);color:var(--red)">C</div><div class="lc-step-content"><div class="lc-step-title">Concentric — powerful but controlled</div><div class="lc-step-body">Intentional drive. Not a fling. Think of it as executing a move deliberately rather than button-mashing your way through it.</div></div></div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 07</div>
+<div class="lc-section-title">The discomfort framework</div>
+<p class="lc-body">Metabolic stress is not a meaningful growth driver. It is an unavoidable byproduct of high-effort training. Real, uncomfortable — but it does not drive muscle growth. <strong>Mechanical tension does that.</strong></p>
+<div class="lc-red-callout">
+<div class="lc-red-label">The critical distinction</div>
+<div class="lc-red-text">"This is very uncomfortable" is metabolic stress — not a reason to stop. "I cannot complete another rep with good form and tempo" is mechanical failure — this is where 0 RIR lives. When the burn tells you to stop, ask honestly: can I complete another rep with my prescribed tempo and good form? If yes, you have more reps to give.</div>
+</div>
+</div>
+`
+  },
+  nutrition: {
+    eyebrow: 'Pre-game briefing · Module 03 of 05 · Vitality',
+    title: 'Nutrition',
+    subtitle: 'Understanding your body\'s fuel system. Read this before your first week on the food plan.',
+    content: `
+<p class="lc-intro">The food plan works. It works even better when you know what it is doing and why. Clients who understand the model make better decisions under pressure — especially when life gets complicated.</p>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 01</div>
+<div class="lc-section-title">Energy balance — the physics</div>
+<p class="lc-body">Your body runs on energy. That energy comes from food. When you take in more energy than you use, your body stores the extra as fat. When you use more than you take in, your body burns stored fat for fuel.</p>
+<p class="lc-body"><strong>This is not a theory. It is physics.</strong> The same rules that govern everything else in the physical world govern your body. You cannot get around them — any more than you can mod your way out of a game's core engine.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">NEAT — the hidden variable</div>
+<div class="lc-callout-text">Non-Exercise Activity Thermogenesis. All the movement you do outside of your workouts. Walking, standing, taking stairs. For a lot of people this burns as much as their actual training sessions. As you lose weight your body burns less energy. The answer is deliberate movement outside the gym.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 02</div>
+<div class="lc-section-title">The two dials — protein and calories</div>
+<p class="lc-body">Body composition comes down to two things. <strong>Protein and calories.</strong> These are the primary dials the food plan is built around. Everything else is secondary.</p>
+<div class="lc-two-col">
+<div class="lc-col-card"><div class="lc-col-label">Primary dial 1</div><div class="lc-col-title">Calories</div><div class="lc-col-body">Total energy in. Eat less than you burn and you lose fat over time. The size of the difference controls how fast things change.</div></div>
+<div class="lc-col-card"><div class="lc-col-label">Primary dial 2</div><div class="lc-col-title">Protein</div><div class="lc-col-body">Tells your body to hold onto muscle while calories are managed. Keeps you fuller. Your most important stat in this plan.</div></div>
+</div>
+<p class="lc-body">Carbs and fat are flexible. Their ratio does not change whether you lose fat or not. Think of them as preference settings — they affect performance and satiety but they do not override the primary stats.</p>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 03</div>
+<div class="lc-section-title">The three macronutrients</div>
+<table class="lc-table">
+<tr><th>Macro</th><th>Calories/g</th><th>Found in</th><th>Primary role</th></tr>
+<tr><td><strong>Protein</strong></td><td>4 kcal</td><td>Meat, fish, eggs, dairy, legumes</td><td>Builds muscle. Most filling. Non-negotiable.</td></tr>
+<tr><td><strong>Carbs</strong></td><td>4 kcal</td><td>Rice, oats, bread, potatoes, fruit</td><td>Primary fuel for brain and training.</td></tr>
+<tr><td><strong>Fat</strong></td><td>9 kcal</td><td>Oils, nuts, avocado, fatty fish</td><td>Hormones, cell function, vitamin absorption.</td></tr>
+</table>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 04</div>
+<div class="lc-section-title">No bad foods — the spectrum</div>
+<p class="lc-body">There are no bad foods. Think of food on a spectrum instead. On one end: whole foods close to their natural state. Meat, fish, eggs, vegetables, fruit, rice, oats. We know exactly what these do in the body. They are predictable. <strong>Think of them as tried-and-tested gear with known stats.</strong></p>
+<p class="lc-body">On the other end: highly processed foods with unknown long-term research. The plan defaults to whole foods — not because a cookie is a moral failure, but because whole foods are the better-understood option.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">Flexible tracking</div>
+<div class="lc-callout-text">Hit your protein and calorie targets. Food choice within that is largely yours. Build most of your intake from whole foods — not as a hard rule, but as the default that serves your results better.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 05</div>
+<div class="lc-section-title">Hunger, habit, and emotion</div>
+<p class="lc-body">Three things feel like hunger. They are not all the same.</p>
+<div class="lc-steps">
+<div class="lc-step"><div class="lc-step-num">H</div><div class="lc-step-content"><div class="lc-step-title">True hunger</div><div class="lc-step-body">Builds slowly. You feel it in your body. It goes away when you eat. This is the signal the food plan is designed around.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">B</div><div class="lc-step-content"><div class="lc-step-title">Habitual hunger</div><div class="lc-step-body">A learned response. Your body expects food at certain times because that is what has always happened. The signal is real. The need is not always. It passes on its own — like a quest prompt you can dismiss.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">E</div><div class="lc-step-content"><div class="lc-step-title">Emotional eating</div><div class="lc-step-body">Eating in response to a feeling rather than physical need. The food does not fix the feeling. You just need to notice that the signal is not coming from your body before you act on it.</div></div></div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 06</div>
+<div class="lc-section-title">When slips happen</div>
+<p class="lc-body">They are part of the skill curve. When one occurs, note what created the conditions — poor planning, a busy day, a social situation. Use that information to adjust. Then move on.</p>
+<div class="lc-red-callout">
+<div class="lc-red-label">The only rule after a slip</div>
+<div class="lc-red-text">Data not drama. Next rep. Six solid days out of seven beats three perfect days followed by four days off the plan. Every time.</div>
+</div>
+</div>
+`
+  },
+  journaling: {
+    eyebrow: 'Pre-game briefing · Module 04 of 05 · Daily practice',
+    title: 'Journaling',
+    subtitle: 'How to study yourself. This is not a diary.',
+    content: `
+<p class="lc-intro">Most people think they know how to journal because they have written things down before. What they have usually done is venting or gratitude listing. Neither of those is what this program is asking you to do. This is different.</p>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 01</div>
+<div class="lc-section-title">What this practice actually is</div>
+<p class="lc-body">The journal is a self-study tool. Think of yourself as a scientist studying a subject. The subject is you.</p>
+<p class="lc-body">A scientist does not judge the data. They observe it, record it honestly, and look for what it is telling them. That is exactly what you are doing here. You are not writing to feel better. You are not writing to impress anyone. <strong>You are writing to see yourself clearly.</strong></p>
+<div class="lc-callout">
+<div class="lc-callout-label">The skill this builds</div>
+<div class="lc-callout-text">Over time this practice develops your ability to observe your own inner experience without being swept away by it. You cannot change patterns you cannot see. The journal is where you learn to see. Think of it as turning on your minimap in an area you have been navigating blind.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 02</div>
+<div class="lc-section-title">Why observation comes first</div>
+<p class="lc-body">Before you can extract anything useful from an experience you have to see it honestly. Most people skip straight to conclusions — "I failed because I am lazy" or "that happened because of someone else." Neither of those is observation. Both are stories.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">Observation sounds like this</div>
+<div class="lc-callout-text">"I skipped the workout. I had planned to go at 6pm. At 5pm I started feeling tired and told myself I would go tomorrow instead. I did not feel guilty until the next morning." That is data. No judgment. No story. Just what happened, when it happened, and what you felt.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 03</div>
+<div class="lc-section-title">How to observe well</div>
+<p class="lc-body">Two things make an observation useful: <strong>honesty</strong> and <strong>specificity</strong>.</p>
+<div class="lc-two-col">
+<div class="lc-col-card"><div class="lc-col-label">Vague</div><div class="lc-col-title">Not useful</div><div class="lc-col-body">"I felt bad." "The week was hard." These confirm what you already believed. Like reading patch notes you wrote yourself.</div></div>
+<div class="lc-col-card"><div class="lc-col-label">Specific</div><div class="lc-col-title">Useful data</div><div class="lc-col-body">"I felt embarrassed and then angry." "Tuesday was hard — the meeting ran long, I missed lunch, and by 4pm I had nothing left."</div></div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 04</div>
+<div class="lc-section-title">The extraction — turning struggle into wisdom</div>
+<p class="lc-body">Once you have observed honestly, you move to the second part of the practice. Ask yourself one question:</p>
+<div class="lc-red-callout">
+<div class="lc-red-label">The extraction question</div>
+<div class="lc-red-text">If I were to create a point of wisdom from this struggle, what would it look like?</div>
+</div>
+<p class="lc-body">This reframe shifts your relationship to the struggle. The hard week becomes a lesson. The missed workout becomes data about your planning. Every difficult experience contains a drop — you just have to run the entry all the way to the end to collect it.</p>
+<div class="lc-two-col">
+<div class="lc-col-card"><div class="lc-col-label">Movement 1</div><div class="lc-col-title">Observe</div><div class="lc-col-body">What happened, what you thought, what you felt. No judgment. Just what is true.</div></div>
+<div class="lc-col-card"><div class="lc-col-label">Movement 2</div><div class="lc-col-title">Extract</div><div class="lc-col-body">What does this teach you? What would you do differently? What is the lesson this struggle contains?</div></div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 05</div>
+<div class="lc-section-title">Finish what you start</div>
+<p class="lc-body">When an entry gets uncomfortable, the instinct is to stop. Do not stop.</p>
+<p class="lc-body">The discomfort is not a signal that you have gone far enough. It is a signal that you are getting close to something real. The useful material almost always lives on the other side of the moment you want to quit.</p>
+<div class="lc-callout">
+<div class="lc-callout-label">The training parallel</div>
+<div class="lc-callout-text">Stopping in the middle of a difficult entry is the journaling equivalent of stopping a set at 4 RIR. You did the work but missed the reps that actually matter. Run the entry all the way to the wisdom extraction while the experience is still alive. That is where the XP lives.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 06</div>
+<div class="lc-section-title">Length and format</div>
+<p class="lc-body">There is no required length. There is no timer. There is no format to follow. The entry is as long as the struggle requires. A good day might be three sentences. A hard week might be two pages. <strong>Both are correct.</strong></p>
+<p class="lc-body">When you have moved through honest observation and wisdom extraction, the entry is complete. That is the only finish line.</p>
+</div>
+`
+  },
+  reading: {
+    eyebrow: 'Pre-game briefing · Module 05 of 05 · Daily practice',
+    title: 'Reading',
+    subtitle: 'How to change who you are by learning from people who figured it out first. 10 minutes minimum.',
+    content: `
+<p class="lc-intro">Who you are right now was built from what you have been exposed to so far. To become someone different, you need different inputs. That is what this practice is for.</p>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 01</div>
+<div class="lc-section-title">Why you have to learn from other people</div>
+<p class="lc-body">Who you are right now is a direct result of what you have been exposed to so far. Your beliefs, your habits, your reactions, your ceiling — all of it was built from the inputs you received.</p>
+<p class="lc-body">If you want to become a different person, you need different inputs. Other people have done the work. They have lived through the struggles, extracted the lessons, and written them down. <strong>Reading is how you access decades of someone else's hard-won understanding in a few hours.</strong></p>
+<div class="lc-callout">
+<div class="lc-callout-label">The RPG parallel</div>
+<div class="lc-callout-text">Every RPG teaches you this. You cannot unlock a skill you have never been exposed to. You find the master, learn the technique, absorb the knowledge — and then you can use it. Reading is that mechanic in real life. The success library is your skill tree. The books are the unlocks.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 02</div>
+<div class="lc-section-title">What 10 minutes a day actually does</div>
+<p class="lc-body">Ten minutes is the minimum. Not the goal. Not the ceiling. The floor.</p>
+<p class="lc-body">If you sit down, open the book, and find yourself still reading at 30 minutes — keep going. The 10 minute commitment exists to make sure you show up even on the days you do not feel like it. Starting is almost always the hardest part.</p>
+<p class="lc-body">Small daily sessions that seem insignificant in isolation <strong>compound into something significant.</strong> This is passive XP that runs in the background every single day.</p>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 03</div>
+<div class="lc-section-title">How to read so it lands</div>
+<p class="lc-body">Most people read passively. Their eyes move across the words, they finish the chapter, and very little sticks. This is reading as consumption. It does not change you.</p>
+<p class="lc-body"><strong>Active reading is different. You are not reading to finish. You are reading to be changed.</strong></p>
+<div class="lc-steps">
+<div class="lc-step"><div class="lc-step-num">1</div><div class="lc-step-content"><div class="lc-step-title">Mark it</div><div class="lc-step-body">When something hits — underline it, star it, write in the margin.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">2</div><div class="lc-step-content"><div class="lc-step-title">Keep reading</div><div class="lc-step-body">Finish the chapter. Context matters. What hit you mid-chapter often means something different once you see where it lands.</div></div></div>
+<div class="lc-step"><div class="lc-step-num">3</div><div class="lc-step-content"><div class="lc-step-title">Share it</div><div class="lc-step-body">When something really connects — share it in the Strain Coaching app. Drop it in the community chat or send it directly to your coach.</div></div></div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 04</div>
+<div class="lc-section-title">How to choose your book — the pain point selector</div>
+<p class="lc-body">The right book is determined by one thing: what is actually holding you back right now in the program. Not what looks interesting. Not what you think you should read. What is your biggest obstacle today?</p>
+<div class="lc-steps">
+<div class="lc-step"><div class="lc-step-num">★</div><div class="lc-step-content"><div class="lc-step-title">Struggling to believe change is possible</div><div class="lc-step-body">The Courage To Be Disliked · The Magic of Thinking Big · Atomic Habits</div></div></div>
+<div class="lc-step"><div class="lc-step-num">★</div><div class="lc-step-content"><div class="lc-step-title">Struggling to control reactions or emotional state</div><div class="lc-step-body">Can't Hurt Me · Unfuck Yourself · Don't Believe Everything You Think</div></div></div>
+<div class="lc-step"><div class="lc-step-num">★</div><div class="lc-step-content"><div class="lc-step-title">Struggling to know what you want or why this matters</div><div class="lc-step-body">Resilience · Mastery · Third Circle Theory</div></div></div>
+<div class="lc-step"><div class="lc-step-num">★</div><div class="lc-step-content"><div class="lc-step-title">Overthinking, anxiety, or low mood</div><div class="lc-step-body">No Self No Problem · The Power of Now · 101 Essays That Will Change The Way You Think</div></div></div>
+<div class="lc-step"><div class="lc-step-num">★</div><div class="lc-step-content"><div class="lc-step-title">New to reading — need something that pulls you in fast</div><div class="lc-step-body">Can't Hurt Me · Atomic Habits · Unfuck Yourself</div></div></div>
+</div>
+<div class="lc-callout">
+<div class="lc-callout-label">Core identity reads — every client works through these eventually</div>
+<div class="lc-callout-text">The Courage To Be Disliked is the philosophical backbone of this program. No Self No Problem and Resilience sit alongside it. These are not necessarily your first books. They are the ones you grow into as the program deepens. When you are ready for them, you will know.</div>
+</div>
+</div>
+
+<div class="lc-divider"></div>
+
+<div class="lc-section">
+<div class="lc-section-num">Section 05</div>
+<div class="lc-section-title">The briefing is complete</div>
+<p class="lc-body">You know the system. You know the why. You know what each day asks of you. You know that friction is data and not a verdict. You know the hero's journey — and you know you are already in it.</p>
+<div class="lc-red-callout">
+<div class="lc-red-label">You have answered the call</div>
+<div class="lc-red-text">The threshold is behind you. The journey starts now. Now go begin Phase 1.</div>
+</div>
+</div>
+`
+  }
+};
+
+// ---- SVG TREE BUILDER ----
+function buildTree(){
+  var svg = document.getElementById('treeSvg');
+  svg.setAttribute('width', W);
+  svg.setAttribute('height', H);
+  svg.innerHTML = '';
+
+  // Defs
+  var defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+
+  // Glow filters
+  ['gold','red','purple','green'].forEach(function(name){
+    var colors = {gold:'#c9a84c',red:'#c0392b',purple:'#7f77dd',green:'#1d9e75'};
+    var f = document.createElementNS('http://www.w3.org/2000/svg','filter');
+    f.setAttribute('id','glow-'+name);
+    f.setAttribute('x','-50%'); f.setAttribute('y','-50%');
+    f.setAttribute('width','200%'); f.setAttribute('height','200%');
+    var fe = document.createElementNS('http://www.w3.org/2000/svg','feGaussianBlur');
+    fe.setAttribute('stdDeviation','6');
+    fe.setAttribute('result','blur');
+    var feFlood = document.createElementNS('http://www.w3.org/2000/svg','feFlood');
+    feFlood.setAttribute('flood-color',colors[name]);
+    feFlood.setAttribute('flood-opacity','0.6');
+    feFlood.setAttribute('result','color');
+    var feComp = document.createElementNS('http://www.w3.org/2000/svg','feComposite');
+    feComp.setAttribute('in','color'); feComp.setAttribute('in2','blur');
+    feComp.setAttribute('operator','in'); feComp.setAttribute('result','colorBlur');
+    var feMerge = document.createElementNS('http://www.w3.org/2000/svg','feMerge');
+    var m1 = document.createElementNS('http://www.w3.org/2000/svg','feMergeNode');
+    m1.setAttribute('in','colorBlur');
+    var m2 = document.createElementNS('http://www.w3.org/2000/svg','feMergeNode');
+    m2.setAttribute('in','SourceGraphic');
+    feMerge.appendChild(m1); feMerge.appendChild(m2);
+    f.appendChild(fe); f.appendChild(feFlood); f.appendChild(feComp); f.appendChild(feMerge);
+    defs.appendChild(f);
+  });
+  svg.appendChild(defs);
+
+  // Draw connections
+  drawConnections(svg);
+
+  // Draw nodes
+  Object.keys(NODES).forEach(function(id){
+    drawNode(svg, id, NODES[id]);
+  });
+
+  // Pillar titles
+  var pillarY = 1020;
+  drawPillarTitle(svg, 280, pillarY, 'VITALITY', '#c0392b');
+  drawPillarTitle(svg, 800, pillarY, 'SPIRIT', '#7f77dd');
+  drawPillarTitle(svg, 1320, pillarY, 'ALIGNMENT', '#1d9e75');
+}
+
+function drawConnections(svg){
+  // Trunk connections
+  for(var i=0; i<TRUNK_ORDER.length-1; i++){
+    var a = NODES[TRUNK_ORDER[i]];
+    var b = NODES[TRUNK_ORDER[i+1]];
+    drawLine(svg, a.x, a.y, b.x, b.y, '#c9a84c', 2, false, 'glow-gold');
+  }
+  // Branch from last trunk to pillar roots
+  var last = NODES[TRUNK_ORDER[TRUNK_ORDER.length-1]];
+  ['energy','mindset','values'].forEach(function(pid){
+    var p = NODES[pid];
+    var color = p.color;
+    drawCurve(svg, last.x, last.y, p.x, p.y, color, 1.5, true);
+  });
+  // Vitality internal
+  drawLine(svg, NODES.energy.x, NODES.energy.y, NODES.recovery.x, NODES.recovery.y, '#c0392b', 1, true);
+  drawLine(svg, NODES.energy.x, NODES.energy.y, NODES.perfstate.x, NODES.perfstate.y, '#c0392b', 1, true);
+  drawLine(svg, NODES.recovery.x, NODES.recovery.y, NODES.biomech.x, NODES.biomech.y, '#c0392b', 1, true);
+  drawLine(svg, NODES.recovery.x, NODES.recovery.y, NODES.fuelsys.x, NODES.fuelsys.y, '#c0392b', 1, true);
+  drawLine(svg, NODES.perfstate.x, NODES.perfstate.y, NODES.neuro.x, NODES.neuro.y, '#c0392b', 1, true);
+  drawLine(svg, NODES.perfstate.x, NODES.perfstate.y, NODES.hormones.x, NODES.hormones.y, '#c0392b', 1, true);
+  // Spirit internal
+  drawLine(svg, NODES.mindset.x, NODES.mindset.y, NODES.identity.x, NODES.identity.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.mindset.x, NODES.mindset.y, NODES.motivation.x, NODES.motivation.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.mindset.x, NODES.mindset.y, NODES.emreg.x, NODES.emreg.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.identity.x, NODES.identity.y, NODES.intent.x, NODES.intent.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.identity.x, NODES.identity.y, NODES.action.x, NODES.action.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.motivation.x, NODES.motivation.y, NODES.reflect.x, NODES.reflect.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.emreg.x, NODES.emreg.y, NODES.idealism.x, NODES.idealism.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.reflect.x, NODES.reflect.y, NODES.hope.x, NODES.hope.y, '#7f77dd', 1, true);
+  drawLine(svg, NODES.reflect.x, NODES.reflect.y, NODES.faith.x, NODES.faith.y, '#7f77dd', 1, true);
+  // Alignment internal
+  drawLine(svg, NODES.values.x, NODES.values.y, NODES.goalarch.x, NODES.goalarch.y, '#1d9e75', 1, true);
+  drawLine(svg, NODES.values.x, NODES.values.y, NODES.envdesign.x, NODES.envdesign.y, '#1d9e75', 1, true);
+  drawLine(svg, NODES.values.x, NODES.values.y, NODES.execsys.x, NODES.execsys.y, '#1d9e75', 1, true);
+  drawLine(svg, NODES.goalarch.x, NODES.goalarch.y, NODES.bounds.x, NODES.bounds.y, '#1d9e75', 1, true);
+  drawLine(svg, NODES.envdesign.x, NODES.envdesign.y, NODES.relations.x, NODES.relations.y, '#1d9e75', 1, true);
+  drawLine(svg, NODES.execsys.x, NODES.execsys.y, NODES.career.x, NODES.career.y, '#1d9e75', 1, true);
+}
+
+function drawLine(svg, x1, y1, x2, y2, color, width, locked, filter){
+  var line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+  line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+  line.setAttribute('stroke',locked ? 'rgba(255,255,255,0.1)' : color);
+  line.setAttribute('stroke-width',width||1);
+  line.setAttribute('fill','none');
+  if(locked) line.setAttribute('stroke-dasharray','5 5');
+  if(filter) line.setAttribute('filter','url(#'+filter+')');
+  svg.appendChild(line);
+  return line;
+}
+
+function drawCurve(svg, x1, y1, x2, y2, color, width, locked){
+  var path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  var mx = (x1+x2)/2;
+  var d = 'M'+x1+' '+y1+' C'+x1+' '+(y1+y2)/2+' '+x2+' '+(y1+y2)/2+' '+x2+' '+y2;
+  path.setAttribute('d',d);
+  path.setAttribute('stroke',locked ? 'rgba(255,255,255,0.12)' : color);
+  path.setAttribute('stroke-width',width||1.5);
+  path.setAttribute('fill','none');
+  if(locked) path.setAttribute('stroke-dasharray','6 4');
+  svg.appendChild(path);
+}
+
+function drawNode(svg, id, node){
+  var isPregame = node.type === 'pregame';
+  var isLocked = !isPregame;
+  var isDone = completed.includes(id);
+  var r = isPregame ? 38 : 30;
+  var color = isDone ? '#c0392b' : (isPregame ? '#c9a84c' : node.color);
+  var bgFill = isDone ? 'rgba(192,57,43,0.2)' : (isPregame ? 'rgba(201,168,76,0.08)' : 'rgba(0,0,0,0.3)');
+  var strokeOpacity = isLocked ? '0.25' : '1';
+  var strokeDash = isLocked ? '5 4' : 'none';
+
+  var g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class','tree-node');
+  g.setAttribute('id','tnode-'+id);
+  if(isPregame){
+    g.style.cursor = 'pointer';
+    g.addEventListener('click', function(){ openLesson(id); });
+  } else {
+    g.style.cursor = 'default';
+  }
+
+  // Glow ring (pregame only)
+  if(isPregame){
+    var glowType = isDone ? 'red' : 'gold';
+    var ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    ring.setAttribute('cx',node.x); ring.setAttribute('cy',node.y);
+    ring.setAttribute('r',r+8);
+    ring.setAttribute('fill','none');
+    ring.setAttribute('stroke',color);
+    ring.setAttribute('stroke-width','1');
+    ring.setAttribute('opacity','0.3');
+    ring.setAttribute('filter','url(#glow-'+(isDone?'red':'gold')+')');
+    g.appendChild(ring);
+  }
+
+  // Main circle
+  var circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  circle.setAttribute('cx',node.x); circle.setAttribute('cy',node.y); circle.setAttribute('r',r);
+  circle.setAttribute('fill',bgFill);
+  circle.setAttribute('stroke',color);
+  circle.setAttribute('stroke-width',isPregame ? '2' : '1.5');
+  circle.setAttribute('stroke-opacity',strokeOpacity);
+  if(isLocked) circle.setAttribute('stroke-dasharray',strokeDash);
+  if(isPregame) circle.setAttribute('filter','url(#glow-'+(isDone?'red':'gold')+')');
+  g.appendChild(circle);
+
+  // Inner circle
+  var inner = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  inner.setAttribute('cx',node.x); inner.setAttribute('cy',node.y); inner.setAttribute('r',r*0.55);
+  inner.setAttribute('fill', isDone ? 'rgba(192,57,43,0.3)' : (isPregame ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)'));
+  inner.setAttribute('stroke','none');
+  g.appendChild(inner);
+
+  // Label
+  var lines = node.label.split('\n');
+  var lineH = 13;
+  var totalH = lines.length * lineH;
+  var startY = node.y - totalH/2 + 7;
+  lines.forEach(function(line, i){
+    var txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',node.x);
+    txt.setAttribute('y',startY + i*lineH);
+    txt.setAttribute('text-anchor','middle');
+    txt.setAttribute('font-family','DM Sans, sans-serif');
+    txt.setAttribute('font-size','10');
+    txt.setAttribute('font-weight','500');
+    txt.setAttribute('fill', isLocked ? 'rgba(240,236,228,0.2)' : (isDone ? '#c0392b' : color));
+    txt.setAttribute('letter-spacing','0.04');
+    txt.textContent = line;
+    g.appendChild(txt);
+  });
+
+  // Lock icon for locked nodes
+  if(isLocked){
+    var lock = document.createElementNS('http://www.w3.org/2000/svg','text');
+    lock.setAttribute('x',node.x); lock.setAttribute('y',node.y + r*0.55 + 12);
+    lock.setAttribute('text-anchor','middle');
+    lock.setAttribute('font-size','12');
+    lock.setAttribute('fill','rgba(255,255,255,0.15)');
+    lock.textContent = '🔒';
+    g.appendChild(lock);
+  }
+
+  // Checkmark for completed
+  if(isDone && isPregame){
+    var check = document.createElementNS('http://www.w3.org/2000/svg','text');
+    check.setAttribute('x',node.x+r*0.55); check.setAttribute('y',node.y-r*0.55+4);
+    check.setAttribute('text-anchor','middle');
+    check.setAttribute('font-size','14');
+    check.setAttribute('fill','#c0392b');
+    check.textContent = '✓';
+    g.appendChild(check);
+  }
+
+  svg.appendChild(g);
+}
+
+function drawPillarTitle(svg, x, y, label, color){
+  var txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+  txt.setAttribute('x',x); txt.setAttribute('y',y);
+  txt.setAttribute('text-anchor','middle');
+  txt.setAttribute('font-family','Bebas Neue, sans-serif');
+  txt.setAttribute('font-size','22');
+  txt.setAttribute('fill',color);
+  txt.setAttribute('letter-spacing','0.06');
+  txt.setAttribute('opacity','0.7');
+  txt.textContent = label;
+  svg.appendChild(txt);
+}
+
+// ---- PAN & ZOOM ----
+var transform = {x:0, y:56, scale:0.7};
+var drag = {active:false, startX:0, startY:0, startTX:0, startTY:0};
+var pinch = {active:false, startDist:0, startScale:0};
+var hintTimer;
+
+function applyTransform(){
+  document.getElementById('canvasInner').style.transform =
+    'translate('+transform.x+'px,'+transform.y+'px) scale('+transform.scale+')';
+}
+
+function centerTree(){
+  var wrap = document.getElementById('canvasWrap');
+  var vw = wrap.offsetWidth;
+  var vh = wrap.offsetHeight;
+  transform.scale = Math.min(0.7, vw / W * 0.95);
+  transform.x = (vw - W * transform.scale) / 2;
+  transform.y = 20;
+  applyTransform();
+}
+
+document.getElementById('canvasWrap').addEventListener('mousedown', function(e){
+  drag.active = true;
+  drag.startX = e.clientX; drag.startY = e.clientY;
+  drag.startTX = transform.x; drag.startTY = transform.y;
+  this.classList.add('dragging');
+  clearTimeout(hintTimer);
+  document.getElementById('hint').classList.add('hidden');
+});
+document.addEventListener('mousemove', function(e){
+  if(!drag.active) return;
+  transform.x = drag.startTX + (e.clientX - drag.startX);
+  transform.y = drag.startTY + (e.clientY - drag.startY);
+  applyTransform();
+});
+document.addEventListener('mouseup', function(){ drag.active = false; document.getElementById('canvasWrap').classList.remove('dragging'); });
+
+document.getElementById('canvasWrap').addEventListener('wheel', function(e){
+  e.preventDefault();
+  var delta = e.deltaY > 0 ? 0.9 : 1.1;
+  var rect = this.getBoundingClientRect();
+  var mx = e.clientX - rect.left;
+  var my = e.clientY - rect.top;
+  var newScale = Math.max(0.2, Math.min(2, transform.scale * delta));
+  transform.x = mx - (mx - transform.x) * (newScale / transform.scale);
+  transform.y = my - (my - transform.y) * (newScale / transform.scale);
+  transform.scale = newScale;
+  applyTransform();
+}, {passive:false});
+
+// Touch
+document.getElementById('canvasWrap').addEventListener('touchstart', function(e){
+  if(e.touches.length === 1){
+    drag.active = true;
+    drag.startX = e.touches[0].clientX; drag.startY = e.touches[0].clientY;
+    drag.startTX = transform.x; drag.startTY = transform.y;
+  } else if(e.touches.length === 2){
+    drag.active = false;
+    pinch.active = true;
+    pinch.startDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    pinch.startScale = transform.scale;
+    pinch.midX = (e.touches[0].clientX+e.touches[1].clientX)/2;
+    pinch.midY = (e.touches[0].clientY+e.touches[1].clientY)/2;
+    pinch.startTX = transform.x; pinch.startTY = transform.y;
+  }
+  clearTimeout(hintTimer);
+  document.getElementById('hint').classList.add('hidden');
+},{passive:true});
+document.getElementById('canvasWrap').addEventListener('touchmove', function(e){
+  e.preventDefault();
+  if(drag.active && e.touches.length === 1){
+    transform.x = drag.startTX + (e.touches[0].clientX - drag.startX);
+    transform.y = drag.startTY + (e.touches[0].clientY - drag.startY);
+    applyTransform();
+  } else if(pinch.active && e.touches.length === 2){
+    var dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    var newScale = Math.max(0.2, Math.min(2, pinch.startScale * dist / pinch.startDist));
+    var wrap = document.getElementById('canvasWrap');
+    var rect = wrap.getBoundingClientRect();
+    var mx = pinch.midX - rect.left;
+    var my = pinch.midY - rect.top;
+    transform.x = mx - (mx - pinch.startTX) * (newScale / pinch.startScale);
+    transform.y = my - (my - pinch.startTY) * (newScale / pinch.startScale);
+    transform.scale = newScale;
+    applyTransform();
+  }
+},{passive:false});
+document.getElementById('canvasWrap').addEventListener('touchend', function(){ drag.active = false; pinch.active = false; },{passive:true});
+
+document.getElementById('zoomIn').onclick = function(){ transform.scale = Math.min(2, transform.scale*1.2); applyTransform(); };
+document.getElementById('zoomOut').onclick = function(){ transform.scale = Math.max(0.2, transform.scale*0.8); applyTransform(); };
+document.getElementById('zoomReset').onclick = function(){ centerTree(); };
+
+// ---- STARS ----
+function drawStars(){
+  var canvas = document.getElementById('stars');
+  var wrap = document.getElementById('canvasWrap');
+  canvas.width = wrap.offsetWidth;
+  canvas.height = wrap.offsetHeight;
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(var i=0;i<200;i++){
+    var x = Math.random()*canvas.width;
+    var y = Math.random()*canvas.height;
+    var r = Math.random()*1.2;
+    var a = Math.random()*0.6+0.1;
+    ctx.beginPath();
+    ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle = 'rgba(255,255,255,'+a+')';
+    ctx.fill();
+  }
+}
+
+// ---- LESSON SYSTEM ----
+var lessonOrder = ['gap','training','nutrition','journaling','reading'];
+function openLesson(id){
+  var lesson = LESSONS[id];
+  if(!lesson) return;
+  currentLesson = id;
+  document.getElementById('lessonEyebrow').textContent = lesson.eyebrow;
+  document.getElementById('lessonTitle').textContent = lesson.title;
+  document.getElementById('lessonBody').innerHTML = lesson.content;
+  document.getElementById('lessonProgressFill').style.width = '0%';
+  var isDone = completed.includes(id);
+  var btn = document.getElementById('completeBtn');
+  if(isDone){
+    btn.textContent = 'Completed ✓';
+    btn.classList.add('done');
+    btn.disabled = true;
+  } else {
+    btn.textContent = 'Mark as complete ✓';
+    btn.classList.remove('done');
+    btn.disabled = false;
+  }
+  var idx = lessonOrder.indexOf(id);
+  document.getElementById('prevBtn').style.display = idx > 0 ? '' : 'none';
+  document.getElementById('nextBtn').style.display = idx < lessonOrder.length-1 ? '' : 'none';
+  document.getElementById('lessonOverlay').classList.add('open');
+  document.getElementById('lessonBody').scrollTop = 0;
+}
+
+function closeLesson(){
+  document.getElementById('lessonOverlay').classList.remove('open');
+  currentLesson = null;
+}
+
+function markComplete(){
+  if(!currentLesson) return;
+  if(completed.includes(currentLesson)) return;
+  completed.push(currentLesson);
+  localStorage.setItem('ga_pregame_completed', JSON.stringify(completed));
+  var btn = document.getElementById('completeBtn');
+  btn.textContent = 'Completed ✓';
+  btn.classList.add('done');
+  btn.disabled = true;
+  // Flash
+  var flash = document.getElementById('completionFlash');
+  flash.classList.add('active');
+  setTimeout(function(){ flash.classList.remove('active'); }, 600);
+  // Update pip
+  var idx = lessonOrder.indexOf(currentLesson);
+  if(idx >= 0) document.getElementById('pip-'+idx).classList.add('done');
+  // Redraw node
+  var g = document.getElementById('tnode-'+currentLesson);
+  if(g) svg_updateNode(currentLesson);
+  // Check all complete
+  if(completed.length >= 5){
+    setTimeout(showAllComplete, 800);
+  }
+}
+
+function svg_updateNode(id){
+  var node = NODES[id];
+  var g = document.getElementById('tnode-'+id);
+  if(!g) return;
+  while(g.firstChild) g.removeChild(g.firstChild);
+  drawNode(document.getElementById('treeSvg'), id, node);
+  var newG = document.getElementById('tnode-'+id);
+}
+
+function navLesson(dir){
+  var idx = lessonOrder.indexOf(currentLesson);
+  var next = lessonOrder[idx+dir];
+  if(next) openLesson(next);
+}
+
+function updateReadProgress(){
+  var body = document.getElementById('lessonBody');
+  var pct = body.scrollTop / (body.scrollHeight - body.clientHeight) * 100;
+  document.getElementById('lessonProgressFill').style.width = Math.min(100,pct)+'%';
+}
+
+function showAllComplete(){
+  var msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,7,15,0.97);flex-direction:column;gap:20px;';
+  msg.innerHTML = '<div style="font-family:Bebas Neue,sans-serif;font-size:clamp(36px,6vw,72px);color:#f0ece4;text-align:center;line-height:1">The briefing<br>is <span style="color:#c0392b">complete.</span></div><div style="font-size:16px;font-weight:300;color:rgba(240,236,228,.55);text-align:center;max-width:400px;line-height:1.7">The threshold is behind you.<br>The journey starts now.</div><a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;text-decoration:none;margin-top:8px">Book your PlayBook call →</a><button onclick="this.parentNode.remove()" style="background:none;border:none;color:rgba(240,236,228,.3);font-size:13px;cursor:pointer;margin-top:8px">Continue exploring →</button>';
+  document.body.appendChild(msg);
+}
+
+// ---- INIT ----
+window.addEventListener('load', function(){
+  buildTree();
+  drawStars();
+  centerTree();
+  // Restore completed pips
+  completed.forEach(function(id){
+    var idx = lessonOrder.indexOf(id);
+    if(idx >= 0) document.getElementById('pip-'+idx).classList.add('done');
+  });
+  // Hint timeout
+  hintTimer = setTimeout(function(){
+    document.getElementById('hint').classList.add('hidden');
+  }, 4000);
+});
+window.addEventListener('resize', function(){ drawStars(); });
+</script>
+</body>
+</html>
