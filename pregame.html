@@ -903,19 +903,15 @@ function drawNode(svg,id,node){
 
   var g=document.createElementNS('http://www.w3.org/2000/svg','g');
   g.setAttribute('id','tnode-'+id);
-  if(isPregame){
-    g.style.cursor='pointer';
-    g.addEventListener('click',function(){ openNodePanel(id); });
-    g.addEventListener('mouseenter',function(e){ showTooltip(e,id,isDone); });
-    g.addEventListener('mouseleave',function(){ hideTooltip(); });
-    g.addEventListener('mousemove',function(e){ moveTooltip(e); });
-  } else {
-    g.style.cursor='pointer';
-    g.addEventListener('click',function(){ openNodePanel(id); });
-    g.addEventListener('mouseenter',function(e){ showTooltip(e,id,false); });
-    g.addEventListener('mouseleave',function(){ hideTooltip(); });
-    g.addEventListener('mousemove',function(e){ moveTooltip(e); });
-  }
+  g.style.cursor='pointer';
+  g.addEventListener('mousedown',function(e){ e.stopPropagation(); });
+  g.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(!drag.moved) openNodePanel(id);
+  });
+  g.addEventListener('mouseenter',function(e){ showTooltip(e,id,isDone); });
+  g.addEventListener('mouseleave',function(){ hideTooltip(); });
+  g.addEventListener('mousemove',function(e){ moveTooltip(e); });
 
   if(!isLocked){
     // Wide ambient bloom
