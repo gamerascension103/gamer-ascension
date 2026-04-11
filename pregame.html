@@ -1277,6 +1277,11 @@ function openNodePanel(id){
   var isDone=completed.includes(id);
   var nodeIndex=PREGAME_NODES.findIndex(function(n){return n.id===id;});
   var isLocked=isPregame&&nodeIndex>0&&!completed.includes(PREGAME_NODES[nodeIndex-1].id);
+  // Find the actual first incomplete module to send them to
+  var firstIncompleteIndex=0;
+  for(var i=0;i<PREGAME_NODES.length;i++){
+    if(!completed.includes(PREGAME_NODES[i].id)){firstIncompleteIndex=i;break;}
+  }
   var pillarColors={pregame:'var(--gold)',vitality:'#ff6644',spirit:'#bb99ff',alignment:'#55ffaa'};
   document.getElementById('nodePanelPillar').textContent=data.pillar;
   document.getElementById('nodePanelPillar').style.color=pillarColors[data.type]||'var(--gold)';
@@ -1291,17 +1296,17 @@ function openNodePanel(id){
     btn.onclick=function(){closeNodePanel();openLesson(id);};
     actions.appendChild(btn);
   } else if(isPregame&&isLocked){
-    var prev=PREGAME_NODES[nodeIndex-1];
+    var prev=PREGAME_NODES[firstIncompleteIndex];
     var lockDiv=document.createElement('div');
     lockDiv.className='node-panel-locked';
     var lbl=document.createElement('div');
     lbl.className='node-panel-locked-label';
-    lbl.textContent='Complete "'+NODE_DATA[prev.id].name+'" to unlock';
+    lbl.textContent='Complete "'+NODE_DATA[prev.id].name+'" first to unlock this module';
     var lActions=document.createElement('div');
     lActions.className='node-panel-locked-actions';
     var prevBtn=document.createElement('button');
     prevBtn.className='node-panel-btn';
-    prevBtn.textContent='Go to previous module →';
+    prevBtn.textContent='Go to '+NODE_DATA[prev.id].name+' →';
     prevBtn.onclick=function(){closeNodePanel();openLesson(prev.id);};
     lActions.appendChild(prevBtn);
     lockDiv.appendChild(lbl);lockDiv.appendChild(lActions);
