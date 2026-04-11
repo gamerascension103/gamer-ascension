@@ -1071,3 +1071,367 @@ function updatePulseWaves(charge){
 }
 
 function updateParticles(){
+  // Energy particles: completed node -> sphere
+  if(Math.random() < 0.15){
+    PREGAME_NODES.forEach(function(n){
+      if(completed.includes(n.id)){
+        var pos = nodePos(n);
+        if(Math.random() < 0.3){
+          energyParticles.push({
+            x:pos.x, y:pos.y, tx:CX, ty:SPHERE_Y,
+            progress:0, speed:0.003+Math.random()*0.002,
+            size:Math.random()*2+1, color:'rgba(255,200,50,'
+          });
+        }
+      }
+    });
+  }
+  // Flow particles: sphere -> pillars (only when all done)
+  if(completed.length>=5 && Math.random()<0.2){
+    var targets=[[VITALITY_X,PILLAR_Y,'rgba(255,100,68,'],[SPIRIT_X,PILLAR_Y,'rgba(187,153,255,'],[ALIGNMENT_X,PILLAR_Y,'rgba(85,255,170,']];
+    var tgt=targets[Math.floor(Math.random()*targets.length)];
+    flowParticles.push({x:CX,y:SPHERE_Y,tx:tgt[0],ty:tgt[1],progress:0,speed:0.0025+Math.random()*0.0015,size:Math.random()*2.5+1,color:tgt[2]});
+  }
+  energyParticles=energyParticles.filter(function(p){
+    p.progress+=p.speed;
+    var ex=p.x+(p.tx-p.x)*p.progress, ey=p.y+(p.ty-p.y)*p.progress;
+    var alpha=Math.sin(p.progress*Math.PI);
+    treeCtx.save(); treeCtx.fillStyle=p.color+alpha+')'; treeCtx.shadowBlur=6; treeCtx.shadowColor='#ffdd55';
+    treeCtx.beginPath(); treeCtx.arc(ex,ey,p.size,0,Math.PI*2); treeCtx.fill(); treeCtx.restore();
+    return p.progress<1;
+  });
+  flowParticles=flowParticles.filter(function(p){
+    p.progress+=p.speed;
+    var ex=p.x+(p.tx-p.x)*p.progress, ey=p.y+(p.ty-p.y)*p.progress;
+    var alpha=Math.sin(p.progress*Math.PI);
+    treeCtx.save(); treeCtx.fillStyle=p.color+alpha+')'; treeCtx.shadowBlur=8; treeCtx.shadowColor=p.color+'0.8)';
+    treeCtx.beginPath(); treeCtx.arc(ex,ey,p.size,0,Math.PI*2); treeCtx.fill(); treeCtx.restore();
+    return p.progress<1;
+  });
+}
+
+function triggerIgnition(){
+  ignitePulse=1;
+  for(var i=0;i<30;i++){
+    var targets=[[VITALITY_X,PILLAR_Y,'rgba(255,100,68,'],[SPIRIT_X,PILLAR_Y,'rgba(187,153,255,'],[ALIGNMENT_X,PILLAR_Y,'rgba(85,255,170,']];
+    var tgt=targets[i%3];
+    flowParticles.push({x:CX,y:SPHERE_Y,tx:tgt[0],ty:tgt[1],progress:i*0.02,speed:0.01+Math.random()*0.008,size:Math.random()*3+1.5,color:tgt[2]});
+  }
+}
+
+// ---- NEBULA ----
+(function(){
+  var nc=document.getElementById('nebulaCanvas');
+  var nctx=nc.getContext('2d');
+  var nt=0;
+  var orbs=[
+    {x:0.5,y:0.4,r:0.6,color:'rgba(80,0,140',s:0.0004,pulse:0.0007,phase:0},
+    {x:0.5,y:0.4,r:0.4,color:'rgba(160,20,40',s:0.0003,pulse:0.001,phase:1.2},
+    {x:0.28,y:0.6,r:0.3,color:'rgba(40,0,100',s:0.0005,pulse:0.0008,phase:2.4},
+    {x:0.72,y:0.55,r:0.28,color:'rgba(120,10,60',s:0.0006,pulse:0.0012,phase:0.8},
+    {x:0.5,y:0.18,r:0.2,color:'rgba(200,130,10',s:0.0004,pulse:0.0015,phase:3.1},
+    {x:0.5,y:0.45,r:0.14,color:'rgba(255,160,20',s:0.0008,pulse:0.002,phase:1.7},
+  ];
+  var stars=[];
+  for(var i=0;i<150;i++) stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.2+0.2,op:Math.random()*0.5+0.1,drift:(Math.random()-0.5)*0.00006,tw:Math.random()*0.003+0.001,ph:Math.random()*Math.PI*2});
+  function resize(){nc.width=window.innerWidth;nc.height=window.innerHeight;}
+  resize(); window.addEventListener('resize',resize);
+  function drawNebula(){
+    nctx.fillStyle='#080810'; nctx.fillRect(0,0,nc.width,nc.height);
+    orbs.forEach(function(o){
+      var cx=o.x*nc.width,cy=o.y*nc.height;
+      var br=o.r*Math.min(nc.width,nc.height)*(1+Math.sin(nt*o.pulse+o.phase)*0.08);
+      cx+=Math.sin(nt*o.s+o.phase)*nc.width*0.04; cy+=Math.cos(nt*o.s*0.7+o.phase)*nc.height*0.03;
+      var g=nctx.createRadialGradient(cx,cy,0,cx,cy,br);
+      g.addColorStop(0,o.color+',0.18)'); g.addColorStop(0.35,o.color+',0.09)');
+      g.addColorStop(0.7,o.color+',0.03)'); g.addColorStop(1,o.color+',0)');
+      nctx.fillStyle=g; nctx.beginPath(); nctx.arc(cx,cy,br,0,Math.PI*2); nctx.fill();
+    });
+    var vg=nctx.createRadialGradient(nc.width/2,nc.height/2,nc.width*0.25,nc.width/2,nc.height/2,nc.width*0.75);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.65)');
+    nctx.fillStyle=vg; nctx.fillRect(0,0,nc.width,nc.height);
+    stars.forEach(function(s){
+      s.x+=s.drift; if(s.x<0)s.x=1; if(s.x>1)s.x=0;
+      nctx.globalAlpha=s.op*(0.5+Math.sin(nt*s.tw+s.ph)*0.5);
+      nctx.fillStyle='#ffffff'; nctx.beginPath(); nctx.arc(s.x*nc.width,s.y*nc.height,s.r,0,Math.PI*2); nctx.fill();
+    });
+    nctx.globalAlpha=1; nt++; requestAnimationFrame(drawNebula);
+  }
+  drawNebula();
+})();
+
+// ---- PAN & ZOOM ----
+var transform={x:0,y:0,scale:1};
+var drag={active:false,moved:false,pending:false,startX:0,startY:0,startTX:0,startTY:0};
+var pinch={active:false,startDist:0,startScale:0};
+
+function applyTransform(){
+  document.getElementById('canvasInner').style.transform='translate('+transform.x+'px,'+transform.y+'px) scale('+transform.scale+')';
+}
+
+function centerTree(){
+  var wrap=document.getElementById('canvasWrap');
+  var vw=wrap.offsetWidth,vh=wrap.offsetHeight;
+  var targetScale=Math.min(0.52,vw/W*0.9);
+  transform.scale=targetScale;
+  transform.x=(vw/2)-(CX*transform.scale);
+  transform.y=Math.max(10,(vh/2)-(SPHERE_Y*transform.scale)-40);
+  applyTransform();
+}
+
+document.getElementById('canvasWrap').addEventListener('mousedown',function(e){
+  drag.active=false;drag.moved=false;drag.pending=true;
+  drag.startX=e.clientX;drag.startY=e.clientY;
+  drag.startTX=transform.x;drag.startTY=transform.y;
+  clearTimeout(hintTimer);
+  document.getElementById('hint').classList.add('hidden');
+});
+document.addEventListener('mousemove',function(e){
+  if(!drag.pending)return;
+  var dx=e.clientX-drag.startX,dy=e.clientY-drag.startY;
+  if(!drag.active&&(Math.abs(dx)>6||Math.abs(dy)>6)){
+    drag.active=true;drag.moved=true;
+    document.getElementById('canvasWrap').classList.add('dragging');
+  }
+  if(drag.active){transform.x=drag.startTX+dx;transform.y=drag.startTY+dy;applyTransform();}
+});
+document.addEventListener('mouseup',function(){
+  drag.pending=false;drag.active=false;
+  document.getElementById('canvasWrap').classList.remove('dragging');
+  setTimeout(function(){drag.moved=false;},10);
+});
+document.getElementById('canvasWrap').addEventListener('wheel',function(e){
+  e.preventDefault();
+  var delta=e.deltaY>0?0.9:1.1;
+  var rect=this.getBoundingClientRect();
+  var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  var ns=Math.max(0.2,Math.min(2.5,transform.scale*delta));
+  transform.x=mx-(mx-transform.x)*(ns/transform.scale);
+  transform.y=my-(my-transform.y)*(ns/transform.scale);
+  transform.scale=ns;applyTransform();
+},{passive:false});
+document.getElementById('canvasWrap').addEventListener('touchstart',function(e){
+  if(e.touches.length===1){
+    drag.active=false;drag.moved=false;drag.pending=true;
+    drag.startX=e.touches[0].clientX;drag.startY=e.touches[0].clientY;
+    drag.startTX=transform.x;drag.startTY=transform.y;
+  } else if(e.touches.length===2){
+    drag.active=false;drag.pending=false;pinch.active=true;
+    pinch.startDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    pinch.startScale=transform.scale;
+    pinch.midX=(e.touches[0].clientX+e.touches[1].clientX)/2;
+    pinch.midY=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    pinch.startTX=transform.x;pinch.startTY=transform.y;
+  }
+  clearTimeout(hintTimer);
+  document.getElementById('hint').classList.add('hidden');
+},{passive:true});
+document.getElementById('canvasWrap').addEventListener('touchmove',function(e){
+  e.preventDefault();
+  if(drag.pending&&e.touches.length===1){
+    var dx=e.touches[0].clientX-drag.startX,dy=e.touches[0].clientY-drag.startY;
+    if(!drag.active&&(Math.abs(dx)>6||Math.abs(dy)>6)){drag.active=true;drag.moved=true;}
+    if(drag.active){transform.x=drag.startTX+dx;transform.y=drag.startTY+dy;applyTransform();}
+  } else if(pinch.active&&e.touches.length===2){
+    var dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    var ns=Math.max(0.2,Math.min(2.5,pinch.startScale*dist/pinch.startDist));
+    var rect=document.getElementById('canvasWrap').getBoundingClientRect();
+    var mx=pinch.midX-rect.left,my=pinch.midY-rect.top;
+    transform.x=mx-(mx-pinch.startTX)*(ns/pinch.startScale);
+    transform.y=my-(my-pinch.startTY)*(ns/pinch.startScale);
+    transform.scale=ns;applyTransform();
+  }
+},{passive:false});
+document.getElementById('canvasWrap').addEventListener('touchend',function(){
+  drag.pending=false;drag.active=false;pinch.active=false;
+  setTimeout(function(){drag.moved=false;},10);
+},{passive:true});
+document.getElementById('zoomIn').onclick=function(){transform.scale=Math.min(2.5,transform.scale*1.2);applyTransform();};
+document.getElementById('zoomOut').onclick=function(){transform.scale=Math.max(0.2,transform.scale*0.8);applyTransform();};
+document.getElementById('zoomReset').onclick=centerTree;
+
+// ---- TOOLTIP ----
+var tooltipEl=null;
+function showTooltip(e,id,isDone){
+  tooltipEl=document.getElementById('nodeTooltip');
+  var data=NODE_DATA[id];if(!data)return;
+  document.getElementById('ttNum').textContent=data.pillar;
+  document.getElementById('ttName').textContent=data.name;
+  document.getElementById('ttAction').textContent=isDone?'Completed ✓':'Click to open';
+  moveTooltip(e);tooltipEl.classList.add('visible');
+}
+function moveTooltip(e){
+  if(!tooltipEl)return;
+  var x=e.clientX+16,y=e.clientY-40;
+  if(x+220>window.innerWidth)x=e.clientX-230;
+  if(y<70)y=e.clientY+16;
+  tooltipEl.style.left=x+'px';tooltipEl.style.top=y+'px';
+}
+function hideTooltip(){document.getElementById('nodeTooltip').classList.remove('visible');tooltipEl=null;}
+
+// ---- NODE PANEL ----
+function openNodePanel(id){
+  if(drag.moved)return;
+  var data=NODE_DATA[id];if(!data)return;
+  var isPregame=data.type==='pregame';
+  var isDone=completed.includes(id);
+  var nodeIndex=PREGAME_NODES.findIndex(function(n){return n.id===id;});
+  var isLocked=isPregame&&nodeIndex>0&&!completed.includes(PREGAME_NODES[nodeIndex-1].id);
+  var pillarColors={pregame:'var(--gold)',vitality:'#ff6644',spirit:'#bb99ff',alignment:'#55ffaa'};
+  document.getElementById('nodePanelPillar').textContent=data.pillar;
+  document.getElementById('nodePanelPillar').style.color=pillarColors[data.type]||'var(--gold)';
+  document.getElementById('nodePanelName').textContent=data.name;
+  document.getElementById('nodePanelDesc').textContent=data.desc;
+  var actions=document.getElementById('nodePanelActions');
+  actions.innerHTML='';
+  if(isPregame&&!isLocked){
+    var btn=document.createElement('button');
+    btn.className='node-panel-btn';
+    btn.textContent=isDone?'Read again →':'Read this module →';
+    btn.onclick=function(){closeNodePanel();openLesson(id);};
+    actions.appendChild(btn);
+  } else if(isPregame&&isLocked){
+    var prev=PREGAME_NODES[nodeIndex-1];
+    var lockDiv=document.createElement('div');
+    lockDiv.className='node-panel-locked';
+    var lbl=document.createElement('div');
+    lbl.className='node-panel-locked-label';
+    lbl.textContent='Complete "'+NODE_DATA[prev.id].name+'" to unlock';
+    var lActions=document.createElement('div');
+    lActions.className='node-panel-locked-actions';
+    var prevBtn=document.createElement('button');
+    prevBtn.className='node-panel-btn';
+    prevBtn.textContent='Go to previous module →';
+    prevBtn.onclick=function(){closeNodePanel();openLesson(prev.id);};
+    lActions.appendChild(prevBtn);
+    lockDiv.appendChild(lbl);lockDiv.appendChild(lActions);
+    actions.appendChild(lockDiv);
+  } else {
+    var lockDiv2=document.createElement('div');
+    lockDiv2.className='node-panel-locked';
+    var lbl2=document.createElement('div');
+    lbl2.className='node-panel-locked-label';
+    lbl2.textContent='Members only — complete the pre-game to unlock';
+    var lActions2=document.createElement('div');
+    lActions2.className='node-panel-locked-actions';
+    var bookBtn=document.createElement('a');
+    bookBtn.className='node-panel-btn';
+    bookBtn.href='https://calendly.com/straincoaching/insightcall';
+    bookBtn.textContent='Book a call →';
+    lActions2.appendChild(bookBtn);
+    lockDiv2.appendChild(lbl2);lockDiv2.appendChild(lActions2);
+    actions.appendChild(lockDiv2);
+  }
+  var closeBtn=document.createElement('button');
+  closeBtn.className='node-panel-close';
+  closeBtn.textContent='Close';
+  closeBtn.onclick=closeNodePanel;
+  actions.appendChild(closeBtn);
+  document.getElementById('nodePanel').classList.add('open');
+}
+function closeNodePanel(){document.getElementById('nodePanel').classList.remove('open');}
+document.addEventListener('click',function(e){
+  var p=document.getElementById('nodePanel');
+  if(p.classList.contains('open')&&!p.contains(e.target))closeNodePanel();
+});
+
+// ---- RESPEC ----
+function updateRespecBtn(){
+  var btn=document.getElementById('respecBtn');
+  if(!btn)return;
+  if(completed.length>0)btn.classList.add('visible');
+  else btn.classList.remove('visible');
+}
+document.getElementById('respecBtn').onclick=function(e){
+  e.stopPropagation();
+  document.getElementById('respecConfirm').classList.add('open');
+};
+document.getElementById('respecConfirmNo').onclick=function(e){
+  e.stopPropagation();
+  document.getElementById('respecConfirm').classList.remove('open');
+};
+document.getElementById('respecConfirmYes').onclick=function(e){
+  e.stopPropagation();
+  var lessonIds=['gap','training','nutrition','journaling','reading'];
+  var drainInterval=setInterval(function(){
+    if(completed.length===0){clearInterval(drainInterval);buildClickTargets();updateRespecBtn();return;}
+    completed.pop();
+    localStorage.setItem('ga_pregame_v2_completed',JSON.stringify(completed));
+    document.querySelectorAll('.pip').forEach(function(p){p.classList.remove('done');});
+    completed.forEach(function(id){var idx=lessonIds.indexOf(id);if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');});
+  },280);
+  sphereIgnited=false;ignitePulse=0;energyParticles.length=0;flowParticles.length=0;
+  shockwaves.length=0;litNodes.length=0;shockTimer=0;
+  var existing=document.querySelector('[style*="z-index:500"]');
+  if(existing)existing.remove();
+  document.getElementById('respecConfirm').classList.remove('open');
+};
+
+// ---- LESSON SYSTEM ----
+var lessonOrder=['gap','training','nutrition','journaling','reading'];
+function openLesson(id){
+  var lesson=LESSONS[id];if(!lesson)return;
+  currentLesson=id;
+  document.getElementById('lessonEyebrow').textContent=lesson.eyebrow;
+  document.getElementById('lessonTitle').textContent=lesson.title;
+  document.getElementById('lessonBody').innerHTML=lesson.content;
+  document.getElementById('lessonProgressFill').style.width='0%';
+  var isDone=completed.includes(id);
+  var btn=document.getElementById('completeBtn');
+  btn.textContent=isDone?'Completed ✓':'Mark as complete ✓';
+  btn.className='complete-btn'+(isDone?' done':'');
+  btn.disabled=isDone;
+  var idx=lessonOrder.indexOf(id);
+  document.getElementById('prevBtn').style.display=idx>0?'':'none';
+  document.getElementById('nextBtn').style.display=idx<lessonOrder.length-1?'':'none';
+  document.getElementById('lessonOverlay').classList.add('open');
+  document.getElementById('lessonBody').scrollTop=0;
+}
+function closeLesson(){document.getElementById('lessonOverlay').classList.remove('open');currentLesson=null;}
+function markComplete(){
+  if(!currentLesson||completed.includes(currentLesson))return;
+  completed.push(currentLesson);
+  localStorage.setItem('ga_pregame_v2_completed',JSON.stringify(completed));
+  var btn=document.getElementById('completeBtn');
+  btn.textContent='Completed ✓';btn.classList.add('done');btn.disabled=true;
+  document.getElementById('completionFlash').classList.add('active');
+  setTimeout(function(){document.getElementById('completionFlash').classList.remove('active');},600);
+  var idx=lessonOrder.indexOf(currentLesson);
+  if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');
+  buildClickTargets();
+  updateRespecBtn();
+  if(completed.length>=5)setTimeout(showAllComplete,1200);
+}
+function navLesson(dir){
+  var idx=lessonOrder.indexOf(currentLesson);
+  var next=lessonOrder[idx+dir];
+  if(next)openLesson(next);
+}
+function updateReadProgress(){
+  var b=document.getElementById('lessonBody');
+  document.getElementById('lessonProgressFill').style.width=Math.min(100,b.scrollTop/(b.scrollHeight-b.clientHeight)*100)+'%';
+}
+function showAllComplete(){
+  var msg=document.createElement('div');
+  msg.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,7,15,0.97);flex-direction:column;gap:20px;';
+  msg.innerHTML='<div style="font-family:Cinzel Decorative,serif;font-size:clamp(32px,5vw,60px);color:#f0ece4;text-align:center;line-height:1.2">The Briefing<br>is <span style="color:#c0392b">Complete.</span></div><div style="font-size:16px;font-weight:300;color:rgba(240,236,228,.55);text-align:center;max-width:400px;line-height:1.7">The threshold is behind you.<br>The journey starts now.</div><a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;text-decoration:none;margin-top:8px">Book your PlayBook call →</a><button onclick="this.parentNode.remove()" style="background:none;border:none;color:rgba(240,236,228,.3);font-size:13px;cursor:pointer;margin-top:8px">Continue exploring →</button>';
+  document.body.appendChild(msg);
+}
+
+// ---- INIT ----
+window.addEventListener('load',function(){
+  initTreeCanvas();
+  centerTree();
+  completed.forEach(function(id){
+    var idx=lessonOrder.indexOf(id);
+    if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');
+  });
+  if(completed.length>=5)sphereIgnited=true;
+  updateRespecBtn();
+  drawFrame();
+  hintTimer=setTimeout(function(){document.getElementById('hint').classList.add('hidden');},7000);
+});
+window.addEventListener('resize',function(){centerTree();});
+</script>
+</body>
+</html>
