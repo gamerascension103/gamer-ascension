@@ -1257,32 +1257,51 @@ document.getElementById('zoomOut').onclick=function(){transform.scale=Math.max(0
 document.getElementById('zoomReset').onclick=centerTree;
 
 // ---- RESPEC ----
-document.getElementById('respecBtn').onclick=function(){
+function updateRespecBtn(){
+  var btn = document.getElementById('respecBtn');
+  if(!btn) return;
+  if(completed.length > 0) btn.classList.add('visible');
+  else btn.classList.remove('visible');
+}
+
+document.getElementById('respecBtn').onclick=function(e){
+  e.stopPropagation();
   document.getElementById('respecConfirm').classList.add('open');
 };
-document.getElementById('respecConfirmNo').onclick=function(){
+document.getElementById('respecConfirmNo').onclick=function(e){
+  e.stopPropagation();
   document.getElementById('respecConfirm').classList.remove('open');
 };
-document.getElementById('respecConfirmYes').onclick=function(){
-  // Wipe progress
-  completed.length = 0;
-  localStorage.removeItem('ga_pregame_v2_completed');
-  // Reset animation state
+document.getElementById('respecConfirmYes').onclick=function(e){
+  e.stopPropagation();
+  // Drain animation — remove completions one by one
+  var lessonIds = ['gap','training','nutrition','journaling','reading'];
+  var drainInterval = setInterval(function(){
+    if(completed.length === 0){
+      clearInterval(drainInterval);
+      buildClickTargets();
+      updateRespecBtn();
+      return;
+    }
+    completed.pop();
+    localStorage.setItem('ga_pregame_v2_completed', JSON.stringify(completed));
+    document.querySelectorAll('.pip').forEach(function(p){ p.classList.remove('done'); });
+    completed.forEach(function(id){
+      var idx = lessonIds.indexOf(id);
+      if(idx >= 0) document.getElementById('pip-'+idx).classList.add('done');
+    });
+  }, 280);
+  // Reset animation state immediately
   sphereIgnited = false;
   ignitePulse = 0;
   energyParticles.length = 0;
   flowParticles.length = 0;
   pulseWaves.length = 0;
   pulseTimer = 0;
-  // Reset pips
-  for(var i=0;i<5;i++) document.getElementById('pip-'+i).classList.remove('done');
-  // Rebuild click targets
-  buildClickTargets();
-  // Close confirm
-  document.getElementById('respecConfirm').classList.remove('open');
-  // Remove any completion screen
+  // Remove completion screen if present
   var existing = document.querySelector('[style*="z-index:500"]');
-  if(existing && existing !== document.getElementById('respecConfirm')) existing.remove();
+  if(existing) existing.remove();
+  document.getElementById('respecConfirm').classList.remove('open');
 };
 
 // ---- TOOLTIP ----
@@ -1371,47 +1390,6 @@ function closeNodePanel(){document.getElementById('nodePanel').classList.remove(
 document.addEventListener('click',function(e){
   var p=document.getElementById('nodePanel');
   if(p.classList.contains('open')&&!p.contains(e.target))closeNodePanel();
-});
-
-// ---- RESPEC ----
-function updateRespecBtn(){
-  var btn = document.getElementById('respecBtn');
-  if(completed.length > 0) btn.classList.add('visible');
-  else btn.classList.remove('visible');
-}
-
-document.getElementById('respecBtn').addEventListener('click', function(){
-  document.getElementById('respecModal').classList.add('open');
-});
-
-document.getElementById('respecCancel').addEventListener('click', function(){
-  document.getElementById('respecModal').classList.remove('open');
-});
-
-document.getElementById('respecConfirm').addEventListener('click', function(){
-  document.getElementById('respecModal').classList.remove('open');
-  // Drain animation — remove completions one by one
-  var drainInterval = setInterval(function(){
-    if(completed.length === 0){
-      clearInterval(drainInterval);
-      return;
-    }
-    completed.pop();
-    localStorage.setItem('ga_pregame_v2_completed', JSON.stringify(completed));
-    // Update pips
-    document.querySelectorAll('.pip').forEach(function(p){ p.classList.remove('done'); });
-    completed.forEach(function(id){
-      var idx = ['gap','training','nutrition','journaling','reading'].indexOf(id);
-      if(idx >= 0) document.getElementById('pip-'+idx).classList.add('done');
-    });
-    buildClickTargets();
-    updateRespecBtn();
-  }, 300);
-  // Reset ignition
-  sphereIgnited = false;
-  ignitePulse = 0;
-  pulseWaves = [];
-  pulseTimer = 0;
 });
 
 // ---- LESSON SYSTEM ----
