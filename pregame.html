@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Hero Education — Pre-Game Briefing | Gamer Ascension</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -34,8 +34,13 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .canvas-inner{position:absolute;transform-origin:0 0;will-change:transform}
 
 /* HINT */
-.hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.08em;z-index:40;pointer-events:none;transition:opacity .5s;white-space:nowrap}
+.hint{position:fixed;left:20px;top:50%;transform:translateY(-50%);z-index:40;pointer-events:none;transition:opacity .6s;display:flex;flex-direction:column;align-items:center;gap:10px}
 .hint.hidden{opacity:0}
+.hint-inner{background:rgba(10,10,20,0.85);border:1px solid rgba(201,168,76,0.25);border-radius:4px;padding:14px 16px;backdrop-filter:blur(12px);display:flex;flex-direction:column;align-items:center;gap:8px}
+.hint-text{font-family:'Cinzel',serif;font-size:10px;font-weight:400;letter-spacing:.1em;color:rgba(201,168,76,0.8);writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg)}
+.hint-arrow{width:1px;height:32px;background:linear-gradient(to bottom,rgba(201,168,76,0),rgba(201,168,76,0.4));margin:0 auto}
+.hint-pulse{width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,0.6);animation:hint-blink 1.8s ease-in-out infinite}
+@keyframes hint-blink{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
 
 /* ZOOM */
 .zoom-controls{position:fixed;bottom:24px;right:24px;z-index:50;display:flex;flex-direction:column;gap:6px}
@@ -53,8 +58,8 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .node-panel{position:fixed;bottom:0;left:0;right:0;z-index:200;background:rgba(10,10,20,.98);border-top:1px solid rgba(255,255,255,.08);padding:28px 24px;transform:translateY(100%);transition:transform .35s cubic-bezier(.16,1,.3,1);backdrop-filter:blur(20px)}
 .node-panel.open{transform:translateY(0)}
 .node-panel-inner{max-width:520px;margin:0 auto}
-.node-panel-pillar{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
-.node-panel-name{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);margin-bottom:12px;line-height:1}
+.node-panel-pillar{font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.node-panel-name{font-family:'Cinzel',serif;font-size:26px;font-weight:600;color:var(--text);margin-bottom:12px;line-height:1.1}
 .node-panel-desc{font-size:14px;font-weight:300;color:var(--tdim);line-height:1.7;margin-bottom:20px}
 .node-panel-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .node-panel-btn{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-size:13px;font-weight:500;padding:11px 22px;border-radius:3px;text-decoration:none;border:none;cursor:pointer;transition:background .2s}
@@ -166,7 +171,15 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
   <button class="zoom-btn" id="zoomReset">⌂</button>
 </div>
 
-<div class="hint" id="hint">Tap a node to begin · Scroll to explore</div>
+<div class="hint" id="hint">
+  <div class="hint-inner">
+    <div class="hint-pulse"></div>
+    <div class="hint-arrow"></div>
+    <div class="hint-text">Tap a node to begin</div>
+    <div class="hint-arrow" style="transform:rotate(180deg)"></div>
+    <div class="hint-text">Scroll to explore</div>
+  </div>
+</div>
 
 <div class="node-tooltip" id="nodeTooltip">
   <div class="node-tooltip-num" id="ttNum"></div>
@@ -208,7 +221,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 // ---- CONFIG ----
 var W = 1800, H = 2400;
 var CX = 900; // center x
-var SPHERE_Y = 700; // sphere center y
+var SPHERE_Y = 780; // sphere center y
 var SPHERE_R = 130; // sphere radius
 
 // Pre-game node positions — arc above sphere
@@ -415,6 +428,29 @@ function drawFrame(){
   treeCtx.clearRect(0,0,W,H);
   t++;
 
+  // Page title
+  treeCtx.save();
+  treeCtx.textAlign = 'center';
+  treeCtx.font = '700 52px Cinzel Decorative, serif';
+  treeCtx.fillStyle = 'rgba(201,168,76,0.12)';
+  treeCtx.fillText('Pillars of Ascension', CX, 52);
+  treeCtx.font = '700 52px Cinzel Decorative, serif';
+  treeCtx.fillStyle = 'rgba(201,168,76,0.55)';
+  treeCtx.fillText('Pillars of Ascension', CX, 50);
+  // Subtitle
+  treeCtx.font = '400 13px Cinzel, serif';
+  treeCtx.fillStyle = 'rgba(240,236,228,0.22)';
+  treeCtx.letterSpacing = '0.12em';
+  treeCtx.fillText('Hero Identity Gap Program · Pre-Game Briefing', CX, 74);
+  // Decorative line
+  treeCtx.strokeStyle = 'rgba(201,168,76,0.2)';
+  treeCtx.lineWidth = 0.5;
+  treeCtx.beginPath();
+  treeCtx.moveTo(CX - 280, 84);
+  treeCtx.lineTo(CX + 280, 84);
+  treeCtx.stroke();
+  treeCtx.restore();
+
   var charge = Math.min(1, completed.length / 5);
   if(completed.length >= 5 && !sphereIgnited){
     sphereIgnited = true;
@@ -575,7 +611,7 @@ function drawSphere(charge){
   // Sphere label
   treeCtx.save();
   treeCtx.fillStyle = charge >= 1 ? 'rgba(255,220,80,0.9)' : 'rgba(240,236,228,0.2)';
-  treeCtx.font = '500 11px DM Sans, sans-serif';
+  treeCtx.font = '400 10px Cinzel, serif';
   treeCtx.textAlign = 'center';
   treeCtx.letterSpacing = '0.1em';
   treeCtx.fillText(charge >= 1 ? 'READY' : (charge > 0 ? Math.round(charge*5)+' / 5' : 'PRE-GAME'), cx, cy + pr + 22);
@@ -731,7 +767,7 @@ function drawPregameNodes(){
     if(isNext && !isDone){
       treeCtx.save();
       treeCtx.fillStyle = '#ffdd55';
-      treeCtx.font = '500 10px DM Sans';
+      treeCtx.font = '400 10px Cinzel, serif';
       treeCtx.textAlign = 'center';
       treeCtx.globalAlpha = 0.7 + Math.sin(t*0.05)*0.3;
       treeCtx.fillText('START HERE', pos.x, pos.y + pr + 16);
@@ -741,7 +777,7 @@ function drawPregameNodes(){
     // Module number
     treeCtx.save();
     treeCtx.fillStyle = isDone ? 'rgba(255,150,100,0.7)' : (isNext ? 'rgba(255,220,80,0.6)' : 'rgba(240,236,228,0.15)');
-    treeCtx.font = '500 10px DM Sans';
+    treeCtx.font = '400 10px Cinzel, serif';
     treeCtx.textAlign = 'center';
     treeCtx.fillText('0'+(i+1), pos.x, pos.y - pr - 10);
     treeCtx.restore();
@@ -775,7 +811,7 @@ function drawPillarBranches(){
     // Pillar label
     treeCtx.save();
     treeCtx.fillStyle = allDone ? p.color : 'rgba(240,236,228,0.15)';
-    treeCtx.font = '500 18px Bebas Neue, sans-serif';
+    treeCtx.font = '600 20px Cinzel, serif';
     treeCtx.textAlign = 'center';
     treeCtx.letterSpacing = '0.06em';
     treeCtx.globalAlpha = allDone ? 0.8 : 0.3;
@@ -1217,7 +1253,7 @@ window.addEventListener('load',function(){
   });
   if(completed.length>=5)sphereIgnited=true;
   drawFrame();
-  hintTimer=setTimeout(function(){document.getElementById('hint').classList.add('hidden');},4000);
+  hintTimer=setTimeout(function(){document.getElementById('hint').classList.add('hidden');},7000);
 });
 window.addEventListener('resize',function(){centerTree();});
 </script>
