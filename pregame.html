@@ -345,6 +345,10 @@ var flowParticles = [];   // sphere -> pillars
 var sphereIgnited = false;
 var ignitePulse = 0;
 
+// Dormant pulse waves — travel down branches when tree is inactive
+var pulseWaves = [];
+var pulseTimer = 0;
+
 function nodePos(n){
   var rad = n.angle * Math.PI / 180;
   return {
@@ -470,6 +474,7 @@ function drawFrame(){
   drawPillarBranches();
   drawPillarNodes();
   updateParticles();
+  if(completed.length < 5) updatePulseWaves(charge);
 
   requestAnimationFrame(drawFrame);
 }
@@ -883,6 +888,95 @@ function drawPillarNodes(){
       treeCtx.fill();
       treeCtx.restore();
     });
+  });
+}
+
+function updatePulseWaves(charge){
+  pulseTimer++;
+  // Spawn a new pulse wave every ~180 frames (~3 seconds)
+  if(pulseTimer % 180 === 0){
+    // Pick a random pillar to pulse down
+    var pillars = [
+      {sx:CX, sy:SPHERE_Y, ex:VITALITY_X, ey:PILLAR_Y, color:'rgba(192,57,43,', nodes: PILLAR_NODES.vitality},
+      {sx:CX, sy:SPHERE_Y, ex:SPIRIT_X,   ey:PILLAR_Y, color:'rgba(127,119,221,', nodes: PILLAR_NODES.spirit},
+      {sx:CX, sy:SPHERE_Y, ex:ALIGNMENT_X,ey:PILLAR_Y, color:'rgba(29,158,117,',  nodes: PILLAR_NODES.alignment},
+    ];
+    // Also send one down each pregame connection occasionally
+    if(Math.random() < 0.4){
+      PREGAME_NODES.forEach(function(n){
+        if(!completed.includes(n.id)){
+          var pos = nodePos(n);
+          pulseWaves.push({
+            sx: CX, sy: SPHERE_Y,
+            ex: pos.x, ey: pos.y,
+            progress: 0,
+            speed: 0.004 + Math.random()*0.002,
+            color: 'rgba(201,168,76,',
+            size: 2.5,
+            type: 'pregame'
+          });
+        }
+      });
+    }
+    var p = pillars[Math.floor(Math.random()*pillars.length)];
+    pulseWaves.push({
+      sx: p.sx, sy: p.sy,
+      ex: p.ex, ey: p.ey,
+      progress: 0,
+      speed: 0.003 + Math.random()*0.002,
+      color: p.color,
+      size: 2,
+      nodes: p.nodes,
+      type: 'pillar',
+      childWaves: []
+    });
+  }
+
+  // Draw and update pulse waves
+  pulseWaves = pulseWaves.filter(function(pw){
+    pw.progress += pw.speed;
+
+    // Current position along the line
+    var px = pw.sx + (pw.ex - pw.sx) * pw.progress;
+    var py = pw.sy + (pw.ey - pw.sy) * pw.progress;
+
+    // Fade in and out
+    var alpha = Math.sin(pw.progress * Math.PI) * 0.5;
+
+    // Draw the traveling dot
+    treeCtx.save();
+    treeCtx.fillStyle = pw.color + alpha + ')';
+    treeCtx.shadowBlur = 12;
+    treeCtx.shadowColor = pw.color + '0.6)';
+    treeCtx.beginPath();
+    treeCtx.arc(px, py, pw.size, 0, Math.PI*2);
+    treeCtx.fill();
+
+    // Trailing glow
+    treeCtx.fillStyle = pw.color + (alpha * 0.3) + ')';
+    treeCtx.shadowBlur = 20;
+    treeCtx.beginPath();
+    treeCtx.arc(px, py, pw.size * 2.5, 0, Math.PI*2);
+    treeCtx.fill();
+    treeCtx.restore();
+
+    // When pillar pulse reaches root, spawn child waves to each pillar node
+    if(pw.type === 'pillar' && pw.progress >= 0.95 && pw.nodes && pw.childWaves.length === 0){
+      pw.nodes.forEach(function(n){
+        pw.childWaves.push({
+          sx: pw.ex, sy: pw.ey,
+          ex: n.x, ey: n.y,
+          progress: 0,
+          speed: pw.speed * 0.85,
+          color: pw.color,
+          size: 1.5,
+          type: 'child'
+        });
+      });
+      pulseWaves = pulseWaves.concat(pw.childWaves);
+    }
+
+    return pw.progress < 1;
   });
 }
 
