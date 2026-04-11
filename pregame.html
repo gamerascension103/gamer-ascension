@@ -960,7 +960,7 @@ function updatePulseWaves(charge){
   shockTimer++;
 
   // Spawn a shockwave every ~220 frames (~3.5 seconds)
-  if(shockTimer % 380 === 0){
+  if(shockTimer % 600 === 0){
     shockwaves.push({
       r: SPHERE_R,        // current radius
       maxR: 1400,         // how far it travels
