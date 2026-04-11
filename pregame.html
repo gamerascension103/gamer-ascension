@@ -342,6 +342,8 @@ function initTreeCanvas(){
   treeCanvas.style.position = 'absolute';
   treeCanvas.style.top = '0';
   treeCanvas.style.left = '0';
+  treeCanvas.style.pointerEvents = 'none';
+  treeCanvas.style.zIndex = '1';
   document.getElementById('canvasInner').appendChild(treeCanvas);
   treeCtx = treeCanvas.getContext('2d');
 
@@ -352,6 +354,8 @@ function initTreeCanvas(){
   svg.style.position = 'absolute';
   svg.style.top = '0';
   svg.style.left = '0';
+  svg.style.zIndex = '2';
+  svg.style.pointerEvents = 'all';
 
   buildClickTargets();
 }
