@@ -838,36 +838,71 @@ function drawPregameNodes(){
 
 function drawPillarBranches(){
   var allDone = completed.length >= 5;
-  var pillars = [
-    {nodes: PILLAR_NODES.vitality, color:'#ff6644', rootX: VITALITY_X},
-    {nodes: PILLAR_NODES.spirit,   color:'#bb99ff', rootX: SPIRIT_X},
-    {nodes: PILLAR_NODES.alignment,color:'#55ffaa', rootX: ALIGNMENT_X},
+  var alpha = allDone ? 0.22 : 0.12;
+  var lineW = allDone ? 1.2 : 0.8;
+
+  // Explicit parent->child connections per pillar — no crossing, no stacking
+  var connections = [
+    // Vitality (red)
+    {x1:VITALITY_X, y1:PILLAR_Y, x2:180,  y2:1300, c:'#ff6644'},
+    {x1:VITALITY_X, y1:PILLAR_Y, x2:420,  y2:1300, c:'#ff6644'},
+    {x1:180,  y1:1300, x2:300,  y2:1480, c:'#ff6644'},
+    {x1:300,  y1:1480, x2:150,  y2:1640, c:'#ff6644'},
+    {x1:300,  y1:1480, x2:300,  y2:1640, c:'#ff6644'},
+    {x1:420,  y1:1300, x2:200,  y2:1800, c:'#ff6644'},
+    {x1:420,  y1:1300, x2:380,  y2:1800, c:'#ff6644'},
+    // Spirit (purple)
+    {x1:SPIRIT_X,   y1:PILLAR_Y, x2:780,  y2:1300, c:'#bb99ff'},
+    {x1:780,  y1:1300, x2:660,  y2:1480, c:'#bb99ff'},
+    {x1:780,  y1:1300, x2:800,  y2:1480, c:'#bb99ff'},
+    {x1:780,  y1:1300, x2:940,  y2:1480, c:'#bb99ff'},
+    {x1:660,  y1:1480, x2:660,  y2:1640, c:'#bb99ff'},
+    {x1:660,  y1:1480, x2:780,  y2:1640, c:'#bb99ff'},
+    {x1:800,  y1:1480, x2:900,  y2:1640, c:'#bb99ff'},
+    {x1:940,  y1:1480, x2:1020, y2:1640, c:'#bb99ff'},
+    {x1:900,  y1:1640, x2:760,  y2:1800, c:'#bb99ff'},
+    {x1:900,  y1:1640, x2:920,  y2:1800, c:'#bb99ff'},
+    // Alignment (green)
+    {x1:ALIGNMENT_X, y1:PILLAR_Y, x2:1420, y2:1300, c:'#55ffaa'},
+    {x1:1420, y1:1300, x2:1300, y2:1480, c:'#55ffaa'},
+    {x1:1420, y1:1300, x2:1440, y2:1480, c:'#55ffaa'},
+    {x1:1420, y1:1300, x2:1580, y2:1480, c:'#55ffaa'},
+    {x1:1300, y1:1480, x2:1320, y2:1640, c:'#55ffaa'},
+    {x1:1440, y1:1480, x2:1480, y2:1640, c:'#55ffaa'},
+    {x1:1580, y1:1480, x2:1620, y2:1640, c:'#55ffaa'},
   ];
-  pillars.forEach(function(p){
-    var alpha = allDone ? 0.22 : 0.12;
-    var lineW = allDone ? 1.2 : 0.8;
-    p.nodes.forEach(function(n){
-      treeCtx.save();
-      treeCtx.strokeStyle = p.color;
-      treeCtx.lineWidth = lineW;
-      treeCtx.globalAlpha = alpha;
-      treeCtx.setLineDash(allDone ? [] : [3,5]);
-      // Find parent — simple: connect to root node if first level
-      var parentX = p.rootX, parentY = PILLAR_Y;
-      treeCtx.beginPath();
-      treeCtx.moveTo(parentX, parentY);
-      treeCtx.lineTo(n.x, n.y);
-      treeCtx.stroke();
-      treeCtx.restore();
-    });
-    // Pillar label
+
+  connections.forEach(function(cn){
     treeCtx.save();
-    treeCtx.fillStyle = p.color;
+    treeCtx.strokeStyle = cn.c;
+    treeCtx.lineWidth = lineW;
+    treeCtx.globalAlpha = alpha;
+    treeCtx.setLineDash(allDone ? [] : [3,6]);
+    if(allDone){
+      treeCtx.shadowBlur = 4;
+      treeCtx.shadowColor = cn.c;
+    }
+    treeCtx.beginPath();
+    treeCtx.moveTo(cn.x1, cn.y1);
+    treeCtx.lineTo(cn.x2, cn.y2);
+    treeCtx.stroke();
+    treeCtx.restore();
+  });
+
+  // Pillar labels
+  var labels = [
+    {x:VITALITY_X, y:PILLAR_Y-20, text:'VITALITY',  color:'#ff6644'},
+    {x:SPIRIT_X,   y:PILLAR_Y-20, text:'SPIRIT',    color:'#bb99ff'},
+    {x:ALIGNMENT_X,y:PILLAR_Y-20, text:'ALIGNMENT', color:'#55ffaa'},
+  ];
+  labels.forEach(function(l){
+    treeCtx.save();
+    treeCtx.fillStyle = l.color;
     treeCtx.font = '600 20px Cinzel, serif';
     treeCtx.textAlign = 'center';
-    treeCtx.letterSpacing = '0.06em';
     treeCtx.globalAlpha = allDone ? 0.85 : 0.28;
-    treeCtx.fillText(p.rootX === VITALITY_X ? 'VITALITY' : (p.rootX === SPIRIT_X ? 'SPIRIT' : 'ALIGNMENT'), p.rootX, PILLAR_Y - 20);
+    if(allDone){treeCtx.shadowBlur=8;treeCtx.shadowColor=l.color;}
+    treeCtx.fillText(l.text, l.x, l.y);
     treeCtx.restore();
   });
 }
