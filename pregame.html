@@ -854,7 +854,7 @@ function updateParticles(){
             x:pos.x, y:pos.y,
             tx:CX, ty:SPHERE_Y,
             progress:0,
-            speed: 0.008 + Math.random()*0.006,
+            speed: 0.003 + Math.random()*0.002,
             size: Math.random()*2+1,
             color:'rgba(255,200,50,'
           });
@@ -871,7 +871,7 @@ function updateParticles(){
       x:CX, y:SPHERE_Y,
       tx:tgt[0], ty:tgt[1],
       progress:0,
-      speed: 0.006 + Math.random()*0.004,
+      speed: 0.0025 + Math.random()*0.0015,
       size: Math.random()*2.5+1,
       color:tgt[2]
     });
@@ -921,7 +921,7 @@ function triggerIgnition(){
     flowParticles.push({
       x:CX, y:SPHERE_Y, tx:tgt[0], ty:tgt[1],
       progress: i*0.02,
-      speed: 0.01 + Math.random()*0.008,
+      speed: 0.004 + Math.random()*0.003,
       size: Math.random()*3+1.5,
       color:tgt[2]
     });
