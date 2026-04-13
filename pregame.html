@@ -159,6 +159,21 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .lc-practice-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px}
 .lc-practice-desc{font-size:12px;font-weight:300;color:var(--tdim)}
 
+/* TUTORIAL OVERLAY */
+.tutorial-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.75);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .4s}
+.tutorial-overlay.open{opacity:1;pointer-events:all}
+.tutorial-card{background:rgba(10,10,20,.97);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:0 0 20px;max-width:380px;width:92%;box-shadow:0 0 60px rgba(80,0,140,.2)}
+.tutorial-header{padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
+.tutorial-title-wrap{display:flex;align-items:center;gap:10px}
+.tutorial-dot{width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,.8);animation:hint-blink 1.8s ease-in-out infinite;flex-shrink:0}
+.tutorial-title{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:rgba(201,168,76,.9);letter-spacing:.08em}
+.tutorial-skip{background:none;border:none;color:rgba(240,236,228,.3);font-size:12px;cursor:pointer;padding:0;transition:color .2s}
+.tutorial-skip:hover{color:rgba(240,236,228,.6)}
+.tutorial-video{margin:16px auto 0;border-radius:6px;overflow:hidden;background:#000;aspect-ratio:9/16;max-height:420px;max-width:240px;display:block}
+.tutorial-video iframe{width:100%;height:100%;display:block}
+.tutorial-btn{display:flex;align-items:center;justify-content:center;margin:16px 20px 0;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:12px 24px;border-radius:3px;border:none;cursor:pointer;transition:background .2s;box-sizing:border-box;width:calc(100% - 40px)}
+.tutorial-btn:hover{background:#a93226}
+
 /* COMPLETION FLASH */
 .completion-flash{position:fixed;inset:0;z-index:400;background:rgba(201,168,76,.08);pointer-events:none;opacity:0;transition:opacity .3s}
 .completion-flash.active{opacity:1}
@@ -215,6 +230,23 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
       <button class="respec-confirm-yes" id="respecConfirmYes">Reset everything</button>
       <button class="respec-confirm-no" id="respecConfirmNo">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- TUTORIAL OVERLAY -->
+<div class="tutorial-overlay" id="tutorialOverlay">
+  <div class="tutorial-card">
+    <div class="tutorial-header">
+      <div class="tutorial-title-wrap">
+        <div class="tutorial-dot"></div>
+        <div class="tutorial-title">Skill Tree Tutorial</div>
+      </div>
+      <button class="tutorial-skip" onclick="closeTutorial()">Skip ✕</button>
+    </div>
+    <div class="tutorial-video">
+      <iframe src="https://www.youtube.com/embed/j3N0Y3gCTRA?autoplay=1&mute=0" title="Skill Tree Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <button class="tutorial-btn" onclick="closeTutorial()">Got it, let's go →</button>
   </div>
 </div>
 
@@ -1458,6 +1490,19 @@ function showAllComplete(){
   document.body.appendChild(msg);
 }
 
+// ---- TUTORIAL ----
+function closeTutorial(){
+  document.getElementById('tutorialOverlay').classList.remove('open');
+  localStorage.setItem('ga_tutorial_seen', '1');
+}
+function maybeShowTutorial(){
+  if(!localStorage.getItem('ga_tutorial_seen')){
+    setTimeout(function(){
+      document.getElementById('tutorialOverlay').classList.add('open');
+    }, 1200);
+  }
+}
+
 // ---- INIT ----
 window.addEventListener('load',function(){
   initTreeCanvas();
@@ -1468,6 +1513,7 @@ window.addEventListener('load',function(){
   });
   if(completed.length>=5)sphereIgnited=true;
   updateRespecBtn();
+  maybeShowTutorial();
   drawFrame();
   hintTimer=setTimeout(function(){document.getElementById('hint').classList.add('hidden');},7000);
 });
