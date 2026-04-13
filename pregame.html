@@ -58,6 +58,8 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 .respec-cancel{background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--tdim);font-size:13px;font-weight:300;padding:11px 22px;border-radius:3px;cursor:pointer;transition:all .2s}
 .respec-cancel:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
+.tutorial-reopen-btn{position:fixed;bottom:70px;left:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.2);border-radius:3px;color:rgba(201,168,76,.5);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.08em;padding:0 12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px);white-space:nowrap}
+.tutorial-reopen-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.5);color:rgba(201,168,76,.9)}
 .respec-btn{position:fixed;bottom:24px;left:24px;z-index:50;width:36px;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(192,57,43,.2);border-radius:3px;color:rgba(192,57,43,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);opacity:0;pointer-events:none}
 .respec-btn.visible{opacity:1;pointer-events:all}
 .respec-btn:hover{background:rgba(192,57,43,.08);border-color:rgba(192,57,43,.5);color:var(--red)}
@@ -215,6 +217,8 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
   <button class="zoom-btn" id="zoomOut">−</button>
   <button class="zoom-btn" id="zoomReset">⌂</button>
 </div>
+
+<button class="tutorial-reopen-btn" id="tutorialReopenBtn" onclick="reopenTutorial()">▶ Tutorial</button>
 
 <button class="respec-btn" id="respecBtn">
   ↺
@@ -1491,6 +1495,9 @@ function showAllComplete(){
 }
 
 // ---- TUTORIAL ----
+function reopenTutorial(){
+  document.getElementById('tutorialOverlay').classList.add('open');
+}
 function closeTutorial(){
   document.getElementById('tutorialOverlay').classList.remove('open');
   localStorage.setItem('ga_tutorial_seen', '1');
