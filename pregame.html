@@ -66,6 +66,47 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .respec-btn .respec-tooltip{position:absolute;left:44px;top:50%;transform:translateY(-50%);background:rgba(10,10,20,.95);border:1px solid rgba(192,57,43,.3);border-radius:4px;padding:6px 12px;white-space:nowrap;font-family:'Cinzel',serif;font-size:9px;letter-spacing:.08em;color:rgba(192,57,43,.8);opacity:0;pointer-events:none;transition:opacity .2s}
 .respec-btn:hover .respec-tooltip{opacity:1}
 
+/* QUIZ BUTTON */
+.quiz-float-btn{position:fixed;right:24px;top:50%;transform:translateY(-50%);z-index:50;background:rgba(13,13,26,.92);border:1px solid rgba(201,168,76,.25);border-radius:4px;padding:12px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;backdrop-filter:blur(8px);transition:all .2s;max-width:44px}
+.quiz-float-btn:hover{border-color:rgba(201,168,76,.6);background:rgba(20,15,35,.95)}
+.quiz-float-dot{width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,.7);animation:hint-blink 2s ease-in-out infinite}
+.quiz-float-label{font-family:'Cinzel',serif;font-size:8px;font-weight:400;letter-spacing:.06em;color:rgba(201,168,76,.6);writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);line-height:1.3}
+
+/* QUIZ PANEL */
+.quiz-panel{position:fixed;inset:0;z-index:300;background:rgba(8,8,16,.97);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.quiz-panel.open{transform:translateY(0)}
+.quiz-panel-header{flex-shrink:0;padding:20px 28px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
+.quiz-panel-title{font-family:'Cinzel Decorative',serif;font-size:18px;color:var(--text);line-height:1}
+.quiz-panel-sub{font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.06em;margin-top:4px}
+.quiz-panel-close{width:36px;height:36px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:3px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.quiz-body{flex:1;overflow-y:auto;padding:32px 28px;max-width:640px;margin:0 auto;width:100%}
+.quiz-progress{height:2px;background:rgba(255,255,255,.06);flex-shrink:0}
+.quiz-progress-fill{height:100%;background:var(--gold);transition:width .3s}
+.quiz-question{margin-bottom:32px}
+.quiz-q-label{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+.quiz-q-text{font-family:'Cinzel',serif;font-size:16px;color:var(--text);margin-bottom:20px;line-height:1.5}
+.quiz-options{display:flex;flex-direction:column;gap:10px}
+.quiz-option{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:14px 18px;cursor:pointer;font-size:13px;font-weight:300;color:var(--tdim);transition:all .2s;text-align:left}
+.quiz-option:hover{border-color:rgba(201,168,76,.3);color:var(--text);background:rgba(201,168,76,.04)}
+.quiz-option.selected{border-color:var(--gold);color:var(--text);background:rgba(201,168,76,.08)}
+.quiz-footer{flex-shrink:0;padding:20px 28px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}
+.quiz-next-btn{background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:11px 24px;border-radius:3px;border:none;cursor:pointer;transition:background .2s;opacity:.4;pointer-events:none}
+.quiz-next-btn.active{opacity:1;pointer-events:all}
+.quiz-next-btn.active:hover{background:#a93226}
+.quiz-back-btn{background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--tdim);font-size:13px;font-weight:300;padding:11px 18px;border-radius:3px;cursor:pointer;transition:all .2s}
+.quiz-back-btn:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
+
+/* QUIZ RESULT */
+.quiz-result{text-align:center;padding:20px 0}
+.quiz-result-eyebrow{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+.quiz-result-title{font-family:'Cinzel Decorative',serif;font-size:clamp(24px,4vw,40px);margin-bottom:8px;line-height:1.2}
+.quiz-result-sub{font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px}
+.quiz-result-desc{font-size:15px;font-weight:300;color:var(--tdim);line-height:1.8;margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto}
+.quiz-result-cta{display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;text-decoration:none;transition:background .2s}
+.quiz-result-cta:hover{background:#a93226}
+.quiz-result-reset{background:none;border:none;color:var(--tmuted);font-size:12px;cursor:pointer;margin-top:16px;display:block;margin-left:auto;margin-right:auto;transition:color .2s}
+.quiz-result-reset:hover{color:var(--text)}
+
 /* RESPEC CONFIRM */
 .respec-confirm{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.55);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .3s}
 .respec-confirm.open{opacity:1;pointer-events:all}
@@ -220,6 +261,22 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 <button class="tutorial-reopen-btn" id="tutorialReopenBtn" onclick="reopenTutorial()">▶ Tutorial</button>
 
+<div class="quiz-panel" id="quizPanel">
+  <div class="quiz-panel-header">
+    <div>
+      <div class="quiz-panel-title">Pillar Assessment</div>
+      <div class="quiz-panel-sub">Find your primary gap</div>
+    </div>
+    <button class="quiz-panel-close" onclick="closeQuiz()">✕</button>
+  </div>
+  <div class="quiz-progress"><div class="quiz-progress-fill" id="quizProgressFill" style="width:0%"></div></div>
+  <div class="quiz-body" id="quizBody"></div>
+  <div class="quiz-footer" id="quizFooter">
+    <button class="quiz-back-btn" id="quizBackBtn" onclick="quizBack()">← Back</button>
+    <button class="quiz-next-btn" id="quizNextBtn" onclick="quizNext()">Next →</button>
+  </div>
+</div>
+
 <button class="respec-btn" id="respecBtn">
   ↺
   <span class="respec-tooltip">Respec Skill Points</span>
@@ -306,6 +363,14 @@ var W = 1800, H = 2400;
 var CX = 900; // center x
 var SPHERE_Y = 780; // sphere center y
 var SPHERE_R = 130; // sphere radius
+
+// The Oracle position — floating like a moon, off to the right
+var ORACLE_X = 1420;
+var ORACLE_Y = 420;
+var ORACLE_R = 55;
+var oracleActivated = false;
+var oraclePulse = 0;
+var oracleParticles = [];
 
 // Pre-game node positions, arc above sphere
 var PREGAME_ANGLES = [-90, -45, 0, 45, 90]; // degrees, spread above sphere
@@ -508,6 +573,62 @@ function buildClickTargets(){
       svg.appendChild(g);
     });
   });
+
+  // Oracle click target
+  var oracleSvg = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  oracleSvg.setAttribute('cx', ORACLE_X);
+  oracleSvg.setAttribute('cy', ORACLE_Y);
+  oracleSvg.setAttribute('r', ORACLE_R + 30);
+  oracleSvg.setAttribute('fill','transparent');
+  oracleSvg.setAttribute('stroke','none');
+  oracleSvg.style.cursor='pointer';
+  oracleSvg.addEventListener('mousedown',function(e){e.stopPropagation();});
+  oracleSvg.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(!drag.moved) openQuiz();
+  });
+  oracleSvg.addEventListener('mouseenter',function(e){
+    var tt=document.getElementById('nodeTooltip');
+    document.getElementById('ttNum').textContent='Astral Artifact';
+    document.getElementById('ttName').textContent='The Oracle';
+    document.getElementById('ttAction').textContent=window.quizResult?'Assessment complete':'Tap to discover your path';
+    var x=e.clientX+16,y=e.clientY-40;
+    if(x+220>window.innerWidth)x=e.clientX-230;
+    if(y<70)y=e.clientY+16;
+    tt.style.left=x+'px';tt.style.top=y+'px';
+    tt.classList.add('visible');
+  });
+  oracleSvg.addEventListener('mouseleave',function(){document.getElementById('nodeTooltip').classList.remove('visible');});
+  svg.appendChild(oracleSvg);
+
+  // Badge hover target
+  if(window.quizResult){
+    var pillarNames = {vitality:'Vitality', spirit:'Spirit', alignment:'Alignment'};
+    var badgeSvg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    var bx2 = ORACLE_X + ORACLE_R + 50;
+    var by2 = ORACLE_Y - 10;
+    badgeSvg.setAttribute('x', bx2);
+    badgeSvg.setAttribute('y', by2);
+    badgeSvg.setAttribute('width', 160);
+    badgeSvg.setAttribute('height', 54);
+    badgeSvg.setAttribute('rx', 4);
+    badgeSvg.setAttribute('fill','transparent');
+    badgeSvg.setAttribute('stroke','none');
+    badgeSvg.style.cursor='default';
+    badgeSvg.addEventListener('mouseenter',function(e){
+      var tt=document.getElementById('nodeTooltip');
+      document.getElementById('ttNum').textContent='Skill focus';
+      document.getElementById('ttName').textContent=pillarNames[window.quizResult]+' Pillar';
+      document.getElementById('ttAction').textContent='This is where you may benefit the most at this time';
+      var x=e.clientX+16,y=e.clientY-40;
+      if(x+260>window.innerWidth)x=e.clientX-270;
+      if(y<70)y=e.clientY+16;
+      tt.style.left=x+'px';tt.style.top=y+'px';
+      tt.classList.add('visible');
+    });
+    badgeSvg.addEventListener('mouseleave',function(){document.getElementById('nodeTooltip').classList.remove('visible');});
+    svg.appendChild(badgeSvg);
+  }
 }
 
 // ---- DRAW ----
@@ -551,8 +672,211 @@ function drawFrame(){
   drawPillarNodes();
   updateParticles();
   if(completed.length < 5) updatePulseWaves(charge);
+  drawOracle();
+  updateOracleParticles();
+  drawOracleBadge();
 
   requestAnimationFrame(drawFrame);
+}
+
+function drawOracle(){
+  var t2 = t;
+  var pulse = 1 + Math.sin(t2 * 0.018) * 0.04;
+  var pr = ORACLE_R * pulse;
+  var activated = oracleActivated || window.quizResult;
+  var pillarColors = {vitality:'#ff6644', spirit:'#bb99ff', alignment:'#55ffaa'};
+  var activeColor = activated ? (pillarColors[window.quizResult] || '#bb99ff') : null;
+
+  // Slow orbit ring around oracle
+  treeCtx.save();
+  treeCtx.strokeStyle = activated ? (activeColor || 'rgba(180,140,255,0.6)') : 'rgba(180,140,255,0.12)';
+  treeCtx.lineWidth = 0.6;
+  treeCtx.globalAlpha = 1;
+  treeCtx.setLineDash([3,6]);
+  treeCtx.beginPath();
+  treeCtx.arc(ORACLE_X, ORACLE_Y, pr + 28, 0, Math.PI*2);
+  treeCtx.stroke();
+  treeCtx.restore();
+
+  // Rotating particle on orbit ring
+  var angle = t2 * 0.008;
+  var ox = ORACLE_X + Math.cos(angle) * (pr + 28);
+  var oy = ORACLE_Y + Math.sin(angle) * (pr + 28);
+  treeCtx.save();
+  treeCtx.fillStyle = activated ? (activeColor || 'rgba(180,140,255,0.8)') : 'rgba(180,140,255,0.35)';
+  treeCtx.shadowBlur = activated ? 12 : 6;
+  treeCtx.shadowColor = activated ? (activeColor || '#bb99ff') : '#bb99ff';
+  treeCtx.beginPath();
+  treeCtx.arc(ox, oy, activated ? 3 : 2, 0, Math.PI*2);
+  treeCtx.fill();
+  treeCtx.restore();
+
+  // Second slower orbit
+  var angle2 = -t2 * 0.005 + 2.1;
+  var ox2 = ORACLE_X + Math.cos(angle2) * (pr + 28);
+  var oy2 = ORACLE_Y + Math.sin(angle2) * (pr + 28);
+  treeCtx.save();
+  treeCtx.fillStyle = activated ? (activeColor || 'rgba(180,140,255,0.5)') : 'rgba(180,140,255,0.2)';
+  treeCtx.beginPath();
+  treeCtx.arc(ox2, oy2, 1.5, 0, Math.PI*2);
+  treeCtx.fill();
+  treeCtx.restore();
+
+  // Outer bloom
+  if(activated){
+    var bloom = treeCtx.createRadialGradient(ORACLE_X, ORACLE_Y, pr, ORACLE_X, ORACLE_Y, pr+60);
+    var bloomColors = {vitality:'rgba(255,100,68,', spirit:'rgba(187,153,255,', alignment:'rgba(85,255,170,'};
+    var bloomCol = bloomColors[window.quizResult] || 'rgba(187,153,255,';
+    bloom.addColorStop(0, bloomCol+'0.15)');
+    bloom.addColorStop(1, 'rgba(0,0,0,0)');
+    treeCtx.fillStyle = bloom;
+    treeCtx.beginPath();
+    treeCtx.arc(ORACLE_X, ORACLE_Y, pr+60, 0, Math.PI*2);
+    treeCtx.fill();
+  }
+
+  // Main body
+  var grad = treeCtx.createRadialGradient(ORACLE_X-pr*0.3, ORACLE_Y-pr*0.3, 0, ORACLE_X, ORACLE_Y, pr);
+  if(activated){
+    grad.addColorStop(0, 'rgba(140,100,255,0.85)');
+    grad.addColorStop(0.4, 'rgba(80,40,160,0.8)');
+    grad.addColorStop(1, 'rgba(10,8,20,0.95)');
+  } else {
+    grad.addColorStop(0, 'rgba(50,30,90,0.7)');
+    grad.addColorStop(0.5, 'rgba(25,15,55,0.8)');
+    grad.addColorStop(1, 'rgba(10,8,20,0.9)');
+  }
+  treeCtx.fillStyle = grad;
+  treeCtx.beginPath();
+  treeCtx.arc(ORACLE_X, ORACLE_Y, pr, 0, Math.PI*2);
+  treeCtx.fill();
+
+  // Outer stroke
+  treeCtx.save();
+  treeCtx.strokeStyle = activated ? (activeColor || '#bb99ff') : 'rgba(180,140,255,0.25)';
+  treeCtx.lineWidth = activated ? 1.5 : 0.8;
+  if(activated){ treeCtx.shadowBlur=16; treeCtx.shadowColor=activeColor||'#bb99ff'; }
+  treeCtx.setLineDash([]);
+  treeCtx.beginPath();
+  treeCtx.arc(ORACLE_X, ORACLE_Y, pr, 0, Math.PI*2);
+  treeCtx.stroke();
+  treeCtx.restore();
+
+  // Inner ring
+  treeCtx.save();
+  treeCtx.strokeStyle = activated ? 'rgba(200,170,255,0.5)' : 'rgba(180,140,255,0.1)';
+  treeCtx.lineWidth = 0.5;
+  treeCtx.beginPath();
+  treeCtx.arc(ORACLE_X, ORACLE_Y, pr*0.6, 0, Math.PI*2);
+  treeCtx.stroke();
+  treeCtx.restore();
+
+  // Center symbol — eye shape
+  treeCtx.save();
+  treeCtx.fillStyle = activated ? 'rgba(220,190,255,0.9)' : 'rgba(180,140,255,0.3)';
+  if(activated){ treeCtx.shadowBlur=10; treeCtx.shadowColor='#bb99ff'; }
+  treeCtx.beginPath();
+  treeCtx.arc(ORACLE_X, ORACLE_Y, activated ? 5 : 3.5, 0, Math.PI*2);
+  treeCtx.fill();
+  treeCtx.restore();
+
+  // Ignition pulse ring when activated
+  if(oraclePulse > 0){
+    treeCtx.save();
+    treeCtx.strokeStyle = 'rgba(200,170,255,' + (oraclePulse * 0.7) + ')';
+    treeCtx.lineWidth = 2;
+    treeCtx.beginPath();
+    treeCtx.arc(ORACLE_X, ORACLE_Y, pr + (1-oraclePulse)*120, 0, Math.PI*2);
+    treeCtx.stroke();
+    treeCtx.restore();
+    oraclePulse = Math.max(0, oraclePulse - 0.006);
+  }
+
+  // Label — "The Oracle" in Cinzel
+  treeCtx.save();
+  treeCtx.fillStyle = activated ? 'rgba(200,170,255,0.7)' : 'rgba(180,140,255,0.2)';
+  treeCtx.font = '400 11px Cinzel, serif';
+  treeCtx.textAlign = 'center';
+  treeCtx.letterSpacing = '0.1em';
+  treeCtx.fillText('The Oracle', ORACLE_X, ORACLE_Y + pr + 20);
+  if(!activated){
+    treeCtx.fillStyle = 'rgba(180,140,255,0.15)';
+    treeCtx.font = '300 9px Cinzel, serif';
+    treeCtx.fillText('Tap to discover', ORACLE_X, ORACLE_Y + pr + 34);
+  } else {
+    treeCtx.fillStyle = 'rgba(200,170,255,0.4)';
+    treeCtx.font = '300 9px Cinzel, serif';
+    treeCtx.fillText('Assessment complete', ORACLE_X, ORACLE_Y + pr + 34);
+  }
+  treeCtx.restore();
+}
+
+function updateOracleParticles(){
+  // No flowing particles — oracle uses badge and pillar glow instead
+}
+
+function drawOracleBadge(){
+  if(!window.quizResult) return;
+  var pillarNames = {vitality:'Vitality', spirit:'Spirit', alignment:'Alignment'};
+  var pillarColors = {vitality:'#ff6644', spirit:'#bb99ff', alignment:'#55ffaa'};
+  var name = pillarNames[window.quizResult];
+  var color = pillarColors[window.quizResult];
+  var bx = ORACLE_X + ORACLE_R + 50;
+  var by = ORACLE_Y - 10;
+  var bw = 160;
+  var bh = 54;
+  var pulse = 0.85 + Math.sin(t * 0.02) * 0.15;
+
+  // Badge background
+  treeCtx.save();
+  treeCtx.globalAlpha = pulse;
+  treeCtx.fillStyle = 'rgba(10,8,20,0.92)';
+  treeCtx.strokeStyle = color;
+  treeCtx.lineWidth = 1;
+  treeCtx.shadowBlur = 12;
+  treeCtx.shadowColor = color;
+  roundRect(treeCtx, bx, by, bw, bh, 4);
+  treeCtx.fill();
+  treeCtx.stroke();
+  treeCtx.restore();
+
+  // Badge text
+  treeCtx.save();
+  treeCtx.globalAlpha = pulse;
+  treeCtx.textAlign = 'left';
+  treeCtx.font = '400 9px Cinzel, serif';
+  treeCtx.fillStyle = 'rgba(240,236,228,0.45)';
+  treeCtx.fillText('YOUR PATH', bx + 12, by + 18);
+  treeCtx.font = '600 15px Cinzel, serif';
+  treeCtx.fillStyle = color;
+  treeCtx.shadowBlur = 8;
+  treeCtx.shadowColor = color;
+  treeCtx.fillText(name.toUpperCase(), bx + 12, by + 38);
+  treeCtx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+function checkOracleClick(svgX, svgY){
+  var dist = Math.sqrt(Math.pow(svgX-ORACLE_X,2)+Math.pow(svgY-ORACLE_Y,2));
+  return dist <= ORACLE_R + 30;
+}
+
+function activateOracle(){
+  oracleActivated = true;
+  oraclePulse = 1;
 }
 
 function drawConnections(){
@@ -927,17 +1251,23 @@ function drawPillarBranches(){
 
   // Pillar labels
   var labels = [
-    {x:VITALITY_X, y:PILLAR_Y-20, text:'VITALITY',  color:'#ff6644'},
-    {x:SPIRIT_X,   y:PILLAR_Y-20, text:'SPIRIT',    color:'#bb99ff'},
-    {x:ALIGNMENT_X,y:PILLAR_Y-20, text:'ALIGNMENT', color:'#55ffaa'},
+    {x:VITALITY_X, y:PILLAR_Y-20, text:'VITALITY',  color:'#ff6644', key:'vitality'},
+    {x:SPIRIT_X,   y:PILLAR_Y-20, text:'SPIRIT',    color:'#bb99ff', key:'spirit'},
+    {x:ALIGNMENT_X,y:PILLAR_Y-20, text:'ALIGNMENT', color:'#55ffaa', key:'alignment'},
   ];
   labels.forEach(function(l){
+    var isWinner = window.quizResult && window.quizResult === l.key;
+    var dormantAlpha = allDone ? 0.85 : 0.28;
+    var alpha = isWinner ? 1 : (window.quizResult ? 0.15 : dormantAlpha);
     treeCtx.save();
     treeCtx.fillStyle = l.color;
     treeCtx.font = '600 20px Cinzel, serif';
     treeCtx.textAlign = 'center';
-    treeCtx.globalAlpha = allDone ? 0.85 : 0.28;
-    if(allDone){treeCtx.shadowBlur=8;treeCtx.shadowColor=l.color;}
+    treeCtx.globalAlpha = alpha;
+    if(isWinner || allDone){
+      treeCtx.shadowBlur = isWinner ? 16 : 8;
+      treeCtx.shadowColor = l.color;
+    }
     treeCtx.fillText(l.text, l.x, l.y);
     treeCtx.restore();
   });
@@ -1243,10 +1573,12 @@ function applyTransform(){
 function centerTree(){
   var wrap=document.getElementById('canvasWrap');
   var vw=wrap.offsetWidth,vh=wrap.offsetHeight;
-  var targetScale=Math.min(0.52,vw/W*0.9);
+  // Center between sphere and oracle horizontally
+  var midX = (CX + ORACLE_X) / 2;
+  var targetScale=Math.min(0.45,vw/W*0.85);
   transform.scale=targetScale;
-  transform.x=(vw/2)-(CX*transform.scale);
-  transform.y=Math.max(10,(vh/2)-(SPHERE_Y*transform.scale)-40);
+  transform.x=(vw/2)-(midX*transform.scale);
+  transform.y=Math.max(10,(vh/2)-(SPHERE_Y*transform.scale)-20);
   applyTransform();
 }
 
@@ -1442,6 +1774,201 @@ document.getElementById('respecConfirmYes').onclick=function(e){
   if(existing)existing.remove();
   document.getElementById('respecConfirm').classList.remove('open');
 };
+
+// ---- QUIZ ----
+var QUIZ_QUESTIONS = [
+  {pillar:'vitality', num:1, text:'How would you describe your relationship with your body right now?', options:[
+    {text:'I feel comfortable and confident in how I look and move', score:0},
+    {text:'I feel okay but wish I was stronger or leaner', score:1},
+    {text:'I feel disconnected from my body and not happy with what I see', score:2},
+    {text:'I actively avoid mirrors and feel ashamed of where I am', score:3}
+  ]},
+  {pillar:'vitality', num:2, text:'When it comes to food, which feels most true?', options:[
+    {text:'I eat well and have a good handle on nutrition', score:0},
+    {text:'I eat okay but I know my habits could be better', score:1},
+    {text:'Food feels complicated. I eat emotionally or struggle with consistency', score:2},
+    {text:'I have very little knowledge of nutrition and feel lost with it', score:3}
+  ]},
+  {pillar:'vitality', num:3, text:'What is your history with training?', options:[
+    {text:'I train consistently and have good results', score:0},
+    {text:'I train but have never seen the results I was hoping for', score:1},
+    {text:'I have tried before but always ended up quitting', score:2},
+    {text:'I have never really trained consistently or am completely new to this', score:3}
+  ]},
+  {pillar:'spirit', num:4, text:'When you imagine yourself succeeding at this program, what comes up first?', options:[
+    {text:'Excitement. I can see it happening', score:0},
+    {text:'Hope mixed with doubt. I want to believe it but I am not sure', score:1},
+    {text:'Fear. What if I fail again like I have before', score:2},
+    {text:'Numbness. I have stopped letting myself picture it', score:3}
+  ]},
+  {pillar:'spirit', num:5, text:'How would you describe your current mental and emotional state?', options:[
+    {text:'I feel good overall. Motivated and fairly stable', score:0},
+    {text:'I have up and down periods but I manage', score:1},
+    {text:'Anxiety or low mood affects my daily life more than I would like', score:2},
+    {text:'I feel stuck, hopeless, or like things will not change no matter what I do', score:3}
+  ]},
+  {pillar:'spirit', num:6, text:'When things get hard or do not go to plan, what usually happens?', options:[
+    {text:'I adjust and keep going', score:0},
+    {text:'I slow down but eventually get back on track', score:1},
+    {text:'I shut down, overthink, and struggle to restart', score:2},
+    {text:'I quit and feel like it confirms I was never going to succeed anyway', score:3}
+  ]},
+  {pillar:'alignment', num:7, text:'How clear are you on what you actually want your life to look like?', options:[
+    {text:'Very clear. I know exactly where I am going', score:0},
+    {text:'I have a general idea but it feels vague', score:1},
+    {text:'I used to know but I feel lost or burned out right now', score:2},
+    {text:'I have no idea and that uncertainty weighs on me', score:3}
+  ]},
+  {pillar:'alignment', num:8, text:'How would you describe your energy toward your own goals right now?', options:[
+    {text:'Fired up and ready to move', score:0},
+    {text:'Interested but scattered. I start things and do not finish them', score:1},
+    {text:'Drained. I give a lot to others and have little left for myself', score:2},
+    {text:'Checked out. I am going through the motions but feel no real drive', score:3}
+  ]},
+  {pillar:'alignment', num:9, text:'When you think about your future, how does it feel?', options:[
+    {text:'Exciting. I feel like the best is ahead of me', score:0},
+    {text:'Uncertain. I hope things get better but I am not sure how', score:1},
+    {text:'Heavy. I have a lot I want but do not believe I can have it', score:2},
+    {text:'Empty. I have stopped thinking that far ahead', score:3}
+  ]}
+];
+
+var QUIZ_RESULTS = {
+  vitality:{
+    title:'Vitality',
+    color:'#ff6644',
+    desc:'Your body is the foundation everything else is built on, and right now that foundation needs the most attention. Whether it is your relationship with food, your history with training, or simply not feeling at home in your own body yet, this is where the program will unlock the most for you first. The physical work is not just about how you look. It is about building a body you can trust.'
+  },
+  spirit:{
+    title:'Spirit',
+    color:'#bb99ff',
+    desc:'For you, the inner game is where the most growth is waiting. The beliefs you carry about yourself, the fear of failing again, the anxiety and low mood that make it hard to stay consistent, these are the things this program is specifically built to address. Emotional regulation, mental health, and learning to feel difficulty without letting it run your decisions are all built into this pillar. You already have the drive. What you need are the tools to trust it.'
+  },
+  alignment:{
+    title:'Alignment',
+    color:'#55ffaa',
+    desc:'You have drive. You have capability. What is missing is direction. The Alignment pillar is where we get clear on what you actually want, build systems around it, and design a life that matches the person you are becoming rather than the one you have been performing.'
+  }
+};
+
+var quizStep = 0;
+var quizAnswers = [];
+var quizSelected = null;
+
+function openQuiz(){
+  quizStep = 0;
+  quizAnswers = [];
+  quizSelected = null;
+  document.getElementById('quizPanel').classList.add('open');
+  renderQuizStep();
+}
+
+function closeQuiz(){
+  document.getElementById('quizPanel').classList.remove('open');
+}
+
+function renderQuizStep(){
+  var body = document.getElementById('quizBody');
+  var nextBtn = document.getElementById('quizNextBtn');
+  var backBtn = document.getElementById('quizBackBtn');
+  var fill = document.getElementById('quizProgressFill');
+
+  fill.style.width = ((quizStep / QUIZ_QUESTIONS.length) * 100) + '%';
+  backBtn.style.visibility = quizStep > 0 ? 'visible' : 'hidden';
+  quizSelected = quizAnswers[quizStep] !== undefined ? quizAnswers[quizStep] : null;
+  nextBtn.className = 'quiz-next-btn' + (quizSelected !== null ? ' active' : '');
+  nextBtn.textContent = quizStep === QUIZ_QUESTIONS.length - 1 ? 'See My Results →' : 'Next →';
+
+  var q = QUIZ_QUESTIONS[quizStep];
+  var html = '<div class="quiz-question">';
+  html += '<div class="quiz-q-label">Question ' + (quizStep + 1) + ' of ' + QUIZ_QUESTIONS.length + '</div>';
+  html += '<div class="quiz-q-text">' + q.text + '</div>';
+  html += '<div class="quiz-options">';
+  q.options.forEach(function(opt, i){
+    var sel = quizSelected === i ? ' selected' : '';
+    html += '<button class="quiz-option' + sel + '" onclick="selectQuizOption(' + i + ')">' + opt.text + '</button>';
+  });
+  html += '</div></div>';
+  body.innerHTML = html;
+  body.scrollTop = 0;
+}
+
+function selectQuizOption(idx){
+  quizSelected = idx;
+  quizAnswers[quizStep] = idx;
+  document.getElementById('quizNextBtn').className = 'quiz-next-btn active';
+  var opts = document.querySelectorAll('.quiz-option');
+  opts.forEach(function(o, i){ o.classList.toggle('selected', i === idx); });
+}
+
+function quizNext(){
+  if(quizSelected === null) return;
+  quizAnswers[quizStep] = quizSelected;
+  if(quizStep < QUIZ_QUESTIONS.length - 1){
+    quizStep++;
+    quizSelected = quizAnswers[quizStep] !== undefined ? quizAnswers[quizStep] : null;
+    renderQuizStep();
+  } else {
+    showQuizResult();
+  }
+}
+
+function quizBack(){
+  if(quizStep > 0){
+    quizStep--;
+    quizSelected = quizAnswers[quizStep] !== undefined ? quizAnswers[quizStep] : null;
+    renderQuizStep();
+  }
+}
+
+function showQuizResult(){
+  var scores = {vitality:0, spirit:0, alignment:0};
+  QUIZ_QUESTIONS.forEach(function(q, i){
+    if(quizAnswers[i] !== undefined){
+      scores[q.pillar] += q.options[quizAnswers[i]].score;
+    }
+  });
+  var winner = Object.keys(scores).reduce(function(a,b){ return scores[a] >= scores[b] ? a : b; });
+  var result = QUIZ_RESULTS[winner];
+
+  document.getElementById('quizProgressFill').style.width = '100%';
+  document.getElementById('quizFooter').style.display = 'none';
+
+  var body = document.getElementById('quizBody');
+  body.innerHTML = '<div class="quiz-result">' +
+    '<div class="quiz-result-eyebrow">Your skill focus</div>' +
+    '<div class="quiz-result-title" style="color:' + result.color + '">' + result.title + '</div>' +
+    '<div class="quiz-result-sub">Pillar of Ascension</div>' +
+    '<div class="quiz-result-desc">' + result.desc + '</div>' +
+    '<button class="quiz-result-reset" onclick="retakeQuiz()">Retake the assessment</button>' +
+    '<button class="quiz-result-reset" onclick="closeQuiz()">Continue exploring →</button>' +
+    '</div>';
+
+  // Activate the Oracle
+  window.quizResult = winner;
+  activateOracle();
+  buildClickTargets();
+}
+
+function activateOracleFromQuiz(){
+  window.quizResult = window.quizResult;
+  activateOracle();
+  // Send energy from oracle to winning pillar
+  oraclePulse = 1;
+}
+
+function retakeQuiz(){
+  document.getElementById('quizFooter').style.display = '';
+  quizStep = 0;
+  quizAnswers = [];
+  quizSelected = null;
+  renderQuizStep();
+}
+
+function quizHighlightPillar(pillar){
+  // Store result for tree to use
+  window.quizResult = pillar;
+}
 
 // ---- LESSON SYSTEM ----
 var lessonOrder=['gap','training','nutrition','journaling','reading'];
