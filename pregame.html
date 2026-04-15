@@ -73,39 +73,45 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .quiz-float-label{font-family:'Cinzel',serif;font-size:8px;font-weight:400;letter-spacing:.06em;color:rgba(201,168,76,.6);writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);line-height:1.3}
 
 /* QUIZ PANEL */
-.quiz-panel{position:fixed;inset:0;z-index:300;background:rgba(8,8,16,.97);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.quiz-panel{position:fixed;inset:0;z-index:300;background:rgba(6,6,14,.98);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);overflow:hidden}
 .quiz-panel.open{transform:translateY(0)}
-.quiz-panel-header{flex-shrink:0;padding:20px 28px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
-.quiz-panel-title{font-family:'Cinzel Decorative',serif;font-size:18px;color:var(--text);line-height:1}
-.quiz-panel-sub{font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.06em;margin-top:4px}
-.quiz-panel-close{width:36px;height:36px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:3px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.quiz-body{flex:1;overflow-y:auto;padding:32px 28px;max-width:640px;margin:0 auto;width:100%}
-.quiz-progress{height:2px;background:rgba(255,255,255,.06);flex-shrink:0}
-.quiz-progress-fill{height:100%;background:var(--gold);transition:width .3s}
-.quiz-question{margin-bottom:32px}
-.quiz-q-label{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
-.quiz-q-text{font-family:'Cinzel',serif;font-size:16px;color:var(--text);margin-bottom:20px;line-height:1.5}
-.quiz-options{display:flex;flex-direction:column;gap:10px}
-.quiz-option{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:14px 18px;cursor:pointer;font-size:13px;font-weight:300;color:var(--tdim);transition:all .2s;text-align:left}
-.quiz-option:hover{border-color:rgba(201,168,76,.3);color:var(--text);background:rgba(201,168,76,.04)}
-.quiz-option.selected{border-color:var(--gold);color:var(--text);background:rgba(201,168,76,.08)}
-.quiz-footer{flex-shrink:0;padding:20px 28px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}
-.quiz-next-btn{background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:11px 24px;border-radius:3px;border:none;cursor:pointer;transition:background .2s;opacity:.4;pointer-events:none}
+.quiz-nebula{position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 30% 40%,rgba(80,0,140,.18) 0%,transparent 60%),radial-gradient(ellipse at 70% 60%,rgba(160,20,40,.12) 0%,transparent 55%),radial-gradient(ellipse at 50% 20%,rgba(40,0,100,.1) 0%,transparent 50%)}
+.quiz-panel-header{flex-shrink:0;padding:24px 32px;border-bottom:1px solid rgba(201,168,76,.12);display:flex;align-items:center;justify-content:center;position:relative;z-index:1;text-align:center}
+.quiz-panel-header-inner{display:flex;flex-direction:column;align-items:center;gap:6px}
+.quiz-panel-title-wrap{display:flex;align-items:center;gap:10px;justify-content:center}
+.quiz-header-dot{width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,.8);animation:hint-blink 2s ease-in-out infinite;flex-shrink:0}
+.quiz-panel-title{font-family:'Cinzel Decorative',serif;font-size:22px;color:var(--text);line-height:1;letter-spacing:.04em}
+.quiz-panel-sub{font-family:'Cinzel',serif;font-size:10px;font-weight:400;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.quiz-panel-close{position:absolute;right:24px;top:50%;transform:translateY(-50%);width:36px;height:36px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:3px;color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.quiz-panel-close:hover{background:rgba(255,255,255,.1)}
+.quiz-progress{height:3px;background:rgba(255,255,255,.05);flex-shrink:0;position:relative;z-index:1}
+.quiz-progress-fill{height:100%;background:linear-gradient(to right,rgba(201,168,76,.6),var(--gold));transition:width .4s ease;box-shadow:0 0 8px rgba(201,168,76,.4)}
+.quiz-body{flex:1;overflow-y:auto;padding:40px 32px;max-width:680px;margin:0 auto;width:100%;position:relative;z-index:1}
+.quiz-question{animation:quiz-slide-in .3s ease}
+@keyframes quiz-slide-in{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+.quiz-q-label{font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;opacity:.8}
+.quiz-q-text{font-family:'Cinzel',serif;font-size:18px;color:var(--text);margin-bottom:28px;line-height:1.6;font-weight:400}
+.quiz-options{display:flex;flex-direction:column;gap:12px}
+.quiz-option{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.07);border-left:3px solid transparent;border-radius:0 4px 4px 0;padding:16px 20px;cursor:pointer;font-size:14px;font-weight:300;color:var(--tdim);transition:all .25s;text-align:left;line-height:1.5}
+.quiz-option:hover{border-left-color:rgba(201,168,76,.4);color:var(--text);background:rgba(201,168,76,.03)}
+.quiz-option.selected{border-left-color:var(--gold);color:var(--text);background:rgba(201,168,76,.07);box-shadow:0 0 20px rgba(201,168,76,.06)}
+.quiz-footer{flex-shrink:0;padding:20px 32px;border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
+.quiz-next-btn{background:var(--red);color:#fff;font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:.08em;padding:12px 28px;border-radius:3px;border:none;cursor:pointer;transition:all .2s;opacity:.3;pointer-events:none}
 .quiz-next-btn.active{opacity:1;pointer-events:all}
-.quiz-next-btn.active:hover{background:#a93226}
-.quiz-back-btn{background:transparent;border:1px solid rgba(255,255,255,.1);color:var(--tdim);font-size:13px;font-weight:300;padding:11px 18px;border-radius:3px;cursor:pointer;transition:all .2s}
+.quiz-next-btn.active:hover{background:#a93226;transform:translateY(-1px)}
+.quiz-back-btn{background:transparent;border:1px solid rgba(255,255,255,.08);color:var(--tmuted);font-size:12px;font-weight:300;padding:12px 18px;border-radius:3px;cursor:pointer;transition:all .2s}
 .quiz-back-btn:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
 
 /* QUIZ RESULT */
-.quiz-result{text-align:center;padding:20px 0}
-.quiz-result-eyebrow{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
-.quiz-result-title{font-family:'Cinzel Decorative',serif;font-size:clamp(24px,4vw,40px);margin-bottom:8px;line-height:1.2}
-.quiz-result-sub{font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px}
-.quiz-result-desc{font-size:15px;font-weight:300;color:var(--tdim);line-height:1.8;margin-bottom:32px;max-width:520px;margin-left:auto;margin-right:auto}
-.quiz-result-cta{display:inline-flex;align-items:center;gap:8px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;text-decoration:none;transition:background .2s}
-.quiz-result-cta:hover{background:#a93226}
-.quiz-result-reset{background:none;border:none;color:var(--tmuted);font-size:12px;cursor:pointer;margin-top:16px;display:block;margin-left:auto;margin-right:auto;transition:color .2s}
-.quiz-result-reset:hover{color:var(--text)}
+.quiz-result{text-align:center;padding:20px 0;animation:quiz-slide-in .4s ease}
+.quiz-result-eyebrow{font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;opacity:.8}
+.quiz-result-title{font-family:'Cinzel Decorative',serif;font-size:clamp(32px,5vw,56px);margin-bottom:8px;line-height:1.1;animation:result-bloom .6s ease}
+@keyframes result-bloom{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+.quiz-result-sub{font-family:'Cinzel',serif;font-size:10px;font-weight:400;color:var(--tmuted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:32px}
+.quiz-result-desc{font-size:15px;font-weight:300;color:var(--tdim);line-height:1.85;margin-bottom:36px;max-width:540px;margin-left:auto;margin-right:auto}
+.quiz-result-reset{background:none;border:1px solid rgba(255,255,255,.08);color:var(--tmuted);font-size:12px;font-weight:300;cursor:pointer;margin-top:12px;display:inline-block;padding:10px 20px;border-radius:3px;transition:all .2s}
+.quiz-result-reset:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
+.quiz-result-actions{display:flex;flex-direction:column;align-items:center;gap:12px}
 
 /* RESPEC CONFIRM */
 .respec-confirm{position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.55);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .3s}
@@ -262,10 +268,15 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 <button class="tutorial-reopen-btn" id="tutorialReopenBtn" onclick="reopenTutorial()">▶ Tutorial</button>
 
 <div class="quiz-panel" id="quizPanel">
+  <div class="quiz-nebula"></div>
   <div class="quiz-panel-header">
-    <div>
-      <div class="quiz-panel-title">Pillar Assessment</div>
-      <div class="quiz-panel-sub">Find your primary gap</div>
+    <div class="quiz-panel-header-inner">
+      <div class="quiz-panel-title-wrap">
+        <div class="quiz-header-dot"></div>
+        <div class="quiz-panel-title">Pillar Assessment</div>
+        <div class="quiz-header-dot"></div>
+      </div>
+      <div class="quiz-panel-sub">Discover your skill focus</div>
     </div>
     <button class="quiz-panel-close" onclick="closeQuiz()">✕</button>
   </div>
@@ -1856,6 +1867,14 @@ var quizAnswers = [];
 var quizSelected = null;
 
 function openQuiz(){
+  if(window.quizResult){
+    // Already completed — show result screen directly
+    document.getElementById('quizPanel').classList.add('open');
+    document.getElementById('quizProgressFill').style.width='100%';
+    document.getElementById('quizFooter').style.display='none';
+    showQuizResult(true);
+    return;
+  }
   quizStep = 0;
   quizAnswers = [];
   quizSelected = null;
@@ -1921,14 +1940,19 @@ function quizBack(){
   }
 }
 
-function showQuizResult(){
-  var scores = {vitality:0, spirit:0, alignment:0};
-  QUIZ_QUESTIONS.forEach(function(q, i){
-    if(quizAnswers[i] !== undefined){
-      scores[q.pillar] += q.options[quizAnswers[i]].score;
-    }
-  });
-  var winner = Object.keys(scores).reduce(function(a,b){ return scores[a] >= scores[b] ? a : b; });
+function showQuizResult(useExisting){
+  var winner;
+  if(useExisting && window.quizResult){
+    winner = window.quizResult;
+  } else {
+    var scores = {vitality:0, spirit:0, alignment:0};
+    QUIZ_QUESTIONS.forEach(function(q, i){
+      if(quizAnswers[i] !== undefined){
+        scores[q.pillar] += q.options[quizAnswers[i]].score;
+      }
+    });
+    winner = Object.keys(scores).reduce(function(a,b){ return scores[a] >= scores[b] ? a : b; });
+  }
   var result = QUIZ_RESULTS[winner];
 
   document.getElementById('quizProgressFill').style.width = '100%';
@@ -1940,8 +1964,10 @@ function showQuizResult(){
     '<div class="quiz-result-title" style="color:' + result.color + '">' + result.title + '</div>' +
     '<div class="quiz-result-sub">Pillar of Ascension</div>' +
     '<div class="quiz-result-desc">' + result.desc + '</div>' +
+    '<div class="quiz-result-actions">' +
     '<button class="quiz-result-reset" onclick="retakeQuiz()">Retake the assessment</button>' +
     '<button class="quiz-result-reset" onclick="closeQuiz()">Continue exploring →</button>' +
+    '</div>' +
     '</div>';
 
   // Activate the Oracle
@@ -1959,9 +1985,12 @@ function activateOracleFromQuiz(){
 
 function retakeQuiz(){
   document.getElementById('quizFooter').style.display = '';
+  window.quizResult = null;
+  oracleActivated = false;
   quizStep = 0;
   quizAnswers = [];
   quizSelected = null;
+  buildClickTargets();
   renderQuizStep();
 }
 
