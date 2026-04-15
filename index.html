@@ -162,6 +162,22 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .skilltree-pill.alignment{color:#55ffaa;border-color:rgba(85,255,170,.3);background:rgba(85,255,170,.06)}
 @media(max-width:600px){.skilltree-frame{height:420px}}
 .proof-bar{background:var(--bg2);padding:60px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.carousel-wrap{position:relative;display:flex;align-items:center;gap:16px}
+.carousel-viewport{overflow:hidden;flex:1}
+.carousel-track{display:flex;gap:24px;transition:transform .4s cubic-bezier(.25,.1,.25,1)}
+.carousel-slide{flex:0 0 calc(50% - 12px);min-width:0}
+.carousel-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;z-index:2}
+.carousel-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2)}
+.carousel-dots{display:flex;justify-content:center;gap:8px;margin-top:24px}
+.carousel-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.15);border:none;cursor:pointer;transition:all .3s;padding:0}
+.carousel-dot.active{background:var(--red);box-shadow:0 0 6px rgba(192,57,43,.6)}
+.proof-img-wrap{position:relative;cursor:pointer}
+.proof-img-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:rgba(255,255,255,0);transition:all .2s;border-radius:4px}
+.proof-img-wrap:hover .proof-img-overlay{background:rgba(0,0,0,.4);color:#fff}
+@media(max-width:600px){
+  .carousel-slide{flex:0 0 100%}
+  .carousel-btn{width:32px;height:32px;font-size:14px}
+}
 .proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
 .proof-card{padding:32px;background:var(--bg1);position:relative}
 .proof-card::before{content:'"';position:absolute;top:16px;left:24px;font-family:'Bebas Neue',sans-serif;font-size:72px;color:rgba(192,57,43,.15);line-height:1}
@@ -504,29 +520,63 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
 <section class="proof-bar">
   <div class="container">
     <div class="eyebrow" style="margin-bottom:40px"><div class="edot"></div>What clients say</div>
-    <div class="proof-grid">
-      <div class="proof-card">
-        <div class="proof-img-wrap">
-          <img src="https://gamerascension103.github.io/gamer-ascension/Gabemedinaconversation.jpg" alt="Gabe Medina feedback" class="proof-img"/>
+    <div class="carousel-wrap">
+      <button class="carousel-btn carousel-prev" id="proofPrev">&#8592;</button>
+      <div class="carousel-viewport" id="proofViewport">
+        <div class="carousel-track" id="proofTrack">
+          <div class="proof-card carousel-slide">
+            <div class="proof-img-wrap" onclick="openLightbox('https://gamerascension103.github.io/gamer-ascension/Gabemedinaconversation.jpg','Gabe Medina feedback')">
+              <img src="https://gamerascension103.github.io/gamer-ascension/Gabemedinaconversation.jpg" alt="Gabe Medina feedback" class="proof-img"/>
+              <div class="proof-img-overlay">Click to expand</div>
+            </div>
+            <div class="proof-quote">"Honestly by far exceeding expectations. I brag on the knowledge you give me all the time to my girl. Your check in feedback is levels ahead of what I'm used to. There's more trust in your plan and adjustments."</div>
+            <div class="proof-name">Gabe Medina, Active Client</div>
+          </div>
+          <div class="proof-card carousel-slide">
+            <div class="proof-img-wrap" onclick="openLightbox('https://gamerascension103.github.io/gamer-ascension/Chrisdunnquickwin.jpg','Chris Dunn feedback')">
+              <img src="https://gamerascension103.github.io/gamer-ascension/Chrisdunnquickwin.jpg" alt="Chris Dunn feedback" class="proof-img"/>
+              <div class="proof-img-overlay">Click to expand</div>
+            </div>
+            <div class="proof-quote">"Haven't seen that weight since maybe junior year of high school when I was lifting. That's cool af."</div>
+            <div class="proof-name">Chris Dunn, Active Client</div>
+          </div>
+          <div class="proof-card carousel-slide">
+            <div class="proof-img-wrap" onclick="openLightbox('https://gamerascension103.github.io/gamer-ascension/Melissaquickwinconvo.jpg','Melissa Salado feedback')">
+              <img src="https://gamerascension103.github.io/gamer-ascension/Melissaquickwinconvo.jpg" alt="Melissa Salado feedback" class="proof-img"/>
+              <div class="proof-img-overlay">Click to expand</div>
+            </div>
+            <div class="proof-quote">"Thanks coach! I'm feeling better than I have in a long time."</div>
+            <div class="proof-name">Melissa Salado, Active Client</div>
+          </div>
+          <div class="proof-card carousel-slide">
+            <div class="proof-img-wrap" onclick="openLightbox('https://gamerascension103.github.io/gamer-ascension/wespalmerwin.jpg','Wes Palmer feedback')">
+              <img src="https://gamerascension103.github.io/gamer-ascension/wespalmerwin.jpg" alt="Wes Palmer feedback" class="proof-img"/>
+              <div class="proof-img-overlay">Click to expand</div>
+            </div>
+            <div class="proof-quote">"Bro I just fit into 31 jeans. Which is wild because I'm 202. I'm usually sitting at 33."</div>
+            <div class="proof-name">Wes Palmer, Active Client</div>
+          </div>
+          <div class="proof-card carousel-slide">
+            <div class="proof-img-wrap" onclick="openLightbox('https://gamerascension103.github.io/gamer-ascension/melissasaladowin.jpg','Melissa Salado win')">
+              <img src="https://gamerascension103.github.io/gamer-ascension/melissasaladowin.jpg" alt="Melissa Salado win" class="proof-img"/>
+              <div class="proof-img-overlay">Click to expand</div>
+            </div>
+            <div class="proof-quote">"You've made this so easy for me and helped me understand the gym dynamic without fear or self consciousness. Now I love going."</div>
+            <div class="proof-name">Melissa Salado, Active Client</div>
+          </div>
+          <div class="proof-card carousel-slide">
+            <div class="proof-img-wrap" onclick="openLightbox('https://gamerascension103.github.io/gamer-ascension/gabemedinawin.jpg','Gabe Medina win')">
+              <img src="https://gamerascension103.github.io/gamer-ascension/gabemedinawin.jpg" alt="Gabe Medina win" class="proof-img"/>
+              <div class="proof-img-overlay">Click to expand</div>
+            </div>
+            <div class="proof-quote">"Was trying this machine out. Still feel small but just noticed the definition and leanness."</div>
+            <div class="proof-name">Gabe Medina, Active Client</div>
+          </div>
         </div>
-        <div class="proof-quote">"Honestly by far exceeding expectations. I brag on the knowledge you give me all the time to my girl. Your check in feedback is levels ahead of what I'm used to. There's more trust in your plan and adjustments."</div>
-        <div class="proof-name">Gabe Medina, Active Client</div>
       </div>
-      <div class="proof-card">
-        <div class="proof-img-wrap">
-          <img src="https://gamerascension103.github.io/gamer-ascension/Chrisdunnquickwin.jpg" alt="Chris Dunn feedback" class="proof-img"/>
-        </div>
-        <div class="proof-quote">"Haven't seen that weight since maybe junior year of high school when I was lifting. That's cool af."</div>
-        <div class="proof-name">Chris Dunn, Active Client</div>
-      </div>
-      <div class="proof-card">
-        <div class="proof-img-wrap">
-          <img src="https://gamerascension103.github.io/gamer-ascension/Melissaquickwinconvo.jpg" alt="Melissa Salado feedback" class="proof-img"/>
-        </div>
-        <div class="proof-quote">"Thanks coach! I'm feeling better than I have in a long time."</div>
-        <div class="proof-name">Melissa Salado, Active Client</div>
-      </div>
+      <button class="carousel-btn carousel-next" id="proofNext">&#8594;</button>
     </div>
+    <div class="carousel-dots" id="proofDots"></div>
   </div>
 </section>
 
