@@ -875,6 +875,8 @@ function updateEffects(){
       }
       e.life -= 1 / e.duration;
     }
+
+    else if(e.type === 'rankUp'){
       // Large Cinzel text blooms from sphere center, holds, fades
       var rise = progress * 60;
       var alpha = progress < 0.2
