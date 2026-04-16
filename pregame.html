@@ -80,6 +80,15 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .reflect-submit:hover{background:#a93226}
 .reflect-submit.saved{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.3);cursor:default}
 .reflect-xp{display:inline-flex;align-items:center;gap:6px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:.1em;color:var(--gold);opacity:0;transition:opacity .4s;margin-left:12px}
+.xp-popup{position:fixed;pointer-events:none;z-index:9999;font-family:'Cinzel Decorative',serif;font-size:28px;font-weight:700;color:#ffdd55;text-shadow:0 0 20px rgba(255,200,50,.9),0 0 40px rgba(201,168,76,.6),0 0 80px rgba(201,168,76,.3);letter-spacing:.06em;opacity:0;transform:translateY(0px) scale(0.8);transition:none;white-space:nowrap}
+.xp-popup.fire{animation:xp-rise 1.8s ease-out forwards}
+@keyframes xp-rise{
+  0%{opacity:0;transform:translateY(0px) scale(0.8)}
+  15%{opacity:1;transform:translateY(-20px) scale(1.1)}
+  40%{opacity:1;transform:translateY(-50px) scale(1)}
+  70%{opacity:0.8;transform:translateY(-80px) scale(0.95)}
+  100%{opacity:0;transform:translateY(-120px) scale(0.85)}
+}
 .reflect-xp.show{opacity:1}
 
 /* QUIZ BUTTON */
@@ -2071,8 +2080,30 @@ function submitReflection(blockId){
 function markReflectionSaved(blockId){
   var btn = document.getElementById('rsub-'+blockId);
   var xp = document.getElementById('rxp-'+blockId);
-  if(btn){ btn.textContent = 'Saved'; btn.classList.add('saved'); }
+  if(btn){
+    // Get button position for popup
+    var rect = btn.getBoundingClientRect();
+    showXPPopup(rect.left + rect.width/2, rect.top);
+    btn.textContent = 'Saved';
+    btn.classList.add('saved');
+  }
   if(xp){ xp.classList.add('show'); }
+}
+
+function showXPPopup(x, y){
+  var popup = document.createElement('div');
+  popup.className = 'xp-popup';
+  popup.textContent = '+ XP Earned';
+  popup.style.left = (x - 80) + 'px';
+  popup.style.top = (y - 10) + 'px';
+  document.body.appendChild(popup);
+  // Trigger animation next frame
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      popup.classList.add('fire');
+    });
+  });
+  setTimeout(function(){ popup.remove(); }, 2000);
 }
 
 function awardReflectionXP(blockId){
