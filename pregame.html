@@ -58,6 +58,8 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 .respec-cancel{background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--tdim);font-size:13px;font-weight:300;padding:11px 22px;border-radius:3px;cursor:pointer;transition:all .2s}
 .respec-cancel:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
+.reflect-reset-btn{position:fixed;bottom:116px;left:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(255,255,255,.08);border-radius:3px;color:rgba(240,236,228,.2);font-family:'Cinzel',serif;font-size:8px;font-weight:400;letter-spacing:.08em;padding:0 12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px);white-space:nowrap}
+.reflect-reset-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);color:rgba(240,236,228,.5)}
 .tutorial-reopen-btn{position:fixed;bottom:70px;left:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.2);border-radius:3px;color:rgba(201,168,76,.5);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.08em;padding:0 12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px);white-space:nowrap}
 .tutorial-reopen-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.5);color:rgba(201,168,76,.9)}
 .respec-btn{position:fixed;bottom:24px;left:24px;z-index:50;width:36px;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(192,57,43,.2);border-radius:3px;color:rgba(192,57,43,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);opacity:0;pointer-events:none}
@@ -291,6 +293,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 </div>
 
 <button class="tutorial-reopen-btn" id="tutorialReopenBtn" onclick="reopenTutorial()">▶ Tutorial</button>
+<button class="reflect-reset-btn" onclick="resetReflections()" title="Reset all reflection data">↺ Reflections</button>
 
 <div class="quiz-panel" id="quizPanel">
   <div class="quiz-nebula"></div>
@@ -2115,6 +2118,18 @@ function awardReflectionXP(blockId){
     localStorage.setItem(xpKey, current + 10);
   }
   updateRankDisplay();
+}
+
+function resetReflections(){
+  if(!confirm('Clear all saved reflection answers and XP?')) return;
+  Object.keys(localStorage).filter(function(k){ return k.indexOf('ga_reflect') === 0 || k.indexOf('ga_xp') === 0; }).forEach(function(k){ localStorage.removeItem(k); });
+  // Reset any visible saved buttons back to submit
+  document.querySelectorAll('.reflect-submit.saved').forEach(function(btn){
+    btn.textContent = 'Submit Reflection';
+    btn.classList.remove('saved');
+  });
+  document.querySelectorAll('.reflect-xp.show').forEach(function(xp){ xp.classList.remove('show'); });
+  document.querySelectorAll('.reflect-textarea').forEach(function(ta){ ta.value = ''; });
 }
 
 function updateRankDisplay(){
