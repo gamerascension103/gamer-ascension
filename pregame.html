@@ -390,7 +390,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 <script>
 // ---- CONFIG ----
-var W = 2400, H = 2600;
+var W = 2400, H = 3200;
 var CX = 1200; // nexus center x
 var SPHERE_Y = 680; // nexus center y
 var SPHERE_R = 130; // kept for particle compat
@@ -403,17 +403,19 @@ var oracleActivated = false;
 var oraclePulse = 0;
 var oracleParticles = [];
 
-// Pre-game node floating positions — no fixed orbit, each drifts independently
+// Pre-game node floating positions
 var PREGAME_ORBIT = 280;
 
-// Astral constellation centers — equilateral triangle below nexus
-// Nexus at CX=1200, SPHERE_Y=680
-// Triangle: Vitality bottom-left, Alignment bottom-right, Spirit bottom-center lower
-var VITALITY_CX  = 560,  VITALITY_CY  = 1480;
-var SPIRIT_CX    = 1200, SPIRIT_CY    = 1700;
-var ALIGNMENT_CX = 1840, ALIGNMENT_CY = 1480;
+// Tesseract — hub below nexus, distributes energy to all three trees
+var TESSERACT_X = 1200;
+var TESSERACT_Y = 1200;
 
-// Legacy compat (shockwave system uses these)
+// Astral constellation centers — equidistant around Tesseract
+var VITALITY_CX  = 580,  VITALITY_CY  = 1900;
+var SPIRIT_CX    = 1200, SPIRIT_CY    = 2080;
+var ALIGNMENT_CX = 1820, ALIGNMENT_CY = 1900;
+
+// Legacy compat
 var VITALITY_X = VITALITY_CX, SPIRIT_X = SPIRIT_CX, ALIGNMENT_X = ALIGNMENT_CX;
 var PILLAR_Y = 1400;
 
@@ -521,18 +523,83 @@ var hintTimer;
 var energyParticles = []; // node -> nexus
 var flowParticles = [];   // nexus -> pillars
 var nexusIgnited = false;
-var nexusFlare = 0;       // 0-1, drives the ignition arm extension flare
+var nexusFlare = 0;
 
-// Nexus starburst state — arm length grows per module
-var NEXUS_ARM_BASE = 18;   // minimum arm length (dormant)
-var NEXUS_ARM_MAX  = 90;   // fully ignited arm length
-var nexusArmLen = NEXUS_ARM_BASE; // animated toward target each frame
+// Nexus starburst state
+var NEXUS_ARM_BASE = 18;
+var NEXUS_ARM_MAX  = 90;
+var nexusArmLen = NEXUS_ARM_BASE;
+
+// ---- PENTAGON LOCK SYSTEM ----
+// When a node completes it drifts to a fixed pentagon position around the nexus
+// Pentagon is point-up, radius 160px from nexus center
+var PENTAGON_LOCK_R = 160;
+var PENTAGON_ANGLES = [
+  -Math.PI/2,                    // top       (gap/01)
+  -Math.PI/2 + Math.PI*2/5,     // top-right (training/02)
+  -Math.PI/2 + Math.PI*4/5,     // bot-right (nutrition/03)
+  -Math.PI/2 + Math.PI*6/5,     // bot-left  (journaling/04)
+  -Math.PI/2 + Math.PI*8/5,     // top-left  (reading/05)
+];
+
+// Per-node lock state: {x, y, progress 0→1, active}
+var nodeLockState = {};   // keyed by node id
+PREGAME_NODES.forEach(function(n, i){
+  nodeLockState[n.id] = {
+    targetX: CX  + Math.cos(PENTAGON_ANGLES[i]) * PENTAGON_LOCK_R,
+    targetY: SPHERE_Y + Math.sin(PENTAGON_ANGLES[i]) * PENTAGON_LOCK_R,
+    fromX: 0, fromY: 0,   // set when drift starts
+    progress: 0,           // 0 = orbiting, 1 = fully locked
+    drifting: false,       // currently animating to position
+    locked: false          // fully arrived
+  };
+});
+
+// ---- ASCENSION SEQUENCE STATE ----
+// Fires after all 5 nodes lock in — tethers grow, constellations light, flash appears
+var ascensionSequence = {
+  active: false,
+  phase: 0,         // 0=idle, 1=stillness, 2=tethers, 3=crawl, 4=flash, 5=done
+  timer: 0,
+  // Tether growth: three lines grow from nexus to each constellation center
+  tethers: [
+    {cx: VITALITY_CX,  cy: VITALITY_CY - 220, color:'rgba(255,100,68,',  progress:0, active:false, done:false},
+    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY,       color:'rgba(85,255,170,',  progress:0, active:false, done:false},
+    {cx: SPIRIT_CX,    cy: SPIRIT_CY,          color:'rgba(187,153,255,', progress:0, active:false, done:false},
+  ],
+  // Ley line from nexus to tesseract
+  leyLine: {progress:0, active:false, done:false},
+  // Constellation light crawl — node indices lit per pillar (timestamps)
+  crawl: {
+    vitality:  {litNodes:[], queue:[0,1,2,3,4,5,6,7,8,9],   timer:0, started:false},
+    alignment: {litNodes:[], queue:[0,1,2,3,4,5,6,7,8,9,10,11,12], timer:0, started:false},
+    spirit:    {litNodes:[], queue:[0,1,2,7,8,3,4,9,5,6,10,11],    timer:0, started:false},
+  },
+  flashAlpha: 0,    // 0→1→0 for the text flash
+  flashPhase: 0,    // 0=in, 1=hold, 2=out
+  flashTimer: 0,
+};
+
+// Permanent tether opacity (after sequence — ghost lines always visible)
+var tetherOpacity = 0;
 
 // Dormant pulse waves, travel down branches when tree is inactive
 var pulseWaves = [];
 var pulseTimer = 0;
 
 function nodePos(n){
+  var ls = nodeLockState[n.id];
+  if(ls && ls.locked){
+    return {x: ls.targetX, y: ls.targetY};
+  }
+  if(ls && ls.drifting){
+    var p = ls.progress;
+    var eased = p * (2 - p); // ease-out quad
+    return {
+      x: ls.fromX + (ls.targetX - ls.fromX) * eased,
+      y: ls.fromY + (ls.targetY - ls.fromY) * eased
+    };
+  }
   var angle = (n.orbitPhase || 0) + t * (n.orbitSpeed || 0.0005);
   var r = n.orbitR || PREGAME_ORBIT;
   return {
@@ -937,6 +1004,514 @@ function updateEffects(){
   });
 }
 
+// ---- ASCENSION SEQUENCE ----
+
+function startAscensionSequence(){
+  if(ascensionSequence.active) return;
+  ascensionSequence.active = true;
+  ascensionSequence.phase = 1; // stillness
+  ascensionSequence.timer = 0;
+  // Trigger nexus ignition
+  nexusIgnited = true;
+  nexusFlare = 1;
+  spawnCompletionBurst();
+}
+
+function updateAscensionSequence(){
+  if(!ascensionSequence.active) return;
+  var seq = ascensionSequence;
+  seq.timer++;
+
+  // Phase 1 — stillness beat (40 frames ~0.65s)
+  if(seq.phase === 1){
+    if(seq.timer > 90){ seq.phase = 2; seq.timer = 0; }
+    return;
+  }
+
+  // Phase 2 — ley line grows from nexus to tesseract first, then tethers from tesseract
+  if(seq.phase === 2){
+    // Step 1: grow ley line
+    if(!seq.leyLine.done){
+      seq.leyLine.active = true;
+      seq.leyLine.progress = Math.min(1, seq.leyLine.progress + 0.006);
+      if(seq.leyLine.progress >= 1){
+        seq.leyLine.done = true;
+        tesseractActive = true;
+        tesseractPulse = 1;
+      }
+      // Draw growing ley line
+      var lx = CX + (TESSERACT_X - CX) * seq.leyLine.progress;
+      var ly = SPHERE_Y + (TESSERACT_Y - SPHERE_Y) * seq.leyLine.progress;
+      treeCtx.save();
+      treeCtx.strokeStyle = 'rgba(192,132,252,0.15)';
+      treeCtx.lineWidth = 14; treeCtx.beginPath();
+      treeCtx.moveTo(CX, SPHERE_Y); treeCtx.lineTo(lx, ly); treeCtx.stroke();
+      treeCtx.strokeStyle = 'rgba(216,180,254,0.85)';
+      treeCtx.lineWidth = 1.2; treeCtx.shadowBlur = 12;
+      treeCtx.shadowColor = 'rgba(192,132,252,0.7)';
+      treeCtx.beginPath();
+      treeCtx.moveTo(CX, SPHERE_Y); treeCtx.lineTo(lx, ly); treeCtx.stroke();
+      if(seq.leyLine.progress < 1){
+        treeCtx.fillStyle = 'rgba(240,220,255,1)';
+        treeCtx.shadowBlur = 22;
+        treeCtx.beginPath(); treeCtx.arc(lx, ly, 5, 0, Math.PI*2); treeCtx.fill();
+      }
+      treeCtx.restore();
+      return;
+    }
+
+    // Ley line done — now grow three tethers from Tesseract
+    var allTethersDone = true;
+    seq.tethers.forEach(function(te, i){
+      if(!te.active && seq.timer > 80 + i * 80){ te.active = true; }
+      if(te.active && !te.done){
+        te.progress = Math.min(1, te.progress + 0.004);
+        if(te.progress >= 1){ te.done = true; }
+        allTethersDone = false;
+      }
+      if(!te.done) allTethersDone = false;
+    });
+
+    // Draw ley line (full)
+    treeCtx.save();
+    treeCtx.strokeStyle = 'rgba(192,132,252,0.12)';
+    treeCtx.lineWidth = 14; treeCtx.beginPath();
+    treeCtx.moveTo(CX, SPHERE_Y); treeCtx.lineTo(TESSERACT_X, TESSERACT_Y); treeCtx.stroke();
+    treeCtx.strokeStyle = 'rgba(216,180,254,0.7)';
+    treeCtx.lineWidth = 1.0; treeCtx.shadowBlur = 8;
+    treeCtx.shadowColor = 'rgba(192,132,252,0.5)';
+    treeCtx.beginPath();
+    treeCtx.moveTo(CX, SPHERE_Y); treeCtx.lineTo(TESSERACT_X, TESSERACT_Y); treeCtx.stroke();
+    treeCtx.restore();
+
+    // Draw growing tether lines from Tesseract
+    seq.tethers.forEach(function(te){
+      if(!te.active) return;
+      var tx = TESSERACT_X + (te.cx - TESSERACT_X) * te.progress;
+      var ty = TESSERACT_Y + (te.cy - TESSERACT_Y) * te.progress;
+      treeCtx.save();
+      treeCtx.strokeStyle = te.color + '0.15)';
+      treeCtx.lineWidth = 12; treeCtx.shadowBlur = 0;
+      treeCtx.beginPath();
+      treeCtx.moveTo(TESSERACT_X, TESSERACT_Y); treeCtx.lineTo(tx, ty); treeCtx.stroke();
+      treeCtx.strokeStyle = te.color + '0.8)';
+      treeCtx.lineWidth = 1.2; treeCtx.shadowBlur = 10;
+      treeCtx.shadowColor = te.color + '0.6)';
+      treeCtx.beginPath();
+      treeCtx.moveTo(TESSERACT_X, TESSERACT_Y); treeCtx.lineTo(tx, ty); treeCtx.stroke();
+      if(te.progress < 1){
+        treeCtx.fillStyle = te.color + '1)';
+        treeCtx.shadowBlur = 20;
+        treeCtx.beginPath(); treeCtx.arc(tx, ty, 4, 0, Math.PI*2); treeCtx.fill();
+      }
+      treeCtx.restore();
+    });
+    if(allTethersDone){ seq.phase = 3; seq.timer = 0; }
+    return;
+  }
+
+  // Phase 3 — constellation light crawl
+  if(seq.phase === 3){
+    var allCrawlsDone = true;
+    // Start each pillar crawl staggered by 20 frames
+    var pillarOrder = ['vitality','alignment','spirit'];
+    pillarOrder.forEach(function(pillar, pi){
+      var crawl = seq.crawl[pillar];
+      if(!crawl.started && seq.timer > pi * 60){ crawl.started = true; }
+      if(!crawl.started) return;
+      crawl.timer++;
+      // Light up next node every 12 frames
+      if(crawl.timer % 28 === 0 && crawl.queue.length > 0){
+        crawl.litNodes.push(crawl.queue.shift());
+      }
+      if(crawl.queue.length > 0 || crawl.litNodes.length < (
+        pillar==='vitality'?10:pillar==='spirit'?12:13)) allCrawlsDone = false;
+    });
+
+    // Draw permanent tether lines (now full opacity settling to ghost)
+    tetherOpacity = Math.min(0.18, tetherOpacity + 0.0005);
+    drawPermanentTethers();
+
+    if(allCrawlsDone && seq.timer > 400){
+      // Fire the single dramatic pulse before transitioning
+      spawnTesseractPulse();
+      seq.phase = 4; seq.timer = 0;
+    }
+    return;
+  }
+
+  // Phase 4 — skip straight to done, then show completion screen
+  if(seq.phase === 4){
+    seq.phase = 5; seq.timer = 0;
+    // Wait for slowest pulse ring to reach outer edge before showing completion
+    // Slowest ring: maxR=1600 at speed=1.4 = ~1143 frames + stagger delay ~54 = ~20s total
+    setTimeout(showAllComplete, 8000);
+    return;
+  }
+
+  // Phase 5 — done, tethers permanent
+  if(seq.phase === 5){
+    tetherOpacity = Math.min(0.18, tetherOpacity + 0.0005);
+    drawPermanentTethers();
+  }
+}
+
+function drawPermanentTethers(){
+  if(tetherOpacity <= 0) return;
+  // Ley line: nexus → tesseract (violet)
+  treeCtx.save();
+  treeCtx.strokeStyle = 'rgba(192,132,252,' + (tetherOpacity * 0.5) + ')';
+  treeCtx.lineWidth = 6;
+  treeCtx.beginPath();
+  treeCtx.moveTo(CX, SPHERE_Y);
+  treeCtx.lineTo(TESSERACT_X, TESSERACT_Y);
+  treeCtx.stroke();
+  treeCtx.strokeStyle = 'rgba(216,180,254,' + (tetherOpacity * 1.6) + ')';
+  treeCtx.lineWidth = 0.8;
+  treeCtx.beginPath();
+  treeCtx.moveTo(CX, SPHERE_Y);
+  treeCtx.lineTo(TESSERACT_X, TESSERACT_Y);
+  treeCtx.stroke();
+  treeCtx.restore();
+
+  // Energy lines: tesseract → tree roots (neutral white/grey)
+  var targets = [
+    {cx: VITALITY_CX,  cy: VITALITY_CY - 220},
+    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY},
+    {cx: SPIRIT_CX,    cy: SPIRIT_CY},
+  ];
+  targets.forEach(function(con){
+    treeCtx.save();
+    treeCtx.strokeStyle = 'rgba(220,215,240,' + (tetherOpacity * 0.4) + ')';
+    treeCtx.lineWidth = 6;
+    treeCtx.beginPath();
+    treeCtx.moveTo(TESSERACT_X, TESSERACT_Y);
+    treeCtx.lineTo(con.cx, con.cy);
+    treeCtx.stroke();
+    treeCtx.strokeStyle = 'rgba(240,236,255,' + (tetherOpacity * 1.4) + ')';
+    treeCtx.lineWidth = 0.7;
+    treeCtx.beginPath();
+    treeCtx.moveTo(TESSERACT_X, TESSERACT_Y);
+    treeCtx.lineTo(con.cx, con.cy);
+    treeCtx.stroke();
+    treeCtx.restore();
+  });
+}
+
+function drawAscensionFlash(alpha){
+  if(alpha <= 0) return;
+  treeCtx.save();
+  treeCtx.globalAlpha = alpha;
+  treeCtx.textAlign = 'center';
+  treeCtx.textBaseline = 'middle';
+
+  // Large title
+  treeCtx.font = '700 72px Cinzel Decorative, serif';
+  treeCtx.shadowBlur = 60;
+  treeCtx.shadowColor = 'rgba(192,132,252,0.9)';
+  treeCtx.fillStyle = '#f3e8ff';
+  treeCtx.fillText('ASCENSION PATHS', CX, SPHERE_Y - 200);
+
+  // Subtitle
+  treeCtx.font = '400 18px Cinzel, serif';
+  treeCtx.shadowBlur = 20;
+  treeCtx.shadowColor = 'rgba(192,132,252,0.6)';
+  treeCtx.fillStyle = 'rgba(216,180,254,0.85)';
+  treeCtx.letterSpacing = '0.2em';
+  treeCtx.fillText('YOUR JOURNEY CONTINUES', CX, SPHERE_Y - 140);
+
+  treeCtx.restore();
+}
+
+// ---- TESSERACT ----
+var tesseractActive = false;
+var tesseractPulse  = 0; // 0-1 life of activation burst
+
+// Particle pools for ley line and energy distribution
+var leyParticles  = [];  // nexus → tesseract (violet)
+var treeParticles = [];  // tesseract → trees (pillar colors)
+
+function spawnLeyParticles(){
+  if(!tesseractActive) return;
+  if(Math.random() < 0.35){
+    leyParticles.push({
+      progress: 0,
+      speed: 0.0018 + Math.random() * 0.001,
+      size: Math.random() * 2.2 + 0.8
+    });
+  }
+}
+
+function spawnTreeParticles(){
+  if(!tesseractActive) return;
+  var targets = [
+    {tx: VITALITY_CX,  ty: VITALITY_CY - 220, color:'rgba(255,100,68,'},
+    {tx: ALIGNMENT_CX, ty: ALIGNMENT_CY,       color:'rgba(85,255,170,'},
+    {tx: SPIRIT_CX,    ty: SPIRIT_CY,          color:'rgba(187,153,255,'},
+  ];
+  // Rhythmic bursts — each tree gets a particle every ~25 frames
+  if(Math.floor(t % 25) === 0){
+    targets.forEach(function(tgt){
+      treeParticles.push({
+        tx: tgt.tx, ty: tgt.ty, color: tgt.color,
+        progress: 0,
+        speed: 0.0015 + Math.random() * 0.0008,
+        size: Math.random() * 2.5 + 1.0
+      });
+    });
+  }
+}
+
+function updateLeyParticles(){
+  leyParticles = leyParticles.filter(function(p){
+    p.progress += p.speed;
+    var x = CX + (TESSERACT_X - CX) * p.progress;
+    var y = SPHERE_Y + (TESSERACT_Y - SPHERE_Y) * p.progress;
+    var alpha = Math.sin(p.progress * Math.PI) * 0.8;
+    treeCtx.save();
+    treeCtx.fillStyle = 'rgba(216,180,254,' + alpha + ')';
+    treeCtx.shadowBlur = 8;
+    treeCtx.shadowColor = 'rgba(192,132,252,0.6)';
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, p.size, 0, Math.PI * 2);
+    treeCtx.fill();
+    treeCtx.restore();
+    return p.progress < 1;
+  });
+}
+
+function updateTreeParticles(){
+  treeParticles = treeParticles.filter(function(p){
+    p.progress += p.speed;
+    var x = TESSERACT_X + (p.tx - TESSERACT_X) * p.progress;
+    var y = TESSERACT_Y + (p.ty - TESSERACT_Y) * p.progress;
+    var alpha = Math.sin(p.progress * Math.PI) * 0.75;
+    treeCtx.save();
+    treeCtx.fillStyle = p.color + alpha + ')';
+    treeCtx.shadowBlur = 10;
+    treeCtx.shadowColor = p.color + '0.7)';
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, p.size, 0, Math.PI * 2);
+    treeCtx.fill();
+    treeCtx.restore();
+    return p.progress < 1;
+  });
+}
+
+function drawTesseract(){
+  var tx = TESSERACT_X, ty = TESSERACT_Y;
+  var outerS = 88; // outer square half-size
+  var innerS = 50; // inner square half-size
+
+  // Rotation — outer clockwise, inner counter-clockwise, slightly different speeds
+  var outerRot = t * 0.0012;
+  var innerRot = -t * 0.0019 + Math.PI / 4; // offset for classic tesseract look
+
+  var active = tesseractActive;
+  var baseAlpha = active ? 0.85 : 0.12;
+  var glowAlpha = active ? 0.18 : 0.03;
+
+  // Gentle pulse on activation
+  var pulseScale = 1 + (active ? Math.sin(t * 0.022) * 0.03 : 0);
+  if(tesseractPulse > 0){
+    pulseScale += tesseractPulse * 0.15;
+    tesseractPulse = Math.max(0, tesseractPulse - 0.015);
+  }
+
+  var oS = outerS * pulseScale;
+  var iS = innerS * pulseScale;
+
+  // Compute corners
+  function corners(size, rot){
+    var pts = [];
+    for(var i = 0; i < 4; i++){
+      var a = rot + i * Math.PI / 2;
+      pts.push({
+        x: tx + Math.cos(a) * size * 1.414, // diagonal of square
+        y: ty + Math.sin(a) * size * 1.414
+      });
+    }
+    return pts;
+  }
+
+  var outer = corners(oS, outerRot);
+  var inner = corners(iS, innerRot);
+
+  // Color: ice blue-white
+  var col  = active ? 'rgba(200,230,255,' : 'rgba(180,200,240,';
+  var colB = active ? 'rgba(240,250,255,' : 'rgba(200,220,255,';
+
+  treeCtx.save();
+
+  // Outer bloom
+  if(active){
+    var bloom = treeCtx.createRadialGradient(tx, ty, oS * 0.3, tx, ty, oS * 2.2);
+    bloom.addColorStop(0, 'rgba(180,220,255,' + (glowAlpha * 0.8) + ')');
+    bloom.addColorStop(0.5,'rgba(140,180,255,' + (glowAlpha * 0.4) + ')');
+    bloom.addColorStop(1,  'rgba(0,0,0,0)');
+    treeCtx.fillStyle = bloom;
+    treeCtx.beginPath();
+    treeCtx.arc(tx, ty, oS * 2.2, 0, Math.PI * 2);
+    treeCtx.fill();
+  }
+
+  function drawSquare(pts, lineW, alpha, shadow){
+    treeCtx.globalAlpha = alpha;
+    treeCtx.lineWidth = lineW;
+    treeCtx.shadowBlur = shadow;
+    treeCtx.shadowColor = 'rgba(180,220,255,0.8)';
+    treeCtx.beginPath();
+    pts.forEach(function(p, i){
+      if(i === 0) treeCtx.moveTo(p.x, p.y);
+      else treeCtx.lineTo(p.x, p.y);
+    });
+    treeCtx.closePath();
+    treeCtx.stroke();
+  }
+
+  // Glow pass — both squares thick soft
+  treeCtx.strokeStyle = col + (baseAlpha * 0.15) + ')';
+  drawSquare(outer, 12, 1, 0);
+  drawSquare(inner, 10, 1, 0);
+
+  // Spine pass — outer square
+  treeCtx.strokeStyle = colB + baseAlpha + ')';
+  drawSquare(outer, 1.2, 1, active ? 16 : 0);
+
+  // Spine pass — inner square
+  treeCtx.strokeStyle = colB + (baseAlpha * 0.8) + ')';
+  drawSquare(inner, 0.9, 1, active ? 10 : 0);
+
+  // Corner connection lines (outer↔inner)
+  treeCtx.globalAlpha = baseAlpha * 0.55;
+  treeCtx.strokeStyle = col + baseAlpha + ')';
+  treeCtx.lineWidth = 0.7;
+  treeCtx.shadowBlur = active ? 8 : 0;
+  for(var i = 0; i < 4; i++){
+    treeCtx.beginPath();
+    treeCtx.moveTo(outer[i].x, outer[i].y);
+    treeCtx.lineTo(inner[i].x, inner[i].y);
+    treeCtx.stroke();
+  }
+
+  // Corner dots — outer square
+  treeCtx.globalAlpha = 1;
+  outer.forEach(function(p){
+    treeCtx.fillStyle = colB + baseAlpha + ')';
+    treeCtx.shadowBlur = active ? 14 : 0;
+    treeCtx.shadowColor = 'rgba(200,230,255,0.9)';
+    treeCtx.beginPath();
+    treeCtx.arc(p.x, p.y, active ? 3.5 : 1.5, 0, Math.PI * 2);
+    treeCtx.fill();
+  });
+
+  // Corner dots — inner square (smaller)
+  inner.forEach(function(p){
+    treeCtx.fillStyle = colB + (baseAlpha * 0.7) + ')';
+    treeCtx.shadowBlur = active ? 8 : 0;
+    treeCtx.beginPath();
+    treeCtx.arc(p.x, p.y, active ? 2.5 : 1, 0, Math.PI * 2);
+    treeCtx.fill();
+  });
+
+  // Center dot
+  treeCtx.fillStyle = active ? 'rgba(240,250,255,0.9)' : 'rgba(180,200,240,0.2)';
+  treeCtx.shadowBlur = active ? 16 : 0;
+  treeCtx.shadowColor = 'rgba(200,230,255,1)';
+  treeCtx.beginPath();
+  treeCtx.arc(tx, ty, active ? 4 : 2, 0, Math.PI * 2);
+  treeCtx.fill();
+
+  // Label
+  treeCtx.globalAlpha = active ? 0.5 : 0.1;
+  treeCtx.fillStyle = 'rgba(200,230,255,1)';
+  treeCtx.font = '400 10px Cinzel, serif';
+  treeCtx.textAlign = 'center';
+  treeCtx.shadowBlur = active ? 8 : 0;
+  treeCtx.letterSpacing = '0.12em';
+  treeCtx.fillText('TESSERACT', tx, ty + oS + 22);
+
+  treeCtx.restore();
+}
+
+// ---- TESSERACT PULSE WAVE ----
+// Single dramatic multi-ring pulse emitted when all three trees fully light
+var tesseractPulseWaves = [];
+
+function spawnTesseractPulse(){
+  // Three rings — one per pillar color — staggered outward
+  var rings = [
+    {color:'rgba(255,100,68,',  delay:0,   maxR:1400, speed:1.8, lineW:2.5},  // vitality red
+    {color:'rgba(200,230,255,', delay:18,  maxR:1600, speed:1.6, lineW:3.5},  // tesseract ice blue (center/largest)
+    {color:'rgba(85,255,170,',  delay:36,  maxR:1400, speed:2.0, lineW:2.0},  // alignment teal
+    {color:'rgba(187,153,255,', delay:54,  maxR:1300, speed:1.4, lineW:1.5},  // spirit purple (trailing)
+  ];
+  rings.forEach(function(ring){
+    tesseractPulseWaves.push({
+      r: 0,
+      maxR: ring.maxR,
+      speed: ring.speed,
+      color: ring.color,
+      lineW: ring.lineW,
+      delay: ring.delay,
+      age: 0,
+      active: false
+    });
+  });
+}
+
+function updateTesseractPulse(){
+  if(tesseractPulseWaves.length === 0) return;
+  tesseractPulseWaves = tesseractPulseWaves.filter(function(w){
+    w.age++;
+    if(w.age < w.delay) return true; // waiting
+    if(!w.active){ w.active = true; }
+    w.r += w.speed;
+
+    var progress = w.r / w.maxR;
+    // Alpha: ease in fast, long slow fade — dramatic hold before disappearing
+    var alpha;
+    if(progress < 0.05){
+      alpha = progress / 0.05;
+    } else {
+      // Slow graceful fade using ease-in-quad so it lingers
+      var t2 = (progress - 0.05) / 0.95;
+      alpha = 1 - (t2 * t2);
+    }
+    alpha = Math.max(0, alpha);
+
+    treeCtx.save();
+
+    // Wide outer glow — very soft, expansive
+    treeCtx.strokeStyle = w.color + (alpha * 0.12) + ')';
+    treeCtx.lineWidth = w.lineW * 18;
+    treeCtx.shadowBlur = 0;
+    treeCtx.beginPath();
+    treeCtx.arc(TESSERACT_X, TESSERACT_Y, w.r, 0, Math.PI * 2);
+    treeCtx.stroke();
+
+    // Mid glow
+    treeCtx.strokeStyle = w.color + (alpha * 0.28) + ')';
+    treeCtx.lineWidth = w.lineW * 6;
+    treeCtx.beginPath();
+    treeCtx.arc(TESSERACT_X, TESSERACT_Y, w.r, 0, Math.PI * 2);
+    treeCtx.stroke();
+
+    // Bright spine
+    treeCtx.strokeStyle = w.color + (alpha * 0.9) + ')';
+    treeCtx.lineWidth = w.lineW;
+    treeCtx.shadowBlur = 20;
+    treeCtx.shadowColor = w.color + '0.7)';
+    treeCtx.beginPath();
+    treeCtx.arc(TESSERACT_X, TESSERACT_Y, w.r, 0, Math.PI * 2);
+    treeCtx.stroke();
+
+    treeCtx.restore();
+
+    return w.r < w.maxR;
+  });
+}
+
 // ---- DRAW ----
 function drawFrame(){
   treeCtx.clearRect(0,0,W,H);
@@ -975,6 +1550,13 @@ function drawFrame(){
 
   drawCosmicDust();
   drawConnections();
+  updateAscensionSequence();
+  drawTesseract();
+  updateTesseractPulse();
+  spawnLeyParticles();
+  spawnTreeParticles();
+  updateLeyParticles();
+  updateTreeParticles();
   drawAstralConstellations();
   drawNexus(charge);
   drawPregameNodes();
@@ -1302,28 +1884,40 @@ function drawConnections(){
 // Shapes are constellation-styled: not trees, but star map forms
 
 function drawAstralConstellations(){
-  var allDone = completed.length >= 5;
-  // Static — no rotation
+  // Constellations only light up when the crawl sequence reaches them
+  // Before that they remain fully dormant regardless of completion state
+  var crawlStarted = ascensionSequence.crawl.vitality.started ||
+                     ascensionSequence.crawl.spirit.started ||
+                     ascensionSequence.crawl.alignment.started;
+  // For returning users (phase 5) — fully lit
+  var allDone = ascensionSequence.phase >= 5;
+
   drawVitalityConstellation(allDone);
   drawSpiritConstellation(allDone);
   drawAlignmentConstellation(allDone);
+  // Permanent tethers drawn on top of constellations when sequence past phase 2
+  if(ascensionSequence.phase >= 5){
+    drawPermanentTethers();
+  }
 }
 
 function drawVitalityConstellation(allDone){
   var cx = VITALITY_CX, cy = VITALITY_CY;
   var color = '#ff6644', bright = 'rgba(255,100,68,';
   var isWinner = window.quizResult === 'vitality';
+  var crawlLit = ascensionSequence.crawl.vitality.litNodes;
+  var crawlActive = ascensionSequence.phase === 3 || ascensionSequence.phase >= 4;
+  // Sequence running (phases 1-4): force dormant, crawl drives lighting
+  var seqRunning = ascensionSequence.phase >= 1 && ascensionSequence.phase <= 4;
 
-  // State: dormant → oracle winner → fully lit
-  var nodeAlpha  = allDone ? 1    : (isWinner ? 0.35 : 0.10);
-  var lineAlpha  = allDone ? 0.7  : (isWinner ? 0.25 : 0.08);
-  var labelAlpha = allDone ? 0.85 : (isWinner ? 0.9  : 0);
+  var nodeAlpha  = allDone ? 1 : (seqRunning ? 0.08 : (isWinner ? 0.35 : 0.10));
+  var lineAlpha  = allDone ? 0.7 : (seqRunning ? 0.05 : (isWinner ? 0.25 : 0.08));
+  var labelAlpha = allDone ? 0.85 : (seqRunning ? 0 : (isWinner ? 0.9 : 0));
   var glowNodes  = allDone;
 
-  // Dormant: render in muted grey, no color
-  var drawColor  = (allDone || isWinner) ? color : 'rgba(180,170,200,';
-  var drawBright = (allDone || isWinner) ? bright : 'rgba(180,170,200,';
-  var strokeCol  = (allDone || isWinner) ? color  : 'rgba(160,150,180,0.4)';
+  var drawColor  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(180,170,200,';
+  var drawBright = (allDone || (!seqRunning && isWinner)) ? bright : 'rgba(180,170,200,';
+  var strokeCol  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(160,150,180,0.4)';
 
   var nodes = [
     {x:0,    y:-220, r:22, root:true},
@@ -1345,10 +1939,24 @@ function drawVitalityConstellation(allDone){
   treeCtx.setLineDash([]);
   lines.forEach(function(l){
     var a = nodes[l[0]], b = nodes[l[1]];
-    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lineAlpha);
+    var lit = crawlActive && crawlLit.indexOf(l[0]) !== -1 && crawlLit.indexOf(l[1]) !== -1;
+    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lit ? 0.85 : lineAlpha);
   });
-  nodes.forEach(function(n){
-    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || (isWinner && n.root));
+  nodes.forEach(function(n, ni){
+    var lit = crawlActive && crawlLit.indexOf(ni) !== -1;
+    if(lit){
+      // Flare effect on crawl-lit node
+      treeCtx.save();
+      var flare = treeCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r + 40);
+      flare.addColorStop(0, 'rgba(255,100,68,0.35)');
+      flare.addColorStop(1, 'rgba(255,100,68,0)');
+      treeCtx.fillStyle = flare;
+      treeCtx.beginPath();
+      treeCtx.arc(n.x, n.y, n.r + 40, 0, Math.PI*2);
+      treeCtx.fill();
+      treeCtx.restore();
+    }
+    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || lit || (isWinner && n.root));
   });
   if(labelAlpha > 0){
     treeCtx.globalAlpha = labelAlpha;
@@ -1366,15 +1974,18 @@ function drawSpiritConstellation(allDone){
   var cx = SPIRIT_CX, cy = SPIRIT_CY;
   var color = '#bb99ff', bright = 'rgba(187,153,255,';
   var isWinner = window.quizResult === 'spirit';
+  var crawlLit = ascensionSequence.crawl.spirit.litNodes;
+  var crawlActive = ascensionSequence.phase === 3 || ascensionSequence.phase >= 4;
+  var seqRunning = ascensionSequence.phase >= 1 && ascensionSequence.phase <= 4;
 
-  var nodeAlpha  = allDone ? 1    : (isWinner ? 0.35 : 0.10);
-  var lineAlpha  = allDone ? 0.7  : (isWinner ? 0.25 : 0.08);
-  var labelAlpha = allDone ? 0.85 : (isWinner ? 0.9  : 0);
+  var nodeAlpha  = allDone ? 1 : (seqRunning ? 0.08 : (isWinner ? 0.35 : 0.10));
+  var lineAlpha  = allDone ? 0.7 : (seqRunning ? 0.05 : (isWinner ? 0.25 : 0.08));
+  var labelAlpha = allDone ? 0.85 : (seqRunning ? 0 : (isWinner ? 0.9 : 0));
   var glowNodes  = allDone;
 
-  var drawColor  = (allDone || isWinner) ? color : 'rgba(180,170,200,';
-  var drawBright = (allDone || isWinner) ? bright : 'rgba(180,170,200,';
-  var strokeCol  = (allDone || isWinner) ? color  : 'rgba(160,150,180,0.4)';
+  var drawColor  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(180,170,200,';
+  var drawBright = (allDone || (!seqRunning && isWinner)) ? bright : 'rgba(180,170,200,';
+  var strokeCol  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(160,150,180,0.4)';
 
   var nodes = [
     {x:0,    y:0,    r:22, root:true},
@@ -1401,10 +2012,23 @@ function drawSpiritConstellation(allDone){
   treeCtx.setLineDash([]);
   lines.forEach(function(l){
     var a = nodes[l[0]], b = nodes[l[1]];
-    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lineAlpha);
+    var lit = crawlActive && crawlLit.indexOf(l[0]) !== -1 && crawlLit.indexOf(l[1]) !== -1;
+    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lit ? 0.85 : lineAlpha);
   });
-  nodes.forEach(function(n){
-    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || (isWinner && n.root));
+  nodes.forEach(function(n, ni){
+    var lit = crawlActive && crawlLit.indexOf(ni) !== -1;
+    if(lit){
+      treeCtx.save();
+      var flare = treeCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r + 40);
+      flare.addColorStop(0, 'rgba(187,153,255,0.35)');
+      flare.addColorStop(1, 'rgba(187,153,255,0)');
+      treeCtx.fillStyle = flare;
+      treeCtx.beginPath();
+      treeCtx.arc(n.x, n.y, n.r + 40, 0, Math.PI*2);
+      treeCtx.fill();
+      treeCtx.restore();
+    }
+    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || lit || (isWinner && n.root));
   });
   if(labelAlpha > 0){
     treeCtx.globalAlpha = labelAlpha;
@@ -1422,15 +2046,18 @@ function drawAlignmentConstellation(allDone){
   var cx = ALIGNMENT_CX, cy = ALIGNMENT_CY;
   var color = '#55ffaa', bright = 'rgba(85,255,170,';
   var isWinner = window.quizResult === 'alignment';
+  var crawlLit = ascensionSequence.crawl.alignment.litNodes;
+  var crawlActive = ascensionSequence.phase === 3 || ascensionSequence.phase >= 4;
+  var seqRunning = ascensionSequence.phase >= 1 && ascensionSequence.phase <= 4;
 
-  var nodeAlpha  = allDone ? 1    : (isWinner ? 0.35 : 0.10);
-  var lineAlpha  = allDone ? 0.7  : (isWinner ? 0.25 : 0.08);
-  var labelAlpha = allDone ? 0.85 : (isWinner ? 0.9  : 0);
+  var nodeAlpha  = allDone ? 1 : (seqRunning ? 0.08 : (isWinner ? 0.35 : 0.10));
+  var lineAlpha  = allDone ? 0.7 : (seqRunning ? 0.05 : (isWinner ? 0.25 : 0.08));
+  var labelAlpha = allDone ? 0.85 : (seqRunning ? 0 : (isWinner ? 0.9 : 0));
   var glowNodes  = allDone;
 
-  var drawColor  = (allDone || isWinner) ? color : 'rgba(180,170,200,';
-  var drawBright = (allDone || isWinner) ? bright : 'rgba(180,170,200,';
-  var strokeCol  = (allDone || isWinner) ? color  : 'rgba(160,150,180,0.4)';
+  var drawColor  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(180,170,200,';
+  var drawBright = (allDone || (!seqRunning && isWinner)) ? bright : 'rgba(180,170,200,';
+  var strokeCol  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(160,150,180,0.4)';
 
   var nodes = [
     {x:0,    y:0,    r:22, root:true},
@@ -1459,10 +2086,23 @@ function drawAlignmentConstellation(allDone){
   treeCtx.setLineDash([]);
   lines.forEach(function(l){
     var a = nodes[l[0]], b = nodes[l[1]];
-    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lineAlpha);
+    var lit = crawlActive && crawlLit.indexOf(l[0]) !== -1 && crawlLit.indexOf(l[1]) !== -1;
+    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lit ? 0.85 : lineAlpha);
   });
-  nodes.forEach(function(n){
-    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || (isWinner && n.root));
+  nodes.forEach(function(n, ni){
+    var lit = crawlActive && crawlLit.indexOf(ni) !== -1;
+    if(lit){
+      treeCtx.save();
+      var flare = treeCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r + 40);
+      flare.addColorStop(0, 'rgba(85,255,170,0.35)');
+      flare.addColorStop(1, 'rgba(85,255,170,0)');
+      treeCtx.fillStyle = flare;
+      treeCtx.beginPath();
+      treeCtx.arc(n.x, n.y, n.r + 40, 0, Math.PI*2);
+      treeCtx.fill();
+      treeCtx.restore();
+    }
+    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || lit || (isWinner && n.root));
   });
   if(labelAlpha > 0){
     treeCtx.globalAlpha = labelAlpha;
@@ -1726,10 +2366,33 @@ function drawPregameNodes(){
   var WHITE_VIOLET = 'rgba(240,220,255,';
 
   // Draw faint orbital ring trails first — behind all nodes
-  // Gives the electron-orbital read, like the Oracle's dashed ring
+  // Only for nodes that are still orbiting (not locked)
   treeCtx.save();
   treeCtx.setLineDash([3, 8]);
+
+  // Pentagon guide ring — appears once first node locks in
+  var anyLocked = PREGAME_NODES.some(function(n){ return nodeLockState[n.id] && (nodeLockState[n.id].locked || nodeLockState[n.id].drifting); });
+  if(anyLocked){
+    var lockedCount = PREGAME_NODES.filter(function(n){ return nodeLockState[n.id] && nodeLockState[n.id].locked; }).length;
+    var guideAlpha = Math.min(0.12, lockedCount * 0.03);
+    treeCtx.strokeStyle = 'rgba(216,180,254,' + guideAlpha + ')';
+    treeCtx.lineWidth = 0.5;
+    // Draw pentagon guide
+    treeCtx.setLineDash([2, 10]);
+    treeCtx.beginPath();
+    PENTAGON_ANGLES.forEach(function(a, i){
+      var px = CX + Math.cos(a) * PENTAGON_LOCK_R;
+      var py = SPHERE_Y + Math.sin(a) * PENTAGON_LOCK_R;
+      if(i === 0) treeCtx.moveTo(px, py); else treeCtx.lineTo(px, py);
+    });
+    treeCtx.closePath();
+    treeCtx.stroke();
+    treeCtx.setLineDash([3, 8]);
+  }
+
   PREGAME_NODES.forEach(function(n){
+    var ls = nodeLockState[n.id];
+    if(ls && ls.locked) return; // no ring for locked nodes
     var isDone = completed.includes(n.id);
     var alpha = isDone ? 0.18 : 0.07;
     treeCtx.strokeStyle = 'rgba(192,132,252,' + alpha + ')';
@@ -2413,7 +3076,26 @@ document.getElementById('respecConfirmYes').onclick=function(e){
     completed.forEach(function(id){var idx=lessonIds.indexOf(id);if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');});
   },280);
   nexusIgnited=false; nexusFlare=0; nexusArmLen=NEXUS_ARM_BASE;
-  energyParticles.length=0;flowParticles.length=0;
+  energyParticles.length=0; flowParticles.length=0;
+  tesseractActive=false; tesseractPulse=0;
+  leyParticles.length=0; treeParticles.length=0;
+  tesseractPulseWaves.length=0;
+  // Reset all node lock states
+  PREGAME_NODES.forEach(function(n, ni){
+    nodeLockState[n.id] = {
+      targetX: CX + Math.cos(PENTAGON_ANGLES[ni]) * PENTAGON_LOCK_R,
+      targetY: SPHERE_Y + Math.sin(PENTAGON_ANGLES[ni]) * PENTAGON_LOCK_R,
+      fromX:0, fromY:0, progress:0, drifting:false, locked:false
+    };
+  });
+  // Reset ascension sequence
+  ascensionSequence.active=false; ascensionSequence.phase=0; ascensionSequence.timer=0;
+  ascensionSequence.leyLine={progress:0, active:false, done:false};
+  ascensionSequence.tethers.forEach(function(te){ te.progress=0; te.active=false; te.done=false; });
+  ascensionSequence.crawl.vitality.litNodes=[]; ascensionSequence.crawl.vitality.queue=[0,1,2,3,4,5,6,7,8,9]; ascensionSequence.crawl.vitality.timer=0; ascensionSequence.crawl.vitality.started=false;
+  ascensionSequence.crawl.spirit.litNodes=[]; ascensionSequence.crawl.spirit.queue=[0,1,2,7,8,3,4,9,5,6,10,11]; ascensionSequence.crawl.spirit.timer=0; ascensionSequence.crawl.spirit.started=false;
+  ascensionSequence.crawl.alignment.litNodes=[]; ascensionSequence.crawl.alignment.queue=[0,1,2,3,4,5,6,7,8,9,10,11,12]; ascensionSequence.crawl.alignment.timer=0; ascensionSequence.crawl.alignment.started=false;
+  ascensionSequence.flashAlpha=0; tetherOpacity=0;
   var existing=document.querySelector('[style*="z-index:500"]');
   if(existing)existing.remove();
   document.getElementById('respecConfirm').classList.remove('open');
@@ -2839,65 +3521,53 @@ function markComplete(){
   var allDone = completed.length >= 5;
 
   if(node){
-    // Capture node reference for the closure
-    (function(capturedNode, capturedAllDone){
+    (function(capturedNode, capturedIdx, capturedAllDone){
 
-      // Effect 1 — node pulse (gold)
+      // Effect 1 — node pulse from current orbital position
       pendingEffects.push(function(){
         var pos = nodePos(capturedNode);
-        spawnNodePulse(pos.x, pos.y, 'rgba(201,168,76,');
+        spawnNodePulse(pos.x, pos.y, 'rgba(192,132,252,');
       });
 
-      // Effect 2 — second pulse (warm white)
+      // Effect 2 — second pulse
       pendingEffects.push(function(){
         var pos = nodePos(capturedNode);
-        spawnNodePulse(pos.x, pos.y, 'rgba(255,220,120,');
+        spawnNodePulse(pos.x, pos.y, 'rgba(240,220,255,');
       });
 
+      // Effect 3 — start drift to pentagon position
+      pendingEffects.push(function(){
+        var pos = nodePos(capturedNode);
+        var ls = nodeLockState[capturedNode.id];
+        ls.fromX = pos.x;
+        ls.fromY = pos.y;
+        ls.progress = 0;
+        ls.drifting = true;
+        ls.locked = false;
+        // Animate progress over ~180 frames (3s)
+        var driftInterval = setInterval(function(){
+          ls.progress += 0.006; // ease-out over ~167 frames
+          if(ls.progress >= 1){
+            ls.progress = 1;
+            ls.drifting = false;
+            ls.locked = true;
+            clearInterval(driftInterval);
+            // Pulse when it locks in
+            spawnNodePulse(ls.targetX, ls.targetY, 'rgba(216,180,254,');
+            // If all nodes are now locked, start the ascension sequence
+            var allLocked = PREGAME_NODES.every(function(n){ return nodeLockState[n.id].locked; });
+            if(allLocked && capturedAllDone){
+              // All nodes locked — start sequence directly (we're already post-closeLesson)
+              setTimeout(startAscensionSequence, 800);
+            }
+          }
+        }, 16);
+      });
 
-
-      // If this was the LAST module — fire the full ignition sequence
-      if(capturedAllDone){
-
-        // Effect 4 — sphere completion burst rings
-        pendingEffects.push(function(){
-          spawnCompletionBurst();
-        });
-
-        // Effect 5 — pillar tree lights up with cascading pulses per pillar
-        pendingEffects.push(function(){
-          // Vitality pulse
-          spawnEffect('treeLightup', { pillar:'vitality', color:'rgba(255,100,68,', delay:0, life:1, duration:120 });
-        });
-        pendingEffects.push(function(){
-          // Spirit pulse
-          spawnEffect('treeLightup', { pillar:'spirit', color:'rgba(187,153,255,', delay:0, life:1, duration:120 });
-        });
-        pendingEffects.push(function(){
-          // Alignment pulse
-          spawnEffect('treeLightup', { pillar:'alignment', color:'rgba(85,255,170,', delay:0, life:1, duration:120 });
-        });
-
-        // Effect 6 — all pregame nodes pulse simultaneously
-        pendingEffects.push(function(){
-          PREGAME_NODES.forEach(function(n, i){
-            setTimeout(function(){
-              var pos = nodePos(n);
-              spawnNodePulse(pos.x, pos.y, 'rgba(255,220,80,');
-            }, i * 80);
-          });
-        });
-
-        // Effect 7 — oracle bloom (sphere awakening the oracle)
-        pendingEffects.push(function(){
-          spawnOracleBloom('rgba(255,220,80,');
-        });
-      }
-
-    })(node, allDone);
+    })(node, idx, allDone);
   }
 
-  if(completed.length >= 5) setTimeout(showAllComplete, 1200);
+  if(completed.length >= 5){} // completion screen fires after ascension sequence
 }
 function navLesson(dir){
   var idx=lessonOrder.indexOf(currentLesson);
@@ -2911,7 +3581,7 @@ function updateReadProgress(){
 function showAllComplete(){
   var msg=document.createElement('div');
   msg.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,7,15,0.97);flex-direction:column;gap:20px;';
-  msg.innerHTML='<div style="font-family:Cinzel Decorative,serif;font-size:clamp(32px,5vw,60px);color:#f0ece4;text-align:center;line-height:1.2">The Briefing<br>is <span style="color:#c0392b">Complete.</span></div><div style="font-size:16px;font-weight:300;color:rgba(240,236,228,.55);text-align:center;max-width:400px;line-height:1.7">The threshold is behind you.<br>The journey starts now.</div><a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;text-decoration:none;margin-top:8px">Book your PlayBook call →</a><button onclick="this.parentNode.remove()" style="background:none;border:none;color:rgba(240,236,228,.3);font-size:13px;cursor:pointer;margin-top:8px">Continue exploring →</button>';
+  msg.innerHTML='<div style="font-family:Cinzel Decorative,serif;font-size:clamp(24px,4vw,48px);color:#f0ece4;text-align:center;line-height:1.3">Ascension Paths<br><span style="color:#c084fc">Unlocked</span></div><div style="font-family:Cinzel,serif;font-size:clamp(11px,1.5vw,14px);font-weight:400;letter-spacing:.12em;color:rgba(192,132,252,.7);text-align:center;margin-top:14px;text-transform:uppercase">Find the Oracle · Discover Your Skill Focus</div><div style="font-size:15px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:420px;line-height:1.8;margin-top:20px">The three astral trees are now visible.<br>Tap the Oracle to discover your path.</div><a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;text-decoration:none;margin-top:24px">Book your PlayBook call →</a><button onclick="this.parentNode.remove()" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;margin-top:12px">Continue exploring →</button>';
   document.body.appendChild(msg);
 }
 
@@ -2939,7 +3609,25 @@ window.addEventListener('load',function(){
     var idx=lessonOrder.indexOf(id);
     if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');
   });
-  if(completed.length>=5){ nexusIgnited=true; nexusArmLen=NEXUS_ARM_MAX; }
+  if(completed.length>=5){
+    nexusIgnited=true; nexusArmLen=NEXUS_ARM_MAX;
+    tesseractActive=true;
+  }
+  // Restore pentagon lock positions for completed nodes
+  completed.forEach(function(id){
+    var ls = nodeLockState[id];
+    if(ls){ ls.locked=true; ls.drifting=false; ls.progress=1; }
+  });
+  // If all done and returning, skip straight to sequence done state
+  if(completed.length>=5){
+    ascensionSequence.active=true; ascensionSequence.phase=5;
+    ascensionSequence.leyLine={progress:1, active:true, done:true};
+    ascensionSequence.tethers.forEach(function(te){ te.active=true; te.done=true; te.progress=1; });
+    ascensionSequence.crawl.vitality.litNodes=[0,1,2,3,4,5,6,7,8,9];
+    ascensionSequence.crawl.spirit.litNodes=[0,1,2,3,4,5,6,7,8,9,10,11];
+    ascensionSequence.crawl.alignment.litNodes=[0,1,2,3,4,5,6,7,8,9,10,11,12];
+    tetherOpacity=0.18;
+  }
   updateRespecBtn();
   maybeShowTutorial();
   loadReflections();
