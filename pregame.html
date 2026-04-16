@@ -2039,11 +2039,11 @@ function loadReflections(){
 function submitReflection(blockId){
   var btn = document.getElementById('rsub-'+blockId);
   var xp = document.getElementById('rxp-'+blockId);
+  if(!btn) return;
   if(btn.classList.contains('saved')) return;
 
   // Save all textareas in this block
-  var block = document.getElementById('reflect-'+blockId);
-  var textareas = block.querySelectorAll('.reflect-textarea');
+  var textareas = document.querySelectorAll('#reflect-'+blockId+' .reflect-textarea');
   var hasContent = false;
   textareas.forEach(function(ta){
     if(ta.value.trim().length > 0){
@@ -2062,8 +2062,6 @@ function submitReflection(blockId){
   }
 
   markReflectionSaved(blockId);
-
-  // Award XP
   awardReflectionXP(blockId);
 }
 
