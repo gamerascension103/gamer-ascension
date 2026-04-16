@@ -292,7 +292,8 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .quest-deny-btn:hover{border-color:rgba(255,255,255,.2);color:rgba(240,236,228,.7)}
 
 /* CODEX PANEL */
-.codex-btn{position:fixed;bottom:70px;right:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;color:rgba(201,168,76,.7);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.1em;padding:0 14px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px)}
+.codex-btn{position:fixed;bottom:162px;right:24px;z-index:55;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;color:rgba(201,168,76,.7);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.1em;padding:0 14px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px)}
+.codex-btn.visible{display:flex}
 .codex-btn.codex-pulse{border-color:rgba(201,168,76,.9);color:rgba(201,168,76,1);animation:codex-pulse-anim 1.2s ease-in-out infinite}
 @keyframes codex-pulse-anim{0%,100%{box-shadow:0 0 6px rgba(201,168,76,.3)}50%{box-shadow:0 0 18px rgba(201,168,76,.8),0 0 4px rgba(201,168,76,.4) inset}}
 .codex-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.6);color:rgba(201,168,76,1)}
@@ -1906,10 +1907,7 @@ function activateOracle(){
   var pillarColors = {vitality:'rgba(255,100,68,', spirit:'rgba(187,153,255,', alignment:'rgba(85,255,170,'};
   var bloomColor = window.quizResult ? pillarColors[window.quizResult] : 'rgba(187,153,255,';
   spawnOracleBloom(bloomColor);
-  // Save quiz result to localStorage for persistence
   if(window.quizResult) localStorage.setItem('ga_quiz_result', window.quizResult);
-  // Check rank up
-  setTimeout(checkRankUp, 1200);
 }
 
 // ---- AMBIENT COSMIC DUST ----
@@ -3535,10 +3533,9 @@ function updateRankDisplay(){
 }
 
 function checkRankUp(){
-  // Iron -> Bronze: all 5 pregame complete AND oracle activated
-  if(getCurrentRank() === 'iron' && completed.length >= 5 && (oracleActivated || window.quizResult)){
+  // Bronze: all 5 pregame complete — Oracle not required
+  if(getCurrentRank() === 'iron' && completed.length >= 5){
     setRank('bronze');
-    // Show quest notification after short delay
     setTimeout(showQuestNotification, 2000);
   }
 }
@@ -4054,11 +4051,219 @@ function updateReadProgress(){
   document.getElementById('lessonProgressFill').style.width=Math.min(100,b.scrollTop/(b.scrollHeight-b.clientHeight)*100)+'%';
 }
 function showAllComplete(){
-  var msg=document.createElement('div');
-  msg.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,7,15,0.97);flex-direction:column;gap:20px;';
-  msg.innerHTML='<div style="font-family:Cinzel Decorative,serif;font-size:clamp(24px,4vw,48px);color:#f0ece4;text-align:center;line-height:1.3">Ascension Paths<br><span style="color:#c084fc">Unlocked</span></div><div style="font-family:Cinzel,serif;font-size:clamp(11px,1.5vw,14px);font-weight:400;letter-spacing:.12em;color:rgba(192,132,252,.7);text-align:center;margin-top:14px;text-transform:uppercase">Find the Oracle · Discover Your Skill Focus</div><div style="font-size:15px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:420px;line-height:1.8;margin-top:20px">The three astral trees are now visible.<br>Tap the Oracle to discover your path.</div><a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:16px 32px;border-radius:3px;text-decoration:none;margin-top:24px">Book your PlayBook call →</a><button onclick="this.parentNode.remove()" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;margin-top:12px">Continue exploring →</button>';
+  if(getCurrentRank() === 'iron') setRank('bronze');
+
+  var msg = document.createElement('div');
+  msg.id = 'completionScreen';
+  msg.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,7,15,0.97);flex-direction:column;gap:0;padding:40px 24px;';
+
+  msg.innerHTML =
+    '<div id="rankAssemblyWrap" style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px">' +
+      '<div id="rankAchievedLabel" style="font-family:Cinzel,serif;font-size:13px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;color:rgba(200,200,220,.35);margin-bottom:24px;opacity:0;transition:opacity 1.2s ease">Rank Achieved</div>' +
+      '<div id="rankAssemblyStage" style="position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">' +
+        '<canvas id="assemblyCanvas" width="220" height="220" style="position:absolute;inset:0;pointer-events:none"></canvas>' +
+        '<div id="bronzeBadgeFinal" style="position:absolute;width:80px;height:80px;border-radius:50%;border:1.5px solid rgba(205,127,50,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:border-color 1.8s ease,box-shadow 1.8s ease,opacity .1s ease">' +
+          '<span id="bronzeIconFinal" style="font-size:30px;color:#cd7f32;opacity:0;transition:opacity 1.8s ease">⬢</span>' +
+        '</div>' +
+      '</div>' +
+      '<div style="position:relative;height:56px;display:flex;align-items:center;justify-content:center;width:240px">' +
+        '<div id="rankNameBronzeFinal" style="font-family:Cinzel Decorative,serif;font-size:clamp(26px,4vw,40px);color:#cd7f32;opacity:0;transform:scale(0.9);transition:opacity 1.4s ease,transform 1.4s ease;text-shadow:0 0 40px rgba(205,127,50,.4),0 0 80px rgba(205,127,50,.15)">Bronze</div>' +
+      '</div>' +
+    '</div>' +
+    '<div id="completionBelow" style="display:flex;flex-direction:column;align-items:center;opacity:0;transition:opacity 1.2s ease">' +
+      '<div style="width:60px;height:1px;background:rgba(255,255,255,.08);margin-bottom:28px"></div>' +
+      '<div style="font-family:Cinzel Decorative,serif;font-size:clamp(18px,3vw,26px);color:#f0ece4;text-align:center;line-height:1.3;margin-bottom:14px">Ascension Paths<br><span style="color:#c084fc">Unlocked</span></div>' +
+      '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:380px;line-height:1.8;margin-bottom:28px">The three astral trees are now visible.<br>Find the Oracle. Discover your skill focus.</div>' +
+      '<a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;text-decoration:none;margin-bottom:12px">Book your PlayBook call →</a>' +
+      '<button onclick="this.parentNode.remove();setTimeout(showQuestNotification,1000)" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;padding:8px">Continue exploring →</button>' +
+    '</div>';
+
   document.body.appendChild(msg);
+
+  var ac  = document.getElementById('assemblyCanvas');
+  var ctx = ac.getContext('2d');
+  var W = 220, H = 220, cx = 110, cy = 110, badgeR = 40;
+
+  var finalPts = [];
+  for(var i = 0; i < 12; i++){
+    var a = (Math.PI * 2 / 12) * i - Math.PI / 2;
+    finalPts.push({ x: cx + Math.cos(a) * badgeR, y: cy + Math.sin(a) * badgeR });
+  }
+  var lines = [];
+  for(var i = 0; i < 12; i++) lines.push([i, (i+1) % 12]);
+  lines.push([0,6],[1,7],[2,8],[3,9],[4,10],[5,11]);
+
+  var stars = finalPts.map(function(fp, i){
+    var scatter = 85 + Math.random() * 20;
+    var startA  = Math.random() * Math.PI * 2;
+    return {
+      id: i,
+      sx: cx + Math.cos(startA) * scatter,
+      sy: cy + Math.sin(startA) * scatter,
+      tx: fp.x, ty: fp.y,
+      x:  cx + Math.cos(startA) * scatter,
+      y:  cy + Math.sin(startA) * scatter,
+      r:  1.8 + Math.random() * 1.2,
+      alpha: 0, arrived: false,
+      arrivalTime: 0,
+      twinklePhase: Math.random() * Math.PI * 2
+    };
+  });
+
+  var travelStart = stars.map(function(_, i){
+    return 600 + i * 80 + Math.random() * 120;
+  });
+  var travelDuration  = 1600;
+  var lineDrawStart   = 2900;
+  var lineDrawDuration = 800;
+
+  function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+  function easeInOutQuad(t){ return t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+
+  var startTime = null;
+  var badgeBloomed = false;
+  var nameBloomed  = false;
+
+  // Collapse phase timing
+  var collapseStart    = lineDrawStart + lineDrawDuration + 100;
+  var collapseDuration = 600;
+  var bloomStart       = collapseStart + collapseDuration;
+
+  function animate(ts){
+    if(!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Label fade in
+    if(elapsed > 300){
+      var lbl = document.getElementById('rankAchievedLabel');
+      if(lbl && lbl.style.opacity === '0') lbl.style.opacity = '1';
+    }
+
+    // Collapse progress (0 = constellation, 1 = fully collapsed to center)
+    var collapsing = elapsed > collapseStart;
+    var cp = collapsing ? Math.min(1, (elapsed - collapseStart) / collapseDuration) : 0;
+    var ecp = cp < 1 ? 1 - Math.pow(1 - cp, 3) : 1; // ease in cubic
+
+    // Update star positions — drift to target, then collapse to center
+    stars.forEach(function(st, i){
+      var t0 = travelStart[i];
+      if(elapsed < t0){
+        st.alpha = 0.3 + Math.sin(elapsed * 0.003 + st.twinklePhase) * 0.25;
+      } else {
+        var p  = Math.min(1, (elapsed - t0) / travelDuration);
+        var ep = easeOutCubic(p);
+        var tx = st.sx + (st.tx - st.sx) * ep;
+        var ty = st.sy + (st.ty - st.sy) * ep;
+        // Collapse: move from target position toward center
+        st.x = tx + (cx - tx) * ecp;
+        st.y = ty + (cy - ty) * ecp;
+        st.alpha = (0.5 + ep * 0.5) * (1 - ecp);
+        if(p >= 1 && !st.arrived){ st.arrived = true; st.arrivalTime = elapsed; }
+      }
+    });
+
+    // Draw constellation lines (fade out during collapse)
+    if(elapsed > lineDrawStart && cp < 1){
+      var lp = Math.min(1, (elapsed - lineDrawStart) / lineDrawDuration);
+      var lineAlphaFade = 1 - ecp;
+      var totalLines = lines.length;
+      lines.forEach(function(ln, li){
+        var lineStart = li / totalLines;
+        if(lp < lineStart) return;
+        var lProgress = Math.min(1, (lp - lineStart) / (1 / totalLines));
+        var ep = easeInOutQuad(lProgress);
+        // Collapse: endpoints also pull toward center
+        var p0 = stars[ln[0]], p1 = stars[ln[1]];
+        var ex = p0.x + (p1.x - p0.x) * ep;
+        var ey = p0.y + (p1.y - p0.y) * ep;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(205,127,50,' + ((0.25 + ep * 0.35) * lineAlphaFade) + ')';
+        ctx.lineWidth = 0.7 + ecp * 1.5; // thicken as they collapse
+        ctx.shadowBlur = ep * 8 * lineAlphaFade;
+        ctx.shadowColor = 'rgba(205,127,50,0.6)';
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    // Draw stars (fade out during collapse)
+    if(cp < 1){
+      stars.forEach(function(st){
+        if(st.alpha <= 0) return;
+        var twinkle = st.arrived
+          ? 0.8 + Math.sin((elapsed - st.arrivalTime) * 0.006 + st.twinklePhase) * 0.2
+          : 1;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r * twinkle * (1 - ecp * 0.5), 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(220,170,80,' + (st.alpha * twinkle) + ')';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(205,127,50,0.8)';
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    // Flash bloom at collapse center — the moment everything converges
+    if(collapsing && cp < 1){
+      var bloomAlpha = Math.sin(ecp * Math.PI) * 0.85;
+      var bloomR     = ecp * badgeR * 2.5;
+      var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, bloomR);
+      grad.addColorStop(0,   'rgba(255,200,80,' + bloomAlpha + ')');
+      grad.addColorStop(0.4, 'rgba(205,127,50,' + (bloomAlpha * 0.5) + ')');
+      grad.addColorStop(1,   'rgba(205,127,50,0)');
+      ctx.save();
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, bloomR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Badge appears at collapse completion
+    if(!badgeBloomed && elapsed > bloomStart){
+      badgeBloomed = true;
+      var badge = document.getElementById('bronzeBadgeFinal');
+      var icon  = document.getElementById('bronzeIconFinal');
+      if(badge){
+        badge.style.opacity = '1';
+        badge.style.borderColor = '#cd7f32';
+        badge.style.boxShadow = '0 0 28px rgba(205,127,50,.5), 0 0 60px rgba(205,127,50,.2)';
+        if(icon) icon.style.opacity = '1';
+        // Expand ring
+        var ring = document.createElement('div');
+        ring.style.cssText = 'position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,200,80,.8);pointer-events:none;transition:inset 0.9s ease-out,opacity 0.9s ease-out';
+        document.getElementById('rankAssemblyStage').appendChild(ring);
+        setTimeout(function(){ ring.style.inset='-44px'; ring.style.opacity='0'; }, 40);
+      }
+    }
+
+    // Bronze name rises
+    if(!nameBloomed && elapsed > bloomStart + 400){
+      nameBloomed = true;
+      var bn = document.getElementById('rankNameBronzeFinal');
+      if(bn){ bn.style.opacity = '1'; bn.style.transform = 'scale(1)'; }
+    }
+
+    var allArrived = stars.every(function(s){ return s.arrived; });
+    if(!allArrived || elapsed < bloomStart + 600){
+      requestAnimationFrame(animate);
+    }
+  }
+
+  requestAnimationFrame(animate);
+
+  setTimeout(function(){
+    var below = document.getElementById('completionBelow');
+    if(below) below.style.opacity = '1';
+  }, 5400);
 }
+
 
 // ---- TUTORIAL ----
 function reopenTutorial(){
@@ -4108,6 +4313,10 @@ window.addEventListener('load',function(){
   }
   // Rank system init
   updateRankDisplay();
+  // For returning users — if still Iron but all complete, catch the rank up
+  if(getCurrentRank() === 'iron' && completed.length >= 5){
+    setTimeout(checkRankUp, 800);
+  }
   // Restore hidden nodes if quest accepted or complete
   if(getQuestState() === 'accepted' || getQuestState() === 'complete'){
     hiddenNodesActive = true;
