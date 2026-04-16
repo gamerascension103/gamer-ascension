@@ -1685,6 +1685,24 @@ function drawOracle(){
     oraclePulse = Math.max(0, oraclePulse - 0.006);
   }
 
+  // Option B — slow beacon pulse every ~5 seconds (post-completion only)
+  var allComplete = completed.length >= 5;
+  var beaconPeriod = 300;
+  var beaconPhase = t % beaconPeriod;
+  if(!activated && allComplete && beaconPhase < 120){
+    var bp = beaconPhase / 120;
+    var beaconR = pr + 30 + bp * 80;
+    var beaconAlpha = (1 - bp) * 0.18;
+    treeCtx.save();
+    treeCtx.strokeStyle = 'rgba(180,140,255,' + beaconAlpha + ')';
+    treeCtx.lineWidth = 1.2;
+    treeCtx.shadowBlur = 0;
+    treeCtx.beginPath();
+    treeCtx.arc(ORACLE_X, ORACLE_Y, beaconR, 0, Math.PI*2);
+    treeCtx.stroke();
+    treeCtx.restore();
+  }
+
   // Label — "The Oracle" in Cinzel
   treeCtx.save();
   treeCtx.fillStyle = activated ? 'rgba(200,170,255,0.7)' : 'rgba(180,140,255,0.2)';
