@@ -2037,24 +2037,26 @@ function loadReflections(){
 }
 
 function submitReflection(blockId){
+  console.log('submitReflection called with:', blockId);
   var btn = document.getElementById('rsub-'+blockId);
-  var xp = document.getElementById('rxp-'+blockId);
-  if(!btn) return;
-  if(btn.classList.contains('saved')) return;
+  console.log('btn found:', btn);
+  if(!btn){ console.log('btn not found, returning'); return; }
+  if(btn.classList.contains('saved')){ console.log('already saved'); return; }
 
-  // Save all textareas in this block
   var textareas = document.querySelectorAll('#reflect-'+blockId+' .reflect-textarea');
+  console.log('textareas found:', textareas.length);
   var hasContent = false;
   textareas.forEach(function(ta){
+    console.log('textarea value:', ta.value);
     if(ta.value.trim().length > 0){
       localStorage.setItem('ga_reflect_'+ta.id.replace('rq-',''), ta.value);
       hasContent = true;
     }
   });
 
-  if(!hasContent) return;
+  console.log('hasContent:', hasContent);
+  if(!hasContent){ console.log('no content, returning'); return; }
 
-  // Mark submitted
   var submitted = JSON.parse(localStorage.getItem('ga_reflect_submitted') || '[]');
   if(submitted.indexOf(blockId) === -1){
     submitted.push(blockId);
@@ -2063,6 +2065,7 @@ function submitReflection(blockId){
 
   markReflectionSaved(blockId);
   awardReflectionXP(blockId);
+  console.log('submitReflection complete');
 }
 
 function markReflectionSaved(blockId){
