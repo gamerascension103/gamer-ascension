@@ -829,7 +829,52 @@ function updateEffects(){
       treeCtx.stroke();
     }
 
-    else if(e.type === 'rankUp'){
+    else if(e.type === 'treeLightup'){
+      // Full pillar tree cascade — all nodes in pillar bloom simultaneously then fade
+      var pillarMap = {
+        vitality: PILLAR_NODES.vitality,
+        spirit:   PILLAR_NODES.spirit,
+        alignment: PILLAR_NODES.alignment
+      };
+      var nodes = pillarMap[e.pillar] || [];
+      var alpha = e.life * 0.65;
+      nodes.forEach(function(n){
+        // Outer bloom
+        var bloom = treeCtx.createRadialGradient(n.x, n.y, 10, n.x, n.y, 55);
+        bloom.addColorStop(0, e.color + (alpha * 0.5) + ')');
+        bloom.addColorStop(1, e.color + '0)');
+        treeCtx.fillStyle = bloom;
+        treeCtx.beginPath();
+        treeCtx.arc(n.x, n.y, 55, 0, Math.PI*2);
+        treeCtx.fill();
+        // Node ring
+        treeCtx.strokeStyle = e.color + alpha + ')';
+        treeCtx.lineWidth = 1.5;
+        treeCtx.shadowBlur = 14;
+        treeCtx.shadowColor = e.color + '0.8)';
+        treeCtx.beginPath();
+        treeCtx.arc(n.x, n.y, 20, 0, Math.PI*2);
+        treeCtx.stroke();
+      });
+      // Also light up the pillar root connection lines
+      var pillarRoots = {
+        vitality:  {x: VITALITY_X,  y: PILLAR_Y},
+        spirit:    {x: SPIRIT_X,    y: PILLAR_Y},
+        alignment: {x: ALIGNMENT_X, y: PILLAR_Y}
+      };
+      var root = pillarRoots[e.pillar];
+      if(root){
+        treeCtx.strokeStyle = e.color + (alpha * 0.8) + ')';
+        treeCtx.lineWidth = 2;
+        treeCtx.shadowBlur = 20;
+        treeCtx.shadowColor = e.color + '0.6)';
+        treeCtx.beginPath();
+        treeCtx.moveTo(CX, SPHERE_Y);
+        treeCtx.lineTo(root.x, root.y);
+        treeCtx.stroke();
+      }
+      e.life -= 1 / e.duration;
+    }
       // Large Cinzel text blooms from sphere center, holds, fades
       var rise = progress * 60;
       var alpha = progress < 0.2
@@ -1614,6 +1659,10 @@ function updatePulseWaves(charge){
     // Fade out as it expands
     sw.opacity = Math.max(0, 0.5 * (1 - sw.r / sw.maxR));
 
+    // Support custom shockwave origins (node bursts vs sphere)
+    var originX = sw.cx !== undefined ? sw.cx : CX;
+    var originY = sw.cy !== undefined ? sw.cy : SPHERE_Y;
+
     // Draw the ring
     treeCtx.save();
     treeCtx.strokeStyle = sw.color + sw.opacity + ')';
@@ -1621,7 +1670,7 @@ function updatePulseWaves(charge){
     treeCtx.shadowBlur = 18;
     treeCtx.shadowColor = sw.color + (sw.opacity * 0.8) + ')';
     treeCtx.beginPath();
-    treeCtx.arc(CX, SPHERE_Y, sw.r, 0, Math.PI * 2);
+    treeCtx.arc(originX, originY, sw.r, 0, Math.PI * 2);
     treeCtx.stroke();
 
     // Soft outer glow ring
@@ -1629,24 +1678,20 @@ function updatePulseWaves(charge){
     treeCtx.lineWidth = sw.lineWidth * 6;
     treeCtx.shadowBlur = 30;
     treeCtx.beginPath();
-    treeCtx.arc(CX, SPHERE_Y, sw.r, 0, Math.PI * 2);
+    treeCtx.arc(originX, originY, sw.r, 0, Math.PI * 2);
     treeCtx.stroke();
     treeCtx.restore();
 
     // Check collision with each node
     allNodes.forEach(function(node){
-      var dist = Math.sqrt(Math.pow(node.x - CX, 2) + Math.pow(node.y - SPHERE_Y, 2));
+      var dist = Math.sqrt(Math.pow(node.x - originX, 2) + Math.pow(node.y - originY, 2));
       var nodeId = node.x + ',' + node.y;
-      // Wave front is within node radius
       if(Math.abs(sw.r - dist) < node.r + 20 && sw.litNodes.indexOf(nodeId) === -1){
         sw.litNodes.push(nodeId);
-        // Add to global lit nodes with decay
         litNodes.push({
           x: node.x, y: node.y, r: node.r,
           color: node.color,
-          alpha: 0,         // starts at 0, ramps up then decays
-          phase: 'in',      // 'in' or 'out'
-          life: 1.0
+          alpha: 0, phase: 'in', life: 1.0
         });
       }
     });
@@ -2392,32 +2437,112 @@ function openLesson(id){
   document.getElementById('lessonOverlay').classList.add('open');
   document.getElementById('lessonBody').scrollTop=0;
 }
-function closeLesson(){document.getElementById('lessonOverlay').classList.remove('open');currentLesson=null;}
+// ---- PENDING EFFECT QUEUE ----
+// Effects queued while lesson overlay is open fire as a cinematic sequence on close
+var pendingEffects = [];
+
+function flushPendingEffects(){
+  if(pendingEffects.length === 0) return;
+  var queue = pendingEffects.slice();
+  pendingEffects = [];
+  // Fire each queued effect with a staggered delay for cinematic feel
+  queue.forEach(function(fn, i){
+    setTimeout(fn, i * 320);
+  });
+}
+
+function closeLesson(){
+  document.getElementById('lessonOverlay').classList.remove('open');
+  currentLesson = null;
+  // Wait for overlay slide-out transition (400ms) then fire the sequence
+  setTimeout(flushPendingEffects, 500);
+}
+
 function markComplete(){
-  if(!currentLesson||completed.includes(currentLesson))return;
+  if(!currentLesson || completed.includes(currentLesson)) return;
   completed.push(currentLesson);
-  localStorage.setItem('ga_pregame_v2_completed',JSON.stringify(completed));
-  var btn=document.getElementById('completeBtn');
-  btn.textContent='Completed ✓';btn.classList.add('done');btn.disabled=true;
+  localStorage.setItem('ga_pregame_v2_completed', JSON.stringify(completed));
+  var btn = document.getElementById('completeBtn');
+  btn.textContent = 'Completed ✓'; btn.classList.add('done'); btn.disabled = true;
   document.getElementById('completionFlash').classList.add('active');
-  setTimeout(function(){document.getElementById('completionFlash').classList.remove('active');},600);
-  var idx=lessonOrder.indexOf(currentLesson);
-  if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');
+  setTimeout(function(){ document.getElementById('completionFlash').classList.remove('active'); }, 600);
+  var idx = lessonOrder.indexOf(currentLesson);
+  if(idx >= 0) document.getElementById('pip-'+idx).classList.add('done');
   buildClickTargets();
   updateRespecBtn();
 
-  // Spawn canvas node pulse for the completed node
   var node = PREGAME_NODES[idx];
+  var allDone = completed.length >= 5;
+
   if(node){
-    var pos = nodePos(node);
-    spawnNodePulse(pos.x, pos.y, 'rgba(201,168,76,');
-    // Slight delay for a second pulse
-    setTimeout(function(){
-      spawnNodePulse(pos.x, pos.y, 'rgba(255,180,80,');
-    }, 220);
+    // Capture node reference for the closure
+    (function(capturedNode, capturedAllDone){
+
+      // Effect 1 — node pulse (gold)
+      pendingEffects.push(function(){
+        var pos = nodePos(capturedNode);
+        spawnNodePulse(pos.x, pos.y, 'rgba(201,168,76,');
+      });
+
+      // Effect 2 — second pulse (warm white)
+      pendingEffects.push(function(){
+        var pos = nodePos(capturedNode);
+        spawnNodePulse(pos.x, pos.y, 'rgba(255,220,120,');
+      });
+
+      // Effect 3 — sonar shockwave from this node outward (new shockwave origin)
+      pendingEffects.push(function(){
+        var pos = nodePos(capturedNode);
+        // Spawn a local burst shockwave from the node itself
+        shockwaves.push({
+          r: 36, maxR: 600, speed: 3.5, opacity: 0.7, lineWidth: 2,
+          color: 'rgba(201,168,76,', litNodes: [],
+          cx: pos.x, cy: pos.y   // custom origin stored on shockwave
+        });
+      });
+
+      // If this was the LAST module — fire the full ignition sequence
+      if(capturedAllDone){
+
+        // Effect 4 — sphere completion burst rings
+        pendingEffects.push(function(){
+          spawnCompletionBurst();
+        });
+
+        // Effect 5 — pillar tree lights up with cascading pulses per pillar
+        pendingEffects.push(function(){
+          // Vitality pulse
+          spawnEffect('treeLightup', { pillar:'vitality', color:'rgba(255,100,68,', delay:0, life:1, duration:120 });
+        });
+        pendingEffects.push(function(){
+          // Spirit pulse
+          spawnEffect('treeLightup', { pillar:'spirit', color:'rgba(187,153,255,', delay:0, life:1, duration:120 });
+        });
+        pendingEffects.push(function(){
+          // Alignment pulse
+          spawnEffect('treeLightup', { pillar:'alignment', color:'rgba(85,255,170,', delay:0, life:1, duration:120 });
+        });
+
+        // Effect 6 — all pregame nodes pulse simultaneously
+        pendingEffects.push(function(){
+          PREGAME_NODES.forEach(function(n, i){
+            setTimeout(function(){
+              var pos = nodePos(n);
+              spawnNodePulse(pos.x, pos.y, 'rgba(255,220,80,');
+            }, i * 80);
+          });
+        });
+
+        // Effect 7 — oracle bloom (sphere awakening the oracle)
+        pendingEffects.push(function(){
+          spawnOracleBloom('rgba(255,220,80,');
+        });
+      }
+
+    })(node, allDone);
   }
 
-  if(completed.length>=5) setTimeout(showAllComplete,1200);
+  if(completed.length >= 5) setTimeout(showAllComplete, 1200);
 }
 function navLesson(dir){
   var idx=lessonOrder.indexOf(currentLesson);
