@@ -293,7 +293,8 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 /* CODEX PANEL */
 .codex-btn{position:fixed;bottom:70px;right:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;color:rgba(201,168,76,.7);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.1em;padding:0 14px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px)}
-.codex-btn.visible{display:flex}
+.codex-btn.codex-pulse{border-color:rgba(201,168,76,.9);color:rgba(201,168,76,1);animation:codex-pulse-anim 1.2s ease-in-out infinite}
+@keyframes codex-pulse-anim{0%,100%{box-shadow:0 0 6px rgba(201,168,76,.3)}50%{box-shadow:0 0 18px rgba(201,168,76,.8),0 0 4px rgba(201,168,76,.4) inset}}
 .codex-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.6);color:rgba(201,168,76,1)}
 .codex-panel{position:fixed;inset:0;z-index:450;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s}
 .codex-panel.open{opacity:1;pointer-events:all}
@@ -3709,9 +3710,12 @@ function openLoreFragment(hn){
     if(found.length >= HIDDEN_NODES.length && getQuestState() === 'accepted'){
       setQuestState('complete');
       setTimeout(function(){
-        showQuestToast('Quest complete. The Codex has been unlocked.');
+        showQuestToast('Quest complete \u2014 The Codex has been unlocked.');
         document.getElementById('codexBtn').classList.add('visible');
-        openCodex();
+        document.getElementById('codexBtn').classList.add('codex-pulse');
+        setTimeout(function(){
+          document.getElementById('codexBtn').classList.remove('codex-pulse');
+        }, 6000);
       }, 400);
     }
   }
