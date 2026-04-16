@@ -251,6 +251,68 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
   .lesson-header,.lesson-footer{padding:16px 20px}
   .lc-phase-grid,.lc-two-col{grid-template-columns:1fr}
 }
+
+/* RANK BADGE */
+.rank-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:3px;border:1px solid rgba(255,255,255,.1);background:rgba(10,10,20,.6);cursor:default;transition:all .2s}
+.rank-badge:hover{border-color:rgba(255,255,255,.2);background:rgba(20,20,40,.8)}
+.rank-badge-icon{font-size:12px;line-height:1}
+.rank-badge-name{font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.12em;text-transform:uppercase}
+.rank-iron .rank-badge-name{color:rgba(180,180,200,.7)}
+.rank-bronze .rank-badge-name{color:#cd7f32}
+.rank-silver .rank-badge-name{color:#aab8c2}
+.rank-gold .rank-badge-name{color:#c9a84c}
+.rank-platinum .rank-badge-name{color:#e0d0ff}
+
+/* QUEST NOTIFICATION */
+.quest-notif{position:fixed;z-index:200;pointer-events:all;cursor:pointer;display:none}
+.quest-notif.visible{display:flex}
+.quest-notif-inner{width:28px;height:28px;border-radius:50%;background:rgba(10,10,20,.9);border:1.5px solid #c9a84c;display:flex;align-items:center;justify-content:center;box-shadow:0 0 12px rgba(201,168,76,.4)}
+.quest-notif-mark{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:#c9a84c;line-height:1;margin-top:-1px}
+@keyframes quest-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes quest-glow{0%,100%{box-shadow:0 0 8px rgba(201,168,76,.3)}50%{box-shadow:0 0 20px rgba(201,168,76,.8)}}
+.quest-notif.visible .quest-notif-inner{animation:quest-bob 1.8s ease-in-out infinite,quest-glow 1.8s ease-in-out infinite}
+
+/* QUEST PANEL */
+.quest-panel{position:fixed;inset:0;z-index:450;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.75);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s}
+.quest-panel.open{opacity:1;pointer-events:all}
+.quest-card{background:rgba(10,10,22,.97);border:1px solid rgba(201,168,76,.35);border-radius:8px;padding:0;max-width:440px;width:92%;box-shadow:0 0 60px rgba(100,60,0,.25)}
+.quest-card-header{padding:24px 28px 18px;border-bottom:1px solid rgba(201,168,76,.12);display:flex;align-items:center;gap:12px}
+.quest-card-dot{width:8px;height:8px;border-radius:50%;background:#c9a84c;flex-shrink:0;animation:hint-blink 2s ease-in-out infinite}
+.quest-card-eyebrow{font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:rgba(201,168,76,.7);margin-bottom:4px}
+.quest-card-title{font-family:'Cinzel Decorative',serif;font-size:18px;color:#f0ece4;line-height:1.2}
+.quest-card-body{padding:20px 28px}
+.quest-card-desc{font-size:14px;font-weight:300;color:rgba(240,236,228,.65);line-height:1.75;margin-bottom:16px}
+.quest-card-hints{background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.12);border-radius:4px;padding:14px 16px;margin-bottom:20px}
+.quest-card-hint{font-size:12px;font-weight:300;color:rgba(201,168,76,.7);line-height:1.6;font-style:italic}
+.quest-card-hint+.quest-card-hint{margin-top:6px;padding-top:6px;border-top:1px solid rgba(201,168,76,.08)}
+.quest-card-actions{display:flex;gap:10px}
+.quest-accept-btn{flex:1;background:#c9a84c;color:#0a0a0a;font-family:'Cinzel',serif;font-size:10px;font-weight:600;letter-spacing:.08em;padding:12px 20px;border-radius:3px;border:none;cursor:pointer;transition:background .2s}
+.quest-accept-btn:hover{background:#b8952e}
+.quest-deny-btn{background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(240,236,228,.4);font-size:12px;font-weight:300;padding:12px 18px;border-radius:3px;cursor:pointer;transition:all .2s}
+.quest-deny-btn:hover{border-color:rgba(255,255,255,.2);color:rgba(240,236,228,.7)}
+
+/* CODEX PANEL */
+.codex-btn{position:fixed;bottom:70px;right:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;color:rgba(201,168,76,.7);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.1em;padding:0 14px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px)}
+.codex-btn.visible{display:flex}
+.codex-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.6);color:rgba(201,168,76,1)}
+.codex-panel{position:fixed;inset:0;z-index:450;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s}
+.codex-panel.open{opacity:1;pointer-events:all}
+.codex-card{background:rgba(8,8,20,.98);border:1px solid rgba(201,168,76,.25);border-radius:8px;max-width:560px;width:94%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 0 80px rgba(80,40,0,.3)}
+.codex-card-header{padding:22px 28px 16px;border-bottom:1px solid rgba(201,168,76,.1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.codex-card-title{font-family:'Cinzel Decorative',serif;font-size:16px;color:#c9a84c}
+.codex-card-close{background:none;border:none;color:rgba(240,236,228,.3);font-size:20px;cursor:pointer;padding:0;transition:color .2s;line-height:1}
+.codex-card-close:hover{color:rgba(240,236,228,.7)}
+.codex-card-body{flex:1;overflow-y:auto;padding:24px 28px}
+.codex-empty{font-size:14px;font-weight:300;color:rgba(240,236,228,.3);text-align:center;padding:40px 0;font-style:italic}
+.codex-entry{margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid rgba(255,255,255,.05)}
+.codex-entry:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.codex-entry-eyebrow{font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(201,168,76,.6);margin-bottom:6px}
+.codex-entry-title{font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:#f0ece4;margin-bottom:12px}
+.codex-entry-text{font-size:13px;font-weight:300;color:rgba(240,236,228,.6);line-height:1.85;font-style:italic}
+
+/* QUEST COMPLETE TOAST */
+.quest-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);z-index:500;background:rgba(10,10,22,.97);border:1px solid rgba(201,168,76,.4);border-radius:4px;padding:14px 24px;font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:.1em;color:#c9a84c;text-align:center;opacity:0;pointer-events:none;transition:all .4s;white-space:nowrap}
+.quest-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -259,6 +321,7 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
   <a href="/" class="header-logo">Gamer<span>Ascension</span></a>
   <div class="header-right">
     <span class="progress-label">Pre-game</span>
+    <div id="rankBadge" class="rank-badge rank-iron" title="Current Rank"><span class="rank-badge-icon">⬡</span><span class="rank-badge-name" id="rankBadgeName">Iron</span></div>
     <div class="progress-pips">
       <div class="pip" id="pip-0"></div>
       <div class="pip" id="pip-1"></div>
@@ -269,6 +332,56 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
     <a href="https://calendly.com/straincoaching/insightcall" class="header-btn">Book a call →</a>
   </div>
 </div>
+
+
+<div class="quest-notif" id="questNotif">
+  <div class="quest-notif-inner">
+    <span class="quest-notif-mark">!</span>
+  </div>
+</div>
+
+<!-- QUEST PANEL -->
+<div class="quest-panel" id="questPanel">
+  <div class="quest-card">
+    <div class="quest-card-header">
+      <div class="quest-card-dot"></div>
+      <div>
+        <div class="quest-card-eyebrow">New Quest Available</div>
+        <div class="quest-card-title">Hidden Knowledge</div>
+      </div>
+    </div>
+    <div class="quest-card-body">
+      <p class="quest-card-desc">Ancient wisdom has been buried in the star map. Two fragments wait to be found by those who look closely enough. The knowledge is small, quiet, orbiting the nodes you have already mastered. You will need to zoom in. You will need to look carefully.</p>
+      <div class="quest-card-hints">
+        <div class="quest-card-hint">&#9670; Something stirs near the place where the gap was first named.</div>
+        <div class="quest-card-hint">&#9670; Another fragment circles the practice the Stoics never abandoned.</div>
+      </div>
+      <div class="quest-card-actions">
+        <button class="quest-accept-btn" onclick="acceptQuest()">Accept the Quest</button>
+        <button class="quest-deny-btn" onclick="denyQuest()">Not now</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CODEX PANEL -->
+<div class="codex-panel" id="codexPanel">
+  <div class="codex-card">
+    <div class="codex-card-header">
+      <div class="codex-card-title">The Codex</div>
+      <button class="codex-card-close" onclick="closeCodex()">&#215;</button>
+    </div>
+    <div class="codex-card-body" id="codexBody">
+      <div class="codex-empty">No fragments discovered yet. Accept the quest and search the star map.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CODEX BUTTON -->
+<button class="codex-btn" id="codexBtn" onclick="openCodex()">&#9670; Codex</button>
+
+<!-- QUEST COMPLETE TOAST -->
+<div class="quest-toast" id="questToast"></div>
 
 <canvas class="nebula-canvas" id="nebulaCanvas"></canvas>
 
@@ -1560,6 +1673,7 @@ function drawFrame(){
   drawAstralConstellations();
   drawNexus(charge);
   drawPregameNodes();
+  drawHiddenNodes();
   updateParticles();
   drawOracle();
   updateOracleParticles();
@@ -1791,6 +1905,10 @@ function activateOracle(){
   var pillarColors = {vitality:'rgba(255,100,68,', spirit:'rgba(187,153,255,', alignment:'rgba(85,255,170,'};
   var bloomColor = window.quizResult ? pillarColors[window.quizResult] : 'rgba(187,153,255,';
   spawnOracleBloom(bloomColor);
+  // Save quiz result to localStorage for persistence
+  if(window.quizResult) localStorage.setItem('ga_quiz_result', window.quizResult);
+  // Check rank up
+  setTimeout(checkRankUp, 1200);
 }
 
 // ---- AMBIENT COSMIC DUST ----
@@ -2817,6 +2935,14 @@ document.getElementById('canvasWrap').addEventListener('mouseleave', function(){
 
 document.getElementById('canvasWrap').addEventListener('click', function(e){
   if(drag.moved) return;
+  // Check hidden meta nodes first (they're tiny, priority hit)
+  var c = screenToCanvas(e.clientX, e.clientY);
+  var hiddenHit = hitTestHiddenNodes(c.x, c.y);
+  if(hiddenHit){
+    e.stopPropagation();
+    openLoreFragment(hiddenHit);
+    return;
+  }
   var hit = hitTestPregameNode(e.clientX, e.clientY);
   if(hit){
     e.stopPropagation();
@@ -2878,6 +3004,14 @@ document.getElementById('canvasWrap').addEventListener('touchend', function(e){
   if(drag.moved) return;
   if(e.changedTouches.length === 0) return;
   var touch = e.changedTouches[0];
+  // Check hidden nodes first
+  var c = screenToCanvas(touch.clientX, touch.clientY);
+  var hiddenHit = hitTestHiddenNodes(c.x, c.y);
+  if(hiddenHit){
+    e.preventDefault();
+    openLoreFragment(hiddenHit);
+    return;
+  }
   var hit = hitTestPregameNode(touch.clientX, touch.clientY);
   if(hit){
     e.preventDefault();
@@ -2890,6 +3024,10 @@ var pinch={active:false,startDist:0,startScale:0};
 
 function applyTransform(){
   document.getElementById('canvasInner').style.transform='translate('+transform.x+'px,'+transform.y+'px) scale('+transform.scale+')';
+  // Keep quest notif aligned to Oracle
+  if(document.getElementById('questNotif').classList.contains('visible')){
+    positionQuestNotif();
+  }
 }
 
 function centerTree(){
@@ -3085,20 +3223,45 @@ document.getElementById('respecConfirmNo').onclick=function(e){
 };
 document.getElementById('respecConfirmYes').onclick=function(e){
   e.stopPropagation();
-  var lessonIds=['gap','training','nutrition','journaling','reading'];
-  var drainInterval=setInterval(function(){
-    if(completed.length===0){clearInterval(drainInterval);buildClickTargets();updateRespecBtn();return;}
-    completed.pop();
-    localStorage.setItem('ga_pregame_v2_completed',JSON.stringify(completed));
-    document.querySelectorAll('.pip').forEach(function(p){p.classList.remove('done');});
-    completed.forEach(function(id){var idx=lessonIds.indexOf(id);if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');});
-  },280);
+
+  // Clear ALL localStorage keys for this app
+  var keysToRemove = Object.keys(localStorage).filter(function(k){
+    return k.startsWith('ga_') || k === 'ga_tutorial_seen';
+  });
+  keysToRemove.forEach(function(k){ localStorage.removeItem(k); });
+
+  // Reset completed array and pips
+  completed.length = 0;
+  localStorage.setItem('ga_pregame_v2_completed', JSON.stringify([]));
+  document.querySelectorAll('.pip').forEach(function(p){ p.classList.remove('done'); });
+
+  // Reset quiz/oracle
+  window.quizResult = null;
+  oracleActivated = false;
+
+  // Reset rank
+  setRank('iron');
+
+  // Reset quest + hidden nodes
+  hiddenNodesActive = false;
+  document.getElementById('questNotif').classList.remove('visible');
+  document.getElementById('codexBtn').classList.remove('visible');
+
+  // Reset reflections UI
+  document.querySelectorAll('.reflect-submit.saved').forEach(function(btn){
+    btn.textContent = 'Submit Reflection'; btn.classList.remove('saved');
+  });
+  document.querySelectorAll('.reflect-xp.show').forEach(function(xp){ xp.classList.remove('show'); });
+  document.querySelectorAll('.reflect-textarea').forEach(function(ta){ ta.value = ''; });
+
+  // Reset canvas systems
   nexusIgnited=false; nexusFlare=0; nexusArmLen=NEXUS_ARM_BASE;
   energyParticles.length=0; flowParticles.length=0;
   tesseractActive=false; tesseractPulse=0;
   leyParticles.length=0; treeParticles.length=0;
   tesseractPulseWaves.length=0;
-  // Reset all node lock states
+
+  // Reset node lock states
   PREGAME_NODES.forEach(function(n, ni){
     nodeLockState[n.id] = {
       targetX: CX + Math.cos(PENTAGON_ANGLES[ni]) * PENTAGON_LOCK_R,
@@ -3106,6 +3269,7 @@ document.getElementById('respecConfirmYes').onclick=function(e){
       fromX:0, fromY:0, progress:0, drifting:false, locked:false
     };
   });
+
   // Reset ascension sequence
   ascensionSequence.active=false; ascensionSequence.phase=0; ascensionSequence.timer=0;
   ascensionSequence.leyLine={progress:0, active:false, done:false};
@@ -3114,8 +3278,13 @@ document.getElementById('respecConfirmYes').onclick=function(e){
   ascensionSequence.crawl.spirit.litNodes=[]; ascensionSequence.crawl.spirit.queue=[0,1,2,7,8,3,4,9,5,6,10,11]; ascensionSequence.crawl.spirit.timer=0; ascensionSequence.crawl.spirit.started=false;
   ascensionSequence.crawl.alignment.litNodes=[]; ascensionSequence.crawl.alignment.queue=[0,1,2,3,4,5,6,7,8,9,10,11,12]; ascensionSequence.crawl.alignment.timer=0; ascensionSequence.crawl.alignment.started=false;
   ascensionSequence.flashAlpha=0; tetherOpacity=0;
+
+  // Remove completion overlay if present
   var existing=document.querySelector('[style*="z-index:500"]');
-  if(existing)existing.remove();
+  if(existing) existing.remove();
+
+  buildClickTargets();
+  updateRespecBtn();
   document.getElementById('respecConfirm').classList.remove('open');
 };
 
@@ -3319,6 +3488,7 @@ function activateOracleFromQuiz(){
 function retakeQuiz(){
   document.getElementById('quizFooter').style.display = '';
   window.quizResult = null;
+  localStorage.removeItem('ga_quiz_result');
   oracleActivated = false;
   quizStep = 0;
   quizAnswers = [];
@@ -3330,6 +3500,289 @@ function retakeQuiz(){
 function quizHighlightPillar(pillar){
   // Store result for tree to use
   window.quizResult = pillar;
+}
+
+// ---- RANK SYSTEM ----
+var RANKS = [
+  {id:'iron',     name:'Iron',     threshold:0,  icon:'\u2B21'},
+  {id:'bronze',   name:'Bronze',   threshold:1,  icon:'\u2B22'},
+  {id:'silver',   name:'Silver',   threshold:2,  icon:'\u2B21'},
+  {id:'gold',     name:'Gold',     threshold:3,  icon:'\u2B22'},
+  {id:'platinum', name:'Platinum', threshold:4,  icon:'\u2B21'},
+];
+
+function getCurrentRank(){
+  var stored = localStorage.getItem('ga_rank') || 'iron';
+  return stored;
+}
+
+function setRank(rankId){
+  localStorage.setItem('ga_rank', rankId);
+  updateRankDisplay();
+}
+
+function updateRankDisplay(){
+  var rankId = getCurrentRank();
+  var rank = RANKS.find(function(r){ return r.id === rankId; }) || RANKS[0];
+  var badge = document.getElementById('rankBadge');
+  var name  = document.getElementById('rankBadgeName');
+  if(!badge) return;
+  // Remove all rank classes
+  RANKS.forEach(function(r){ badge.classList.remove('rank-' + r.id); });
+  badge.classList.add('rank-' + rankId);
+  if(name) name.textContent = rank.name;
+}
+
+function checkRankUp(){
+  // Iron -> Bronze: all 5 pregame complete AND oracle activated
+  if(getCurrentRank() === 'iron' && completed.length >= 5 && (oracleActivated || window.quizResult)){
+    setRank('bronze');
+    // Show quest notification after short delay
+    setTimeout(showQuestNotification, 2000);
+  }
+}
+
+// ---- QUEST SYSTEM ----
+var QUEST_STATE_KEY  = 'ga_quest_iron_bronze';
+var LORE_FOUND_KEY   = 'ga_lore_found';
+
+// Quest states: 'none' | 'available' | 'accepted' | 'complete'
+function getQuestState(){ return localStorage.getItem(QUEST_STATE_KEY) || 'none'; }
+function setQuestState(s){ localStorage.setItem(QUEST_STATE_KEY, s); }
+function getLoreFound(){ return JSON.parse(localStorage.getItem(LORE_FOUND_KEY) || '[]'); }
+function setLoreFound(arr){ localStorage.setItem(LORE_FOUND_KEY, JSON.stringify(arr)); }
+
+function showQuestNotification(){
+  if(getQuestState() !== 'none') return;
+  setQuestState('available');
+  positionQuestNotif();
+  document.getElementById('questNotif').classList.add('visible');
+}
+
+function positionQuestNotif(){
+  // Position near Oracle in screen space
+  var wrap = document.getElementById('canvasWrap');
+  var rect = wrap.getBoundingClientRect();
+  var sx = rect.left + transform.x + ORACLE_X * transform.scale;
+  var sy = rect.top  + transform.y + ORACLE_Y * transform.scale;
+  var notif = document.getElementById('questNotif');
+  notif.style.left = (sx + 40) + 'px';
+  notif.style.top  = (sy - 40) + 'px';
+}
+
+document.getElementById('questNotif').addEventListener('click', function(){
+  document.getElementById('questNotif').classList.remove('visible');
+  document.getElementById('questPanel').classList.add('open');
+});
+
+function acceptQuest(){
+  document.getElementById('questPanel').classList.remove('open');
+  setQuestState('accepted');
+  spawnHiddenNodes();
+  showQuestToast('Quest accepted. Search the star map.');
+}
+
+function denyQuest(){
+  document.getElementById('questPanel').classList.remove('open');
+  setQuestState('none'); // allow re-offer later
+}
+
+function showQuestToast(msg){
+  var toast = document.getElementById('questToast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function(){ toast.classList.remove('show'); }, 3500);
+}
+
+// ---- HIDDEN META NODES ----
+var HIDDEN_NODES = [
+  {
+    id: 'lore_acedia',
+    parentId: 'gap',
+    orbitR: 52,
+    orbitSpeed: 0.0007,
+    orbitPhase: Math.PI * 0.4,
+    title: 'The Acedia Codex',
+    eyebrow: 'Fragment I \u00b7 The Gap',
+    lore: 'In the 4th century, desert monks of Egypt named a condition they feared more than any sin. They called it acedia \u2014 a word that has no clean translation. Not laziness. Not sadness. Something closer to a spiritual numbness, a failure to care about the distance between who you are and who you could be. The monk Evagrius Ponticus described it as \u201cthe noonday demon\u201d \u2014 the feeling that comes when the sun is highest and the work is hardest and nothing seems worth the effort. He considered it the most dangerous of all afflictions, not because it destroyed people suddenly, but because it made them comfortable with a smaller life. The gap you feel is not a modern problem. It is ancient. And the people who named it earliest understood something important: the antidote was not motivation. It was movement. Begin the work. The feeling follows.'
+  },
+  {
+    id: 'lore_seneca',
+    parentId: 'reading',
+    orbitR: 54,
+    orbitSpeed: -0.0006,
+    orbitPhase: Math.PI * 1.2,
+    title: 'The Seneca Fragment',
+    eyebrow: 'Fragment II \u00b7 Reading',
+    lore: 'In 65 AD, a man under house arrest and awaiting execution wrote a letter to his friend. Lucius Annaeus Seneca \u2014 philosopher, playwright, once the most powerful advisor in Rome \u2014 had been ordered to die by the emperor Nero. He spent his final days writing. One of those letters contained a line that has survived two thousand years: Nusquam est qui ubique est \u2014 he who is everywhere is nowhere. Seneca was writing about focus. But the letter also contained something else: a defence of reading that reads like it was written yesterday. He told his friend that we should read deeply rather than widely, that collecting books without absorbing them was like collecting tools without learning a trade, and that the purpose of reading was not knowledge but transformation. \u201cRetire into yourself as much as you can,\u201d he wrote. \u201cAssociate with those who will make a better man of you.\u201d He meant the authors on your shelf. The ones who did the work before you. Every book you open is a conversation across time with someone who figured something out. Seneca understood that. He died having written more letters than most people read in a lifetime.'
+  }
+];
+
+var hiddenNodesActive = false;
+
+function spawnHiddenNodes(){
+  hiddenNodesActive = true;
+}
+
+function getHiddenNodePos(hn){
+  // Find parent node position
+  var parent = PREGAME_NODES.find(function(n){ return n.id === hn.parentId; });
+  if(!parent) return {x:0, y:0};
+  var pPos = nodePos(parent);
+  var angle = hn.orbitPhase + t * hn.orbitSpeed;
+  return {
+    x: pPos.x + Math.cos(angle) * hn.orbitR,
+    y: pPos.y + Math.sin(angle) * hn.orbitR
+  };
+}
+
+function drawHiddenNodes(){
+  if(!hiddenNodesActive && getQuestState() !== 'accepted' && getQuestState() !== 'complete') return;
+  // Also draw if previously found (permanent)
+  var found = getLoreFound();
+  var questActive = getQuestState() === 'accepted' || getQuestState() === 'complete';
+
+  HIDDEN_NODES.forEach(function(hn){
+    var isFounded = found.indexOf(hn.id) !== -1;
+    if(!questActive && !isFounded) return;
+
+    var pos = getHiddenNodePos(hn);
+    var isFound = isFounded;
+
+    // Slow twinkle
+    var twinkle = 0.5 + Math.sin(t * 0.015 + hn.orbitPhase) * 0.5;
+
+    treeCtx.save();
+
+    if(isFound){
+      // Found state — brighter, gold tint
+      treeCtx.fillStyle = 'rgba(201,168,76,' + (0.7 + twinkle * 0.3) + ')';
+      treeCtx.shadowBlur = 12;
+      treeCtx.shadowColor = 'rgba(201,168,76,0.8)';
+      treeCtx.beginPath();
+      treeCtx.arc(pos.x, pos.y, 5.5, 0, Math.PI*2);
+      treeCtx.fill();
+      // Outer glow ring
+      treeCtx.strokeStyle = 'rgba(201,168,76,0.25)';
+      treeCtx.lineWidth = 1;
+      treeCtx.beginPath();
+      treeCtx.arc(pos.x, pos.y, 9, 0, Math.PI*2);
+      treeCtx.stroke();
+    } else {
+      // Undiscovered — very small, barely visible, faint violet
+      var alpha = 0.12 + twinkle * 0.18;
+      treeCtx.fillStyle = 'rgba(180,140,255,' + alpha + ')';
+      treeCtx.shadowBlur = 6;
+      treeCtx.shadowColor = 'rgba(180,140,255,0.4)';
+      treeCtx.beginPath();
+      treeCtx.arc(pos.x, pos.y, 3.5, 0, Math.PI*2);
+      treeCtx.fill();
+    }
+
+    treeCtx.restore();
+  });
+}
+
+function hitTestHiddenNodes(canvasX, canvasY){
+  if(getQuestState() !== 'accepted' && getQuestState() !== 'complete') return null;
+  var found = getLoreFound();
+  for(var i = 0; i < HIDDEN_NODES.length; i++){
+    var hn = HIDDEN_NODES[i];
+    var pos = getHiddenNodePos(hn);
+    var dx = canvasX - pos.x;
+    var dy = canvasY - pos.y;
+    var hitR = 22; // generous hit area — they're tiny
+    if(dx*dx + dy*dy < hitR*hitR){
+      return hn;
+    }
+  }
+  return null;
+}
+
+function openLoreFragment(hn){
+  var found = getLoreFound();
+  if(found.indexOf(hn.id) === -1){
+    found.push(hn.id);
+    setLoreFound(found);
+    updateCodexBtn();
+    // Check if quest complete
+    if(found.length >= HIDDEN_NODES.length && getQuestState() === 'accepted'){
+      setQuestState('complete');
+      setTimeout(function(){
+        showQuestToast('Quest complete. The Codex has been unlocked.');
+        document.getElementById('codexBtn').classList.add('visible');
+        openCodex();
+      }, 400);
+    }
+  }
+
+  // Show lore panel (reuse quest panel structure)
+  var panel = document.getElementById('questPanel');
+  panel.innerHTML = '<div class="quest-card">' +
+    '<div class="quest-card-header">' +
+    '<div class="quest-card-dot"></div>' +
+    '<div><div class="quest-card-eyebrow">' + hn.eyebrow + '</div>' +
+    '<div class="quest-card-title">' + hn.title + '</div></div>' +
+    '</div>' +
+    '<div class="quest-card-body">' +
+    '<p class="quest-card-desc" style="font-style:italic;color:rgba(240,236,228,.75)">' + hn.lore + '</p>' +
+    '<div class="quest-card-actions">' +
+    '<button class="quest-accept-btn" onclick="closeLorePanel()">Close</button>' +
+    '</div></div></div>';
+  panel.classList.add('open');
+}
+
+function closeLorePanel(){
+  var panel = document.getElementById('questPanel');
+  panel.classList.remove('open');
+  // Restore original quest panel content
+  panel.innerHTML = '<div class="quest-card">' +
+    '<div class="quest-card-header"><div class="quest-card-dot"></div>' +
+    '<div><div class="quest-card-eyebrow">New Quest Available</div>' +
+    '<div class="quest-card-title">Hidden Knowledge</div></div></div>' +
+    '<div class="quest-card-body">' +
+    '<p class="quest-card-desc">Ancient wisdom has been buried in the star map. Two fragments wait to be found by those who look closely enough. The knowledge is small, quiet, orbiting the nodes you have already mastered. You will need to zoom in. You will need to look carefully.</p>' +
+    '<div class="quest-card-hints">' +
+    '<div class="quest-card-hint">&#9670; Something stirs near the place where the gap was first named.</div>' +
+    '<div class="quest-card-hint">&#9670; Another fragment circles the practice the Stoics never abandoned.</div>' +
+    '</div><div class="quest-card-actions">' +
+    '<button class="quest-accept-btn" onclick="acceptQuest()">Accept the Quest</button>' +
+    '<button class="quest-deny-btn" onclick="denyQuest()">Not now</button>' +
+    '</div></div></div>';
+}
+
+// ---- CODEX ----
+function updateCodexBtn(){
+  var found = getLoreFound();
+  if(found.length > 0 || getQuestState() === 'complete'){
+    document.getElementById('codexBtn').classList.add('visible');
+  }
+}
+
+function openCodex(){
+  var found = getLoreFound();
+  var body  = document.getElementById('codexBody');
+
+  if(found.length === 0){
+    body.innerHTML = '<div class="codex-empty">No fragments discovered yet. Accept the quest and search the star map.</div>';
+  } else {
+    var html = '';
+    HIDDEN_NODES.forEach(function(hn){
+      if(found.indexOf(hn.id) === -1) return;
+      html += '<div class="codex-entry">' +
+        '<div class="codex-entry-eyebrow">' + hn.eyebrow + '</div>' +
+        '<div class="codex-entry-title">' + hn.title + '</div>' +
+        '<div class="codex-entry-text">' + hn.lore + '</div>' +
+        '</div>';
+    });
+    body.innerHTML = html;
+  }
+
+  document.getElementById('codexPanel').classList.add('open');
+}
+
+function closeCodex(){
+  document.getElementById('codexPanel').classList.remove('open');
 }
 
 // ---- REFLECTION SYSTEM ----
@@ -3623,6 +4076,9 @@ function maybeShowTutorial(){
 window.addEventListener('load',function(){
   initTreeCanvas();
   centerTree();
+  // Restore quiz result from localStorage
+  var savedQuiz = localStorage.getItem('ga_quiz_result');
+  if(savedQuiz){ window.quizResult = savedQuiz; oracleActivated = true; }
   completed.forEach(function(id){
     var idx=lessonOrder.indexOf(id);
     if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');
@@ -3646,6 +4102,21 @@ window.addEventListener('load',function(){
     ascensionSequence.crawl.alignment.litNodes=[0,1,2,3,4,5,6,7,8,9,10,11,12];
     tetherOpacity=0.18;
   }
+  // Rank system init
+  updateRankDisplay();
+  // Restore hidden nodes if quest accepted or complete
+  if(getQuestState() === 'accepted' || getQuestState() === 'complete'){
+    hiddenNodesActive = true;
+  }
+  // Re-show quest notification if still available
+  if(getQuestState() === 'available'){
+    setTimeout(function(){
+      positionQuestNotif();
+      document.getElementById('questNotif').classList.add('visible');
+    }, 1500);
+  }
+  // Show codex button if any fragments found
+  updateCodexBtn();
   updateRespecBtn();
   maybeShowTutorial();
   loadReflections();
