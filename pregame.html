@@ -390,26 +390,32 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 <script>
 // ---- CONFIG ----
-var W = 1800, H = 2400;
-var CX = 900; // center x
-var SPHERE_Y = 780; // sphere center y
-var SPHERE_R = 130; // sphere radius
+var W = 2400, H = 2600;
+var CX = 1200; // nexus center x
+var SPHERE_Y = 680; // nexus center y
+var SPHERE_R = 130; // kept for particle compat
 
-// The Oracle position — floating like a moon, off to the right
-var ORACLE_X = 1420;
-var ORACLE_Y = 420;
+// The Oracle position
+var ORACLE_X = 2050;
+var ORACLE_Y = 360;
 var ORACLE_R = 55;
 var oracleActivated = false;
 var oraclePulse = 0;
 var oracleParticles = [];
 
-// Pre-game node positions, arc above sphere
-var PREGAME_ANGLES = [-90, -45, 0, 45, 90]; // degrees, spread above sphere
-var PREGAME_ORBIT = 300; // distance from sphere center
+// Pre-game node floating positions — no fixed orbit, each drifts independently
+var PREGAME_ORBIT = 280;
 
-// Pillar root positions
-var VITALITY_X = 300, SPIRIT_X = 900, ALIGNMENT_X = 1500;
-var PILLAR_Y = 1100;
+// Astral constellation centers — equilateral triangle below nexus
+// Nexus at CX=1200, SPHERE_Y=680
+// Triangle: Vitality bottom-left, Alignment bottom-right, Spirit bottom-center lower
+var VITALITY_CX  = 560,  VITALITY_CY  = 1480;
+var SPIRIT_CX    = 1200, SPIRIT_CY    = 1700;
+var ALIGNMENT_CX = 1840, ALIGNMENT_CY = 1480;
+
+// Legacy compat (shockwave system uses these)
+var VITALITY_X = VITALITY_CX, SPIRIT_X = SPIRIT_CX, ALIGNMENT_X = ALIGNMENT_CX;
+var PILLAR_Y = 1400;
 
 var completed = JSON.parse(localStorage.getItem('ga_pregame_v2_completed') || '[]');
 var currentLesson = null;
@@ -422,11 +428,11 @@ var animState = {
 
 // ---- NODE DATA ----
 var PREGAME_NODES = [
-  {id:'gap',       label:'01', angle:-90, locked:false},
-  {id:'training',  label:'02', angle:-45, locked:false},
-  {id:'nutrition', label:'03', angle:0,   locked:false},
-  {id:'journaling',label:'04', angle:45,  locked:false},
-  {id:'reading',   label:'05', angle:90,  locked:false},
+  {id:'gap',        label:'01', orbitR:200, orbitSpeed: 0.00110, orbitPhase:0.0,         glyph:'triangle'},
+  {id:'training',   label:'02', orbitR:265, orbitSpeed:-0.00088, orbitPhase:Math.PI*0.7, glyph:'cross'},
+  {id:'nutrition',  label:'03', orbitR:330, orbitSpeed: 0.00068, orbitPhase:Math.PI*1.3, glyph:'diamond'},
+  {id:'journaling', label:'04', orbitR:395, orbitSpeed:-0.00054, orbitPhase:Math.PI*0.3, glyph:'spiral'},
+  {id:'reading',    label:'05', orbitR:460, orbitSpeed: 0.00042, orbitPhase:Math.PI*1.8, glyph:'eye'},
 ];
 
 var PILLAR_NODES = {
@@ -512,20 +518,26 @@ var transform = {x:0,y:0,scale:1};
 var hintTimer;
 
 // Particle systems
-var energyParticles = []; // node -> sphere
-var flowParticles = [];   // sphere -> pillars
-var sphereIgnited = false;
-var ignitePulse = 0;
+var energyParticles = []; // node -> nexus
+var flowParticles = [];   // nexus -> pillars
+var nexusIgnited = false;
+var nexusFlare = 0;       // 0-1, drives the ignition arm extension flare
+
+// Nexus starburst state — arm length grows per module
+var NEXUS_ARM_BASE = 18;   // minimum arm length (dormant)
+var NEXUS_ARM_MAX  = 90;   // fully ignited arm length
+var nexusArmLen = NEXUS_ARM_BASE; // animated toward target each frame
 
 // Dormant pulse waves, travel down branches when tree is inactive
 var pulseWaves = [];
 var pulseTimer = 0;
 
 function nodePos(n){
-  var rad = n.angle * Math.PI / 180;
+  var angle = (n.orbitPhase || 0) + t * (n.orbitSpeed || 0.0005);
+  var r = n.orbitR || PREGAME_ORBIT;
   return {
-    x: CX + Math.cos(rad) * PREGAME_ORBIT,
-    y: SPHERE_Y + Math.sin(rad) * PREGAME_ORBIT
+    x: CX + Math.cos(angle) * r,
+    y: SPHERE_Y + Math.sin(angle) * r
   };
 }
 
@@ -560,50 +572,9 @@ function buildClickTargets(){
   var svg = document.getElementById('treeSvg');
   svg.innerHTML = '';
 
-  // Pregame nodes
-  PREGAME_NODES.forEach(function(n, i){
-    var pos = nodePos(n);
-    var isUnlocked = i === 0 || completed.includes(PREGAME_NODES[i-1].id);
-    var isDone = completed.includes(n.id);
-    var g = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    g.setAttribute('cx', pos.x);
-    g.setAttribute('cy', pos.y);
-    g.setAttribute('r', 44);
-    g.setAttribute('fill','transparent');
-    g.setAttribute('stroke','none');
-    g.style.cursor = (isUnlocked || isDone) ? 'pointer' : 'default';
-    g.addEventListener('mousedown', function(e){ e.stopPropagation(); });
-    g.addEventListener('click', function(e){
-      e.stopPropagation();
-      if(!drag.moved) openNodePanel(n.id);
-    });
-    g.addEventListener('mouseenter', function(e){ showTooltip(e, n.id, isDone); });
-    g.addEventListener('mouseleave', hideTooltip);
-    g.addEventListener('mousemove', moveTooltip);
-    svg.appendChild(g);
-  });
-
-  // Pillar nodes
-  ['vitality','spirit','alignment'].forEach(function(pillar){
-    PILLAR_NODES[pillar].forEach(function(n){
-      var g = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      g.setAttribute('cx', n.x);
-      g.setAttribute('cy', n.y);
-      g.setAttribute('r', 30);
-      g.setAttribute('fill','transparent');
-      g.setAttribute('stroke','none');
-      g.style.cursor = 'pointer';
-      g.addEventListener('mousedown', function(e){ e.stopPropagation(); });
-      g.addEventListener('click', function(e){
-        e.stopPropagation();
-        if(!drag.moved) openNodePanel(n.id);
-      });
-      g.addEventListener('mouseenter', function(e){ showTooltip(e, n.id, false); });
-      g.addEventListener('mouseleave', hideTooltip);
-      g.addEventListener('mousemove', moveTooltip);
-      svg.appendChild(g);
-    });
-  });
+  // Pregame nodes handled via live hit-testing (they orbit)
+  // Constellation nodes handled via live hit-testing too (see hitTestAllNodes)
+  // Only Oracle and badge use SVG since they never move
 
   // Oracle click target
   var oracleSvg = document.createElementNS('http://www.w3.org/2000/svg','circle');
@@ -709,20 +680,84 @@ function spawnOracleBloom(color){
   });
 }
 
-// Completion burst — sphere erupts when all 5 modules done
-function spawnCompletionBurst(){
-  for(var i = 0; i < 3; i++){
-    (function(delay){
-      setTimeout(function(){
-        spawnEffect('completionBurst', {
-          x: CX, y: SPHERE_Y,
-          life: 1.0,
-          ring: i,
-          duration: 100
-        });
-      }, delay * 300);
-    })(i);
+// ---- SPHERE CROWN PARTICLE SYSTEM ----
+// Proper particle pool — Fulton pattern: pop from pool, push back when dead
+var crownPool = [];
+var crownParticles = [];
+var MAX_CROWN = 120;
+(function initCrownPool(){
+  for(var i = 0; i < MAX_CROWN; i++) crownPool.push({});
+})();
+
+function emitCrownParticles(count){
+  for(var i = 0; i < count; i++){
+    if(crownPool.length === 0) break;
+    var p = crownPool.pop();
+    // Spawn at nexus center, burst outward in all directions
+    var angle = Math.random() * Math.PI * 2;
+    var spawnR = Math.random() * 8; // tight cluster at center
+    p.x = CX + Math.cos(angle) * spawnR;
+    p.y = SPHERE_Y + Math.sin(angle) * spawnR;
+    // Velocity — outward from center, upward bias
+    var speed = 1.2 + Math.random() * 3.0;
+    p.dx = Math.cos(angle) * speed;
+    p.dy = Math.sin(angle) * speed - (Math.random() * 1.8); // strong upward drift
+    p.life = 60 + Math.floor(Math.random() * 60);  // 60-120 frames
+    p.lifeCtr = 0;
+    p.size = 1.2 + Math.random() * 2.8;
+    // Color: mix of gold, warm white, pale orange
+    var palette = [
+      'rgba(192,132,252,',
+      'rgba(216,180,254,',
+      'rgba(240,220,255,',
+      'rgba(167,100,255,',
+      'rgba(139,92,246,'
+    ];
+    p.color = palette[Math.floor(Math.random() * palette.length)];
+    crownParticles.push(p);
   }
+}
+
+function updateCrownParticles(){
+  for(var i = crownParticles.length - 1; i >= 0; i--){
+    var p = crownParticles[i];
+    p.x += p.dx;
+    p.y += p.dy;
+    p.dy -= 0.025; // gentle upward drift
+    p.dx *= 0.97;  // slight friction
+    p.lifeCtr++;
+    var lifeRatio = p.lifeCtr / p.life;
+    var alpha = lifeRatio < 0.15
+      ? lifeRatio / 0.15               // fade in fast
+      : 1 - ((lifeRatio - 0.15) / 0.85); // fade out slow
+    if(p.lifeCtr >= p.life){
+      crownPool.push(crownParticles.splice(i, 1)[0]);
+      continue;
+    }
+    treeCtx.save();
+    treeCtx.globalAlpha = Math.max(0, alpha * 0.85);
+    treeCtx.fillStyle = p.color + Math.max(0, alpha) + ')';
+    treeCtx.shadowBlur = 8;
+    treeCtx.shadowColor = p.color + '0.6)';    treeCtx.beginPath();
+    treeCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    treeCtx.fill();
+    treeCtx.restore();
+  }
+}
+
+// Nova — slow radial bloom beneath the particles, Penner ease-out quad
+function spawnCompletionBurst(){
+  // Single slow nova effect — no rings
+  spawnEffect('sphereNova', {
+    life: 1.0,
+    duration: 240,   // 4 seconds — long, majestic
+    peakFrame: 120   // peak at halfway
+  });
+  // Emit crown particles in waves
+  emitCrownParticles(60);
+  setTimeout(function(){ emitCrownParticles(40); }, 400);
+  setTimeout(function(){ emitCrownParticles(30); }, 900);
+  setTimeout(function(){ emitCrownParticles(20); }, 1600);
 }
 
 // Rank up flash — full-canvas gold flash for rank transitions
@@ -765,14 +800,14 @@ function updateEffects(){
       // Glow layers
       treeCtx.font = 'bold ' + Math.round(28 * scale) + 'px Cinzel Decorative, serif';
       treeCtx.shadowBlur = 32;
-      treeCtx.shadowColor = 'rgba(255,200,50,0.9)';
-      treeCtx.fillStyle = '#ffdd55';
+      treeCtx.shadowColor = 'rgba(200,150,255,0.9)';
+      treeCtx.fillStyle = '#e9d5ff';
       treeCtx.fillText('+ XP Earned', e.x, e.y - rise);
 
       // Softer second glow pass
       treeCtx.shadowBlur = 60;
-      treeCtx.shadowColor = 'rgba(201,168,76,0.5)';
-      treeCtx.fillStyle = 'rgba(255,220,100,0.4)';
+      treeCtx.shadowColor = 'rgba(160,100,255,0.5)';
+      treeCtx.fillStyle = 'rgba(192,132,252,0.4)';
       treeCtx.fillText('+ XP Earned', e.x, e.y - rise);
     }
 
@@ -815,62 +850,60 @@ function updateEffects(){
       }
     }
 
-    else if(e.type === 'completionBurst'){
-      // Sphere eruption rings
-      var rAlpha = (1 - progress) * 0.6;
-      var rSize = SPHERE_R + progress * 300;
-      var colors = ['rgba(255,220,80,','rgba(201,168,76,','rgba(255,150,60,'];
-      treeCtx.strokeStyle = colors[e.ring % 3] + rAlpha + ')';
-      treeCtx.lineWidth = 3 - progress * 2;
-      treeCtx.shadowBlur = 30;
-      treeCtx.shadowColor = colors[e.ring % 3] + '0.5)';
+    else if(e.type === 'sphereNova'){
+      // Slow radial glow bloom — ease-out quad, peaks at mid-duration then fades
+      // Penner ease-out: t*(2-t)
+      var halfDur = e.peakFrame || (e.duration * 0.5);
+      var novaAlpha, novaR;
+      if(e.t <= halfDur){
+        var t1 = e.t / halfDur;
+        var eased = t1 * (2 - t1); // ease out quad — fast start, gentle arrival
+        novaAlpha = eased * 0.18;
+        novaR = SPHERE_R + eased * 220;
+      } else {
+        var t2 = (e.t - halfDur) / (e.duration - halfDur);
+        var eased2 = t2 * (2 - t2);
+        novaAlpha = (1 - eased2) * 0.18;
+        novaR = (SPHERE_R + 220) + eased2 * 80; // keeps drifting out as it fades
+      }
+      // Radial gradient bloom — soft gold core to transparent edge
+      var novaGrad = treeCtx.createRadialGradient(CX, SPHERE_Y, SPHERE_R * 0.5, CX, SPHERE_Y, novaR);
+      novaGrad.addColorStop(0,   'rgba(255,230,100,' + (novaAlpha * 2.5) + ')');
+      novaGrad.addColorStop(0.2, 'rgba(220,160,40,'  + (novaAlpha * 1.4) + ')');
+      novaGrad.addColorStop(0.6, 'rgba(180,80,20,'   + (novaAlpha * 0.6) + ')');
+      novaGrad.addColorStop(1,   'rgba(0,0,0,0)');
+      treeCtx.fillStyle = novaGrad;
       treeCtx.beginPath();
-      treeCtx.arc(CX, SPHERE_Y, rSize, 0, Math.PI*2);
-      treeCtx.stroke();
+      treeCtx.arc(CX, SPHERE_Y, novaR, 0, Math.PI * 2);
+      treeCtx.fill();
     }
 
     else if(e.type === 'treeLightup'){
-      // Full pillar tree cascade — all nodes in pillar bloom simultaneously then fade
-      var pillarMap = {
-        vitality: PILLAR_NODES.vitality,
-        spirit:   PILLAR_NODES.spirit,
-        alignment: PILLAR_NODES.alignment
+      // Constellation root bloom — pulses the center of the pillar constellation
+      var centers = {
+        vitality:  {x: VITALITY_CX,  y: VITALITY_CY,  color:'rgba(255,100,68,'},
+        spirit:    {x: SPIRIT_CX,    y: SPIRIT_CY,    color:'rgba(187,153,255,'},
+        alignment: {x: ALIGNMENT_CX, y: ALIGNMENT_CY, color:'rgba(85,255,170,'}
       };
-      var nodes = pillarMap[e.pillar] || [];
-      var alpha = e.life * 0.65;
-      nodes.forEach(function(n){
-        // Outer bloom
-        var bloom = treeCtx.createRadialGradient(n.x, n.y, 10, n.x, n.y, 55);
-        bloom.addColorStop(0, e.color + (alpha * 0.5) + ')');
-        bloom.addColorStop(1, e.color + '0)');
+      var con = centers[e.pillar];
+      if(con){
+        var alpha = e.life * 0.7;
+        var bloomR = 80 + (1 - e.life) * 200;
+        var bloom = treeCtx.createRadialGradient(con.x, con.y, 0, con.x, con.y, bloomR);
+        bloom.addColorStop(0, con.color + (alpha * 0.6) + ')');
+        bloom.addColorStop(0.4, con.color + (alpha * 0.2) + ')');
+        bloom.addColorStop(1, con.color + '0)');
         treeCtx.fillStyle = bloom;
         treeCtx.beginPath();
-        treeCtx.arc(n.x, n.y, 55, 0, Math.PI*2);
+        treeCtx.arc(con.x, con.y, bloomR, 0, Math.PI * 2);
         treeCtx.fill();
-        // Node ring
-        treeCtx.strokeStyle = e.color + alpha + ')';
+        // Ring pulse
+        treeCtx.strokeStyle = con.color + alpha + ')';
         treeCtx.lineWidth = 1.5;
-        treeCtx.shadowBlur = 14;
-        treeCtx.shadowColor = e.color + '0.8)';
-        treeCtx.beginPath();
-        treeCtx.arc(n.x, n.y, 20, 0, Math.PI*2);
-        treeCtx.stroke();
-      });
-      // Also light up the pillar root connection lines
-      var pillarRoots = {
-        vitality:  {x: VITALITY_X,  y: PILLAR_Y},
-        spirit:    {x: SPIRIT_X,    y: PILLAR_Y},
-        alignment: {x: ALIGNMENT_X, y: PILLAR_Y}
-      };
-      var root = pillarRoots[e.pillar];
-      if(root){
-        treeCtx.strokeStyle = e.color + (alpha * 0.8) + ')';
-        treeCtx.lineWidth = 2;
         treeCtx.shadowBlur = 20;
-        treeCtx.shadowColor = e.color + '0.6)';
+        treeCtx.shadowColor = con.color + '0.8)';
         treeCtx.beginPath();
-        treeCtx.moveTo(CX, SPHERE_Y);
-        treeCtx.lineTo(root.x, root.y);
+        treeCtx.arc(con.x, con.y, 24 + (1 - e.life) * 60, 0, Math.PI * 2);
         treeCtx.stroke();
       }
       e.life -= 1 / e.duration;
@@ -933,25 +966,26 @@ function drawFrame(){
   treeCtx.restore();
 
   var charge = Math.min(1, completed.length / 5);
-  if(completed.length >= 5 && !sphereIgnited){
-    sphereIgnited = true;
+  if(completed.length >= 5 && !nexusIgnited){
+    nexusIgnited = true;
+    nexusFlare = 1;
     triggerIgnition();
     spawnCompletionBurst();
   }
 
+  drawCosmicDust();
   drawConnections();
-  drawSphere(charge);
+  drawAstralConstellations();
+  drawNexus(charge);
   drawPregameNodes();
-  drawPillarBranches();
-  drawPillarNodes();
   updateParticles();
-  if(completed.length < 5) updatePulseWaves(charge);
   drawOracle();
   updateOracleParticles();
   drawOracleBadge();
 
   // Effects layer — drawn last so they sit on top of everything
   updateEffects();
+  updateCrownParticles();
 
   requestAnimationFrame(drawFrame);
 }
@@ -1159,458 +1193,695 @@ function activateOracle(){
   spawnOracleBloom(bloomColor);
 }
 
-function drawConnections(){
-  var allDone = completed.length >= 5;
-  // Lines from sphere to pillar roots
-  [[VITALITY_X, PILLAR_Y, '#ff6644'], [SPIRIT_X, PILLAR_Y, '#bb99ff'], [ALIGNMENT_X, PILLAR_Y, '#55ffaa']].forEach(function(p){
-    var alpha = allDone ? 0.4 : 0.14;
-    var lineW = allDone ? 1.5 : 0.9;
-    treeCtx.save();
-    treeCtx.strokeStyle = p[2];
-    treeCtx.lineWidth = lineW;
-    treeCtx.globalAlpha = alpha;
-    treeCtx.setLineDash(allDone ? [] : [4,6]);
-    treeCtx.beginPath();
-    treeCtx.moveTo(CX, SPHERE_Y);
-    treeCtx.lineTo(p[0], p[1]);
-    treeCtx.stroke();
-    treeCtx.restore();
+// ---- AMBIENT COSMIC DUST ----
+var cosmicDust = (function(){
+  var dust = [];
+  for(var i = 0; i < 90; i++){
+    dust.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      dx: (Math.random() - 0.5) * 0.12,
+      dy: (Math.random() - 0.5) * 0.08,
+      r: Math.random() * 1.2 + 0.3,
+      alpha: Math.random() * 0.35 + 0.05,
+      twinkle: Math.random() * 0.003 + 0.001,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+  return dust;
+})();
 
-    if(allDone){
-      // Glow
-      treeCtx.save();
-      treeCtx.strokeStyle = p[2];
-      treeCtx.lineWidth = 8;
-      treeCtx.globalAlpha = 0.08;
-      treeCtx.beginPath();
-      treeCtx.moveTo(CX, SPHERE_Y);
-      treeCtx.lineTo(p[0], p[1]);
-      treeCtx.stroke();
-      treeCtx.restore();
-    }
+function drawCosmicDust(){
+  cosmicDust.forEach(function(d){
+    d.x += d.dx; d.y += d.dy;
+    if(d.x < 0) d.x = W; if(d.x > W) d.x = 0;
+    if(d.y < 0) d.y = H; if(d.y > H) d.y = 0;
+    var a = d.alpha * (0.5 + Math.sin(t * d.twinkle + d.phase) * 0.5);
+    treeCtx.save();
+    treeCtx.globalAlpha = a;
+    treeCtx.fillStyle = '#ffffff';
+    treeCtx.beginPath();
+    treeCtx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+    treeCtx.fill();
+    treeCtx.restore();
   });
 }
 
-function drawSphere(charge){
-  var cx = CX, cy = SPHERE_Y, r = SPHERE_R;
-  var pulse = 1 + Math.sin(t * 0.02) * 0.03;
-  var pr = r * pulse;
-
-  // Outer bloom
-  if(charge > 0){
-    var bloomR = pr + 60 + charge * 40;
-    var bloom = treeCtx.createRadialGradient(cx,cy,pr*0.5,cx,cy,bloomR);
-    var goldA = charge * 0.12;
-    bloom.addColorStop(0, 'rgba(201,168,76,'+goldA+')');
-    bloom.addColorStop(0.5,'rgba(192,57,43,'+(goldA*0.5)+')');
-    bloom.addColorStop(1, 'rgba(0,0,0,0)');
-    treeCtx.fillStyle = bloom;
-    treeCtx.beginPath();
-    treeCtx.arc(cx,cy,bloomR,0,Math.PI*2);
-    treeCtx.fill();
-  }
-
-  // Ignition pulse
-  if(sphereIgnited && ignitePulse > 0){
-    treeCtx.save();
-    treeCtx.strokeStyle = '#ffdd55';
-    treeCtx.lineWidth = 3;
-    treeCtx.globalAlpha = ignitePulse * 0.8;
-    treeCtx.beginPath();
-    treeCtx.arc(cx,cy,pr + (1-ignitePulse)*200,0,Math.PI*2);
-    treeCtx.stroke();
-    treeCtx.restore();
-    ignitePulse = Math.max(0, ignitePulse - 0.008);
-  }
-
-  // Main sphere body
-  var grad = treeCtx.createRadialGradient(cx-pr*0.3, cy-pr*0.3, 0, cx, cy, pr);
-  if(charge === 0){
-    grad.addColorStop(0,'rgba(40,30,60,0.8)');
-    grad.addColorStop(0.6,'rgba(20,15,40,0.9)');
-    grad.addColorStop(1,'rgba(10,8,20,0.95)');
-  } else if(charge < 1){
-    var r1 = Math.round(40 + charge*160);
-    var g1 = Math.round(30 + charge*100);
-    var b1 = Math.round(60 + charge*20);
-    grad.addColorStop(0,'rgba('+r1+','+g1+','+b1+',0.9)');
-    grad.addColorStop(0.5,'rgba('+Math.round(r1*0.6)+','+Math.round(g1*0.5)+','+Math.round(b1*0.8)+',0.85)');
-    grad.addColorStop(1,'rgba(10,8,20,0.95)');
-  } else {
-    var ig = 1 + Math.sin(t*0.03)*0.05;
-    grad.addColorStop(0,'rgba(255,220,80,0.95)');
-    grad.addColorStop(0.3,'rgba(220,100,30,0.9)');
-    grad.addColorStop(0.7,'rgba(150,40,80,0.85)');
-    grad.addColorStop(1,'rgba(10,8,20,0.95)');
-  }
-  treeCtx.fillStyle = grad;
+// ---- DOUBLE-STROKE LINE HELPER ----
+// The Nachia technique: glow pass + spine pass
+function drawConstellationLine(x1, y1, x2, y2, color, doneAlpha){
+  var alpha = doneAlpha !== undefined ? doneAlpha : 0.5;
+  // Glow pass
+  treeCtx.strokeStyle = color;
+  treeCtx.lineWidth = 10;
+  treeCtx.globalAlpha = alpha * 0.08;
+  treeCtx.shadowBlur = 0;
   treeCtx.beginPath();
-  treeCtx.arc(cx,cy,pr,0,Math.PI*2);
-  treeCtx.fill();
-
-  // Outer ring
-  treeCtx.save();
-  treeCtx.strokeStyle = charge >= 1 ? '#ffdd55' : (charge > 0 ? 'rgba(201,168,76,'+(0.3+charge*0.5)+')' : 'rgba(255,255,255,0.08)');
-  treeCtx.lineWidth = charge >= 1 ? 2 : 1;
+  treeCtx.moveTo(x1, y1);
+  treeCtx.lineTo(x2, y2);
+  treeCtx.stroke();
+  // Spine pass
+  treeCtx.lineWidth = 0.9;
+  treeCtx.globalAlpha = alpha * 0.65;
+  treeCtx.beginPath();
+  treeCtx.moveTo(x1, y1);
+  treeCtx.lineTo(x2, y2);
+  treeCtx.stroke();
   treeCtx.globalAlpha = 1;
-  if(charge >= 1) treeCtx.shadowBlur = 20;
-  treeCtx.beginPath();
-  treeCtx.arc(cx,cy,pr,0,Math.PI*2);
-  treeCtx.stroke();
-  treeCtx.restore();
+}
 
-  // Inner ring
-  treeCtx.save();
-  treeCtx.strokeStyle = charge > 0 ? 'rgba(255,200,50,'+(charge*0.4)+')' : 'rgba(255,255,255,0.04)';
-  treeCtx.lineWidth = 0.5;
+// ---- CONSTELLATION NODE HELPER ----
+function drawConstellationNode(x, y, r, color, bright, glowBright){
+  // Outer bloom
+  var bloom = treeCtx.createRadialGradient(x, y, r * 0.5, x, y, r + 28);
+  bloom.addColorStop(0, bright + (glowBright ? '0.18)' : '0.08)'));
+  bloom.addColorStop(1, bright + '0)');
+  treeCtx.fillStyle = bloom;
   treeCtx.beginPath();
-  treeCtx.arc(cx,cy,pr*0.65,0,Math.PI*2);
-  treeCtx.stroke();
-  treeCtx.restore();
-
-  // Energy fill arc, shows charge level
-  if(charge > 0 && charge < 1){
-    treeCtx.save();
-    treeCtx.strokeStyle = '#c9a84c';
-    treeCtx.lineWidth = 3;
-    treeCtx.globalAlpha = 0.8;
-    treeCtx.lineCap = 'round';
-    treeCtx.beginPath();
-    treeCtx.arc(cx,cy,pr+6,-Math.PI/2,-Math.PI/2 + charge*Math.PI*2);
-    treeCtx.stroke();
-    // Glow on arc
-    treeCtx.strokeStyle = '#ffdd55';
-    treeCtx.lineWidth = 8;
-    treeCtx.globalAlpha = 0.15;
-    treeCtx.beginPath();
-    treeCtx.arc(cx,cy,pr+6,-Math.PI/2,-Math.PI/2 + charge*Math.PI*2);
-    treeCtx.stroke();
-    treeCtx.restore();
-  }
-
-  // Center dot
-  treeCtx.save();
-  treeCtx.fillStyle = charge >= 1 ? '#ffee88' : (charge > 0 ? 'rgba(201,168,76,0.8)' : 'rgba(255,255,255,0.15)');
-  if(charge >= 1){
-    treeCtx.shadowBlur = 15;
-    treeCtx.shadowColor = '#ffdd55';
-  }
-  treeCtx.beginPath();
-  treeCtx.arc(cx,cy,charge >= 1 ? 6 : 4,0,Math.PI*2);
+  treeCtx.arc(x, y, r + 28, 0, Math.PI * 2);
   treeCtx.fill();
-  treeCtx.restore();
-
-  // Sphere label
+  // Body gradient
+  var body = treeCtx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
+  body.addColorStop(0, bright + (glowBright ? '0.5)' : '0.2)'));
+  body.addColorStop(0.5, bright + '0.1)');
+  body.addColorStop(1, 'rgba(10,8,20,0.85)');
+  treeCtx.fillStyle = body;
+  treeCtx.beginPath();
+  treeCtx.arc(x, y, r, 0, Math.PI * 2);
+  treeCtx.fill();
+  // Ring
   treeCtx.save();
-  treeCtx.fillStyle = charge >= 1 ? 'rgba(255,220,80,0.9)' : 'rgba(240,236,228,0.2)';
-  treeCtx.font = '400 10px Cinzel, serif';
-  treeCtx.textAlign = 'center';
-  treeCtx.letterSpacing = '0.1em';
-  treeCtx.fillText(charge >= 1 ? 'READY' : (charge > 0 ? Math.round(charge*5)+' / 5' : 'PRE-GAME'), cx, cy + pr + 22);
+  treeCtx.strokeStyle = color;
+  treeCtx.lineWidth = glowBright ? 1.2 : 0.7;
+  treeCtx.globalAlpha = glowBright ? 0.85 : 0.3;
+  treeCtx.shadowBlur = glowBright ? 14 : 0;
+  treeCtx.shadowColor = color;
+  treeCtx.beginPath();
+  treeCtx.arc(x, y, r, 0, Math.PI * 2);
+  treeCtx.stroke();
+  treeCtx.restore();
+  // Hot center dot
+  treeCtx.save();
+  treeCtx.fillStyle = glowBright ? '#ffffff' : color;
+  treeCtx.globalAlpha = glowBright ? 0.9 : 0.25;
+  treeCtx.shadowBlur = glowBright ? 10 : 0;
+  treeCtx.shadowColor = color;
+  treeCtx.beginPath();
+  treeCtx.arc(x, y, r * 0.28, 0, Math.PI * 2);
+  treeCtx.fill();
   treeCtx.restore();
 }
 
+function drawConnections(){
+  // No nexus-to-pillar lines — constellations are independent
+  // This space intentionally empty; astral trees drawn in drawAstralConstellations()
+}
+
+// ---- ASTRAL CONSTELLATIONS ----
+// Each constellation rotates as a unit using ctx.translate + ctx.rotate
+// Shapes are constellation-styled: not trees, but star map forms
+
+function drawAstralConstellations(){
+  var allDone = completed.length >= 5;
+  // Static — no rotation
+  drawVitalityConstellation(allDone);
+  drawSpiritConstellation(allDone);
+  drawAlignmentConstellation(allDone);
+}
+
+function drawVitalityConstellation(allDone){
+  var cx = VITALITY_CX, cy = VITALITY_CY;
+  var color = '#ff6644', bright = 'rgba(255,100,68,';
+  var isWinner = window.quizResult === 'vitality';
+
+  // State: dormant → oracle winner → fully lit
+  var nodeAlpha  = allDone ? 1    : (isWinner ? 0.35 : 0.10);
+  var lineAlpha  = allDone ? 0.7  : (isWinner ? 0.25 : 0.08);
+  var labelAlpha = allDone ? 0.85 : (isWinner ? 0.9  : 0);
+  var glowNodes  = allDone;
+
+  // Dormant: render in muted grey, no color
+  var drawColor  = (allDone || isWinner) ? color : 'rgba(180,170,200,';
+  var drawBright = (allDone || isWinner) ? bright : 'rgba(180,170,200,';
+  var strokeCol  = (allDone || isWinner) ? color  : 'rgba(160,150,180,0.4)';
+
+  var nodes = [
+    {x:0,    y:-220, r:22, root:true},
+    {x:-80,  y:-130, r:14},
+    {x:80,   y:-130, r:14},
+    {x:-40,  y:-20,  r:14},
+    {x:40,   y:-20,  r:14},
+    {x:0,    y:60,   r:18},
+    {x:-110, y:160,  r:11},
+    {x:110,  y:160,  r:11},
+    {x:-140, y:280,  r:9},
+    {x:140,  y:280,  r:9},
+  ];
+  var lines = [[0,1],[0,2],[1,3],[2,4],[3,5],[4,5],[5,6],[5,7],[6,8],[7,9]];
+
+  treeCtx.save();
+  treeCtx.translate(cx, cy);
+  treeCtx.globalAlpha = nodeAlpha;
+  treeCtx.setLineDash([]);
+  lines.forEach(function(l){
+    var a = nodes[l[0]], b = nodes[l[1]];
+    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lineAlpha);
+  });
+  nodes.forEach(function(n){
+    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || (isWinner && n.root));
+  });
+  if(labelAlpha > 0){
+    treeCtx.globalAlpha = labelAlpha;
+    treeCtx.fillStyle = color;
+    treeCtx.font = '600 18px Cinzel, serif';
+    treeCtx.textAlign = 'center';
+    treeCtx.shadowBlur = allDone ? 12 : 16;
+    treeCtx.shadowColor = color;
+    treeCtx.fillText('VITALITY', 0, 330);
+  }
+  treeCtx.restore();
+}
+
+function drawSpiritConstellation(allDone){
+  var cx = SPIRIT_CX, cy = SPIRIT_CY;
+  var color = '#bb99ff', bright = 'rgba(187,153,255,';
+  var isWinner = window.quizResult === 'spirit';
+
+  var nodeAlpha  = allDone ? 1    : (isWinner ? 0.35 : 0.10);
+  var lineAlpha  = allDone ? 0.7  : (isWinner ? 0.25 : 0.08);
+  var labelAlpha = allDone ? 0.85 : (isWinner ? 0.9  : 0);
+  var glowNodes  = allDone;
+
+  var drawColor  = (allDone || isWinner) ? color : 'rgba(180,170,200,';
+  var drawBright = (allDone || isWinner) ? bright : 'rgba(180,170,200,';
+  var strokeCol  = (allDone || isWinner) ? color  : 'rgba(160,150,180,0.4)';
+
+  var nodes = [
+    {x:0,    y:0,    r:22, root:true},
+    {x:-160, y:-80,  r:14},
+    {x:160,  y:-80,  r:14},
+    {x:-260, y:20,   r:11},
+    {x:260,  y:20,   r:11},
+    {x:-320, y:140,  r:9},
+    {x:320,  y:140,  r:9},
+    {x:-80,  y:160,  r:14},
+    {x:80,   y:160,  r:14},
+    {x:0,    y:260,  r:18},
+    {x:-60,  y:360,  r:9},
+    {x:60,   y:360,  r:9},
+  ];
+  var lines = [
+    [0,1],[0,2],[1,3],[2,4],[3,5],[4,6],
+    [0,7],[0,8],[7,9],[8,9],[9,10],[9,11]
+  ];
+
+  treeCtx.save();
+  treeCtx.translate(cx, cy);
+  treeCtx.globalAlpha = nodeAlpha;
+  treeCtx.setLineDash([]);
+  lines.forEach(function(l){
+    var a = nodes[l[0]], b = nodes[l[1]];
+    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lineAlpha);
+  });
+  nodes.forEach(function(n){
+    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || (isWinner && n.root));
+  });
+  if(labelAlpha > 0){
+    treeCtx.globalAlpha = labelAlpha;
+    treeCtx.fillStyle = color;
+    treeCtx.font = '600 18px Cinzel, serif';
+    treeCtx.textAlign = 'center';
+    treeCtx.shadowBlur = allDone ? 12 : 16;
+    treeCtx.shadowColor = color;
+    treeCtx.fillText('SPIRIT', 0, 420);
+  }
+  treeCtx.restore();
+}
+
+function drawAlignmentConstellation(allDone){
+  var cx = ALIGNMENT_CX, cy = ALIGNMENT_CY;
+  var color = '#55ffaa', bright = 'rgba(85,255,170,';
+  var isWinner = window.quizResult === 'alignment';
+
+  var nodeAlpha  = allDone ? 1    : (isWinner ? 0.35 : 0.10);
+  var lineAlpha  = allDone ? 0.7  : (isWinner ? 0.25 : 0.08);
+  var labelAlpha = allDone ? 0.85 : (isWinner ? 0.9  : 0);
+  var glowNodes  = allDone;
+
+  var drawColor  = (allDone || isWinner) ? color : 'rgba(180,170,200,';
+  var drawBright = (allDone || isWinner) ? bright : 'rgba(180,170,200,';
+  var strokeCol  = (allDone || isWinner) ? color  : 'rgba(160,150,180,0.4)';
+
+  var nodes = [
+    {x:0,    y:0,    r:22, root:true},
+    {x:0,    y:-200, r:14},
+    {x:200,  y:0,    r:14},
+    {x:0,    y:200,  r:14},
+    {x:-200, y:0,    r:14},
+    {x:130,  y:-130, r:11},
+    {x:130,  y:130,  r:11},
+    {x:-130, y:130,  r:11},
+    {x:-130, y:-130, r:11},
+    {x:0,    y:-320, r:9},
+    {x:320,  y:0,    r:9},
+    {x:0,    y:320,  r:9},
+    {x:-320, y:0,    r:9},
+  ];
+  var lines = [
+    [0,1],[0,2],[0,3],[0,4],
+    [0,5],[0,6],[0,7],[0,8],
+    [1,9],[2,10],[3,11],[4,12]
+  ];
+
+  treeCtx.save();
+  treeCtx.translate(cx, cy);
+  treeCtx.globalAlpha = nodeAlpha;
+  treeCtx.setLineDash([]);
+  lines.forEach(function(l){
+    var a = nodes[l[0]], b = nodes[l[1]];
+    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lineAlpha);
+  });
+  nodes.forEach(function(n){
+    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || (isWinner && n.root));
+  });
+  if(labelAlpha > 0){
+    treeCtx.globalAlpha = labelAlpha;
+    treeCtx.fillStyle = color;
+    treeCtx.font = '600 18px Cinzel, serif';
+    treeCtx.textAlign = 'center';
+    treeCtx.shadowBlur = allDone ? 12 : 16;
+    treeCtx.shadowColor = color;
+    treeCtx.fillText('ALIGNMENT', 0, 370);
+  }
+  treeCtx.restore();
+}
+
+function drawNexus(charge){
+  var cx = CX, cy = SPHERE_Y;
+  var count = completed.length;
+
+  // Ease nexusArmLen toward target each frame — Penner ease-out
+  var targetLen = NEXUS_ARM_BASE + (NEXUS_ARM_MAX - NEXUS_ARM_BASE) * charge;
+  if(nexusFlare > 0){
+    // During ignition flare — arms extend beyond max then snap back
+    targetLen = NEXUS_ARM_MAX * (1 + nexusFlare * 0.7);
+    nexusFlare = Math.max(0, nexusFlare - 0.012);
+  }
+  nexusArmLen += (targetLen - nexusArmLen) * 0.06; // smooth follow
+
+  // Slow rotation — barely perceptible, speeds up slightly as charge increases
+  var rotSpeed = 0.0004 + charge * 0.0008;
+  var baseRot = t * rotSpeed;
+
+  // 12 arms alternating long/short
+  var armCount = 12;
+
+  treeCtx.save();
+
+  // --- Deep background bloom (only when charged) ---
+  if(charge > 0){
+    var bloomR = nexusArmLen * 1.8 + charge * 40;
+    var bloom = treeCtx.createRadialGradient(cx, cy, 0, cx, cy, bloomR);
+    bloom.addColorStop(0,   'rgba(160,100,255,' + (charge * 0.22) + ')');
+    bloom.addColorStop(0.4, 'rgba(120,60,200,'  + (charge * 0.10) + ')');
+    bloom.addColorStop(1,   'rgba(0,0,0,0)');
+    treeCtx.fillStyle = bloom;
+    treeCtx.beginPath();
+    treeCtx.arc(cx, cy, bloomR, 0, Math.PI * 2);
+    treeCtx.fill();
+  }
+
+  // --- Draw arms (glow pass then spine pass) ---
+  for(var pass = 0; pass < 2; pass++){
+    for(var i = 0; i < armCount; i++){
+      var angle = baseRot + (i / armCount) * Math.PI * 2;
+      var isLong = i % 2 === 0;
+      var len = isLong ? nexusArmLen : nexusArmLen * 0.52;
+      var ex = cx + Math.cos(angle) * len;
+      var ey = cy + Math.sin(angle) * len;
+
+      // Only show armed arms that are unlocked by progress
+      // All 12 arms visible always, but brightness scales with charge
+      var armAlpha = charge === 0
+        ? 0.08
+        : isLong
+          ? 0.35 + charge * 0.55
+          : 0.2  + charge * 0.35;
+
+      treeCtx.beginPath();
+      treeCtx.moveTo(cx, cy);
+      treeCtx.lineTo(ex, ey);
+
+      if(pass === 0){
+        // Glow pass — thick, soft
+        treeCtx.strokeStyle = charge >= 1
+          ? 'rgba(200,140,255,' + (armAlpha * 0.4) + ')'
+          : 'rgba(160,100,255,' + (armAlpha * 0.3) + ')';
+        treeCtx.lineWidth = isLong ? 10 : 6;
+        treeCtx.shadowBlur = 0;
+      } else {
+        // Spine pass — thin, bright
+        treeCtx.strokeStyle = charge >= 1
+          ? 'rgba(230,200,255,' + armAlpha + ')'
+          : 'rgba(180,130,240,' + armAlpha + ')';
+        treeCtx.lineWidth = isLong ? 1.2 : 0.7;
+        treeCtx.shadowBlur = charge >= 1 ? 12 : 4;
+        treeCtx.shadowColor = charge >= 1 ? '#d8b4fe' : 'rgba(160,100,255,0.6)';
+      }
+      treeCtx.stroke();
+    }
+  }
+
+  // --- Per-module arm highlights ---
+  // Each completed module lights up 2 long arms specifically (arms 0,2,4,6,8)
+  if(count > 0){
+    for(var m = 0; m < count; m++){
+      var mAngle = baseRot + ((m * 2) / armCount) * Math.PI * 2;
+      var mLen = nexusArmLen;
+      var mex = cx + Math.cos(mAngle) * mLen;
+      var mey = cy + Math.sin(mAngle) * mLen;
+      // Hot white spine on completed arms
+      treeCtx.beginPath();
+      treeCtx.moveTo(cx, cy);
+      treeCtx.lineTo(mex, mey);
+      treeCtx.strokeStyle = 'rgba(240,220,255,0.9)';
+      treeCtx.lineWidth = 0.8;
+      treeCtx.shadowBlur = 16;
+      treeCtx.shadowColor = '#e9d5ff';
+      treeCtx.stroke();
+      // Small orb at tip of completed arm
+      treeCtx.fillStyle = 'rgba(216,180,254,0.9)';
+      treeCtx.shadowBlur = 12;
+      treeCtx.shadowColor = '#c084fc';
+      treeCtx.beginPath();
+      treeCtx.arc(mex, mey, isLong ? 3.5 : 2.5, 0, Math.PI * 2);
+      treeCtx.fill();
+    }
+  }
+
+  // --- Center convergence point ---
+  // Multi-layer hot dot — the actual nexus
+  var dotR = charge >= 1 ? 5 : 3 + charge * 2;
+  // Outer soft glow
+  var dotGlow = treeCtx.createRadialGradient(cx, cy, 0, cx, cy, dotR * 5);
+  dotGlow.addColorStop(0, charge >= 1 ? 'rgba(233,213,255,0.6)' : 'rgba(160,100,255,' + (0.1 + charge * 0.3) + ')');
+  dotGlow.addColorStop(1, 'rgba(0,0,0,0)');
+  treeCtx.fillStyle = dotGlow;
+  treeCtx.beginPath();
+  treeCtx.arc(cx, cy, dotR * 5, 0, Math.PI * 2);
+  treeCtx.fill();
+  // Core dot
+  treeCtx.fillStyle = charge >= 1 ? '#f3e8ff' : 'rgba(192,132,252,' + (0.4 + charge * 0.6) + ')';
+  treeCtx.shadowBlur = charge >= 1 ? 20 : 8;
+  treeCtx.shadowColor = charge >= 1 ? '#c084fc' : 'rgba(160,100,255,0.8)';
+  treeCtx.beginPath();
+  treeCtx.arc(cx, cy, dotR, 0, Math.PI * 2);
+  treeCtx.fill();
+
+  // --- Status label ---
+  treeCtx.shadowBlur = 0;
+  treeCtx.fillStyle = charge >= 1
+    ? 'rgba(216,180,254,0.9)'
+    : charge > 0
+      ? 'rgba(240,236,228,0.35)'
+      : 'rgba(240,236,228,0.15)';
+  treeCtx.font = '400 10px Cinzel, serif';
+  treeCtx.textAlign = 'center';
+  treeCtx.letterSpacing = '0.12em';
+  treeCtx.fillText(
+    charge >= 1 ? 'ASCENSION READY' : (count > 0 ? count + ' / 5  BRIEFINGS' : 'PRE-GAME NEXUS'),
+    cx, cy + nexusArmLen + 22
+  );
+
+  treeCtx.restore();
+}
+
+// ---- PENTAGON HELPER ----
+function drawPentagon(ctx, cx, cy, r, rotation){
+  ctx.beginPath();
+  for(var i = 0; i < 5; i++){
+    var a = rotation + (i / 5) * Math.PI * 2 - Math.PI / 2;
+    var x = cx + Math.cos(a) * r;
+    var y = cy + Math.sin(a) * r;
+    if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+}
+
+// ---- GLYPH DRAWING ----
+function drawGlyph(ctx, cx, cy, size, type, color, alpha){
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.2;
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = 'round';
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = color;
+
+  if(type === 'triangle'){
+    // Upward pointing triangle
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size);
+    ctx.lineTo(cx + size * 0.87, cy + size * 0.5);
+    ctx.lineTo(cx - size * 0.87, cy + size * 0.5);
+    ctx.closePath();
+    ctx.stroke();
+
+  } else if(type === 'cross'){
+    // Simple cross with slightly extended arms
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size); ctx.lineTo(cx, cy + size);
+    ctx.moveTo(cx - size, cy); ctx.lineTo(cx + size, cy);
+    ctx.stroke();
+    // Small diamonds at each tip
+    var tipSize = size * 0.18;
+    [[0,-size],[0,size],[-size,0],[size,0]].forEach(function(tip){
+      ctx.beginPath();
+      ctx.arc(cx + tip[0], cy + tip[1], tipSize, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+
+  } else if(type === 'diamond'){
+    // Rotated square / diamond
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size);
+    ctx.lineTo(cx + size * 0.7, cy);
+    ctx.lineTo(cx, cy + size);
+    ctx.lineTo(cx - size * 0.7, cy);
+    ctx.closePath();
+    ctx.stroke();
+    // Inner smaller diamond
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size * 0.45);
+    ctx.lineTo(cx + size * 0.32, cy);
+    ctx.lineTo(cx, cy + size * 0.45);
+    ctx.lineTo(cx - size * 0.32, cy);
+    ctx.closePath();
+    ctx.stroke();
+
+  } else if(type === 'spiral'){
+    // Approximated spiral — 3 concentric arcs stepping outward
+    for(var ring = 0; ring < 3; ring++){
+      var ringR = size * (0.3 + ring * 0.35);
+      var startA = -Math.PI / 2 + ring * 0.6;
+      var endA = startA + Math.PI * 1.6;
+      ctx.beginPath();
+      ctx.arc(cx, cy, ringR, startA, endA);
+      ctx.stroke();
+    }
+    // Center dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.1, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+
+  } else if(type === 'eye'){
+    // Eye / vesica shape — two arcs forming an eye
+    var ew = size * 1.1, eh = size * 0.55;
+    ctx.beginPath();
+    ctx.moveTo(cx - ew, cy);
+    ctx.bezierCurveTo(cx - ew * 0.5, cy - eh, cx + ew * 0.5, cy - eh, cx + ew, cy);
+    ctx.bezierCurveTo(cx + ew * 0.5, cy + eh, cx - ew * 0.5, cy + eh, cx - ew, cy);
+    ctx.stroke();
+    // Iris
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.32, 0, Math.PI * 2);
+    ctx.stroke();
+    // Pupil dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.1, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.globalAlpha = alpha * 0.8;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function drawPregameNodes(){
+  // Violet color palette — mystical, arcane
+  var VIOLET       = '#c084fc';
+  var VIOLET_DONE  = '#a855f7';
+  var VIOLET_BRIGHT= 'rgba(192,132,252,';
+  var VIOLET_DARK  = 'rgba(168,85,247,';
+  var WHITE_VIOLET = 'rgba(240,220,255,';
+
+  // Draw faint orbital ring trails first — behind all nodes
+  // Gives the electron-orbital read, like the Oracle's dashed ring
+  treeCtx.save();
+  treeCtx.setLineDash([3, 8]);
+  PREGAME_NODES.forEach(function(n){
+    var isDone = completed.includes(n.id);
+    var alpha = isDone ? 0.18 : 0.07;
+    treeCtx.strokeStyle = 'rgba(192,132,252,' + alpha + ')';
+    treeCtx.lineWidth = 0.6;
+    treeCtx.shadowBlur = 0;
+    treeCtx.beginPath();
+    treeCtx.arc(CX, SPHERE_Y, n.orbitR, 0, Math.PI * 2);
+    treeCtx.stroke();
+  });
+  treeCtx.setLineDash([]);
+  treeCtx.restore();
+
   PREGAME_NODES.forEach(function(n, i){
     var pos = nodePos(n);
     var isDone = completed.includes(n.id);
     var isNext = !isDone && (i === 0 || completed.includes(PREGAME_NODES[i-1].id));
     var isLocked = !isDone && !isNext;
 
-    var r = 36;
-    var pulse = isNext ? (1 + Math.sin(t * 0.04 + i) * 0.06) : 1;
-    var pr = r * pulse;
+    var r = 38;
+    // Pentagon rotates as node orbits — tied to orbital angle for living feel
+    var orbitAngle = (n.orbitPhase || 0) + t * (n.orbitSpeed || 0.0005);
+    var pentRot = orbitAngle * 0.4; // rotates slower than orbit, independent feel
 
-    // Connection line to sphere
-    var lineAlpha = isDone ? 0.7 : (isNext ? 0.25 : 0.06);
+    var color     = isDone ? VIOLET_DONE : (isLocked ? 'rgba(120,80,160,0.5)' : VIOLET);
+    var brightStr = isDone ? VIOLET_DARK : VIOLET_BRIGHT;
+    var glowAlpha = isDone ? 0.22 : (isNext ? 0.14 : 0.05);
+    var bodyAlpha = isDone ? 0.55 : (isNext ? 0.35 : 0.15);
+    var strokeAlpha = isDone ? 0.95 : (isNext ? 0.75 : 0.22);
+    var glyphAlpha  = isDone ? 0.9  : (isNext ? 0.65 : 0.18);
+
     treeCtx.save();
-    if(isDone){
-      // Glowing done line
-      treeCtx.strokeStyle = '#c9a84c';
-      treeCtx.lineWidth = 6;
-      treeCtx.globalAlpha = 0.08;
-      treeCtx.beginPath();
-      treeCtx.moveTo(pos.x, pos.y);
-      treeCtx.lineTo(CX, SPHERE_Y);
-      treeCtx.stroke();
-      treeCtx.strokeStyle = '#ffdd55';
-      treeCtx.lineWidth = 1.5;
-      treeCtx.globalAlpha = 0.7;
-      treeCtx.beginPath();
-      treeCtx.moveTo(pos.x, pos.y);
-      treeCtx.lineTo(CX, SPHERE_Y);
-      treeCtx.stroke();
-      // White hot spine
-      treeCtx.strokeStyle = 'rgba(255,255,255,0.5)';
-      treeCtx.lineWidth = 0.5;
-      treeCtx.globalAlpha = 1;
-      treeCtx.beginPath();
-      treeCtx.moveTo(pos.x, pos.y);
-      treeCtx.lineTo(CX, SPHERE_Y);
-      treeCtx.stroke();
-    } else {
-      treeCtx.strokeStyle = '#c9a84c';
-      treeCtx.lineWidth = 0.8;
-      treeCtx.globalAlpha = isNext ? 0.2 : 0.06;
-      treeCtx.setLineDash([3,5]);
-      treeCtx.beginPath();
-      treeCtx.moveTo(pos.x, pos.y);
-      treeCtx.lineTo(CX, SPHERE_Y);
-      treeCtx.stroke();
-    }
-    treeCtx.restore();
 
-    // Node outer bloom
-    if(!isLocked){
-      var bloomColor = isDone ? 'rgba(192,57,43,' : 'rgba(201,168,76,';
-      var bgrad = treeCtx.createRadialGradient(pos.x,pos.y,pr,pos.x,pos.y,pr+50);
-      bgrad.addColorStop(0, bloomColor+(isDone?'0.12':'0.08')+')');
-      bgrad.addColorStop(1, bloomColor+'0)');
-      treeCtx.fillStyle = bgrad;
-      treeCtx.beginPath();
-      treeCtx.arc(pos.x,pos.y,pr+50,0,Math.PI*2);
-      treeCtx.fill();
-    }
-
-    // Node body
-    var ngrad = treeCtx.createRadialGradient(pos.x-pr*0.3,pos.y-pr*0.3,0,pos.x,pos.y,pr);
-    if(isDone){
-      ngrad.addColorStop(0,'rgba(220,80,40,0.9)');
-      ngrad.addColorStop(0.5,'rgba(160,40,30,0.8)');
-      ngrad.addColorStop(1,'rgba(10,8,20,0.95)');
-    } else if(isNext){
-      ngrad.addColorStop(0,'rgba(220,180,60,0.7)');
-      ngrad.addColorStop(0.5,'rgba(160,120,30,0.6)');
-      ngrad.addColorStop(1,'rgba(10,8,20,0.9)');
-    } else {
-      ngrad.addColorStop(0,'rgba(30,25,50,0.6)');
-      ngrad.addColorStop(1,'rgba(10,8,20,0.8)');
-    }
-    treeCtx.fillStyle = ngrad;
+    // Outer bloom — radial gradient
+    var bloom = treeCtx.createRadialGradient(pos.x, pos.y, r * 0.5, pos.x, pos.y, r + 55);
+    bloom.addColorStop(0, brightStr + glowAlpha + ')');
+    bloom.addColorStop(1, brightStr + '0)');
+    treeCtx.fillStyle = bloom;
     treeCtx.beginPath();
-    treeCtx.arc(pos.x,pos.y,pr,0,Math.PI*2);
+    treeCtx.arc(pos.x, pos.y, r + 55, 0, Math.PI * 2);
     treeCtx.fill();
 
-    // Outer stroke
-    treeCtx.save();
-    treeCtx.strokeStyle = isDone ? '#ff7755' : (isNext ? '#ffdd55' : 'rgba(255,255,255,0.08)');
-    treeCtx.lineWidth = isDone ? 1.5 : (isNext ? 1.5 : 0.8);
-    treeCtx.globalAlpha = isDone ? 1 : (isNext ? 0.8 : 0.3);
-    if(isDone || isNext){
-      treeCtx.shadowBlur = isNext ? 12 : 8;
-      treeCtx.shadowColor = isDone ? '#ff7755' : '#ffdd55';
-    }
-    treeCtx.beginPath();
-    treeCtx.arc(pos.x,pos.y,pr,0,Math.PI*2);
-    treeCtx.stroke();
-    treeCtx.restore();
-
-    // Inner ring
-    treeCtx.save();
-    treeCtx.strokeStyle = isDone ? 'rgba(255,150,100,0.5)' : (isNext ? 'rgba(255,220,80,0.4)' : 'rgba(255,255,255,0.05)');
-    treeCtx.lineWidth = 0.6;
-    treeCtx.beginPath();
-    treeCtx.arc(pos.x,pos.y,pr*0.62,0,Math.PI*2);
-    treeCtx.stroke();
-    treeCtx.restore();
-
-    // Cardinal ticks
-    if(!isLocked){
-      [0,90,180,270].forEach(function(angle){
-        var rad = angle*Math.PI/180;
-        var ix = pos.x + Math.cos(rad)*(pr*0.62);
-        var iy = pos.y + Math.sin(rad)*(pr*0.62);
-        var ox = pos.x + Math.cos(rad)*(pr*0.62+5);
-        var oy = pos.y + Math.sin(rad)*(pr*0.62+5);
-        treeCtx.save();
-        treeCtx.strokeStyle = isDone ? '#ff7755' : '#ffdd55';
-        treeCtx.lineWidth = 1;
-        treeCtx.globalAlpha = 0.6;
-        treeCtx.beginPath();
-        treeCtx.moveTo(ix,iy); treeCtx.lineTo(ox,oy);
-        treeCtx.stroke();
-        treeCtx.restore();
-      });
-    }
-
-    // Center dot
-    treeCtx.save();
-    treeCtx.fillStyle = isDone ? '#ff9977' : (isNext ? '#ffdd55' : 'rgba(255,255,255,0.1)');
-    if(!isLocked){treeCtx.shadowBlur=8; treeCtx.shadowColor=isDone?'#ff7755':'#ffdd55';}
-    treeCtx.beginPath();
-    treeCtx.arc(pos.x,pos.y, isDone?4:3,0,Math.PI*2);
+    // Pentagon dark body fill
+    var bodyGrad = treeCtx.createRadialGradient(
+      pos.x - r * 0.25, pos.y - r * 0.25, 0,
+      pos.x, pos.y, r
+    );
+    bodyGrad.addColorStop(0, brightStr + (bodyAlpha * 0.9) + ')');
+    bodyGrad.addColorStop(0.6, brightStr + (bodyAlpha * 0.3) + ')');
+    bodyGrad.addColorStop(1, 'rgba(8,6,18,0.92)');
+    treeCtx.fillStyle = bodyGrad;
+    drawPentagon(treeCtx, pos.x, pos.y, r, pentRot);
     treeCtx.fill();
+
+    // Pentagon glow stroke pass (thick, soft)
+    treeCtx.strokeStyle = color;
+    treeCtx.lineWidth = 10;
+    treeCtx.globalAlpha = strokeAlpha * 0.08;
+    treeCtx.shadowBlur = 0;
+    drawPentagon(treeCtx, pos.x, pos.y, r, pentRot);
+    treeCtx.stroke();
+
+    // Pentagon spine pass (thin, bright)
+    treeCtx.lineWidth = isDone ? 1.6 : (isNext ? 1.4 : 0.7);
+    treeCtx.globalAlpha = strokeAlpha;
+    treeCtx.shadowBlur = isDone ? 18 : (isNext ? 12 : 0);
+    treeCtx.shadowColor = color;
+    drawPentagon(treeCtx, pos.x, pos.y, r, pentRot);
+    treeCtx.stroke();
+
+    // Inner pentagon (smaller, fainter — adds depth)
+    treeCtx.lineWidth = 0.5;
+    treeCtx.globalAlpha = strokeAlpha * 0.3;
+    treeCtx.shadowBlur = 0;
+    drawPentagon(treeCtx, pos.x, pos.y, r * 0.58, pentRot + Math.PI / 5);
+    treeCtx.stroke();
+
     treeCtx.restore();
 
-    // Done checkmark
+    // Glyph — drawn centered inside pentagon
+    var glyphSize = r * 0.38;
+    drawGlyph(treeCtx, pos.x, pos.y, glyphSize, n.glyph, color, glyphAlpha);
+
+    // Done state — checkmark replaces glyph
     if(isDone){
       treeCtx.save();
-      treeCtx.fillStyle = '#ff9977';
-      treeCtx.font = 'bold 18px DM Sans';
+      treeCtx.fillStyle = WHITE_VIOLET + '0.95)';
+      treeCtx.font = 'bold 16px DM Sans';
       treeCtx.textAlign = 'center';
       treeCtx.textBaseline = 'middle';
-      treeCtx.shadowBlur = 10;
-      treeCtx.shadowColor = '#ff7755';
+      treeCtx.shadowBlur = 14;
+      treeCtx.shadowColor = VIOLET;
       treeCtx.fillText('✓', pos.x, pos.y);
       treeCtx.restore();
     }
 
-    // Next indicator
+    // Active node pulse — breathing light effect
     if(isNext && !isDone){
-      treeCtx.save();
-      treeCtx.fillStyle = '#ffdd55';
-      treeCtx.font = '400 10px Cinzel, serif';
-      treeCtx.textAlign = 'center';
-      treeCtx.globalAlpha = 0.7 + Math.sin(t*0.05)*0.3;
-      treeCtx.fillText('START HERE', pos.x, pos.y + pr + 16);
-      treeCtx.restore();
-    }
+      // Slow breathe: 0→1→0 over ~2 seconds
+      var breathe = (Math.sin(t * 0.045) + 1) / 2;
+      var breatheFast = (Math.sin(t * 0.09) + 1) / 2;
 
-    // Module number
-    treeCtx.save();
-    treeCtx.fillStyle = isDone ? 'rgba(255,150,100,0.7)' : (isNext ? 'rgba(255,220,80,0.6)' : 'rgba(240,236,228,0.15)');
-    treeCtx.font = '400 10px Cinzel, serif';
-    treeCtx.textAlign = 'center';
-    treeCtx.fillText('0'+(i+1), pos.x, pos.y - pr - 10);
-    treeCtx.restore();
-  });
-}
-
-function drawPillarBranches(){
-  var allDone = completed.length >= 5;
-  var alpha = allDone ? 0.22 : 0.12;
-  var lineW = allDone ? 1.2 : 0.8;
-
-  // Explicit parent->child connections per pillar, no crossing, no stacking
-  var connections = [
-    // Vitality (red)
-    {x1:VITALITY_X, y1:PILLAR_Y, x2:180,  y2:1300, c:'#ff6644'},
-    {x1:VITALITY_X, y1:PILLAR_Y, x2:420,  y2:1300, c:'#ff6644'},
-    {x1:180,  y1:1300, x2:300,  y2:1480, c:'#ff6644'},
-    {x1:300,  y1:1480, x2:150,  y2:1640, c:'#ff6644'},
-    {x1:300,  y1:1480, x2:300,  y2:1640, c:'#ff6644'},
-    {x1:420,  y1:1300, x2:200,  y2:1800, c:'#ff6644'},
-    {x1:420,  y1:1300, x2:380,  y2:1800, c:'#ff6644'},
-    // Spirit (purple)
-    {x1:SPIRIT_X,   y1:PILLAR_Y, x2:780,  y2:1300, c:'#bb99ff'},
-    {x1:780,  y1:1300, x2:660,  y2:1480, c:'#bb99ff'},
-    {x1:780,  y1:1300, x2:800,  y2:1480, c:'#bb99ff'},
-    {x1:780,  y1:1300, x2:940,  y2:1480, c:'#bb99ff'},
-    {x1:660,  y1:1480, x2:660,  y2:1640, c:'#bb99ff'},
-    {x1:660,  y1:1480, x2:780,  y2:1640, c:'#bb99ff'},
-    {x1:800,  y1:1480, x2:900,  y2:1640, c:'#bb99ff'},
-    {x1:940,  y1:1480, x2:1020, y2:1640, c:'#bb99ff'},
-    {x1:900,  y1:1640, x2:760,  y2:1800, c:'#bb99ff'},
-    {x1:900,  y1:1640, x2:920,  y2:1800, c:'#bb99ff'},
-    // Alignment (green)
-    {x1:ALIGNMENT_X, y1:PILLAR_Y, x2:1420, y2:1300, c:'#55ffaa'},
-    {x1:1420, y1:1300, x2:1300, y2:1480, c:'#55ffaa'},
-    {x1:1420, y1:1300, x2:1440, y2:1480, c:'#55ffaa'},
-    {x1:1420, y1:1300, x2:1580, y2:1480, c:'#55ffaa'},
-    {x1:1300, y1:1480, x2:1320, y2:1640, c:'#55ffaa'},
-    {x1:1440, y1:1480, x2:1480, y2:1640, c:'#55ffaa'},
-    {x1:1580, y1:1480, x2:1620, y2:1640, c:'#55ffaa'},
-  ];
-
-  connections.forEach(function(cn){
-    treeCtx.save();
-    treeCtx.strokeStyle = cn.c;
-    treeCtx.lineWidth = lineW;
-    treeCtx.globalAlpha = alpha;
-    treeCtx.setLineDash(allDone ? [] : [3,6]);
-    if(allDone){
-      treeCtx.shadowBlur = 4;
-      treeCtx.shadowColor = cn.c;
-    }
-    treeCtx.beginPath();
-    treeCtx.moveTo(cn.x1, cn.y1);
-    treeCtx.lineTo(cn.x2, cn.y2);
-    treeCtx.stroke();
-    treeCtx.restore();
-  });
-
-  // Pillar labels
-  var labels = [
-    {x:VITALITY_X, y:PILLAR_Y-20, text:'VITALITY',  color:'#ff6644', key:'vitality'},
-    {x:SPIRIT_X,   y:PILLAR_Y-20, text:'SPIRIT',    color:'#bb99ff', key:'spirit'},
-    {x:ALIGNMENT_X,y:PILLAR_Y-20, text:'ALIGNMENT', color:'#55ffaa', key:'alignment'},
-  ];
-  labels.forEach(function(l){
-    var isWinner = window.quizResult && window.quizResult === l.key;
-    var dormantAlpha = allDone ? 0.85 : 0.28;
-    var alpha = isWinner ? 1 : (window.quizResult ? 0.15 : dormantAlpha);
-    treeCtx.save();
-    treeCtx.fillStyle = l.color;
-    treeCtx.font = '600 20px Cinzel, serif';
-    treeCtx.textAlign = 'center';
-    treeCtx.globalAlpha = alpha;
-    if(isWinner || allDone){
-      treeCtx.shadowBlur = isWinner ? 16 : 8;
-      treeCtx.shadowColor = l.color;
-    }
-    treeCtx.fillText(l.text, l.x, l.y);
-    treeCtx.restore();
-  });
-}
-
-function drawPillarNodes(){
-  var allDone = completed.length >= 5;
-  var pillarMap = {
-    vitality: {nodes: PILLAR_NODES.vitality, color:'#ff6644', bright:'rgba(255,100,68,'},
-    spirit:   {nodes: PILLAR_NODES.spirit,   color:'#bb99ff', bright:'rgba(187,153,255,'},
-    alignment:{nodes: PILLAR_NODES.alignment,color:'#55ffaa', bright:'rgba(85,255,170,'},
-  };
-  Object.keys(pillarMap).forEach(function(key){
-    var p = pillarMap[key];
-    p.nodes.forEach(function(n){
-      var r = 18;
-      var alpha = allDone ? 1 : 0.25;
-      var pulse = allDone ? (1 + Math.sin(t*0.025 + n.x)*0.04) : 1;
-      var pr = r * pulse;
-
-      if(allDone){
-        var bgrad = treeCtx.createRadialGradient(n.x,n.y,pr,n.x,n.y,pr+30);
-        bgrad.addColorStop(0, p.bright+'0.08)');
-        bgrad.addColorStop(1, p.bright+'0)');
-        treeCtx.fillStyle = bgrad;
-        treeCtx.beginPath();
-        treeCtx.arc(n.x,n.y,pr+30,0,Math.PI*2);
-        treeCtx.fill();
-      }
-
-      var ngrad = treeCtx.createRadialGradient(n.x-pr*0.3,n.y-pr*0.3,0,n.x,n.y,pr);
-      if(allDone){
-        ngrad.addColorStop(0, p.bright+'0.25)');
-        ngrad.addColorStop(1,'rgba(10,8,20,0.9)');
-      } else {
-        ngrad.addColorStop(0,'rgba(30,25,50,0.4)');
-        ngrad.addColorStop(1,'rgba(10,8,20,0.7)');
-      }
-      treeCtx.fillStyle = ngrad;
+      // Layer 1 — wide outer bloom that expands and contracts
+      var pulseBloomR = r + 50 + breathe * 40;
+      var pulseBloom = treeCtx.createRadialGradient(pos.x, pos.y, r, pos.x, pos.y, pulseBloomR);
+      pulseBloom.addColorStop(0, 'rgba(216,180,254,' + (0.18 * breathe) + ')');
+      pulseBloom.addColorStop(1, 'rgba(192,132,252,0)');
+      treeCtx.fillStyle = pulseBloom;
       treeCtx.beginPath();
-      treeCtx.arc(n.x,n.y,pr,0,Math.PI*2);
+      treeCtx.arc(pos.x, pos.y, pulseBloomR, 0, Math.PI * 2);
       treeCtx.fill();
 
+      // Layer 2 — pulsing pentagon outline (extra stroke on top of existing)
       treeCtx.save();
-      treeCtx.strokeStyle = allDone ? p.color : 'rgba(255,255,255,0.08)';
-      treeCtx.lineWidth = allDone ? 1 : 0.6;
-      treeCtx.globalAlpha = allDone ? 0.7 : 0.3;
-      treeCtx.setLineDash(allDone ? [] : [2,4]);
-      if(allDone){treeCtx.shadowBlur=6; treeCtx.shadowColor=p.color;}
-      treeCtx.beginPath();
-      treeCtx.arc(n.x,n.y,pr,0,Math.PI*2);
+      treeCtx.strokeStyle = '#e9d5ff';
+      treeCtx.lineWidth = 2.2;
+      treeCtx.globalAlpha = 0.4 + breathe * 0.55;
+      treeCtx.shadowBlur = 20 + breathe * 24;
+      treeCtx.shadowColor = '#c084fc';
+      drawPentagon(treeCtx, pos.x, pos.y, r, pentRot);
       treeCtx.stroke();
       treeCtx.restore();
 
+      // Layer 3 — small orbiting dot that circles the pentagon
+      var orbitA = t * 0.04;
+      var orbitX = pos.x + Math.cos(orbitA) * (r + 14);
+      var orbitY = pos.y + Math.sin(orbitA) * (r + 14);
       treeCtx.save();
-      treeCtx.fillStyle = allDone ? p.color : 'rgba(255,255,255,0.1)';
+      treeCtx.fillStyle = '#f3e8ff';
+      treeCtx.globalAlpha = 0.5 + breatheFast * 0.5;
+      treeCtx.shadowBlur = 10;
+      treeCtx.shadowColor = '#c084fc';
       treeCtx.beginPath();
-      treeCtx.arc(n.x,n.y,allDone?2.5:1.5,0,Math.PI*2);
+      treeCtx.arc(orbitX, orbitY, 2.5, 0, Math.PI * 2);
       treeCtx.fill();
       treeCtx.restore();
-    });
+    }
+
+    // Module number above node
+    treeCtx.save();
+    treeCtx.fillStyle = isDone
+      ? WHITE_VIOLET + '0.7)'
+      : isNext
+        ? VIOLET_BRIGHT + '0.6)'
+        : 'rgba(200,180,240,0.15)';
+    treeCtx.font = '400 9px Cinzel, serif';
+    treeCtx.textAlign = 'center';
+    treeCtx.letterSpacing = '0.08em';
+    treeCtx.fillText('0' + (i + 1), pos.x, pos.y - r - 12);
+    treeCtx.restore();
   });
 }
+
 
 // Collect all node positions for sonar collision detection
 function getAllNodePositions(){
@@ -1619,140 +1890,21 @@ function getAllNodePositions(){
   PREGAME_NODES.forEach(function(n){
     if(!completed.includes(n.id)){
       var pos = nodePos(n);
-      positions.push({x:pos.x, y:pos.y, r:36, color:'rgba(201,168,76,', lit:0});
+      positions.push({x:pos.x, y:pos.y, r:36, color:'rgba(192,132,252,', lit:0});
     }
   });
-  // Pillar nodes
-  ['vitality','spirit','alignment'].forEach(function(pillar){
-    var colors = {vitality:'rgba(192,57,43,', spirit:'rgba(127,119,221,', alignment:'rgba(29,158,117,'};
-    PILLAR_NODES[pillar].forEach(function(n){
-      positions.push({x:n.x, y:n.y, r:18, color:colors[pillar], lit:0});
-    });
-  });
+  // Constellation root nodes (approximate world positions — rotated so use centers)
+  positions.push({x:VITALITY_CX,  y:VITALITY_CY,  r:22, color:'rgba(255,100,68,',  lit:0});
+  positions.push({x:SPIRIT_CX,    y:SPIRIT_CY,    r:22, color:'rgba(187,153,255,', lit:0});
+  positions.push({x:ALIGNMENT_CX, y:ALIGNMENT_CY, r:22, color:'rgba(85,255,170,',  lit:0});
   return positions;
 }
 
 // Shockwave rings, expand outward from sphere
-var shockwaves = [];
-var shockTimer = 0;
-var litNodes = []; // nodes currently being illuminated by a wave
 
-function updatePulseWaves(charge){
-  shockTimer++;
-
-  // Spawn a shockwave every ~220 frames (~3.5 seconds)
-  if(shockTimer === 1 || shockTimer % 600 === 0){
-    shockwaves.push({
-      r: SPHERE_R,        // current radius
-      maxR: 1400,         // how far it travels
-      speed: 2.0,         // px per frame
-      opacity: 0.5,
-      lineWidth: 2,
-      color: charge > 0 ? 'rgba(201,168,76,' : 'rgba(180,160,255,',
-      litNodes: []        // nodes this wave has touched
-    });
-  }
-
-  var allNodes = getAllNodePositions();
-
-  // Update and draw shockwaves
-  shockwaves = shockwaves.filter(function(sw){
-    sw.r += sw.speed;
-    // Fade out as it expands
-    sw.opacity = Math.max(0, 0.5 * (1 - sw.r / sw.maxR));
-
-    // Support custom shockwave origins (node bursts vs sphere)
-    var originX = sw.cx !== undefined ? sw.cx : CX;
-    var originY = sw.cy !== undefined ? sw.cy : SPHERE_Y;
-
-    // Draw the ring
-    treeCtx.save();
-    treeCtx.strokeStyle = sw.color + sw.opacity + ')';
-    treeCtx.lineWidth = sw.lineWidth;
-    treeCtx.shadowBlur = 18;
-    treeCtx.shadowColor = sw.color + (sw.opacity * 0.8) + ')';
-    treeCtx.beginPath();
-    treeCtx.arc(originX, originY, sw.r, 0, Math.PI * 2);
-    treeCtx.stroke();
-
-    // Soft outer glow ring
-    treeCtx.strokeStyle = sw.color + (sw.opacity * 0.3) + ')';
-    treeCtx.lineWidth = sw.lineWidth * 6;
-    treeCtx.shadowBlur = 30;
-    treeCtx.beginPath();
-    treeCtx.arc(originX, originY, sw.r, 0, Math.PI * 2);
-    treeCtx.stroke();
-    treeCtx.restore();
-
-    // Check collision with each node
-    allNodes.forEach(function(node){
-      var dist = Math.sqrt(Math.pow(node.x - originX, 2) + Math.pow(node.y - originY, 2));
-      var nodeId = node.x + ',' + node.y;
-      if(Math.abs(sw.r - dist) < node.r + 20 && sw.litNodes.indexOf(nodeId) === -1){
-        sw.litNodes.push(nodeId);
-        litNodes.push({
-          x: node.x, y: node.y, r: node.r,
-          color: node.color,
-          alpha: 0, phase: 'in', life: 1.0
-        });
-      }
-    });
-
-    return sw.r < sw.maxR;
-  });
-
-  // Draw and update lit nodes
-  litNodes = litNodes.filter(function(ln){
-    if(ln.phase === 'in'){
-      ln.alpha = Math.min(0.85, ln.alpha + 0.08);
-      if(ln.alpha >= 0.85) ln.phase = 'out';
-    } else {
-      ln.alpha = Math.max(0, ln.alpha - 0.025);
-    }
-
-    if(ln.alpha > 0){
-      // Outer bloom
-      treeCtx.save();
-      var bloom = treeCtx.createRadialGradient(ln.x, ln.y, ln.r * 0.5, ln.x, ln.y, ln.r + 35);
-      bloom.addColorStop(0, ln.color + (ln.alpha * 0.4) + ')');
-      bloom.addColorStop(1, ln.color + '0)');
-      treeCtx.fillStyle = bloom;
-      treeCtx.beginPath();
-      treeCtx.arc(ln.x, ln.y, ln.r + 35, 0, Math.PI * 2);
-      treeCtx.fill();
-
-      // Node outline
-      treeCtx.strokeStyle = ln.color + ln.alpha + ')';
-      treeCtx.lineWidth = 1.5;
-      treeCtx.shadowBlur = 16;
-      treeCtx.shadowColor = ln.color + ln.alpha + ')';
-      treeCtx.beginPath();
-      treeCtx.arc(ln.x, ln.y, ln.r, 0, Math.PI * 2);
-      treeCtx.stroke();
-
-      // Inner ring
-      treeCtx.strokeStyle = ln.color + (ln.alpha * 0.5) + ')';
-      treeCtx.lineWidth = 0.8;
-      treeCtx.shadowBlur = 8;
-      treeCtx.beginPath();
-      treeCtx.arc(ln.x, ln.y, ln.r * 0.62, 0, Math.PI * 2);
-      treeCtx.stroke();
-
-      // Center hot dot
-      treeCtx.fillStyle = ln.color + (ln.alpha * 0.9) + ')';
-      treeCtx.shadowBlur = 10;
-      treeCtx.beginPath();
-      treeCtx.arc(ln.x, ln.y, 2.5, 0, Math.PI * 2);
-      treeCtx.fill();
-      treeCtx.restore();
-    }
-
-    return ln.alpha > 0;
-  });
-}
 
 function updateParticles(){
-  // Energy particles: completed node -> sphere
+  // Energy particles: completed node -> nexus only
   if(Math.random() < 0.15){
     PREGAME_NODES.forEach(function(n){
       if(completed.includes(n.id)){
@@ -1761,43 +1913,24 @@ function updateParticles(){
           energyParticles.push({
             x:pos.x, y:pos.y, tx:CX, ty:SPHERE_Y,
             progress:0, speed:0.003+Math.random()*0.002,
-            size:Math.random()*2+1, color:'rgba(255,200,50,'
+            size:Math.random()*2+1, color:'rgba(192,132,252,'
           });
         }
       }
     });
   }
-  // Flow particles: sphere -> pillars (only when all done)
-  if(completed.length>=5 && Math.random()<0.2){
-    var targets=[[VITALITY_X,PILLAR_Y,'rgba(255,100,68,'],[SPIRIT_X,PILLAR_Y,'rgba(187,153,255,'],[ALIGNMENT_X,PILLAR_Y,'rgba(85,255,170,']];
-    var tgt=targets[Math.floor(Math.random()*targets.length)];
-    flowParticles.push({x:CX,y:SPHERE_Y,tx:tgt[0],ty:tgt[1],progress:0,speed:0.0025+Math.random()*0.0015,size:Math.random()*2.5+1,color:tgt[2]});
-  }
   energyParticles=energyParticles.filter(function(p){
     p.progress+=p.speed;
     var ex=p.x+(p.tx-p.x)*p.progress, ey=p.y+(p.ty-p.y)*p.progress;
     var alpha=Math.sin(p.progress*Math.PI);
-    treeCtx.save(); treeCtx.fillStyle=p.color+alpha+')'; treeCtx.shadowBlur=6; treeCtx.shadowColor='#ffdd55';
-    treeCtx.beginPath(); treeCtx.arc(ex,ey,p.size,0,Math.PI*2); treeCtx.fill(); treeCtx.restore();
-    return p.progress<1;
-  });
-  flowParticles=flowParticles.filter(function(p){
-    p.progress+=p.speed;
-    var ex=p.x+(p.tx-p.x)*p.progress, ey=p.y+(p.ty-p.y)*p.progress;
-    var alpha=Math.sin(p.progress*Math.PI);
-    treeCtx.save(); treeCtx.fillStyle=p.color+alpha+')'; treeCtx.shadowBlur=8; treeCtx.shadowColor=p.color+'0.8)';
+    treeCtx.save(); treeCtx.fillStyle=p.color+alpha+')'; treeCtx.shadowBlur=6; treeCtx.shadowColor='#c084fc';
     treeCtx.beginPath(); treeCtx.arc(ex,ey,p.size,0,Math.PI*2); treeCtx.fill(); treeCtx.restore();
     return p.progress<1;
   });
 }
 
 function triggerIgnition(){
-  ignitePulse=1;
-  for(var i=0;i<30;i++){
-    var targets=[[VITALITY_X,PILLAR_Y,'rgba(255,100,68,'],[SPIRIT_X,PILLAR_Y,'rgba(187,153,255,'],[ALIGNMENT_X,PILLAR_Y,'rgba(85,255,170,']];
-    var tgt=targets[i%3];
-    flowParticles.push({x:CX,y:SPHERE_Y,tx:tgt[0],ty:tgt[1],progress:i*0.02,speed:0.01+Math.random()*0.008,size:Math.random()*3+1.5,color:tgt[2]});
-  }
+  // Ignition handled by nexusFlare + crown particles — no flow particles needed
 }
 
 // ---- NEBULA ----
@@ -1841,7 +1974,235 @@ function triggerIgnition(){
   drawNebula();
 })();
 
-// ---- PAN & ZOOM ----
+// ---- CONSTELLATION NODE WORLD POSITIONS ----
+// These mirror the local coords in each draw function + constellation center offset
+// Used for live hit-testing since the nodes are static (unlike orbiting pregame nodes)
+function getConstellationHitNodes(){
+  var nodes = [];
+
+  // Vitality — Orion shape
+  var vNodes = [
+    {lx:0,y:-220,r:22,name:'Energy Management',     pillar:'Vitality · Physical Foundation', action:'Unlocks with the program'},
+    {lx:-80, ly:-130,r:14,name:'Recovery',            pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:80,  ly:-130,r:14,name:'Performance State',   pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:-40, ly:-20, r:14,name:'Biomechanics',        pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:40,  ly:-20, r:14,name:'Fuel Systems',        pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:0,   ly:60,  r:18,name:'Neuroscience & Exercise',pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:-110,ly:160, r:11,name:'Hormones',            pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:110, ly:160, r:11,name:'Biomechanics',        pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:-140,ly:280, r:9, name:'Energy Management',   pillar:'Vitality',action:'Unlocks with the program'},
+    {lx:140, ly:280, r:9, name:'Recovery',            pillar:'Vitality',action:'Unlocks with the program'},
+  ];
+  var vData = [
+    {name:'Energy Management',     pillar:'Vitality · Physical Foundation'},
+    {name:'Recovery',              pillar:'Vitality'},
+    {name:'Performance State',     pillar:'Vitality'},
+    {name:'Biomechanics',          pillar:'Vitality'},
+    {name:'Fuel Systems',          pillar:'Vitality'},
+    {name:'Neuroscience & Exercise',pillar:'Vitality'},
+    {name:'Hormones',              pillar:'Vitality'},
+    {name:'Energy Management',     pillar:'Vitality'},
+    {name:'Recovery',              pillar:'Vitality'},
+    {name:'Performance State',     pillar:'Vitality'},
+  ];
+  var vLayout = [
+    {lx:0,   ly:-220,r:22},{lx:-80, ly:-130,r:14},{lx:80,  ly:-130,r:14},
+    {lx:-40, ly:-20, r:14},{lx:40,  ly:-20, r:14},{lx:0,   ly:60,  r:18},
+    {lx:-110,ly:160, r:11},{lx:110, ly:160, r:11},{lx:-140,ly:280, r:9},
+    {lx:140, ly:280, r:9},
+  ];
+  var vNames = ['Energy Management','Recovery','Performance State','Biomechanics',
+                'Fuel Systems','Neuroscience & Exercise','Hormones','Biomechanics',
+                'Energy Management','Recovery'];
+  vLayout.forEach(function(n, i){
+    nodes.push({wx: VITALITY_CX + n.lx, wy: VITALITY_CY + n.ly, r: n.r,
+      name: vNames[i], pillar:'Vitality', color:'#ff6644'});
+  });
+
+  // Spirit — Scorpio shape
+  var sLayout = [
+    {lx:0,   ly:0,   r:22},{lx:-160,ly:-80, r:14},{lx:160, ly:-80, r:14},
+    {lx:-260,ly:20,  r:11},{lx:260, ly:20,  r:11},{lx:-320,ly:140, r:9},
+    {lx:320, ly:140, r:9}, {lx:-80, ly:160, r:14},{lx:80,  ly:160, r:14},
+    {lx:0,   ly:260, r:18},{lx:-60, ly:360, r:9}, {lx:60,  ly:360, r:9},
+  ];
+  var sNames = ['Mindset','Identity','Motivation Systems','Emotional Regulation',
+                'Intentionality','Action Taking','Reflection','Idealisms & Culture',
+                'Hope','Faith','Identity','Mindset'];
+  sLayout.forEach(function(n, i){
+    nodes.push({wx: SPIRIT_CX + n.lx, wy: SPIRIT_CY + n.ly, r: n.r,
+      name: sNames[i], pillar:'Spirit', color:'#bb99ff'});
+  });
+
+  // Alignment — Compass rose shape
+  var aLayout = [
+    {lx:0,   ly:0,   r:22},{lx:0,   ly:-200,r:14},{lx:200, ly:0,   r:14},
+    {lx:0,   ly:200, r:14},{lx:-200,ly:0,   r:14},{lx:130, ly:-130,r:11},
+    {lx:130, ly:130, r:11},{lx:-130,ly:130, r:11},{lx:-130,ly:-130,r:11},
+    {lx:0,   ly:-320,r:9}, {lx:320, ly:0,   r:9}, {lx:0,   ly:320, r:9},
+    {lx:-320,ly:0,   r:9},
+  ];
+  var aNames = ['Values Clarity','Goal Architecture','Environment Design','Executive Systems',
+                'Boundaries','Relationships','Career & Legacy','Values Clarity',
+                'Goal Architecture','Environment Design','Executive Systems','Boundaries',
+                'Relationships'];
+  aLayout.forEach(function(n, i){
+    nodes.push({wx: ALIGNMENT_CX + n.lx, wy: ALIGNMENT_CY + n.ly, r: n.r,
+      name: aNames[i], pillar:'Alignment', color:'#55ffaa'});
+  });
+
+  return nodes;
+}
+
+// Returns hit constellation node or null
+function hitTestConstellationNode(screenX, screenY){
+  var c = screenToCanvas(screenX, screenY);
+  var hitR = 28;
+  var nodes = getConstellationHitNodes();
+  for(var i = 0; i < nodes.length; i++){
+    var n = nodes[i];
+    var dx = c.x - n.wx, dy = c.y - n.wy;
+    if(Math.sqrt(dx*dx + dy*dy) < n.r + hitR) return n;
+  }
+  return null;
+}
+
+// ---- LIVE NODE HIT TESTING ----
+// Converts screen coords → canvas space, accounting for pan/zoom transform
+function screenToCanvas(screenX, screenY){
+  var wrap = document.getElementById('canvasWrap');
+  var rect = wrap.getBoundingClientRect();
+  return {
+    x: (screenX - rect.left - transform.x) / transform.scale,
+    y: (screenY - rect.top  - transform.y) / transform.scale
+  };
+}
+
+// Returns the pregame node under screen coords, or null
+function hitTestPregameNode(screenX, screenY){
+  var c = screenToCanvas(screenX, screenY);
+  var hitR = 48; // slightly larger than visual radius for easy clicking
+  for(var i = 0; i < PREGAME_NODES.length; i++){
+    var n = PREGAME_NODES[i];
+    var pos = nodePos(n);
+    var dx = c.x - pos.x, dy = c.y - pos.y;
+    if(Math.sqrt(dx*dx + dy*dy) < hitR) return {node: n, index: i};
+  }
+  return null;
+}
+
+// Track which node the cursor is currently hovering
+var hoveredNodeId = null;
+
+document.getElementById('canvasWrap').addEventListener('mousemove', function(e){
+  if(drag.active) return;
+  var hit = hitTestPregameNode(e.clientX, e.clientY);
+  if(hit){
+    var isDone = completed.includes(hit.node.id);
+    if(hoveredNodeId !== hit.node.id){
+      hoveredNodeId = hit.node.id;
+      showTooltip(e, hit.node.id, isDone);
+    } else {
+      moveTooltip(e);
+    }
+    document.getElementById('canvasWrap').style.cursor = 'pointer';
+    return;
+  }
+  // Check constellation nodes
+  var conHit = hitTestConstellationNode(e.clientX, e.clientY);
+  if(conHit){
+    var conKey = 'con_' + conHit.wx + '_' + conHit.wy;
+    tooltipEl = document.getElementById('nodeTooltip');
+    document.getElementById('ttNum').textContent = conHit.pillar;
+    document.getElementById('ttName').textContent = conHit.name;
+    document.getElementById('ttAction').textContent = 'Unlocks when you join the program';
+    moveTooltip(e);
+    tooltipEl.classList.add('visible');
+    hoveredNodeId = conKey;
+    document.getElementById('canvasWrap').style.cursor = 'pointer';
+    return;
+  }
+  if(hoveredNodeId !== null){
+    hoveredNodeId = null;
+    hideTooltip();
+  }
+  document.getElementById('canvasWrap').style.cursor = drag.pending ? 'grabbing' : 'grab';
+});
+
+document.getElementById('canvasWrap').addEventListener('mouseleave', function(){
+  hoveredNodeId = null;
+  hideTooltip();
+});
+
+document.getElementById('canvasWrap').addEventListener('click', function(e){
+  if(drag.moved) return;
+  var hit = hitTestPregameNode(e.clientX, e.clientY);
+  if(hit){
+    e.stopPropagation();
+    openNodePanel(hit.node.id);
+    return;
+  }
+  var conHit = hitTestConstellationNode(e.clientX, e.clientY);
+  if(conHit){
+    e.stopPropagation();
+    // Show a locked node panel with book-a-call CTA
+    var pillarColors = {Vitality:'var(--red)', Spirit:'#bb99ff', Alignment:'#55ffaa'};
+    document.getElementById('nodePanelPillar').textContent = conHit.pillar;
+    document.getElementById('nodePanelPillar').style.color = pillarColors[conHit.pillar] || 'var(--gold)';
+    document.getElementById('nodePanelName').textContent = conHit.name;
+    // Map constellation node names to NODE_DATA ids for descriptions
+    var nameToId = {
+      'Energy Management':'energy','Recovery':'recovery','Performance State':'perfstate',
+      'Biomechanics':'biomech','Fuel Systems':'fuelsys','Neuroscience & Exercise':'neuro',
+      'Hormones':'hormones','Mindset':'mindset','Identity':'identity',
+      'Motivation Systems':'motivation','Emotional Regulation':'emreg',
+      'Intentionality':'intent','Action Taking':'action','Reflection':'reflect',
+      'Idealisms & Culture':'idealism','Hope':'hope','Faith':'faith',
+      'Values Clarity':'values','Goal Architecture':'goalarch',
+      'Environment Design':'envdesign','Executive Systems':'execsys',
+      'Boundaries':'bounds','Relationships':'relations','Career & Legacy':'career'
+    };
+    var nodeId = nameToId[conHit.name];
+    var desc = nodeId && NODE_DATA[nodeId] ? NODE_DATA[nodeId].desc : 'This skill is part of the ' + conHit.pillar + ' pillar. It unlocks when you join the Gamer Ascension program.';
+    document.getElementById('nodePanelDesc').textContent = desc;
+    var actions = document.getElementById('nodePanelActions');
+    actions.innerHTML = '';
+    var lockDiv = document.createElement('div');
+    lockDiv.className = 'node-panel-locked';
+    var lbl = document.createElement('div');
+    lbl.className = 'node-panel-locked-label';
+    lbl.textContent = 'This skill unlocks when you join the program';
+    var lActions = document.createElement('div');
+    lActions.className = 'node-panel-locked-actions';
+    var bookBtn = document.createElement('a');
+    bookBtn.className = 'node-panel-btn';
+    bookBtn.href = 'https://calendly.com/straincoaching/insightcall';
+    bookBtn.target = '_blank';
+    bookBtn.textContent = 'Book a call →';
+    lActions.appendChild(bookBtn);
+    lockDiv.appendChild(lbl);
+    lockDiv.appendChild(lActions);
+    actions.appendChild(lockDiv);
+    var closeBtn = document.createElement('button');
+    closeBtn.className = 'node-panel-close';
+    closeBtn.textContent = 'Close';
+    closeBtn.onclick = closeNodePanel;
+    actions.appendChild(closeBtn);
+    document.getElementById('nodePanel').classList.add('open');
+  }
+});
+
+// Touch tap support for orbiting nodes
+document.getElementById('canvasWrap').addEventListener('touchend', function(e){
+  if(drag.moved) return;
+  if(e.changedTouches.length === 0) return;
+  var touch = e.changedTouches[0];
+  var hit = hitTestPregameNode(touch.clientX, touch.clientY);
+  if(hit){
+    e.preventDefault();
+    openNodePanel(hit.node.id);
+  }
+}, {passive: false});
 var transform={x:0,y:0,scale:1};
 var drag={active:false,moved:false,pending:false,startX:0,startY:0,startTX:0,startTY:0};
 var pinch={active:false,startDist:0,startScale:0};
@@ -1853,12 +2214,10 @@ function applyTransform(){
 function centerTree(){
   var wrap=document.getElementById('canvasWrap');
   var vw=wrap.offsetWidth,vh=wrap.offsetHeight;
-  // Center between sphere and oracle horizontally
-  var midX = (CX + ORACLE_X) / 2;
-  var targetScale=Math.min(0.45,vw/W*0.85);
+  var targetScale=Math.min(0.42,vw/W*0.88);
   transform.scale=targetScale;
-  transform.x=(vw/2)-(midX*transform.scale);
-  transform.y=Math.max(10,(vh/2)-(SPHERE_Y*transform.scale)-20);
+  transform.x=(vw/2)-(CX*transform.scale);
+  transform.y=Math.max(10,(vh/2)-(SPHERE_Y*transform.scale)-30);
   applyTransform();
 }
 
@@ -1944,11 +2303,16 @@ function showTooltip(e,id,isDone){
   moveTooltip(e);tooltipEl.classList.add('visible');
 }
 function moveTooltip(e){
-  if(!tooltipEl)return;
-  var x=e.clientX+16,y=e.clientY-40;
-  if(x+220>window.innerWidth)x=e.clientX-230;
-  if(y<70)y=e.clientY+16;
-  tooltipEl.style.left=x+'px';tooltipEl.style.top=y+'px';
+  if(!tooltipEl) tooltipEl = document.getElementById('nodeTooltip');
+  if(!tooltipEl) return;
+  var x = e.clientX + 16;
+  var y = e.clientY - 40;
+  if(x + 240 > window.innerWidth) x = e.clientX - 250;
+  if(x < 8) x = 8;
+  if(y < 70) y = e.clientY + 16;
+  if(y + 80 > window.innerHeight) y = e.clientY - 90;
+  tooltipEl.style.left = x + 'px';
+  tooltipEl.style.top  = y + 'px';
 }
 function hideTooltip(){document.getElementById('nodeTooltip').classList.remove('visible');tooltipEl=null;}
 
@@ -2048,8 +2412,8 @@ document.getElementById('respecConfirmYes').onclick=function(e){
     document.querySelectorAll('.pip').forEach(function(p){p.classList.remove('done');});
     completed.forEach(function(id){var idx=lessonIds.indexOf(id);if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');});
   },280);
-  sphereIgnited=false;ignitePulse=0;energyParticles.length=0;flowParticles.length=0;
-  shockwaves.length=0;litNodes.length=0;shockTimer=0;
+  nexusIgnited=false; nexusFlare=0; nexusArmLen=NEXUS_ARM_BASE;
+  energyParticles.length=0;flowParticles.length=0;
   var existing=document.querySelector('[style*="z-index:500"]');
   if(existing)existing.remove();
   document.getElementById('respecConfirm').classList.remove('open');
@@ -2492,16 +2856,7 @@ function markComplete(){
         spawnNodePulse(pos.x, pos.y, 'rgba(255,220,120,');
       });
 
-      // Effect 3 — sonar shockwave from this node outward (new shockwave origin)
-      pendingEffects.push(function(){
-        var pos = nodePos(capturedNode);
-        // Spawn a local burst shockwave from the node itself
-        shockwaves.push({
-          r: 36, maxR: 600, speed: 3.5, opacity: 0.7, lineWidth: 2,
-          color: 'rgba(201,168,76,', litNodes: [],
-          cx: pos.x, cy: pos.y   // custom origin stored on shockwave
-        });
-      });
+
 
       // If this was the LAST module — fire the full ignition sequence
       if(capturedAllDone){
@@ -2586,7 +2941,7 @@ window.addEventListener('load',function(){
     var idx=lessonOrder.indexOf(id);
     if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');
   });
-  if(completed.length>=5)sphereIgnited=true;
+  if(completed.length>=5){ nexusIgnited=true; nexusArmLen=NEXUS_ARM_MAX; }
   updateRespecBtn();
   maybeShowTutorial();
   loadReflections();
