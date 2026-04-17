@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>The Threshold · Gamer Ascension</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#c0392b;--gold:#c9a84c;--violet:#7f77dd;--green:#1d9e75;
+  --bg:#080810;--bg-deep:#04040a;--border:rgba(255,255,255,0.06);
+  --text:#f0ece4;--tdim:rgba(240,236,228,0.55);--tmuted:rgba(240,236,228,0.28);
+  --arcane:#9d8bff;--ember:#d4a647;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text);position:fixed;width:100%}
+
+/* NEBULA BACKGROUND — matches pregame aesthetic */
+.nebula{position:fixed;inset:0;z-index:0;pointer-events:none;background:
+  radial-gradient(ellipse at 20% 30%, rgba(157,139,255,0.08) 0%, transparent 45%),
+  radial-gradient(ellipse at 80% 70%, rgba(201,168,76,0.06) 0%, transparent 50%),
+  radial-gradient(ellipse at 50% 90%, rgba(127,119,221,0.05) 0%, transparent 40%),
+  var(--bg-deep);
+}
+.starfield{position:fixed;inset:0;z-index:1;pointer-events:none}
+.star{position:absolute;background:#fff;border-radius:50%;opacity:0.6;animation:twinkle 4s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:0.15}50%{opacity:0.7}}
+
+/* HEADER — minimal, consistent with pregame */
+.header{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(8,8,16,0.7);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.05em;color:var(--text);text-decoration:none;white-space:nowrap}
+.header-logo span{color:var(--red)}
+.header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.header-btn{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:7px 12px;border-radius:3px;text-decoration:none;transition:background .2s;white-space:nowrap}
+.header-btn:hover{background:#a93226}
+@media(min-width:500px){
+  .header{padding:0 24px}
+  .header-logo{font-size:20px}
+  .header-right{gap:16px}
+  .header-btn{font-size:12px;padding:8px 16px}
+}
+
+/* MAIN STAGE */
+.stage{position:fixed;top:56px;left:0;right:0;bottom:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+
+/* SCENES — stacked, only one visible at a time */
+.scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;opacity:0;pointer-events:none;transition:opacity .8s ease}
+.scene.active{opacity:1;pointer-events:auto}
+.scene.exiting{opacity:0;pointer-events:none}
+
+/* SCENE 1 — ARRIVAL */
+#arrival{gap:28px}
+.arrival-eyebrow{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.3em;color:rgba(201,168,76,0.6);text-transform:uppercase;text-align:center}
+.arrival-title{font-family:'Cinzel Decorative',serif;font-size:clamp(32px,7vw,56px);font-weight:700;letter-spacing:.02em;text-align:center;color:var(--text);line-height:1.1;text-shadow:0 0 40px rgba(157,139,255,0.3)}
+.arrival-subtitle{font-family:'Cinzel',serif;font-size:14px;letter-spacing:.15em;color:var(--tdim);text-align:center;max-width:520px;line-height:1.6;margin-top:4px}
+.arrival-world{font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.25em;color:rgba(157,139,255,0.5);text-transform:uppercase;margin-top:8px}
+
+.enter-btn{margin-top:24px;background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-family:'Cinzel',serif;font-size:14px;font-weight:400;letter-spacing:.25em;padding:16px 40px;border-radius:2px;cursor:pointer;text-transform:uppercase;transition:all .3s;position:relative;overflow:hidden}
+.enter-btn:hover{border-color:var(--gold);color:#fff;box-shadow:0 0 24px rgba(201,168,76,0.25)}
+.enter-btn::before{content:'';position:absolute;top:50%;left:-100%;width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.6),transparent);transition:left .6s}
+.enter-btn:hover::before{left:100%}
+
+/* SCENE 2 — TUTORIAL VIDEO */
+#tutorial{gap:24px}
+.video-frame{width:100%;max-width:520px;aspect-ratio:9/16;max-height:70vh;background:rgba(0,0,0,0.6);border:1px solid rgba(201,168,76,0.25);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.video-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;text-align:center}
+.video-icon{width:64px;height:64px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:24px}
+.video-icon::before{content:'▶';margin-left:4px}
+.video-label{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.2em;color:var(--tdim);text-transform:uppercase}
+.video-caption{font-size:13px;color:var(--tmuted);max-width:320px;line-height:1.5}
+.skip-btn{margin-top:8px;background:transparent;border:none;color:var(--tmuted);font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;padding:8px 16px;transition:color .2s}
+.skip-btn:hover{color:var(--tdim)}
+
+/* SCENE 3 — GUIDE DIALOGUE */
+#dialogue{gap:20px;flex-direction:column}
+.guide-stage{position:relative;width:min(300px,68vw);height:min(320px,72vw);display:flex;align-items:center;justify-content:center;margin-bottom:8px;pointer-events:auto}
+
+/* THE WATCHER — ancient, patient, still */
+/* Container that holds core + aura and responds to cursor */
+.watcher-body{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:150px;z-index:3;transition:transform 1.2s cubic-bezier(0.25,0.1,0.25,1);will-change:transform}
+
+/* Core — elongated standing figure of light */
+.watcher-core{position:absolute;inset:0;border-radius:50% 50% 45% 45% / 40% 40% 55% 55%;background:
+  radial-gradient(ellipse 50% 60% at 50% 45%, rgba(225,215,255,0.85) 0%, rgba(157,139,255,0.6) 25%, rgba(127,119,221,0.25) 50%, rgba(127,119,221,0) 75%);
+  filter:blur(0.5px);opacity:0.9}
+
+/* Inner glow — brighter center */
+.watcher-inner{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:40px;height:60px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,250,240,0.7) 0%,rgba(200,180,255,0.3) 40%,transparent 70%);filter:blur(1px)}
+
+/* Halo — dim aura around the core */
+.watcher-halo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:260px;border-radius:50%;background:radial-gradient(ellipse 55% 50% at 50% 50%,rgba(157,139,255,0.18) 0%,rgba(157,139,255,0.08) 40%,transparent 70%);z-index:2;filter:blur(4px)}
+
+/* Outer aura — faintest */
+.watcher-aura{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:340px;height:360px;border-radius:50%;background:radial-gradient(ellipse,rgba(157,139,255,0.08) 0%,rgba(157,139,255,0.03) 50%,transparent 75%);z-index:1;filter:blur(8px)}
+
+/* Breathing animation applied to inner elements so the cursor tracking (applied to watcher-body) does not fight it */
+.watcher-breathing{animation:watcher-breathe 5s ease-in-out infinite}
+@keyframes watcher-breathe{
+  0%,100%{transform:translate(-50%,-50%) scaleY(1) scaleX(1);opacity:0.9}
+  35%{transform:translate(-50%,-50%) scaleY(1.025) scaleX(1.02);opacity:0.95}
+  55%{transform:translate(-50%,-50%) scaleY(1.03) scaleX(1.025);opacity:1}
+  80%{transform:translate(-50%,-50%) scaleY(1.01) scaleX(1.008);opacity:0.92}
+}
+
+/* Core-specific breathing (no translate needed — it fills its parent) */
+.watcher-core.watcher-breathing{animation:watcher-breathe-core 5s ease-in-out infinite}
+@keyframes watcher-breathe-core{
+  0%,100%{transform:scale(1);opacity:0.88}
+  35%{transform:scale(1.025);opacity:0.93}
+  55%{transform:scale(1.03);opacity:0.97}
+  80%{transform:scale(1.01);opacity:0.9}
+}
+
+/* Embers container */
+.ember-layer{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:visible}
+.ember{position:absolute;width:3px;height:3px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,140,0.95) 0%,rgba(201,168,76,0.6) 50%,transparent 100%);filter:blur(0.5px);opacity:0;animation:ember-rise 6s ease-out forwards;will-change:transform,opacity}
+@keyframes ember-rise{
+  0%{opacity:0;transform:translate(0,0) scale(0.6)}
+  15%{opacity:0.95}
+  60%{opacity:0.7}
+  100%{opacity:0;transform:translate(var(--drift,0px),-220px) scale(0.4)}
+}
+
+/* Runes — fixed positions, slow in-place rotation */
+.rune{position:absolute;font-family:'Cinzel Decorative',serif;font-size:16px;color:rgba(201,168,76,0.45);z-index:5;animation:rune-spin 20s linear infinite;transition:color 1.2s ease, text-shadow 1.2s ease;text-shadow:0 0 4px rgba(201,168,76,0.15);user-select:none}
+.rune-1{top:8%;left:50%;transform:translate(-50%,-50%)}
+.rune-2{bottom:22%;left:14%;transform:translate(-50%,-50%)}
+.rune-3{bottom:22%;right:14%;transform:translate(50%,-50%)}
+@keyframes rune-spin{from{rotate:0deg}to{rotate:360deg}}
+.rune.acknowledged{color:rgba(201,168,76,0.8);text-shadow:0 0 10px rgba(201,168,76,0.5)}
+
+/* Dialogue box */
+.dialogue-box{width:100%;max-width:640px;background:rgba(8,8,16,0.85);border:1px solid rgba(157,139,255,0.25);border-radius:4px;padding:20px 24px;backdrop-filter:blur(12px);position:relative}
+.dialogue-box::before{content:'';position:absolute;top:-6px;left:24px;width:12px;height:12px;background:rgba(8,8,16,0.85);border-top:1px solid rgba(157,139,255,0.25);border-left:1px solid rgba(157,139,255,0.25);transform:rotate(45deg)}
+.speaker-name{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.25em;color:rgba(157,139,255,0.9);text-transform:uppercase;margin-bottom:10px}
+.dialogue-text{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:300;line-height:1.7;color:var(--text);min-height:100px}
+.dialogue-text .cursor{display:inline-block;width:8px;height:16px;background:var(--gold);margin-left:4px;vertical-align:middle;animation:cursor-blink 0.8s ease-in-out infinite}
+@keyframes cursor-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
+.dialogue-footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:12px;flex-wrap:wrap}
+.dialogue-progress{font-size:10px;color:var(--tmuted);letter-spacing:.1em;font-family:'DM Sans',sans-serif}
+.dialogue-continue{background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:.2em;padding:8px 20px;border-radius:2px;cursor:pointer;text-transform:uppercase;transition:all .2s}
+.dialogue-continue:hover{border-color:var(--gold);background:rgba(201,168,76,0.08)}
+.dialogue-continue:disabled{opacity:0.3;cursor:not-allowed}
+
+/* SCENE 4 — REALM SELECTION */
+#realms{gap:16px;justify-content:flex-start;padding-top:80px}
+.realms-header{text-align:center;margin-bottom:20px}
+.realms-eyebrow{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.3em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin-bottom:6px}
+.realms-title{font-family:'Cinzel Decorative',serif;font-size:clamp(22px,4.5vw,32px);font-weight:700;color:var(--text);line-height:1.2}
+.realms-subtitle{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--tdim);margin-top:8px;max-width:480px;line-height:1.5}
+.realm-grid{display:grid;grid-template-columns:1fr;gap:14px;width:100%;max-width:640px;margin-top:8px}
+@media(min-width:640px){
+  .realm-grid{grid-template-columns:1fr 1fr;gap:16px}
+}
+.realm-card{display:block;background:rgba(13,13,26,0.65);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:18px 20px;text-decoration:none;color:var(--text);transition:all .3s;position:relative;backdrop-filter:blur(8px);cursor:pointer}
+.realm-card:hover{border-color:rgba(201,168,76,0.35);background:rgba(20,20,35,0.75);transform:translateY(-2px)}
+.realm-card.available{border-color:rgba(201,168,76,0.25)}
+.realm-card.locked{opacity:0.55;cursor:not-allowed}
+.realm-card.locked:hover{transform:none;border-color:rgba(255,255,255,0.08);background:rgba(13,13,26,0.65)}
+.realm-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px}
+.realm-name{font-family:'Cinzel Decorative',serif;font-size:20px;font-weight:700;letter-spacing:.02em;color:var(--text);line-height:1.2}
+.realm-status{font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap;flex-shrink:0}
+.realm-status.available{color:var(--gold);border:1px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.08)}
+.realm-status.soon{color:var(--tmuted);border:1px solid var(--border);background:transparent}
+.realm-function{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;color:rgba(157,139,255,0.7);text-transform:uppercase;margin-bottom:10px}
+.realm-desc{font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.6;color:var(--tdim)}
+.realm-enter{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;margin-top:12px;display:flex;align-items:center;gap:6px}
+.realm-enter-arrow{transition:transform .2s}
+.realm-card:hover .realm-enter-arrow{transform:translateX(4px)}
+
+/* Small help text at bottom of realm selection */
+.realms-help{margin-top:24px;text-align:center;font-size:11px;color:var(--tmuted);letter-spacing:.05em}
+.realms-help a{color:var(--tdim);text-decoration:underline;text-decoration-color:rgba(240,236,228,0.2)}
+.realms-help a:hover{color:var(--text)}
+
+/* SKIP TO REALMS — small utility link */
+.scene-utility{position:absolute;top:16px;right:16px;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.1em;color:var(--tmuted);background:transparent;border:none;cursor:pointer;text-transform:uppercase;padding:6px 10px}
+.scene-utility:hover{color:var(--tdim)}
+
+/* Fade-in class used across scenes */
+.fade-in{animation:fade-in-anim .9s ease forwards}
+@keyframes fade-in-anim{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+</style>
+</head>
+<body>
+
+<!-- Nebula + starfield -->
+<div class="nebula"></div>
+<div class="starfield" id="starfield"></div>
+
+<!-- HEADER -->
+<div class="header">
+  <a href="/" class="header-logo">Gamer<span>Ascension</span></a>
+  <div class="header-right">
+    <a href="https://calendly.com/straincoaching/insightcall" class="header-btn">Book a call →</a>
+  </div>
+</div>
+
+<!-- STAGE -->
+<div class="stage">
+
+  <!-- SCENE 1 — ARRIVAL -->
+  <div class="scene active" id="arrival">
+    <div class="arrival-eyebrow fade-in">You have arrived at</div>
+    <h1 class="arrival-title fade-in">The Threshold</h1>
+    <div class="arrival-subtitle fade-in">World Map</div>
+    <p class="arrival-subtitle fade-in">A sacred place of learning. The realms beyond were built for those ready to become.</p>
+    <button class="enter-btn fade-in" onclick="showTutorial()">Enter</button>
+  </div>
+
+  <!-- SCENE 2 — TUTORIAL VIDEO -->
+  <div class="scene" id="tutorial">
+    <button class="scene-utility" onclick="showDialogue()">Skip Tutorial</button>
+    <div class="video-frame">
+      <div class="video-placeholder">
+        <div class="video-icon"></div>
+        <div class="video-label">Tutorial — 30 to 45 seconds</div>
+        <div class="video-caption">Introduction from Jake: what this place is, why he built it, what is waiting for you within.</div>
+        <div class="video-caption" style="color:var(--tmuted);font-size:11px;margin-top:16px">[ Video to be recorded and embedded here ]</div>
+      </div>
+    </div>
+    <button class="enter-btn" onclick="showDialogue()">Continue →</button>
+  </div>
+
+  <!-- SCENE 3 — GUIDE DIALOGUE -->
+  <div class="scene" id="dialogue">
+    <div class="guide-stage" id="guideStage">
+      <div class="watcher-aura watcher-breathing"></div>
+      <div class="watcher-halo watcher-breathing"></div>
+      <div class="watcher-body" id="watcherBody">
+        <div class="watcher-core watcher-breathing"></div>
+        <div class="watcher-inner"></div>
+      </div>
+      <div class="ember-layer" id="emberLayer"></div>
+      <span class="rune rune-1" id="rune1">✦</span>
+      <span class="rune rune-2" id="rune2">✧</span>
+      <span class="rune rune-3" id="rune3">✦</span>
+    </div>
+
+    <div class="dialogue-box">
+      <div class="speaker-name" id="speakerName">The Guide</div>
+      <div class="dialogue-text" id="dialogueText"></div>
+      <div class="dialogue-footer">
+        <div class="dialogue-progress" id="dialogueProgress"></div>
+        <button class="dialogue-continue" id="dialogueContinue" onclick="advanceDialogue()">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCENE 4 — REALM SELECTION -->
+  <div class="scene" id="realms">
+    <div class="realms-header">
+      <div class="realms-eyebrow">Choose your path</div>
+      <h2 class="realms-title">The Realms</h2>
+      <p class="realms-subtitle">Each realm serves a purpose. Visit them in any order. Return as often as you like.</p>
+    </div>
+
+    <div class="realm-grid">
+      <a class="realm-card available" href="/pregame.html">
+        <div class="realm-header">
+          <div class="realm-name">The Atheneum</div>
+          <span class="realm-status available">Open</span>
+        </div>
+        <div class="realm-function">Skill Mastery</div>
+        <div class="realm-desc">The living map of what there is to learn. Twenty-nine skill nodes across three pillars. The first five are free.</div>
+        <div class="realm-enter">Enter <span class="realm-enter-arrow">→</span></div>
+      </a>
+
+      <div class="realm-card locked" onclick="return false">
+        <div class="realm-header">
+          <div class="realm-name">The Arcanium</div>
+          <span class="realm-status soon">Coming Soon</span>
+        </div>
+        <div class="realm-function">Library</div>
+        <div class="realm-desc">A curated library. Tell it what you are wrestling with, and it returns the books written by those who wrestled with it first.</div>
+        <div class="realm-enter" style="color:var(--tmuted)">Sealed <span class="realm-enter-arrow">—</span></div>
+      </div>
+
+      <div class="realm-card locked" onclick="return false">
+        <div class="realm-header">
+          <div class="realm-name">The Scriptorium</div>
+          <span class="realm-status soon">Coming Soon</span>
+        </div>
+        <div class="realm-function">Mail and Journal</div>
+        <div class="realm-desc">Where the work is written down. Your journal, your correspondence, and the fragments left behind by those who came before.</div>
+        <div class="realm-enter" style="color:var(--tmuted)">Sealed <span class="realm-enter-arrow">—</span></div>
+      </div>
+
+      <div class="realm-card locked" onclick="return false">
+        <div class="realm-header">
+          <div class="realm-name">The Agora</div>
+          <span class="realm-status soon">Coming Soon</span>
+        </div>
+        <div class="realm-function">Community Forum</div>
+        <div class="realm-desc">The gathering place. Where those walking the same path meet, challenge, and sharpen each other.</div>
+        <div class="realm-enter" style="color:var(--tmuted)">Sealed <span class="realm-enter-arrow">—</span></div>
+      </div>
+    </div>
+
+    <div class="realms-help">
+      Not sure where to begin? <a href="https://calendly.com/straincoaching/insightcall">Book a free PlayBook call</a> and Jake will walk you through it.
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ========= STARFIELD =========
+(function makeStars(){
+  var field = document.getElementById('starfield');
+  var count = 80;
+  for(var i=0;i<count;i++){
+    var s = document.createElement('div');
+    s.className = 'star';
+    var size = Math.random()*1.8 + 0.3;
+    s.style.width = size+'px';
+    s.style.height = size+'px';
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = (Math.random()*4)+'s';
+    s.style.animationDuration = (3+Math.random()*4)+'s';
+    field.appendChild(s);
+  }
+})();
+
+// ========= THE WATCHER — cursor tracking =========
+// The Watcher's center shifts slightly toward the cursor, delayed and eased.
+// Runs only while the dialogue scene is active.
+(function watcherCursor(){
+  var body = document.getElementById('watcherBody');
+  var stage = document.getElementById('guideStage');
+  if(!body || !stage) return;
+
+  var targetX = 0, targetY = 0;
+  var currentX = 0, currentY = 0;
+  var MAX_OFFSET = 8; // px max displacement
+
+  function onMove(e){
+    if(currentScene !== 'dialogue') return;
+    var rect = stage.getBoundingClientRect();
+    var cx = rect.left + rect.width/2;
+    var cy = rect.top + rect.height/2;
+    var dx = e.clientX - cx;
+    var dy = e.clientY - cy;
+    // Normalize and clamp
+    var dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    var norm = Math.min(dist, 400) / 400; // 0 at center, 1 at 400px away
+    targetX = (dx/dist) * MAX_OFFSET * norm;
+    targetY = (dy/dist) * MAX_OFFSET * norm * 0.5; // vertical shift is smaller — feet stay grounded
+  }
+
+  window.addEventListener('mousemove', onMove, {passive:true});
+
+  // Smooth interpolation toward target
+  function tick(){
+    currentX += (targetX - currentX) * 0.06;
+    currentY += (targetY - currentY) * 0.06;
+    body.style.transform = 'translate(calc(-50% + '+currentX.toFixed(2)+'px), calc(-50% + '+currentY.toFixed(2)+'px))';
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+// ========= THE WATCHER — ember spawning =========
+// Irregular embers rise from the core. 1-3 visible at a time.
+(function watcherEmbers(){
+  var layer = document.getElementById('emberLayer');
+  if(!layer) return;
+
+  function spawnEmber(){
+    if(currentScene !== 'dialogue'){
+      scheduleNext();
+      return;
+    }
+    var em = document.createElement('div');
+    em.className = 'ember';
+    // Spawn position — near bottom center of the watcher body
+    var stage = layer.getBoundingClientRect();
+    var stageW = stage.width;
+    var stageH = stage.height;
+    var centerX = stageW / 2;
+    var bottomY = stageH * 0.58; // around the core's lower region
+    var spawnX = centerX + (Math.random() - 0.5) * 40;
+    var spawnY = bottomY + (Math.random() - 0.5) * 20;
+    em.style.left = spawnX + 'px';
+    em.style.top = spawnY + 'px';
+    // Horizontal drift for the rise
+    var drift = (Math.random() - 0.5) * 30;
+    em.style.setProperty('--drift', drift + 'px');
+    // Size variation
+    var size = 2 + Math.random() * 2;
+    em.style.width = size + 'px';
+    em.style.height = size + 'px';
+    layer.appendChild(em);
+    setTimeout(function(){ em.remove(); }, 6200);
+    scheduleNext();
+  }
+
+  function scheduleNext(){
+    // Irregular timing: 1.5 to 4 seconds
+    var delay = 1500 + Math.random() * 2500;
+    setTimeout(spawnEmber, delay);
+  }
+
+  scheduleNext();
+})();
+
+// ========= THE WATCHER — rune acknowledgment =========
+// Runes brighten briefly when each dialogue line advances.
+function acknowledgeRunes(){
+  var runes = ['rune1','rune2','rune3'];
+  runes.forEach(function(id, i){
+    var el = document.getElementById(id);
+    if(!el) return;
+    setTimeout(function(){
+      el.classList.add('acknowledged');
+      setTimeout(function(){ el.classList.remove('acknowledged'); }, 1100);
+    }, i * 180);
+  });
+}
+
+// ========= SCENE TRANSITIONS =========
+var currentScene = 'arrival';
+function showScene(id){
+  var prev = document.getElementById(currentScene);
+  var next = document.getElementById(id);
+  if(!next || prev === next) return;
+  prev.classList.add('exiting');
+  prev.classList.remove('active');
+  setTimeout(function(){
+    prev.classList.remove('exiting');
+    next.classList.add('active');
+    currentScene = id;
+  }, 400);
+}
+
+function showTutorial(){ showScene('tutorial'); }
+function showDialogue(){
+  showScene('dialogue');
+  setTimeout(startDialogueSequence, 900);
+}
+function showRealms(){ showScene('realms'); }
+
+// ========= DIALOGUE SEQUENCE =========
+// The guide's script. Each entry has a speaker and a text line.
+// The final line triggers the realm reveal.
+var dialogueScript = [
+  {
+    speaker: 'The Guide',
+    text: 'You have crossed into The Threshold. Welcome, traveler. I am the keeper of this crossing — and I was here before you arrived.'
+  },
+  {
+    speaker: 'The Guide',
+    text: 'This place is not a product. It is a world built for people who refused to stay who they were. The realms beyond this chamber were made for you, though not by me.'
+  },
+  {
+    speaker: 'The Guide',
+    text: 'You will find four realms. Each serves a purpose. None of them will rush you. Walk them in any order. Return as often as you like. The path is yours to shape.'
+  },
+  {
+    speaker: 'The Guide',
+    text: 'Some realms are open now. Others remain sealed while the architects of this place finish their work. Trust that what is not ready for you today will be when you need it.'
+  },
+  {
+    speaker: 'The Guide',
+    text: 'Go now. Choose the realm that calls to you. I will be here if you ever wish to return to the beginning.'
+  }
+];
+
+var dialogueIndex = 0;
+var typewriterTimeout = null;
+
+function startDialogueSequence(){
+  dialogueIndex = 0;
+  renderDialogueLine();
+}
+
+function renderDialogueLine(){
+  var line = dialogueScript[dialogueIndex];
+  var nameEl = document.getElementById('speakerName');
+  var textEl = document.getElementById('dialogueText');
+  var progressEl = document.getElementById('dialogueProgress');
+  var continueBtn = document.getElementById('dialogueContinue');
+
+  nameEl.textContent = line.speaker;
+  textEl.innerHTML = '';
+  progressEl.textContent = (dialogueIndex+1)+' / '+dialogueScript.length;
+  continueBtn.disabled = true;
+  continueBtn.textContent = 'Continue';
+
+  // Runes brighten in acknowledgment as the line begins
+  acknowledgeRunes();
+
+  // Typewriter effect
+  var i = 0;
+  var full = line.text;
+  if(typewriterTimeout) clearTimeout(typewriterTimeout);
+
+  function tick(){
+    if(i <= full.length){
+      textEl.innerHTML = full.substring(0,i) + '<span class="cursor"></span>';
+      i++;
+      typewriterTimeout = setTimeout(tick, 22);
+    } else {
+      textEl.innerHTML = full;
+      continueBtn.disabled = false;
+      if(dialogueIndex === dialogueScript.length - 1){
+        continueBtn.textContent = 'Enter the Realms →';
+      }
+    }
+  }
+  tick();
+}
+
+function advanceDialogue(){
+  // If user clicks continue while typing, skip to end of current line
+  var textEl = document.getElementById('dialogueText');
+  var continueBtn = document.getElementById('dialogueContinue');
+  if(continueBtn.disabled){
+    if(typewriterTimeout) clearTimeout(typewriterTimeout);
+    textEl.innerHTML = dialogueScript[dialogueIndex].text;
+    continueBtn.disabled = false;
+    if(dialogueIndex === dialogueScript.length - 1){
+      continueBtn.textContent = 'Enter the Realms →';
+    }
+    return;
+  }
+
+  if(dialogueIndex < dialogueScript.length - 1){
+    dialogueIndex++;
+    renderDialogueLine();
+  } else {
+    // Mark visited and go to realms
+    try { localStorage.setItem('ga_visited_threshold', '1'); } catch(e){}
+    showRealms();
+  }
+}
+
+// ========= RETURNING VISITOR SHORTCUT =========
+// If user has visited before, skip the tutorial — show a shorter welcome and go to realms
+(function checkReturning(){
+  try {
+    var visited = localStorage.getItem('ga_visited_threshold');
+    if(visited === '1'){
+      // Replace arrival content with returning-visitor version
+      var arrival = document.getElementById('arrival');
+      arrival.innerHTML = ''+
+        '<div class="arrival-eyebrow fade-in">Welcome back to</div>'+
+        '<h1 class="arrival-title fade-in">The Threshold</h1>'+
+        '<p class="arrival-subtitle fade-in">The realms await.</p>'+
+        '<button class="enter-btn fade-in" onclick="showRealms()">Enter the Realms</button>'+
+        '<button style="margin-top:16px;background:transparent;border:none;color:var(--tmuted);font-size:11px;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;font-family:\'DM Sans\',sans-serif" onclick="resetThreshold()">See the Introduction Again</button>';
+    }
+  } catch(e){}
+})();
+
+function resetThreshold(){
+  try { localStorage.removeItem('ga_visited_threshold'); } catch(e){}
+  location.reload();
+}
+</script>
+
+</body>
+</html>
