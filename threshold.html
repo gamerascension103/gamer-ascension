@@ -73,61 +73,62 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
 
 /* SCENE 3 — GUIDE DIALOGUE */
 #dialogue{gap:20px;flex-direction:column}
-.guide-stage{position:relative;width:min(300px,68vw);height:min(320px,72vw);display:flex;align-items:center;justify-content:center;margin-bottom:8px;pointer-events:auto}
+.guide-stage{position:relative;width:min(360px,82vw);height:min(520px,62vh);display:flex;align-items:center;justify-content:center;margin-bottom:8px;pointer-events:auto}
 
-/* THE WATCHER — ancient, patient, still */
-/* Container that holds core + aura and responds to cursor */
-.watcher-body{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100px;height:150px;z-index:3;transition:transform 1.2s cubic-bezier(0.25,0.1,0.25,1);will-change:transform}
+/* THE GUIDE'S VESSEL — image-based shard with animated overlays */
+/* The body carries the float + cursor parallax transforms */
+.shard-body{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;z-index:3;transition:transform 1.6s cubic-bezier(0.25,0.1,0.25,1);will-change:transform}
 
-/* Core — elongated standing figure of light */
-.watcher-core{position:absolute;inset:0;border-radius:50% 50% 45% 45% / 40% 40% 55% 55%;background:
-  radial-gradient(ellipse 50% 60% at 50% 45%, rgba(225,215,255,0.85) 0%, rgba(157,139,255,0.6) 25%, rgba(127,119,221,0.25) 50%, rgba(127,119,221,0) 75%);
-  filter:blur(0.5px);opacity:0.9}
-
-/* Inner glow — brighter center */
-.watcher-inner{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:40px;height:60px;border-radius:50%;background:radial-gradient(ellipse,rgba(255,250,240,0.7) 0%,rgba(200,180,255,0.3) 40%,transparent 70%);filter:blur(1px)}
-
-/* Halo — dim aura around the core */
-.watcher-halo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:260px;border-radius:50%;background:radial-gradient(ellipse 55% 50% at 50% 50%,rgba(157,139,255,0.18) 0%,rgba(157,139,255,0.08) 40%,transparent 70%);z-index:2;filter:blur(4px)}
-
-/* Outer aura — faintest */
-.watcher-aura{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:340px;height:360px;border-radius:50%;background:radial-gradient(ellipse,rgba(157,139,255,0.08) 0%,rgba(157,139,255,0.03) 50%,transparent 75%);z-index:1;filter:blur(8px)}
-
-/* Breathing animation applied to inner elements so the cursor tracking (applied to watcher-body) does not fight it */
-.watcher-breathing{animation:watcher-breathe 5s ease-in-out infinite}
-@keyframes watcher-breathe{
-  0%,100%{transform:translate(-50%,-50%) scaleY(1) scaleX(1);opacity:0.9}
-  35%{transform:translate(-50%,-50%) scaleY(1.025) scaleX(1.02);opacity:0.95}
-  55%{transform:translate(-50%,-50%) scaleY(1.03) scaleX(1.025);opacity:1}
-  80%{transform:translate(-50%,-50%) scaleY(1.01) scaleX(1.008);opacity:0.92}
+/* Outer aura — dim violet, bridges to pregame palette, breathes with dialogue */
+.shard-aura{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:135%;height:85%;border-radius:50%;background:radial-gradient(ellipse 50% 60% at 50% 50%,rgba(157,139,255,0.18) 0%,rgba(127,119,221,0.08) 40%,transparent 70%);z-index:1;filter:blur(18px);pointer-events:none;animation:aura-breathe 5s ease-in-out infinite;will-change:opacity,transform}
+@keyframes aura-breathe{
+  0%,100%{opacity:0.55;transform:translate(-50%,-50%) scale(1)}
+  50%{opacity:0.85;transform:translate(-50%,-50%) scale(1.06)}
 }
 
-/* Core-specific breathing (no translate needed — it fills its parent) */
-.watcher-core.watcher-breathing{animation:watcher-breathe-core 5s ease-in-out infinite}
-@keyframes watcher-breathe-core{
-  0%,100%{transform:scale(1);opacity:0.88}
-  35%{transform:scale(1.025);opacity:0.93}
-  55%{transform:scale(1.03);opacity:0.97}
-  80%{transform:scale(1.01);opacity:0.9}
+/* Core glow — warm gold, sits at the shard's center, brightens on dialogue speak */
+.shard-core-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:55%;height:30%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,210,150,0.35) 0%,rgba(201,168,76,0.18) 40%,transparent 70%);z-index:2;filter:blur(20px);pointer-events:none;opacity:0.65;transition:opacity .6s ease;mix-blend-mode:screen;will-change:opacity}
+.shard-core-glow.speaking{opacity:1;animation:core-glow-pulse 1.4s ease-in-out infinite}
+@keyframes core-glow-pulse{
+  0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.9}
+  50%{transform:translate(-50%,-50%) scale(1.12);opacity:1}
 }
 
-/* Embers container */
-.ember-layer{position:absolute;inset:0;pointer-events:none;z-index:4;overflow:visible}
-.ember{position:absolute;width:3px;height:3px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,140,0.95) 0%,rgba(201,168,76,0.6) 50%,transparent 100%);filter:blur(0.5px);opacity:0;animation:ember-rise 6s ease-out forwards;will-change:transform,opacity}
+/* The shard image itself */
+.shard-image{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;z-index:3;pointer-events:none;filter:drop-shadow(0 0 30px rgba(157,139,255,0.15)) drop-shadow(0 0 60px rgba(201,168,76,0.12));animation:shard-float 7s ease-in-out infinite;will-change:transform}
+.shard-image img{width:100%;height:100%;object-fit:contain;display:block}
+@keyframes shard-float{
+  0%,100%{transform:translate(-50%,-50%) translateY(0)}
+  50%{transform:translate(-50%,-50%) translateY(-8px)}
+}
+
+/* Apex starburst — echoes the image's built-in star at the top with a pulsing overlay */
+.apex-star{position:absolute;top:4%;left:50%;transform:translate(-50%,-50%);width:60px;height:60px;z-index:4;pointer-events:none;opacity:0.7;animation:apex-pulse 5s ease-in-out infinite;will-change:opacity,transform}
+.apex-star::before,.apex-star::after{content:'';position:absolute;top:50%;left:50%;background:radial-gradient(ellipse,rgba(255,255,255,0.9) 0%,rgba(200,220,255,0.4) 30%,transparent 65%);filter:blur(1px)}
+.apex-star::before{width:60px;height:4px;transform:translate(-50%,-50%)}
+.apex-star::after{width:4px;height:60px;transform:translate(-50%,-50%)}
+@keyframes apex-pulse{
+  0%,100%{opacity:0.55;transform:translate(-50%,-50%) scale(1)}
+  50%{opacity:0.95;transform:translate(-50%,-50%) scale(1.15)}
+}
+
+/* Embers — rise from above the apex, gold sparks drifting upward */
+.ember-layer{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:visible}
+.ember{position:absolute;width:3px;height:3px;border-radius:50%;background:radial-gradient(circle,rgba(255,230,170,0.95) 0%,rgba(201,168,76,0.6) 50%,transparent 100%);filter:blur(0.4px);opacity:0;animation:ember-rise 7s ease-out forwards;will-change:transform,opacity}
 @keyframes ember-rise{
   0%{opacity:0;transform:translate(0,0) scale(0.6)}
-  15%{opacity:0.95}
-  60%{opacity:0.7}
-  100%{opacity:0;transform:translate(var(--drift,0px),-220px) scale(0.4)}
+  15%{opacity:0.9}
+  60%{opacity:0.6}
+  100%{opacity:0;transform:translate(var(--drift,0px),-180px) scale(0.3)}
 }
 
-/* Runes — fixed positions, slow in-place rotation */
-.rune{position:absolute;font-family:'Cinzel Decorative',serif;font-size:16px;color:rgba(201,168,76,0.45);z-index:5;animation:rune-spin 20s linear infinite;transition:color 1.2s ease, text-shadow 1.2s ease;text-shadow:0 0 4px rgba(201,168,76,0.15);user-select:none}
-.rune-1{top:8%;left:50%;transform:translate(-50%,-50%)}
-.rune-2{bottom:22%;left:14%;transform:translate(-50%,-50%)}
-.rune-3{bottom:22%;right:14%;transform:translate(50%,-50%)}
+/* Runes — fixed positions around the shard, slow in-place rotation, brighten on dialogue advance */
+.rune{position:absolute;font-family:'Cinzel Decorative',serif;font-size:20px;color:rgba(201,168,76,0.38);z-index:6;animation:rune-spin 26s linear infinite;transition:color 1.2s ease, text-shadow 1.2s ease;text-shadow:0 0 4px rgba(201,168,76,0.12);user-select:none;pointer-events:none}
+.rune-1{top:2%;left:16%;transform:translate(-50%,-50%)}
+.rune-2{top:50%;right:2%;transform:translate(50%,-50%)}
+.rune-3{bottom:2%;left:16%;transform:translate(-50%,-50%)}
 @keyframes rune-spin{from{rotate:0deg}to{rotate:360deg}}
-.rune.acknowledged{color:rgba(201,168,76,0.8);text-shadow:0 0 10px rgba(201,168,76,0.5)}
+.rune.acknowledged{color:rgba(201,168,76,0.85);text-shadow:0 0 12px rgba(201,168,76,0.55)}
 
 /* Dialogue box */
 .dialogue-box{width:100%;max-width:640px;background:rgba(8,8,16,0.85);border:1px solid rgba(157,139,255,0.25);border-radius:4px;padding:20px 24px;backdrop-filter:blur(12px);position:relative}
@@ -181,6 +182,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
 .fade-in{animation:fade-in-anim .9s ease forwards}
 @keyframes fade-in-anim{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
+/* DEV PANEL — remove before launch */
+.dev-panel{position:fixed;bottom:16px;right:16px;z-index:500;background:rgba(20,20,35,0.92);border:1px solid rgba(201,168,76,0.25);border-radius:4px;padding:8px 10px;display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px);font-family:'DM Sans',sans-serif;opacity:0.5;transition:opacity .25s}
+.dev-panel:hover{opacity:1}
+.dev-panel.collapsed{padding:6px 8px}
+.dev-panel.collapsed .dev-btn:not(.dev-btn-toggle){display:none}
+.dev-panel.collapsed .dev-label{display:none}
+.dev-label{font-size:9px;letter-spacing:.2em;color:var(--tmuted);text-transform:uppercase;margin-right:4px;white-space:nowrap}
+.dev-btn{background:transparent;border:1px solid rgba(201,168,76,0.3);color:rgba(201,168,76,0.8);font-family:'DM Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:.08em;padding:6px 10px;border-radius:2px;cursor:pointer;text-transform:uppercase;transition:all .2s;white-space:nowrap}
+.dev-btn:hover{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
+.dev-btn-toggle{padding:4px 8px;font-size:14px;line-height:1}
+
 </style>
 </head>
 <body>
@@ -226,11 +238,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
   <!-- SCENE 3 — GUIDE DIALOGUE -->
   <div class="scene" id="dialogue">
     <div class="guide-stage" id="guideStage">
-      <div class="watcher-aura watcher-breathing"></div>
-      <div class="watcher-halo watcher-breathing"></div>
-      <div class="watcher-body" id="watcherBody">
-        <div class="watcher-core watcher-breathing"></div>
-        <div class="watcher-inner"></div>
+      <div class="shard-aura"></div>
+      <div class="shard-core-glow" id="shardCoreGlow"></div>
+      <div class="shard-body" id="watcherBody">
+        <div class="shard-image">
+          <img src="shard.png" alt="The Guide's vessel" draggable="false">
+        </div>
+        <div class="apex-star"></div>
       </div>
       <div class="ember-layer" id="emberLayer"></div>
       <span class="rune rune-1" id="rune1">✦</span>
@@ -305,6 +319,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
 
 </div>
 
+<!-- DEV PANEL — remove before launch -->
+<div class="dev-panel" id="devPanel">
+  <div class="dev-label">Dev Tools</div>
+  <button class="dev-btn" onclick="devRespawnWatcher()">Respawn Watcher</button>
+  <button class="dev-btn" onclick="devFullReset()">Full Reset</button>
+  <button class="dev-btn dev-btn-toggle" onclick="devToggleCollapse()" title="Collapse">−</button>
+</div>
+
 <script>
 // ========= STARFIELD =========
 (function makeStars(){
@@ -324,17 +346,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
   }
 })();
 
-// ========= THE WATCHER — cursor tracking =========
-// The Watcher's center shifts slightly toward the cursor, delayed and eased.
+// ========= THE GUIDE'S VESSEL — cursor parallax =========
+// The shard drifts slightly toward the cursor for depth. Subtle.
 // Runs only while the dialogue scene is active.
-(function watcherCursor(){
+(function shardParallax(){
   var body = document.getElementById('watcherBody');
   var stage = document.getElementById('guideStage');
   if(!body || !stage) return;
 
   var targetX = 0, targetY = 0;
   var currentX = 0, currentY = 0;
-  var MAX_OFFSET = 8; // px max displacement
+  var MAX_OFFSET = 10; // px
 
   function onMove(e){
     if(currentScene !== 'dialogue') return;
@@ -343,19 +365,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
     var cy = rect.top + rect.height/2;
     var dx = e.clientX - cx;
     var dy = e.clientY - cy;
-    // Normalize and clamp
     var dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    var norm = Math.min(dist, 400) / 400; // 0 at center, 1 at 400px away
+    var norm = Math.min(dist, 600) / 600;
     targetX = (dx/dist) * MAX_OFFSET * norm;
-    targetY = (dy/dist) * MAX_OFFSET * norm * 0.5; // vertical shift is smaller — feet stay grounded
+    targetY = (dy/dist) * MAX_OFFSET * norm * 0.6;
   }
 
   window.addEventListener('mousemove', onMove, {passive:true});
 
-  // Smooth interpolation toward target
   function tick(){
-    currentX += (targetX - currentX) * 0.06;
-    currentY += (targetY - currentY) * 0.06;
+    currentX += (targetX - currentX) * 0.04;
+    currentY += (targetY - currentY) * 0.04;
     body.style.transform = 'translate(calc(-50% + '+currentX.toFixed(2)+'px), calc(-50% + '+currentY.toFixed(2)+'px))';
     requestAnimationFrame(tick);
   }
@@ -375,25 +395,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
     }
     var em = document.createElement('div');
     em.className = 'ember';
-    // Spawn position — near bottom center of the watcher body
+    // Spawn position — just above the top of the vessel
     var stage = layer.getBoundingClientRect();
     var stageW = stage.width;
     var stageH = stage.height;
     var centerX = stageW / 2;
-    var bottomY = stageH * 0.58; // around the core's lower region
-    var spawnX = centerX + (Math.random() - 0.5) * 40;
-    var spawnY = bottomY + (Math.random() - 0.5) * 20;
+    // Vessel center is at ~50%, vessel diameter is ~200px; top edge is ~100px above center
+    var topY = stageH * 0.5 - 90 + (Math.random() - 0.5) * 10;
+    var spawnX = centerX + (Math.random() - 0.5) * 50;
     em.style.left = spawnX + 'px';
-    em.style.top = spawnY + 'px';
+    em.style.top = topY + 'px';
     // Horizontal drift for the rise
-    var drift = (Math.random() - 0.5) * 30;
+    var drift = (Math.random() - 0.5) * 40;
     em.style.setProperty('--drift', drift + 'px');
     // Size variation
     var size = 2 + Math.random() * 2;
     em.style.width = size + 'px';
     em.style.height = size + 'px';
     layer.appendChild(em);
-    setTimeout(function(){ em.remove(); }, 6200);
+    setTimeout(function(){ em.remove(); }, 6700);
     scheduleNext();
   }
 
@@ -482,6 +502,7 @@ function renderDialogueLine(){
   var textEl = document.getElementById('dialogueText');
   var progressEl = document.getElementById('dialogueProgress');
   var continueBtn = document.getElementById('dialogueContinue');
+  var coreGlow = document.getElementById('shardCoreGlow');
 
   nameEl.textContent = line.speaker;
   textEl.innerHTML = '';
@@ -491,6 +512,9 @@ function renderDialogueLine(){
 
   // Runes brighten in acknowledgment as the line begins
   acknowledgeRunes();
+
+  // Shard core glow activates while speaking
+  if(coreGlow) coreGlow.classList.add('speaking');
 
   // Typewriter effect
   var i = 0;
@@ -505,6 +529,9 @@ function renderDialogueLine(){
     } else {
       textEl.innerHTML = full;
       continueBtn.disabled = false;
+      // Shard core glow settles once the Guide finishes speaking
+      var coreGlow = document.getElementById('shardCoreGlow');
+      if(coreGlow) coreGlow.classList.remove('speaking');
       if(dialogueIndex === dialogueScript.length - 1){
         continueBtn.textContent = 'Enter the Realms →';
       }
@@ -521,6 +548,9 @@ function advanceDialogue(){
     if(typewriterTimeout) clearTimeout(typewriterTimeout);
     textEl.innerHTML = dialogueScript[dialogueIndex].text;
     continueBtn.disabled = false;
+    // Also settle the shard glow on skip
+    var coreGlow = document.getElementById('shardCoreGlow');
+    if(coreGlow) coreGlow.classList.remove('speaking');
     if(dialogueIndex === dialogueScript.length - 1){
       continueBtn.textContent = 'Enter the Realms →';
     }
@@ -558,6 +588,43 @@ function advanceDialogue(){
 function resetThreshold(){
   try { localStorage.removeItem('ga_visited_threshold'); } catch(e){}
   location.reload();
+}
+
+// ========= DEV PANEL =========
+// Respawn Watcher: jump to dialogue scene, restart dialogue from line 1,
+// which re-triggers rune acknowledgment, flame breathing reset, etc.
+function devRespawnWatcher(){
+  // If not already on dialogue scene, transition to it
+  if(currentScene !== 'dialogue'){
+    showScene('dialogue');
+    setTimeout(startDialogueSequence, 900);
+  } else {
+    // Already on dialogue — just restart the sequence
+    dialogueIndex = 0;
+    if(typewriterTimeout) clearTimeout(typewriterTimeout);
+    renderDialogueLine();
+  }
+}
+
+// Full reset: clear visited flag and reload from scratch
+function devFullReset(){
+  try { localStorage.removeItem('ga_visited_threshold'); } catch(e){}
+  location.reload();
+}
+
+// Collapse / expand dev panel
+function devToggleCollapse(){
+  var panel = document.getElementById('devPanel');
+  var toggleBtn = panel.querySelector('.dev-btn-toggle');
+  if(panel.classList.contains('collapsed')){
+    panel.classList.remove('collapsed');
+    toggleBtn.textContent = '−';
+    toggleBtn.title = 'Collapse';
+  } else {
+    panel.classList.add('collapsed');
+    toggleBtn.textContent = '+';
+    toggleBtn.title = 'Expand';
+  }
 }
 </script>
 
