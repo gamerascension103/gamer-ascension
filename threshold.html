@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Threshold · Gamer Ascension</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<!-- Animation library for living rift (Session 9 upgrade) — GSAP only.
+     tsParticles was attempted but could not be made to render particles
+     reliably in this rendering context. The SVG-based CSS embers remain
+     the primary particle system for this page. -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -49,7 +54,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
 .scene.exiting{opacity:0;pointer-events:none}
 
 /* ============================================================= */
-/* SCENE 1 — THE RIFT (tear in space)                             */
+/* ============================================================= */
+/* SCENE 1 — THE EVENT HORIZON (circular portal)                   */
 /* ============================================================= */
 
 #arrival{
@@ -57,227 +63,134 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
   display:flex;align-items:center;justify-content:center;
 }
 
-/* The rift canvas — full viewport, edge to edge */
-.rift-canvas{
+/* Full-viewport layer hosting all portal rendering. */
+.horizon-stage{
   position:fixed;top:0;left:0;width:100vw;height:100vh;
   z-index:1;pointer-events:none;
+  display:flex;align-items:center;justify-content:center;
 }
-.rift-canvas svg{width:100%;height:100%;display:block;overflow:visible}
 
-/* ===== BACKGROUND REACTION ===== */
-/* The nebula/starfield dim briefly during the rift's birth, then recover.
-   A single-shot animation using opacity on the parent wrappers.
-   The reality holds its breath. */
-body.rift-tearing .nebula,
-body.rift-tearing .starfield{
-  animation:rift-darken 1.2s ease-in-out forwards;
+/* Canvas for the accretion disk and infall particles — covers full viewport
+   so wide-orbit particles don't clip. JS maintains devicePixelRatio-correct
+   sizing and handles all rendering. */
+.horizon-canvas{
+  position:absolute;inset:0;
+  display:block;width:100%;height:100%;
 }
-@keyframes rift-darken{
+
+/* SVG layer for the event horizon core + photon ring. Sits above canvas
+   but below content. */
+.horizon-svg{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;
+  overflow:visible;
+}
+
+/* The full portal cluster — the GSAP timeline controls its birth scale.
+   Starting state is scale(0); GSAP expands it to 1 during the birth sequence. */
+.horizon-core-wrap{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  transform-origin:center center;
+  will-change:transform;
+}
+
+/* Subtle corona glow around the outer edge of the horizon — pure CSS */
+.horizon-corona{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:clamp(380px,44vmin,560px);
+  height:clamp(380px,44vmin,560px);
+  border-radius:50%;
+  background:radial-gradient(circle,
+    transparent 38%,
+    rgba(157,139,255,0.12) 48%,
+    rgba(201,168,76,0.07) 55%,
+    transparent 70%);
+  pointer-events:none;
+  opacity:0;
+  mix-blend-mode:screen;
+  will-change:opacity;
+}
+
+/* Starfield + nebula dim briefly during singularity collapse — reality reacts */
+body.horizon-collapsing .nebula,
+body.horizon-collapsing .starfield{
+  animation:horizon-collapse-react 1.4s ease-in-out forwards;
+}
+@keyframes horizon-collapse-react{
   0%{opacity:1;filter:brightness(1)}
-  30%{opacity:0.3;filter:brightness(0.5)}
+  40%{opacity:0.25;filter:brightness(0.4)}
   100%{opacity:1;filter:brightness(1)}
 }
 
-/* ===== THE TEAR - three stages ===== */
-
-/* Stage 1: The initial spark — thin horizontal line at center */
-.rift-spark{
-  opacity:0;
-  animation:rift-spark-flash 0.5s ease-out forwards 0.4s;
-}
-@keyframes rift-spark-flash{
-  0%{opacity:0;transform:scaleX(0.2)}
-  50%{opacity:1;transform:scaleX(1)}
-  100%{opacity:0.9;transform:scaleX(1)}
-}
-
-/* Stage 2: Vertical expansion — the slit grows up and down */
-.rift-body{
-  transform:scaleY(0);
-  transform-origin:50% 50%;
-  transform-box:view-box;
-  animation:rift-stretch-vertical 1.2s cubic-bezier(.6,.05,.35,.95) forwards 0.85s;
-}
-@keyframes rift-stretch-vertical{
-  to{transform:scaleY(1)}
+/* Void blackout — overlays entire viewport during pull-through.
+   Starts as a tiny dot at center (matching the horizon), then expands
+   outward to consume the page. When scene transition is done, it fades
+   away to reveal the next scene. */
+.void-blackout{
+  position:fixed;top:50%;left:50%;
+  width:260px;height:260px;
+  transform:translate(-50%,-50%) scale(0);
+  border-radius:50%;
+  background:radial-gradient(circle,
+    #000 0%,
+    #020108 60%,
+    #050314 85%,
+    rgba(5,3,20,0.9) 100%);
+  pointer-events:none;
+  z-index:9000;
+  opacity:1;
+  will-change:transform,opacity;
 }
 
-/* Stage 3: Horizontal widening — the tear opens into a portal */
-.rift-body-inner{
-  transform:scaleX(0.01);
-  transform-origin:50% 50%;
-  transform-box:view-box;
-  animation:rift-widen 1.4s cubic-bezier(.25,.5,.3,1) forwards 2s;
-}
-@keyframes rift-widen{
-  0%{transform:scaleX(0.01)}
-  100%{transform:scaleX(1)}
-}
-
-/* ===== THE TORN EDGES — ragged, bright, unstable ===== */
-.rift-edge{
-  fill:none;
-  stroke:#fff;
-  stroke-width:1.5;
-  stroke-linecap:round;
-  stroke-linejoin:round;
-  filter:url(#rift-edge-glow);
-  animation:rift-edge-pulse 4s ease-in-out infinite 3.2s;
-}
-@keyframes rift-edge-pulse{
-  0%,100%{stroke-width:1.5;opacity:0.85}
-  50%{stroke-width:2.2;opacity:1}
-}
-
-/* Subtle continuous ripple via displacement filter */
-.rift-edges-group{
-  animation:rift-edge-displace 7s ease-in-out infinite 3.2s;
-}
-@keyframes rift-edge-displace{
-  0%,100%{filter:url(#rift-displace-a)}
-  50%{filter:url(#rift-displace-b)}
-}
-
-/* ===== THE INTERIOR FIELD ===== */
-.rift-interior{
-  opacity:0;
-  animation:rift-interior-reveal 1.6s ease-out forwards 2.4s;
-}
-@keyframes rift-interior-reveal{
-  to{opacity:1}
-}
-
-.rift-swirl-a{
-  transform-origin:center;
-  transform-box:view-box;
-  animation:rift-swirl-a 42s linear infinite;
-  mix-blend-mode:screen;
-}
-.rift-swirl-b{
-  transform-origin:center;
-  transform-box:view-box;
-  animation:rift-swirl-b 58s linear infinite;
-  mix-blend-mode:screen;
-}
-@keyframes rift-swirl-a{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes rift-swirl-b{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
-
-/* Sweep band rises through rift periodically */
-.rift-sweep{
-  animation:rift-sweep-rise 16s ease-in-out infinite 5s;
-}
-@keyframes rift-sweep-rise{
-  0%{transform:translateY(0);opacity:0}
-  10%{opacity:0.4}
-  90%{opacity:0.3}
-  100%{transform:translateY(-110vh);opacity:0}
-}
-
-/* ===== RISING EMBERS ===== */
-.rift-embers{opacity:0;animation:rift-interior-reveal 2s forwards 3s}
-.rift-ember{opacity:0}
-.rift-ember-1 {animation:ember-rise-a 10s linear infinite 3.2s}
-.rift-ember-2 {animation:ember-rise-b 12s linear infinite 4.1s}
-.rift-ember-3 {animation:ember-rise-c 9s linear infinite 5s}
-.rift-ember-4 {animation:ember-rise-a 13s linear infinite 3.6s}
-.rift-ember-5 {animation:ember-rise-b 11s linear infinite 6.4s}
-.rift-ember-6 {animation:ember-rise-c 14s linear infinite 4.7s}
-.rift-ember-7 {animation:ember-rise-a 10.5s linear infinite 7.2s}
-.rift-ember-8 {animation:ember-rise-b 12.5s linear infinite 3.8s}
-.rift-ember-9 {animation:ember-rise-c 9.5s linear infinite 6s}
-.rift-ember-10{animation:ember-rise-a 11.5s linear infinite 5.9s}
-.rift-ember-11{animation:ember-rise-b 13.5s linear infinite 4.2s}
-.rift-ember-12{animation:ember-rise-c 10.8s linear infinite 7.7s}
-.rift-ember-13{animation:ember-rise-a 12.2s linear infinite 3.3s}
-.rift-ember-14{animation:ember-rise-b 11.8s linear infinite 6.1s}
-.rift-ember-15{animation:ember-rise-c 9.2s linear infinite 8.5s}
-.rift-ember-16{animation:ember-rise-a 13.8s linear infinite 4.8s}
-.rift-ember-17{animation:ember-rise-b 10.2s linear infinite 7s}
-.rift-ember-18{animation:ember-rise-c 12.8s linear infinite 5.5s}
-.rift-ember-19{animation:ember-rise-a 11s linear infinite 8.2s}
-.rift-ember-20{animation:ember-rise-b 9.8s linear infinite 4.4s}
-.rift-ember-21{animation:ember-rise-c 13.2s linear infinite 6.8s}
-.rift-ember-22{animation:ember-rise-a 10.2s linear infinite 7.5s}
-.rift-ember-23{animation:ember-rise-b 12s linear infinite 5.2s}
-.rift-ember-24{animation:ember-rise-c 9.6s linear infinite 8s}
-
-@keyframes ember-rise-a{
-  0%{transform:translate(0,0);opacity:0}
-  8%{opacity:0.85}
-  90%{opacity:0.55}
-  100%{transform:translate(4px,-900px);opacity:0}
-}
-@keyframes ember-rise-b{
-  0%{transform:translate(0,0);opacity:0}
-  10%{opacity:0.7}
-  90%{opacity:0.45}
-  100%{transform:translate(-7px,-950px);opacity:0}
-}
-@keyframes ember-rise-c{
-  0%{transform:translate(0,0);opacity:0}
-  12%{opacity:0.9}
-  90%{opacity:0.5}
-  100%{transform:translate(3px,-880px);opacity:0}
-}
-
-.rift-ember-hero{
-  opacity:0;
-  animation:rift-ember-hero-rise 22s ease-out infinite 8s;
-  filter:drop-shadow(0 0 5px rgba(245,238,204,0.95));
-}
-@keyframes rift-ember-hero-rise{
-  0%{transform:translate(0,0) scale(0.5);opacity:0}
-  5%{opacity:1}
-  85%{opacity:0.85}
-  100%{transform:translate(0,-1000px) scale(1.5);opacity:0}
-}
-
-/* ===== CONTENT INSIDE THE RIFT ===== */
-.rift-content{
+/* ===== CONTENT INSIDE THE HORIZON ===== */
+.horizon-content{
   position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
   z-index:5;pointer-events:none;
-  width:min(560px,78vw);
-  display:flex;flex-direction:column;align-items:center;gap:14px;
+  width:min(500px,72vw);
+  display:flex;flex-direction:column;align-items:center;gap:12px;
   text-align:center;
 }
-.rift-content > *{pointer-events:auto}
+.horizon-content > *{pointer-events:auto}
 
 .arrival-eyebrow{
   font-family:'Cinzel',serif;font-size:11px;letter-spacing:.4em;
   color:rgba(201,168,76,0.85);text-transform:uppercase;
-  opacity:0;animation:rift-content-in 1.2s ease-out forwards 4s;
+  opacity:0;animation:horizon-content-in 1.2s ease-out forwards 3.8s;
 }
 .arrival-title{
   font-family:'Cinzel Decorative',serif;
-  font-size:clamp(36px,7vw,68px);font-weight:700;letter-spacing:.04em;
+  font-size:clamp(34px,6.4vw,62px);font-weight:700;letter-spacing:.04em;
   color:#f5eecc;line-height:1.05;
   text-shadow:0 0 30px rgba(157,139,255,0.6),0 0 60px rgba(157,139,255,0.25);
-  opacity:0;animation:rift-content-in 1.4s ease-out forwards 4.4s;
+  opacity:0;animation:horizon-content-in 1.4s ease-out forwards 4.2s;
   margin:4px 0 2px;
 }
 .arrival-subtitle{
-  font-family:'Cinzel',serif;font-size:13px;letter-spacing:.3em;
+  font-family:'Cinzel',serif;font-size:12px;letter-spacing:.3em;
   color:rgba(240,236,228,0.7);text-transform:uppercase;
-  opacity:0;animation:rift-content-in 1.2s ease-out forwards 5s;
+  opacity:0;animation:horizon-content-in 1.2s ease-out forwards 4.8s;
 }
 .arrival-lore{
-  font-family:'DM Sans',sans-serif;font-style:italic;font-size:14px;
-  color:rgba(240,236,228,0.62);line-height:1.65;max-width:440px;font-weight:300;
-  margin-top:10px;
-  opacity:0;animation:rift-content-in 1.2s ease-out forwards 5.6s;
+  font-family:'DM Sans',sans-serif;font-style:italic;font-size:13px;
+  color:rgba(240,236,228,0.62);line-height:1.65;max-width:400px;font-weight:300;
+  margin-top:8px;
+  opacity:0;animation:horizon-content-in 1.2s ease-out forwards 5.4s;
 }
-@keyframes rift-content-in{
+@keyframes horizon-content-in{
   from{opacity:0;transform:translateY(8px)}
   to{opacity:1;transform:translateY(0)}
 }
 
 .cross-btn{
-  margin-top:20px;background:transparent;
+  margin-top:18px;background:transparent;
   border:1px solid rgba(201,168,76,0.5);color:var(--gold);
   font-family:'Cinzel',serif;font-size:12px;font-weight:400;letter-spacing:.35em;
   padding:15px 42px;border-radius:1px;cursor:pointer;text-transform:uppercase;
   transition:all .4s;position:relative;overflow:hidden;
-  opacity:0;animation:rift-content-in 1.2s ease-out forwards 6.2s;
+  opacity:0;animation:horizon-content-in 1.2s ease-out forwards 6.0s;
 }
 .cross-btn:hover{
   border-color:var(--gold);color:#fff;
@@ -505,179 +418,73 @@ body.rift-tearing .starfield{
 
 <div class="stage">
 
-  <!-- SCENE 1 — THE RIFT -->
+  <!-- SCENE 1 — THE EVENT HORIZON -->
   <div class="scene active" id="arrival">
 
-    <div class="rift-canvas">
-      <svg viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-        <defs>
-          <!-- Edge glow — hot white inner with violet outer halo -->
-          <filter id="rift-edge-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="1.5" result="blurInner"/>
-            <feGaussianBlur stdDeviation="6" result="blurOuter"/>
-            <feMerge>
-              <feMergeNode in="blurOuter"/>
-              <feMergeNode in="blurInner"/>
-              <feMergeNode in="SourceGraphic"/>
-            </feMerge>
-          </filter>
+    <div class="horizon-stage">
+      <!-- Canvas layer: accretion disk + infall particles, rendered JS-side -->
+      <canvas class="horizon-canvas" id="horizonCanvas"></canvas>
 
-          <!-- Two displacement filters for continuous edge ripple -->
-          <filter id="rift-displace-a" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.04" numOctaves="2" seed="7" result="noiseA"/>
-            <feDisplacementMap in="SourceGraphic" in2="noiseA" scale="10" xChannelSelector="R" yChannelSelector="G"/>
-          </filter>
-          <filter id="rift-displace-b" x="-20%" y="-20%" width="140%" height="140%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.015 0.035" numOctaves="2" seed="13" result="noiseB"/>
-            <feDisplacementMap in="SourceGraphic" in2="noiseB" scale="14" xChannelSelector="R" yChannelSelector="G"/>
-          </filter>
+      <!-- SVG layer: event horizon core + photon ring -->
+      <div class="horizon-core-wrap" id="horizonCoreWrap">
+        <svg class="horizon-svg" viewBox="-250 -250 500 500" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Photon ring gradient — bright at the edge, glow-heavy -->
+            <radialGradient id="photonRingGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#f5eecc" stop-opacity="0"/>
+              <stop offset="88%" stop-color="#f5eecc" stop-opacity="0"/>
+              <stop offset="94%" stop-color="#fff7dd" stop-opacity="1"/>
+              <stop offset="97%" stop-color="#c9a84c" stop-opacity="0.9"/>
+              <stop offset="100%" stop-color="#c9a84c" stop-opacity="0"/>
+            </radialGradient>
 
-          <!-- Interior field gradients -->
-          <radialGradient id="riftBase" cx="50%" cy="50%" r="60%">
-            <stop offset="0%" stop-color="#6656a8" stop-opacity="0.65"/>
-            <stop offset="30%" stop-color="#453885" stop-opacity="0.55"/>
-            <stop offset="65%" stop-color="#1e1640" stop-opacity="0.55"/>
-            <stop offset="100%" stop-color="#0a0618" stop-opacity="0.85"/>
-          </radialGradient>
-          <radialGradient id="riftSwirlA" cx="35%" cy="45%" r="65%">
-            <stop offset="0%" stop-color="#9d8bff" stop-opacity="0.4"/>
-            <stop offset="40%" stop-color="#7f77dd" stop-opacity="0.2"/>
-            <stop offset="100%" stop-color="#4a3f8a" stop-opacity="0"/>
-          </radialGradient>
-          <radialGradient id="riftSwirlB" cx="65%" cy="55%" r="55%">
-            <stop offset="0%" stop-color="#e5c574" stop-opacity="0.32"/>
-            <stop offset="45%" stop-color="#a88a3e" stop-opacity="0.16"/>
-            <stop offset="100%" stop-color="#6a5623" stop-opacity="0"/>
-          </radialGradient>
-          <linearGradient id="riftSweep" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stop-color="#e5c574" stop-opacity="0"/>
-            <stop offset="50%" stop-color="#f5eecc" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#e5c574" stop-opacity="0"/>
-          </linearGradient>
-          <radialGradient id="riftEmberGold" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
-            <stop offset="40%" stop-color="#f5eecc" stop-opacity="0.85"/>
-            <stop offset="100%" stop-color="#c9a84c" stop-opacity="0"/>
-          </radialGradient>
-          <radialGradient id="riftEmberViolet" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
-            <stop offset="40%" stop-color="#d8ceff" stop-opacity="0.75"/>
-            <stop offset="100%" stop-color="#7f77dd" stop-opacity="0"/>
-          </radialGradient>
+            <!-- Event horizon gradient — pure black core, deep violet at edges -->
+            <radialGradient id="horizonCoreGrad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#000000"/>
+              <stop offset="70%" stop-color="#050310"/>
+              <stop offset="94%" stop-color="#14102a" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#14102a" stop-opacity="0"/>
+            </radialGradient>
 
-          <!-- Clip path for the rift interior — irregular tear shape -->
-          <!-- Left edge is an irregular jagged path, right edge mirrors-ish -->
-          <clipPath id="riftInteriorClip">
-            <path d="
-              M 500 -50
-              Q 440 120, 460 260
-              Q 420 400, 455 550
-              Q 430 720, 465 870
-              Q 450 980, 500 1050
-              Q 545 990, 530 870
-              Q 560 720, 540 560
-              Q 575 410, 545 270
-              Q 555 130, 500 -50 Z
-            "/>
-          </clipPath>
-        </defs>
+            <!-- Inner photon ring glow filter -->
+            <filter id="photonGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.5" result="innerBlur"/>
+              <feGaussianBlur stdDeviation="8" result="outerBlur"/>
+              <feMerge>
+                <feMergeNode in="outerBlur"/>
+                <feMergeNode in="innerBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
 
-        <!-- =================================================== -->
-        <!-- STAGE 1: Initial spark (horizontal hairline at center) -->
-        <!-- =================================================== -->
-        <g class="rift-spark">
-          <rect x="460" y="498" width="80" height="4" fill="#ffffff" filter="url(#rift-edge-glow)"/>
-        </g>
+          <!-- The event horizon — dark core where light cannot escape -->
+          <circle id="horizonCore" cx="0" cy="0" r="130"
+                  fill="url(#horizonCoreGrad)"/>
 
-        <!-- =================================================== -->
-        <!-- STAGE 2 + 3: The rift body (vertical then horizontal expansion) -->
-        <!-- =================================================== -->
-        <g class="rift-body">
-          <g class="rift-body-inner">
+          <!-- The photon ring — thin bright circle at horizon's edge -->
+          <circle id="photonRing" cx="0" cy="0" r="134"
+                  fill="none" stroke="url(#photonRingGrad)" stroke-width="6"
+                  filter="url(#photonGlow)"/>
 
-            <!-- ========== INTERIOR FIELD (clipped to rift shape) ========== -->
-            <g clip-path="url(#riftInteriorClip)" class="rift-interior">
-              <!-- Base violet gradient -->
-              <rect x="0" y="-100" width="1000" height="1200" fill="url(#riftBase)"/>
+          <!-- Inner photon sphere — subtle inner glow just inside the horizon -->
+          <circle id="photonRingInner" cx="0" cy="0" r="126"
+                  fill="none" stroke="rgba(245,238,204,0.25)" stroke-width="1.5"
+                  filter="url(#photonGlow)"/>
+        </svg>
+      </div>
 
-              <!-- Swirling violet layer -->
-              <g class="rift-swirl-a">
-                <rect x="-300" y="-300" width="1600" height="1600" fill="url(#riftSwirlA)"/>
-              </g>
+      <!-- Corona glow — sits outside the disk, CSS-only -->
+      <div class="horizon-corona" id="horizonCorona"></div>
 
-              <!-- Swirling gold layer -->
-              <g class="rift-swirl-b">
-                <rect x="-300" y="-300" width="1600" height="1600" fill="url(#riftSwirlB)"/>
-              </g>
-
-              <!-- Vertical sweep band -->
-              <g class="rift-sweep">
-                <rect x="380" y="900" width="240" height="200" fill="url(#riftSweep)"/>
-              </g>
-
-              <!-- ========== RISING EMBERS ========== -->
-              <g class="rift-embers">
-                <circle class="rift-ember rift-ember-1"  cx="460" cy="980" r="1.6" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-2"  cx="495" cy="985" r="1.3" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-3"  cx="525" cy="975" r="1.7" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-4"  cx="470" cy="990" r="1.1" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-5"  cx="510" cy="978" r="1.5" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-6"  cx="482" cy="985" r="1.2" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-7"  cx="518" cy="990" r="1.6" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-8"  cx="450" cy="980" r="1.3" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-9"  cx="500" cy="975" r="1.0" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-10" cx="475" cy="988" r="1.4" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-11" cx="515" cy="982" r="1.2" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-12" cx="490" cy="992" r="1.7" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-13" cx="465" cy="978" r="1.1" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-14" cx="535" cy="988" r="1.5" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-15" cx="485" cy="975" r="1.3" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-16" cx="505" cy="988" r="1.6" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-17" cx="470" cy="984" r="1.0" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-18" cx="520" cy="980" r="1.4" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-19" cx="458" cy="994" r="1.2" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-20" cx="528" cy="974" r="1.5" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-21" cx="492" cy="982" r="1.3" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-22" cx="478" cy="977" r="1.1" fill="url(#riftEmberViolet)"/>
-                <circle class="rift-ember rift-ember-23" cx="512" cy="994" r="1.4" fill="url(#riftEmberGold)"/>
-                <circle class="rift-ember rift-ember-24" cx="498" cy="985" r="1.6" fill="url(#riftEmberViolet)"/>
-
-                <!-- Hero ember -->
-                <circle class="rift-ember rift-ember-hero" cx="500" cy="990" r="2.8" fill="url(#riftEmberGold)"/>
-              </g>
-            </g>
-
-            <!-- ========== THE TORN EDGES ========== -->
-            <g class="rift-edges-group">
-              <!-- Left jagged edge — irregular path from top to bottom -->
-              <path class="rift-edge" d="
-                M 500 -50
-                Q 440 120, 460 260
-                Q 420 400, 455 550
-                Q 430 720, 465 870
-                Q 450 980, 500 1050"/>
-
-              <!-- Right jagged edge — asymmetric mirror -->
-              <path class="rift-edge" d="
-                M 500 -50
-                Q 555 130, 545 270
-                Q 575 410, 540 560
-                Q 560 720, 530 870
-                Q 545 990, 500 1050"/>
-            </g>
-
-          </g>
-        </g>
-      </svg>
-    </div>
-
-    <!-- Content inside the rift -->
-    <div class="rift-content">
-      <div class="arrival-eyebrow">You have arrived at</div>
-      <h1 class="arrival-title">The Threshold</h1>
-      <div class="arrival-subtitle">World Map</div>
-      <p class="arrival-lore">A sacred place of learning. The realms beyond were built for those ready to become.</p>
-      <button class="cross-btn" onclick="showTutorial()">Cross the Threshold</button>
+      <!-- Content inside the horizon -->
+      <div class="horizon-content">
+        <div class="arrival-eyebrow">You have arrived at</div>
+        <h1 class="arrival-title">The Threshold</h1>
+        <div class="arrival-subtitle">World Map</div>
+        <p class="arrival-lore">A sacred place of learning. The realms beyond were built for those ready to become.</p>
+        <button class="cross-btn" onclick="showTutorial()">Cross the Threshold</button>
+      </div>
     </div>
 
   </div>
@@ -867,26 +674,16 @@ body.rift-tearing .starfield{
 
 </div>
 
-<script>
-// ========= RIFT REACTION =========
-// Background (nebula + starfield) briefly darkens when the rift is born.
-// Only fires on initial arrival, not on returning-visitor path.
-(function triggerRiftReaction(){
-  // Only if we're showing the full arrival sequence (not returning)
-  try {
-    if(localStorage.getItem('ga_visited_threshold') === '1') return;
-  } catch(e){}
-  // Sync with CSS: spark appears at 0.4s. Start the darken slightly before.
-  setTimeout(function(){
-    document.body.classList.add('rift-tearing');
-    // Remove after animation completes so it doesn't interfere later
-    setTimeout(function(){ document.body.classList.remove('rift-tearing'); }, 1400);
-  }, 300);
-})();
+<!-- Void blackout: used during the pull-through to swallow the page in
+     darkness, then fade away once the next scene is in place. Body-level so
+     it overlays everything including scene transitions. -->
+<div class="void-blackout" id="voidBlackout"></div>
 
+<script>
 // ========= STARFIELD =========
 (function makeStars(){
   var field = document.getElementById('starfield');
+  if(!field) return;
   var count = 80;
   for(var i=0;i<count;i++){
     var s = document.createElement('div');
@@ -902,6 +699,674 @@ body.rift-tearing .starfield{
   }
 })();
 
+// ========= EVENT HORIZON SYSTEM =========
+// Everything below is the portal's visual runtime:
+//   - Custom canvas renderer (accretion disk + infall events)
+//   - GSAP birth sequence timeline
+//   - GSAP idle animations (photon ring pulse, subtle horizon breathing)
+//   - GSAP interaction layer (hover accelerates disk, click triggers pull-through)
+// Each layer checks for gsap / canvas availability and fails gracefully if
+// something's not there.
+
+// Order matters: HORIZON_STATE and all helper functions are declared first,
+// then `initEventHorizon` is called via DOMContentLoaded. Original bug was
+// running this IIFE at script-eval time before `var HORIZON_STATE = {...}`
+// had been initialized.
+
+function initEventHorizon(){
+  console.log('[Threshold] Event Horizon init. GSAP:', typeof gsap);
+
+  var isReturning = false;
+  try { isReturning = localStorage.getItem('ga_visited_threshold') === '1'; } catch(e){}
+
+  // Kick off the canvas renderer immediately; disk particles will begin
+  // orbiting empty space until the horizon materializes. The birth timeline
+  // handles the visual "reveal" choreography on top.
+  startCanvasRenderer();
+
+  if(isReturning){
+    // Skip birth — set everything to its resting state immediately
+    skipBirthSequence();
+  } else {
+    // Full cinematic birth
+    playBirthSequence();
+  }
+
+  // Idle animations + hover/click — always active
+  startIdleAnimations();
+  hookButtonReactions();
+
+  // Mark visited for future loads
+  try { localStorage.setItem('ga_visited_threshold', '1'); } catch(e){}
+}
+
+// ============================================================================
+// CANVAS RENDERER
+// ============================================================================
+// Renders two particle systems on a single canvas:
+//   - Accretion disk: a continuous field of orbital particles around the
+//     center, with Keplerian-ish motion (inner particles faster than outer).
+//   - Infall events: occasional particles that spiral INTO the horizon,
+//     triggering a brightness flash on consumption.
+// Both systems share the canvas and draw loop for efficiency.
+
+var HORIZON_STATE = {
+  canvas: null,
+  ctx: null,
+  width: 0,
+  height: 0,
+  dpr: 1,
+  centerX: 0,
+  centerY: 0,
+  horizonRadius: 130,       // matches SVG horizon circle r=130 in viewBox coords
+  diskInnerRadius: 140,     // particles start just outside photon ring
+  diskOuterRadius: 420,     // outer edge of visible disk
+  rotationSpeed: 1,         // multiplier — 1 is normal, 2 during hover
+  timeScale: 1,             // global time multiplier — 1 normal, spikes during pull
+  particles: [],
+  infallParticles: [],
+  flashIntensity: 0,        // 0-1; spikes when matter falls in
+  coreOpacity: 1,           // scales with birth state; 0 before horizon exists
+  rafId: null,
+  lastInfallAt: 0,
+  lastOutburstAt: 0,
+  birthComplete: false,
+  pullThroughActive: false
+};
+
+function startCanvasRenderer(){
+  var canvas = document.getElementById('horizonCanvas');
+  if(!canvas){ console.warn('[Threshold] No horizonCanvas found'); return; }
+
+  HORIZON_STATE.canvas = canvas;
+  HORIZON_STATE.ctx = canvas.getContext('2d');
+
+  sizeCanvas();
+  window.addEventListener('resize', sizeCanvas);
+
+  // Seed the disk with particles — all orbits initialized with random phase
+  for(var i = 0; i < 180; i++){
+    HORIZON_STATE.particles.push(createDiskParticle());
+  }
+
+  // Start the draw loop
+  HORIZON_STATE.rafId = requestAnimationFrame(drawFrame);
+
+  console.log('[Threshold] Canvas renderer started. Particles:', HORIZON_STATE.particles.length);
+}
+
+function sizeCanvas(){
+  var c = HORIZON_STATE.canvas;
+  if(!c) return;
+  HORIZON_STATE.dpr = window.devicePixelRatio || 1;
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+  c.width  = Math.floor(w * HORIZON_STATE.dpr);
+  c.height = Math.floor(h * HORIZON_STATE.dpr);
+  c.style.width  = w + 'px';
+  c.style.height = h + 'px';
+  HORIZON_STATE.ctx.setTransform(HORIZON_STATE.dpr, 0, 0, HORIZON_STATE.dpr, 0, 0);
+  HORIZON_STATE.width  = w;
+  HORIZON_STATE.height = h;
+  HORIZON_STATE.centerX = w / 2;
+  HORIZON_STATE.centerY = h / 2;
+}
+
+// Create one disk particle with a random orbit and phase.
+// The orbital radius determines its speed (inner = faster), simulating
+// Keplerian motion in a simplified form.
+// Base velocity is tuned so inner particles complete a full orbit in ~15s
+// and outer particles take ~40s — slow, cinematic, still feels alive.
+function createDiskParticle(){
+  var r = HORIZON_STATE.diskInnerRadius + Math.random() * (HORIZON_STATE.diskOuterRadius - HORIZON_STATE.diskInnerRadius);
+  var innerFraction = (r - HORIZON_STATE.diskInnerRadius) / (HORIZON_STATE.diskOuterRadius - HORIZON_STATE.diskInnerRadius);
+  // Angular velocity scales inversely with sqrt(r). At the inner edge, a full
+  // orbit takes ~15s. 2π rad / (15s × 60fps) ≈ 0.007 rad/frame at inner edge.
+  var baseAngVel = 0.007 / Math.sqrt(r / HORIZON_STATE.diskInnerRadius);
+  var colorRoll = Math.random();
+  // Color grading: inner disk hotter (white/gold), outer cooler (gold/violet)
+  var color;
+  if(innerFraction < 0.2){
+    color = Math.random() < 0.5 ? '#fff7dd' : '#f5eecc';
+  } else if(innerFraction < 0.55){
+    color = Math.random() < 0.6 ? '#f5eecc' : '#e5c574';
+  } else {
+    color = colorRoll < 0.4 ? '#e5c574' : (colorRoll < 0.75 ? '#c9a84c' : '#9d8bff');
+  }
+  return {
+    r: r,
+    baseR: r,
+    angle: Math.random() * Math.PI * 2,
+    angVel: baseAngVel * (0.8 + Math.random() * 0.4),
+    size: 0.6 + Math.random() * 1.6 + (1 - innerFraction) * 0.3,
+    // Vertical flatten factor — makes the disk elliptical (viewed at slight angle)
+    // 1 = perfect circle; < 1 = flattened top-to-bottom
+    flatten: 0.78 + Math.random() * 0.08,
+    opacity: 0.4 + Math.random() * 0.55,
+    color: color,
+    // Wobble so particles don't orbit perfectly — slight radial oscillation
+    wobblePhase: Math.random() * Math.PI * 2,
+    wobbleAmp: 1 + Math.random() * 3,
+    wobbleSpeed: 0.02 + Math.random() * 0.03
+  };
+}
+
+// Create an infall event: a particle that spirals from the outer edge into
+// the horizon, then triggers a consumption flash on crossing the photon ring.
+function createInfallParticle(){
+  var startR = HORIZON_STATE.diskOuterRadius + 40 + Math.random() * 80;
+  return {
+    r: startR,
+    angle: Math.random() * Math.PI * 2,
+    angVel: 0.018 + Math.random() * 0.012,
+    inwardSpeed: 0.65 + Math.random() * 0.4,  // r units per frame (scales with dt)
+    accel: 1.012,  // each frame, inwardSpeed multiplies by this (gravity accelerating)
+    size: 1.4 + Math.random() * 1.2,
+    color: Math.random() < 0.7 ? '#f5eecc' : '#e5c574',
+    opacity: 0.9,
+    consumed: false,
+    trail: []  // array of {x, y} past positions for motion trail
+  };
+}
+
+// Main draw loop — called every frame via requestAnimationFrame
+var lastFrameTime = 0;
+function drawFrame(now){
+  // On the very first frame, lastFrameTime is 0 but `now` can be thousands
+  // of ms — don't let that enormous delta drive physics or everything jumps.
+  if(lastFrameTime === 0){ lastFrameTime = now; HORIZON_STATE.rafId = requestAnimationFrame(drawFrame); return; }
+  var dt = Math.min(32, now - lastFrameTime) / 16.67;  // normalized to 60fps
+  lastFrameTime = now;
+  dt *= HORIZON_STATE.timeScale;
+
+  var ctx = HORIZON_STATE.ctx;
+  var cx = HORIZON_STATE.centerX;
+  var cy = HORIZON_STATE.centerY;
+
+  // Clear canvas each frame (transparent — starfield shows through)
+  ctx.clearRect(0, 0, HORIZON_STATE.width, HORIZON_STATE.height);
+
+  // --- ACCRETION DISK ---
+  ctx.globalCompositeOperation = 'screen';  // additive blending = brighter overlaps
+
+  for(var i = 0; i < HORIZON_STATE.particles.length; i++){
+    var p = HORIZON_STATE.particles[i];
+    // Advance orbit
+    p.angle += p.angVel * HORIZON_STATE.rotationSpeed * dt;
+    p.wobblePhase += p.wobbleSpeed * dt;
+    var currentR = p.baseR + Math.sin(p.wobblePhase) * p.wobbleAmp;
+
+    // Elliptical projection — looks like disk viewed at slight angle
+    var x = cx + Math.cos(p.angle) * currentR;
+    var y = cy + Math.sin(p.angle) * currentR * p.flatten;
+
+    // Fade particles that are "behind" the black hole (slightly lower opacity
+    // when on the far side of the orbit, simulating light not making it around)
+    var depthFactor = 0.7 + 0.3 * (Math.sin(p.angle) * p.flatten > 0 ? 1 : 0.6);
+
+    // Particles very near inner edge glow brighter (hottest part of disk)
+    var innerGlow = currentR < HORIZON_STATE.diskInnerRadius + 30 ? 1.4 : 1;
+
+    drawGlowPoint(ctx, x, y, p.size * innerGlow, p.opacity * depthFactor * HORIZON_STATE.coreOpacity, p.color);
+  }
+
+  // --- INFALL PARTICLES ---
+  for(var j = HORIZON_STATE.infallParticles.length - 1; j >= 0; j--){
+    var ip = HORIZON_STATE.infallParticles[j];
+    ip.angle += ip.angVel * dt;
+    ip.r -= ip.inwardSpeed * dt;
+    ip.inwardSpeed *= Math.pow(ip.accel, dt);
+
+    var ix = cx + Math.cos(ip.angle) * ip.r;
+    var iy = cy + Math.sin(ip.angle) * ip.r * 0.82;
+
+    // Add to trail
+    ip.trail.push({x: ix, y: iy, opacity: ip.opacity});
+    if(ip.trail.length > 14) ip.trail.shift();
+
+    // Draw trail
+    for(var t = 0; t < ip.trail.length; t++){
+      var trailAlpha = (t / ip.trail.length) * ip.trail[t].opacity * 0.6;
+      drawGlowPoint(ctx, ip.trail[t].x, ip.trail[t].y, ip.size * (t / ip.trail.length) * 0.9, trailAlpha, ip.color);
+    }
+
+    // Draw head
+    drawGlowPoint(ctx, ix, iy, ip.size, ip.opacity, ip.color);
+
+    // Crossing the photon ring = consumption
+    if(ip.r < HORIZON_STATE.horizonRadius + 6 && !ip.consumed){
+      ip.consumed = true;
+      HORIZON_STATE.flashIntensity = Math.min(1, HORIZON_STATE.flashIntensity + 0.55);
+    }
+
+    // Remove once fully inside the horizon
+    if(ip.r < HORIZON_STATE.horizonRadius - 20){
+      HORIZON_STATE.infallParticles.splice(j, 1);
+    }
+  }
+
+  // --- CONSUMPTION FLASH ---
+  if(HORIZON_STATE.flashIntensity > 0.01){
+    var flashR = HORIZON_STATE.horizonRadius + 20;
+    var grad = ctx.createRadialGradient(cx, cy, HORIZON_STATE.horizonRadius, cx, cy, flashR + 40);
+    grad.addColorStop(0, 'rgba(255, 247, 221, ' + (HORIZON_STATE.flashIntensity * 0.7) + ')');
+    grad.addColorStop(0.6, 'rgba(201, 168, 76, ' + (HORIZON_STATE.flashIntensity * 0.35) + ')');
+    grad.addColorStop(1, 'rgba(157, 139, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, flashR + 40, 0, Math.PI * 2);
+    ctx.fill();
+    HORIZON_STATE.flashIntensity *= Math.pow(0.94, dt);
+  }
+
+  ctx.globalCompositeOperation = 'source-over';
+
+  // --- INFALL TIMING ---
+  if(HORIZON_STATE.birthComplete && !HORIZON_STATE.pullThroughActive){
+    var infallInterval = HORIZON_STATE.rotationSpeed > 1.5 ? 1500 : 4500;
+    if(now - HORIZON_STATE.lastInfallAt > infallInterval && Math.random() < 0.02){
+      HORIZON_STATE.infallParticles.push(createInfallParticle());
+      HORIZON_STATE.lastInfallAt = now;
+    }
+  }
+
+  HORIZON_STATE.rafId = requestAnimationFrame(drawFrame);
+}
+
+// Helper: draw a soft glowing circle at a point. Uses a small radial gradient
+// rather than a hard circle so particles look like light sources, not pixels.
+function drawGlowPoint(ctx, x, y, size, opacity, color){
+  if(opacity <= 0.02 || size <= 0.05) return;
+  // Parse color into r,g,b once (quick hex parse)
+  var hex = color;
+  if(hex[0] === '#') hex = hex.slice(1);
+  var r = parseInt(hex.substr(0, 2), 16);
+  var g = parseInt(hex.substr(2, 2), 16);
+  var b = parseInt(hex.substr(4, 2), 16);
+  var grad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
+  grad.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ',' + opacity + ')');
+  grad.addColorStop(0.4, 'rgba(' + r + ',' + g + ',' + b + ',' + (opacity * 0.5) + ')');
+  grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, size * 3, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// ============================================================================
+// BIRTH SEQUENCE (GSAP)
+// ============================================================================
+
+function playBirthSequence(){
+  if(typeof gsap === 'undefined'){ skipBirthSequence(); return; }
+
+  var coreWrap = document.getElementById('horizonCoreWrap');
+  var corona   = document.getElementById('horizonCorona');
+  var photonRing = document.getElementById('photonRing');
+  var photonInner = document.getElementById('photonRingInner');
+  var horizonCore = document.getElementById('horizonCore');
+
+  // Start states — everything hidden / minimal
+  gsap.set(coreWrap, { scale: 0, opacity: 1 });
+  if(corona) gsap.set(corona, { opacity: 0, scale: 0.6 });
+  if(photonRing) gsap.set(photonRing, { opacity: 0, scale: 0.3, transformOrigin: 'center center' });
+  if(photonInner) gsap.set(photonInner, { opacity: 0, scale: 0.3, transformOrigin: 'center center' });
+  if(horizonCore) gsap.set(horizonCore, { opacity: 0, scale: 0.3, transformOrigin: 'center center' });
+
+  // Canvas starts hidden during collapse (disk hasn't formed yet)
+  HORIZON_STATE.coreOpacity = 0;
+
+  var tl = gsap.timeline();
+
+  // Beat 1: 0.0s — 0.3s — dark page, nothing happens. Then a point ignites.
+  tl.set({}, {}, 0.3);
+  // (We use a small SVG circle that briefly appears as the pre-singularity point)
+
+  // Beat 2: 0.6s — The point COLLAPSES (starfield darkens via CSS class)
+  tl.call(function(){
+    document.body.classList.add('horizon-collapsing');
+    setTimeout(function(){ document.body.classList.remove('horizon-collapsing'); }, 1500);
+  }, null, 0.6);
+
+  // Beat 3: 1.2s — Event horizon punches into existence (scale 0.3 → 1, fast)
+  tl.to(horizonCore, {
+    scale: 1,
+    opacity: 1,
+    duration: 0.4,
+    ease: 'power3.out'
+  }, 1.2);
+
+  // Beat 4: 1.4s — Photon rings ignite, pulse bright then settle
+  tl.to([photonRing, photonInner], {
+    scale: 1,
+    opacity: 1,
+    duration: 0.5,
+    ease: 'back.out(1.3)'
+  }, 1.4);
+
+  // Beat 5: 1.8s — Core wrap itself comes up to scale 1 (if any other offset)
+  tl.to(coreWrap, {
+    scale: 1,
+    duration: 0.8,
+    ease: 'power2.out'
+  }, 1.8);
+
+  // Beat 6: 2.0s — Accretion disk materializes (fade in via coreOpacity)
+  tl.to(HORIZON_STATE, {
+    coreOpacity: 1,
+    duration: 1.5,
+    ease: 'power2.out'
+  }, 2.0);
+
+  // Beat 7: 2.8s — Corona glow fades in
+  tl.to(corona, {
+    opacity: 1,
+    scale: 1,
+    duration: 1.2,
+    ease: 'power2.out'
+  }, 2.8);
+
+  // Beat 8: 3.5s — Birth done, idle animations take over
+  tl.call(function(){
+    HORIZON_STATE.birthComplete = true;
+    console.log('[Threshold] Birth sequence complete.');
+  }, null, 3.5);
+}
+
+function skipBirthSequence(){
+  // Returning visitor: snap everything to its steady state instantly
+  var coreWrap = document.getElementById('horizonCoreWrap');
+  var corona = document.getElementById('horizonCorona');
+  if(typeof gsap !== 'undefined'){
+    gsap.set(coreWrap, { scale: 1, opacity: 1 });
+    gsap.set(corona, { opacity: 1, scale: 1 });
+  } else {
+    if(coreWrap) coreWrap.style.transform = 'translate(-50%,-50%) scale(1)';
+    if(corona) corona.style.opacity = '1';
+  }
+  HORIZON_STATE.coreOpacity = 1;
+  HORIZON_STATE.birthComplete = true;
+}
+
+// ============================================================================
+// IDLE ANIMATIONS (GSAP)
+// ============================================================================
+
+var idleTimeline = null;
+
+function startIdleAnimations(){
+  if(typeof gsap === 'undefined') return;
+  var photonRing = document.getElementById('photonRing');
+  var corona = document.getElementById('horizonCorona');
+  if(!photonRing) return;
+
+  idleTimeline = gsap.timeline({ repeat: -1 });
+
+  // Photon ring subtle pulse — 4 second cycle
+  idleTimeline.to(photonRing, {
+    opacity: 0.85,
+    duration: 2,
+    ease: 'sine.inOut'
+  }, 0);
+  idleTimeline.to(photonRing, {
+    opacity: 1,
+    duration: 2,
+    ease: 'sine.inOut'
+  }, 2);
+
+  // Corona breathes in parallel — slightly different rhythm for organic feel
+  if(corona){
+    idleTimeline.to(corona, {
+      opacity: 0.75,
+      duration: 2.5,
+      ease: 'sine.inOut'
+    }, 0.3);
+    idleTimeline.to(corona, {
+      opacity: 1,
+      duration: 2.5,
+      ease: 'sine.inOut'
+    }, 2.8);
+  }
+}
+
+// ============================================================================
+// BUTTON REACTIONS (hover accelerates, click triggers pull-through)
+// ============================================================================
+
+function hookButtonReactions(){
+  if(typeof gsap === 'undefined') return;
+
+  var tries = 0;
+  var pollId = setInterval(function(){
+    var btn = document.querySelector('.cross-btn');
+    if(btn){
+      clearInterval(pollId);
+      wireButton(btn);
+    } else if(++tries > 30){
+      clearInterval(pollId);
+    }
+  }, 150);
+}
+
+function wireButton(btn){
+  var photonRing = document.getElementById('photonRing');
+  var corona = document.getElementById('horizonCorona');
+
+  btn.addEventListener('mouseenter', function(){
+    // Disk spins faster, photon ring brightens
+    gsap.to(HORIZON_STATE, {
+      rotationSpeed: 2.2,
+      duration: 0.6,
+      ease: 'power2.out'
+    });
+    if(photonRing){
+      gsap.to(photonRing, {
+        opacity: 1.15,
+        duration: 0.5,
+        ease: 'power2.out'
+      });
+    }
+    if(corona){
+      gsap.to(corona, {
+        opacity: 1.2,
+        duration: 0.5,
+        ease: 'power2.out'
+      });
+    }
+  });
+
+  btn.addEventListener('mouseleave', function(){
+    gsap.to(HORIZON_STATE, {
+      rotationSpeed: 1,
+      duration: 0.9,
+      ease: 'power2.out'
+    });
+    if(photonRing){
+      gsap.to(photonRing, {
+        opacity: 1,
+        duration: 0.9,
+        ease: 'power2.out'
+      });
+    }
+    if(corona){
+      gsap.to(corona, {
+        opacity: 1,
+        duration: 0.9,
+        ease: 'power2.out'
+      });
+    }
+  });
+
+  // Click — override inline onclick with cinematic dive into void.
+  // No callback needed: the scene transition fires INSIDE the timeline at
+  // the moment the blackout fully covers the screen.
+  btn.removeAttribute('onclick');
+  btn.addEventListener('click', function(){
+    triggerPullThrough(function(){ /* scene already transitioned inside timeline */ });
+  });
+}
+
+function triggerPullThrough(callback){
+  if(typeof gsap === 'undefined'){ callback(); return; }
+  HORIZON_STATE.pullThroughActive = true;
+
+  var content = document.querySelector('.horizon-content');
+  var coreWrap = document.getElementById('horizonCoreWrap');
+  var corona = document.getElementById('horizonCorona');
+  var blackout = document.getElementById('voidBlackout');
+  var stage = document.querySelector('.stage');
+
+  // Pause idle animations so they don't fight the timeline
+  if(idleTimeline) idleTimeline.pause();
+
+  // Blackout starts as a tiny dot, invisible until we scale it in.
+  // We don't touch its opacity here — it's set to 1 in CSS so only the scale
+  // transform controls visibility. Start it at scale 0 fresh.
+  gsap.set(blackout, { scale: 0, opacity: 1 });
+
+  var tl = gsap.timeline({
+    onComplete: function(){
+      HORIZON_STATE.pullThroughActive = false;
+      callback();
+    }
+  });
+
+  // =========== BEAT 1 (0.0 to 0.4s): LEAN IN ===========
+  // Content dims and scales down slightly. Gravitational time dilation metaphor —
+  // disk actually SLOWS as we approach the horizon. Creates anticipation.
+  tl.to(content, {
+    opacity: 0,
+    scale: 0.92,
+    duration: 0.45,
+    ease: 'power2.in'
+  }, 0);
+
+  tl.to(HORIZON_STATE, {
+    rotationSpeed: 0.4,  // slow down, not speed up — time is dilating
+    duration: 0.4,
+    ease: 'power2.out'
+  }, 0);
+
+  // =========== BEAT 2 (0.4s to 1.2s): THE DIVE ===========
+  // Horizon grows — we're flying INTO it. Corona expands in kind. Blackout
+  // scales from 0 to covering the full viewport. Disk accelerates inward
+  // (matter being pulled in alongside us).
+  tl.to(coreWrap, {
+    scale: 3.2,
+    duration: 0.85,
+    ease: 'power2.in'
+  }, 0.4);
+
+  tl.to(corona, {
+    scale: 2.4,
+    opacity: 0.4,
+    duration: 0.85,
+    ease: 'power2.in'
+  }, 0.4);
+
+  // Blackout grows from center — uses scale rather than width/height so it's
+  // smooth and GPU-accelerated. 12x scale ensures it covers any viewport since
+  // CSS base is 260px and max viewport diagonal is ~2500px.
+  tl.to(blackout, {
+    scale: 12,
+    duration: 1.0,
+    ease: 'power2.in'
+  }, 0.5);
+
+  // Accelerate disk subtly during the dive — we're moving through the disk
+  tl.to(HORIZON_STATE, {
+    rotationSpeed: 2,
+    duration: 0.7,
+    ease: 'power2.in'
+  }, 0.5);
+
+  // =========== BEAT 3 (1.4s to 1.9s): SWALLOWED ===========
+  // Blackout fully covers screen. Brief held darkness. The canvas rendering
+  // is now hidden beneath the blackout. Scene transition fires during this
+  // beat so it's invisible to the user.
+  tl.call(function(){
+    // Snap scene transition inside the darkness
+    var prev = document.getElementById('arrival');
+    var next = document.getElementById('tutorial');
+    if(prev && next){
+      prev.classList.remove('active');
+      next.classList.add('active');
+      // Don't use the normal showScene here — we're bypassing the fade
+    }
+  }, null, 1.5);
+
+  // =========== BEAT 4 (1.9s to 3.0s): EMERGE ===========
+  // Blackout fades away, revealing the tutorial. Smooth, slow. Feels like
+  // emerging from a long fall.
+  tl.to(blackout, {
+    opacity: 0,
+    duration: 1.1,
+    ease: 'power2.out'
+  }, 1.9);
+
+  // =========== BEAT 5 (3.0s): RESET ===========
+  // Reset horizon elements so if the user navigates back, everything is in
+  // a sane state. Blackout returns to scale 0 (invisible pebble).
+  tl.call(function(){
+    gsap.set(content, { scale: 1, opacity: 1 });
+    gsap.set(coreWrap, { scale: 1 });
+    gsap.set(corona, { scale: 1, opacity: 1 });
+    gsap.set(blackout, { scale: 0, opacity: 1 });
+    HORIZON_STATE.rotationSpeed = 1;
+    if(idleTimeline) idleTimeline.resume();
+  }, null, 3.0);
+}
+
+// ============================================================================
+// TEAR ACCENTS (legacy — retired, kept as no-op to preserve old call sites)
+// ============================================================================
+(function riftTearAccents(){})();
+
+// ============================================================================
+// SENTINEL ENTRANCE (kept from previous session — hooks Scene 3 transition)
+// ============================================================================
+var sentinelEntranceFired = false;
+function playSentinelEntrance(){
+  if(sentinelEntranceFired || typeof gsap === 'undefined') return;
+  var sentinelSvg = document.querySelector('#dialogue .sentinel-svg');
+  var sentinelGlow = document.querySelector('#dialogue .sentinel-glow');
+  if(!sentinelSvg) return;
+  sentinelEntranceFired = true;
+
+  gsap.set(sentinelSvg, { opacity: 0, scale: 0.6 });
+  if(sentinelGlow) gsap.set(sentinelGlow, { opacity: 0, scale: 0.4 });
+
+  if(sentinelGlow){
+    gsap.to(sentinelGlow, {
+      opacity: 1,
+      scale: 1,
+      duration: 0.9,
+      ease: 'power2.out',
+      delay: 0.15
+    });
+  }
+  gsap.to(sentinelSvg, {
+    opacity: 1,
+    scale: 1,
+    duration: 1.2,
+    ease: 'back.out(1.4)',
+    delay: 0.4
+  });
+}
+
+// ============================================================================
+// BOOTSTRAP — run initEventHorizon after DOM is ready AND after all the
+// helpers declared above have been evaluated. DOMContentLoaded fires once
+// the script has been fully parsed, so all function declarations AND var
+// assignments (including HORIZON_STATE) are in place.
+// ============================================================================
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', initEventHorizon);
+} else {
+  // Document already parsed (e.g. defer'd script arrives late) — run now
+  initEventHorizon();
+}
+
 // ========= SCENE TRANSITIONS =========
 var currentScene = 'arrival';
 function showScene(id){
@@ -915,6 +1380,8 @@ function showScene(id){
     next.classList.add('active');
     currentScene = id;
     if(id === 'dialogue'){
+      // Fire the Sentinel's cinematic entrance, then the dialogue typewriter
+      playSentinelEntrance();
       setTimeout(startDialogueSequence, 300);
     }
   }, 400);
