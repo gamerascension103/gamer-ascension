@@ -193,6 +193,9 @@ body.lesson-open .guide-summon{opacity:0;pointer-events:none;transform:scale(0.8
 .lesson-progress-bar{height:2px;background:rgba(255,255,255,.06);flex-shrink:0}
 .lesson-progress-fill{height:100%;background:var(--gold);width:0%;transition:width .3s}
 .lesson-body{flex:1;overflow-y:auto;padding:40px 32px;max-width:800px;margin:0 auto;width:100%}
+/* Session 9: while Guide is open over a lesson, freeze the lesson scroll so
+   stray wheel/touch events don't move the user's reading position behind Guide. */
+body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 .lesson-footer{flex-shrink:0;padding:20px 32px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 .complete-btn{display:inline-flex;align-items:center;gap:10px;background:var(--gold);color:#0a0a0a;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;border:none;cursor:pointer;transition:background .2s,transform .15s}
 .complete-btn:hover{background:#b8952e;transform:translateY(-1px)}
@@ -4027,6 +4030,10 @@ function openLesson(id){
   document.getElementById('lessonOverlay').classList.add('open');
   document.body.classList.add('lesson-open');
   document.getElementById('lessonBody').scrollTop=0;
+  // Tell Guide what's happening — enables context-aware dialogue on summon
+  if(typeof Guide !== 'undefined' && typeof Guide.setContext === 'function'){
+    Guide.setContext('module-open', { moduleId: id });
+  }
 }
 // ---- PENDING EFFECT QUEUE ----
 // Effects queued while lesson overlay is open fire as a cinematic sequence on close
@@ -4046,21 +4053,40 @@ function closeLesson(){
   document.getElementById('lessonOverlay').classList.remove('open');
   document.body.classList.remove('lesson-open');
   currentLesson = null;
+  // Reset Guide's context back to default
+  if(typeof Guide !== 'undefined' && typeof Guide.setContext === 'function'){
+    Guide.setContext('default');
+  }
   // Wait for overlay slide-out transition (400ms) then fire the sequence
   setTimeout(flushPendingEffects, 500);
 }
 
-// Summon Guide from within a lesson module.
-// For now plays the default Atheneum dialogue. Context-aware dialogue
-// (module-specific lines) is a future upgrade planned for the Guide system.
+// Summon Guide from within a lesson module (session 9).
+// New spatial pattern: the lesson stays OPEN behind the Guide. The Guide's
+// overlay dims the lesson (not blacks it out), keeping the module visible as
+// context while the user has a brief conversation with Guide. When Guide
+// dismisses, we simply fade him out — the lesson is already there.
 function summonGuideFromModule(){
   if(typeof Guide === 'undefined') return;
-  // Close the lesson first so the Guide has its full stage
-  closeLesson();
-  // Let the lesson overlay slide out before summoning
-  setTimeout(function(){
-    Guide.summon();
-  }, 450);
+  // Make sure Guide knows which module is open so he plays the right script
+  if(typeof Guide.setContext === 'function' && currentLesson){
+    Guide.setContext('module-open', { moduleId: currentLesson });
+  }
+  // Add a body class that tells Guide's CSS to use the lighter "companion"
+  // dim treatment instead of the full blackout. The class is removed in the
+  // Guide.dismiss hook below so subsequent summons from default context
+  // (outside a module) use the normal full-attention overlay.
+  document.body.classList.add('guide-over-lesson');
+  // Hook Guide.dismiss as a one-shot to clean up the body class. The lesson
+  // stays open throughout the entire interaction, so there's nothing to reopen
+  // — we just need to make sure the class is removed before any future summons.
+  var originalDismiss = Guide.dismiss;
+  Guide.dismiss = function(){
+    document.body.classList.remove('guide-over-lesson');
+    originalDismiss.call(Guide);
+    Guide.dismiss = originalDismiss;
+  };
+  Guide.summon();
 }
 
 function markComplete(){
@@ -4902,6 +4928,42 @@ window.addEventListener('resize',function(){centerTree();});
           }
         ]
       });
+
+      // ---- CONTEXT-AWARE GUIDE SCRIPTS (session 8) ----
+      // Each of the 5 pre-game modules gets a unique script the Guide plays
+      // when summoned from inside that module. Sanderson framing:
+      //   Promise — mystical/sage line setting the weight of what they're reading
+      //   Progress — teacher pointer to the ONE concept that anchors the module
+      //   Payoff — short encouragement to engage honestly
+      Guide.registerContextScript('module-open:gap', [
+        { speaker: 'The Guide', text: 'The feeling you have carried for years — the distance between who you are and who you are meant to become — finally has a name within these pages.' },
+        { speaker: 'The Guide', text: 'Watch for the Skill Curve. Four phases. Most who walk this path quit because the difficult part caught them unaware. It will not surprise you.' },
+        { speaker: 'The Guide', text: 'Answer the reflections honestly. The gap does not have to be permanent.' }
+      ]);
+
+      Guide.registerContextScript('module-open:training', [
+        { speaker: 'The Guide', text: 'Long have lifters paid in pain and received nothing in return. This scroll names the currency your body actually accepts.' },
+        { speaker: 'The Guide', text: 'Remember three words — mechanical tension. All three conditions must meet on the same rep, or the signal does not fire. Velocity is the dashboard. Sensation is the passenger.' },
+        { speaker: 'The Guide', text: 'Read carefully. Everything you do beneath the bar from here forward will make more sense.' }
+      ]);
+
+      Guide.registerContextScript('module-open:nutrition', [
+        { speaker: 'The Guide', text: 'Many have been lost to the endless labyrinth of food rules. This module gives you two dials and the reason they are the only two that matter.' },
+        { speaker: 'The Guide', text: 'Protein and calories. Everything else is a preference setting. And the three hungers — true, habit, emotion — feel identical from within. Learning to tell them apart is a skill that transfers to every corner of your life.' },
+        { speaker: 'The Guide', text: 'The engine is simpler than you were told. Trust the physics.' }
+      ]);
+
+      Guide.registerContextScript('module-open:journaling', [
+        { speaker: 'The Guide', text: 'What you have been calling journaling — the venting, the gratitude lists — is not the practice this program asks of you. This is something else entirely.' },
+        { speaker: 'The Guide', text: 'Two movements. Observe, then extract. When the entry gets uncomfortable, do not stop there. That discomfort is the signal you are close to something real.' },
+        { speaker: 'The Guide', text: 'Run the entry all the way to the wisdom. That is where the XP lives.' }
+      ]);
+
+      Guide.registerContextScript('module-open:reading', [
+        { speaker: 'The Guide', text: 'Who you are was built from what you have been exposed to. To become someone different, you require different inputs. That is the entire purpose of this practice.' },
+        { speaker: 'The Guide', text: 'Ten minutes is the floor, not the goal. Read actively — not to finish, but to be changed. Mark what lands. When a passage strikes you deeply, share it in the Strain Coaching app.' },
+        { speaker: 'The Guide', text: 'The success library is your skill tree. Every book is an unlock.' }
+      ]);
 
       // If the tutorial was open, re-invoke the Guide once it closes
       if(tutorialIsOpen){
