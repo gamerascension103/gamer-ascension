@@ -277,6 +277,40 @@ body.lesson-open .guide-summon{opacity:0;pointer-events:none;transform:scale(0.8
 .rank-gold .rank-badge-name{color:#c9a84c}
 .rank-platinum .rank-badge-name{color:#e0d0ff}
 
+/* Rank badge "lands" animation — plays when user closes rank-up overlay */
+/* Medium treatment: glow pulse + shimmer sweep across badge (~1.5s) */
+.rank-badge{position:relative;overflow:hidden}
+.rank-badge-landing{animation:badgeLandsGlow 1.5s ease-out forwards}
+@keyframes badgeLandsGlow{
+  0%  { box-shadow: 0 0 0 0 rgba(255,255,255,0); border-color: rgba(255,255,255,.1); }
+  20% { box-shadow: 0 0 20px 4px rgba(255,255,255,0.45); border-color: rgba(255,255,255,0.65); }
+  50% { box-shadow: 0 0 28px 6px currentColor; border-color: currentColor; }
+  100%{ box-shadow: 0 0 0 0 rgba(255,255,255,0); border-color: rgba(255,255,255,.1); }
+}
+/* Shimmer overlay — a gold/white light sweeps across the badge once */
+.rank-badge-landing::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(105deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(255,255,255,0.9) 50%,
+    transparent 65%,
+    transparent 100%);
+  transform:translateX(-120%);
+  animation:badgeLandsShimmer 1.2s cubic-bezier(0.4,0,0.2,1) 0.15s forwards;
+  pointer-events:none;
+  mix-blend-mode:overlay;
+}
+@keyframes badgeLandsShimmer{
+  to{ transform:translateX(120%); }
+}
+/* Use the rank color for the glow — currentColor of rank-badge-name */
+.rank-badge-landing.rank-bronze{color:#cd7f32}
+.rank-badge-landing.rank-silver{color:#aab8c2}
+.rank-badge-landing.rank-gold{color:#c9a84c}
+.rank-badge-landing.rank-platinum{color:#e0d0ff}
+
 /* QUEST NOTIFICATION */
 .quest-notif{position:fixed;z-index:200;pointer-events:all;cursor:pointer;display:none}
 .quest-notif.visible{display:flex}
@@ -329,7 +363,19 @@ body.lesson-open .guide-summon{opacity:0;pointer-events:none;transform:scale(0.8
 /* QUEST COMPLETE TOAST */
 .quest-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);z-index:500;background:rgba(10,10,22,.97);border:1px solid rgba(201,168,76,.4);border-radius:4px;padding:14px 24px;font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:.1em;color:#c9a84c;text-align:center;opacity:0;pointer-events:none;transition:all .4s;white-space:nowrap}
 .quest-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Rune inscription ring — SVG-safe slow rotation (pairs with classList.add('rune-ring-rotating') in fireRankUpCelebration) */
+/* transform-box: fill-box makes transform-origin: center resolve to the element's own geometric center in SVG user-space, which is consistent across browsers */
+#runeRingGroup{transform-origin:center;transform-box:fill-box}
+.rune-ring-rotating{animation:runeRingRotate 60s linear infinite}
+@keyframes runeRingRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 </style>
+
+<!-- Animation libraries for rank-up celebration effects -->
+<!-- tsParticles: physics-based particle system for arcane embers + magic dust -->
+<script src="https://cdn.jsdelivr.net/npm/tsparticles@3.5.0/tsparticles.bundle.min.js"></script>
+<!-- GSAP: timeline orchestration for the rank-up sequence -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 </head>
 <body>
 
@@ -3554,14 +3600,16 @@ function updateRankDisplay(){
   RANKS.forEach(function(r){ badge.classList.remove('rank-' + r.id); });
   badge.classList.add('rank-' + rankId);
   if(name) name.textContent = rank.name;
+  // Update the icon glyph to match the rank
+  var icon = badge.querySelector('.rank-badge-icon');
+  if(icon) icon.textContent = rank.icon;
 }
 
 function checkRankUp(){
-  // Bronze: all 5 pregame complete — Oracle not required
-  if(getCurrentRank() === 'iron' && completed.length >= 5){
-    setRank('bronze');
-    setTimeout(showQuestNotification, 2000);
-  }
+  // NOTE: Rank promotion now happens inside closeCompletionScreen() so the user
+  // witnesses the badge transition. This legacy function is kept as a no-op
+  // to avoid breaking any callers that may still reference it. Do not call
+  // setRank() here — the rank-up ceremony is the only path to new ranks.
 }
 
 // ---- QUEST SYSTEM ----
@@ -3954,9 +4002,9 @@ function resetReflections(){
   document.querySelectorAll('.reflect-textarea').forEach(function(ta){ ta.value = ''; });
 }
 
-function updateRankDisplay(){
-  // Placeholder for rank system — will build out fully later
-}
+// (Legacy duplicate updateRankDisplay stub removed — the real definition at
+// line ~3593 was being overridden by a placeholder that did nothing, which
+// is why the header badge text never changed after rank promotion.)
 
 // ---- LESSON SYSTEM ----
 var lessonOrder=['gap','training','nutrition','journaling','reading'];
@@ -4090,18 +4138,50 @@ function updateReadProgress(){
   document.getElementById('lessonProgressFill').style.width=Math.min(100,b.scrollTop/(b.scrollHeight-b.clientHeight)*100)+'%';
 }
 function showAllComplete(){
-  if(getCurrentRank() === 'iron') setRank('bronze');
+  // Note: setRank() is deliberately NOT called here. It fires when the user
+  // closes the overlay, so the badge transition is witnessed, not silent.
+  var pendingRank = (getCurrentRank() === 'iron') ? 'bronze' : null;
 
   var msg = document.createElement('div');
   msg.id = 'completionScreen';
   msg.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,7,15,0.97);flex-direction:column;gap:0;padding:40px 24px;';
 
   msg.innerHTML =
-    '<div id="rankAssemblyWrap" style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px">' +
+    // Screen flash layer — bright-to-dark pulse at peak moment
+    '<div id="rankFlash" style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,0.7) 0%,rgba(245,238,204,0.3) 20%,transparent 55%);opacity:0;pointer-events:none;z-index:10;mix-blend-mode:screen"></div>' +
+    // Particle layer — tsParticles injects ember/dust here
+    '<div id="rankParticleField" style="position:absolute;inset:0;pointer-events:none;z-index:2"></div>' +
+    '<div id="rankAssemblyWrap" style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px;position:relative;z-index:5">' +
       '<div id="rankAchievedLabel" style="font-family:Cinzel,serif;font-size:clamp(18px,2.4vw,22px);font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:rgba(240,224,160,.85);margin-bottom:28px;opacity:0;transition:opacity 1.2s ease;text-shadow:0 0 20px rgba(201,168,76,.45),0 0 40px rgba(201,168,76,.2)">Rank Achieved</div>' +
-      '<div id="rankAssemblyStage" style="position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">' +
-        '<canvas id="assemblyCanvas" width="220" height="220" style="position:absolute;inset:0;pointer-events:none"></canvas>' +
-        '<div id="bronzeBadgeFinal" style="position:absolute;width:80px;height:80px;border-radius:50%;border:1.5px solid rgba(205,127,50,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:border-color 1.8s ease,box-shadow 1.8s ease,opacity .1s ease">' +
+      '<div id="rankAssemblyStage" style="position:relative;width:260px;height:260px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">' +
+        '<canvas id="assemblyCanvas" width="260" height="260" style="position:absolute;inset:0;pointer-events:none"></canvas>' +
+        // Rune inscription ring — SVG overlay, drawn by GSAP
+        '<svg id="runeRing" viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0">' +
+          '<defs>' +
+            '<filter id="runeGlow" x="-50%" y="-50%" width="200%" height="200%">' +
+              '<feGaussianBlur stdDeviation="1.8" result="blur"/>' +
+              '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+            '</filter>' +
+          '</defs>' +
+          '<g id="runeRingGroup" filter="url(#runeGlow)">' +
+            // Outer scribe ring — drawn by stroke-dashoffset
+            '<circle id="scribeCircle" cx="130" cy="130" r="80" fill="none" stroke="#c9a84c" stroke-width="1" stroke-linecap="round" opacity="0.7"/>' +
+            // Inner scribe ring
+            '<circle id="scribeCircleInner" cx="130" cy="130" r="72" fill="none" stroke="rgba(201,168,76,0.35)" stroke-width="0.5"/>' +
+            // 8 runic marks — each is an outer positioning <g> with an inner scale <g> that GSAP animates
+            '<g id="runeMarks">' +
+              '<g transform="rotate(0 130 130) translate(130 50)"><g class="rune-mark"><circle r="2" fill="#e5c574"/><circle r="4" fill="none" stroke="#c9a84c" stroke-width="0.5"/></g></g>' +
+              '<g transform="rotate(45 130 130) translate(130 50)"><g class="rune-mark"><path d="M -3 -3 L 3 3 M -3 3 L 3 -3" stroke="#e5c574" stroke-width="0.8" stroke-linecap="round"/></g></g>' +
+              '<g transform="rotate(90 130 130) translate(130 50)"><g class="rune-mark"><circle r="2" fill="#e5c574"/><circle r="4" fill="none" stroke="#c9a84c" stroke-width="0.5"/></g></g>' +
+              '<g transform="rotate(135 130 130) translate(130 50)"><g class="rune-mark"><path d="M 0 -4 L 0 4 M -3 0 L 3 0" stroke="#e5c574" stroke-width="0.8" stroke-linecap="round"/></g></g>' +
+              '<g transform="rotate(180 130 130) translate(130 50)"><g class="rune-mark"><circle r="2" fill="#e5c574"/><circle r="4" fill="none" stroke="#c9a84c" stroke-width="0.5"/></g></g>' +
+              '<g transform="rotate(225 130 130) translate(130 50)"><g class="rune-mark"><path d="M -3 -3 L 3 3 M -3 3 L 3 -3" stroke="#e5c574" stroke-width="0.8" stroke-linecap="round"/></g></g>' +
+              '<g transform="rotate(270 130 130) translate(130 50)"><g class="rune-mark"><circle r="2" fill="#e5c574"/><circle r="4" fill="none" stroke="#c9a84c" stroke-width="0.5"/></g></g>' +
+              '<g transform="rotate(315 130 130) translate(130 50)"><g class="rune-mark"><path d="M 0 -4 L 0 4 M -3 0 L 3 0" stroke="#e5c574" stroke-width="0.8" stroke-linecap="round"/></g></g>' +
+            '</g>' +
+          '</g>' +
+        '</svg>' +
+        '<div id="bronzeBadgeFinal" style="position:absolute;width:80px;height:80px;border-radius:50%;border:1.5px solid rgba(205,127,50,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:border-color 1.8s ease,box-shadow 1.8s ease,opacity .1s ease;z-index:3">' +
           '<span id="bronzeIconFinal" style="font-size:30px;color:#cd7f32;opacity:0;transition:opacity 1.8s ease">⬢</span>' +
         '</div>' +
       '</div>' +
@@ -4109,19 +4189,19 @@ function showAllComplete(){
         '<div id="rankNameBronzeFinal" style="font-family:Cinzel Decorative,serif;font-size:clamp(26px,4vw,40px);color:#cd7f32;opacity:0;transform:scale(0.9);transition:opacity 1.4s ease,transform 1.4s ease;text-shadow:0 0 40px rgba(205,127,50,.4),0 0 80px rgba(205,127,50,.15)">Bronze</div>' +
       '</div>' +
     '</div>' +
-    '<div id="completionBelow" style="display:flex;flex-direction:column;align-items:center;opacity:0;transition:opacity 1.2s ease">' +
+    '<div id="completionBelow" style="display:flex;flex-direction:column;align-items:center;opacity:0;transition:opacity 1.2s ease;position:relative;z-index:5">' +
       '<div style="width:60px;height:1px;background:rgba(255,255,255,.08);margin-bottom:28px"></div>' +
       '<div style="font-family:Cinzel Decorative,serif;font-size:clamp(18px,3vw,26px);color:#f0ece4;text-align:center;line-height:1.3;margin-bottom:14px">Ascension Paths<br><span style="color:#c084fc">Unlocked</span></div>' +
       '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:380px;line-height:1.8;margin-bottom:28px">The three astral trees are now visible.<br>Find the Oracle. Discover your skill focus.</div>' +
       '<a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;text-decoration:none;margin-bottom:12px">Book your PlayBook call →</a>' +
-      '<button onclick="document.getElementById(\'completionScreen\').remove();setTimeout(showQuestNotification,1000)" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;padding:8px">Continue exploring →</button>' +
+      '<button onclick="closeCompletionScreen(\'' + (pendingRank || '') + '\')" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;padding:8px">Continue exploring →</button>' +
     '</div>';
 
   document.body.appendChild(msg);
 
   var ac  = document.getElementById('assemblyCanvas');
   var ctx = ac.getContext('2d');
-  var W = 220, H = 220, cx = 110, cy = 110, badgeR = 40;
+  var W = 260, H = 260, cx = 130, cy = 130, badgeR = 40;
 
   var finalPts = [];
   for(var i = 0; i < 12; i++){
@@ -4287,6 +4367,7 @@ function showAllComplete(){
       nameBloomed = true;
       var bn = document.getElementById('rankNameBronzeFinal');
       if(bn){ bn.style.opacity = '1'; bn.style.transform = 'scale(1)'; }
+      fireRankUpCelebration(pendingRank);
     }
 
     var allArrived = stars.every(function(s){ return s.arrived; });
@@ -4301,6 +4382,383 @@ function showAllComplete(){
     var below = document.getElementById('completionBelow');
     if(below) below.style.opacity = '1';
   }, 5400);
+}
+
+
+// =============================================================================
+// COMPLETION SCREEN CLOSE HANDLER
+// Fires when user clicks "Continue exploring →" on the completion overlay.
+// This is where the actual setRank() is called, so the user witnesses the
+// header badge transition from Iron to the new rank — glow pulse + shimmer.
+// =============================================================================
+function closeCompletionScreen(pendingRank){
+  // Remove overlay
+  var screen = document.getElementById('completionScreen');
+  if(screen) screen.remove();
+
+  // Promote rank + trigger badge-lands animation
+  if(pendingRank){
+    setRank(pendingRank);
+    setTimeout(function(){
+      playBadgeLandsAnimation(pendingRank);
+    }, 180); // tiny delay so user sees iron → new color transition
+  }
+
+  // Keep the existing post-overlay behavior
+  setTimeout(showQuestNotification, 1400);
+}
+
+// =============================================================================
+// BADGE LANDS — the header rank badge's witnessed arrival moment
+// Medium treatment: color fade + glow pulse + shimmer sweep (~1.5s)
+// Runs when user closes the rank-up overlay.
+// =============================================================================
+function playBadgeLandsAnimation(rankId){
+  var badge = document.getElementById('rankBadge');
+  if(!badge) return;
+  var palette = RANK_PALETTES[rankId] || RANK_PALETTES.bronze;
+
+  var hasGSAP = typeof gsap !== 'undefined';
+
+  // Add the landing class which triggers the CSS shimmer + glow
+  badge.classList.add('rank-badge-landing');
+
+  if(hasGSAP){
+    // Subtle scale pulse — "the rank lands"
+    gsap.fromTo(badge,
+      { scale: 1 },
+      {
+        scale: 1.18,
+        duration: 0.25,
+        ease: 'back.out(2.5)',
+        yoyo: true,
+        repeat: 1,
+        transformOrigin: 'center center'
+      }
+    );
+  } else {
+    // CSS fallback handled by .rank-badge-landing class
+  }
+
+  // Clean up after animation (let CSS shimmer finish)
+  setTimeout(function(){
+    badge.classList.remove('rank-badge-landing');
+    if(hasGSAP) gsap.set(badge, { clearProps: 'all' });
+  }, 2000);
+}
+
+// =============================================================================
+// RANK-UP CELEBRATION — the arcane orchestra
+// Coordinates: screen flash + screen shake + magical particle field + rune
+// inscription drawing around the badge. Locked-in animation for ALL future
+// rank promotions (Bronze, Silver, Gold, Platinum).
+// Libraries used: tsParticles (particle physics), GSAP (timeline orchestration).
+// Graceful fallback if either library fails to load.
+// =============================================================================
+
+// Per-rank visual palettes. Violet stays present across all ranks for brand
+// continuity; accent colors shift to match rank identity.
+var RANK_PALETTES = {
+  bronze: {
+    fountain: ['#c9a84c', '#e5c574', '#9d8bff', '#7f77dd'],
+    cannon:   ['#9d8bff', '#c9a84c', '#f5eecc', '#7df5f5'],
+    dust:     ['#f5eecc', '#e5c574', '#ffffff', '#c5b8ff'],
+    sparks:   ['#e5c574', '#c9a84c', '#f5eecc'],
+    ringPrimary:  '#c9a84c',
+    ringSecondary:'rgba(201,168,76,0.35)',
+    ringMark:     '#e5c574',
+    flashRgba:    'rgba(245,238,204,0.3)'
+  },
+  silver: {
+    fountain: ['#aab8c2', '#d0dae3', '#9d8bff', '#7f77dd'],
+    cannon:   ['#9d8bff', '#aab8c2', '#ffffff', '#7df5f5'],
+    dust:     ['#ffffff', '#d0dae3', '#e8eef3', '#c5b8ff'],
+    sparks:   ['#d0dae3', '#aab8c2', '#ffffff'],
+    ringPrimary:  '#c0cdd8',
+    ringSecondary:'rgba(192,205,216,0.35)',
+    ringMark:     '#e8eef3',
+    flashRgba:    'rgba(220,230,240,0.35)'
+  },
+  gold: {
+    fountain: ['#c9a84c', '#f5eecc', '#9d8bff', '#e5c574'],
+    cannon:   ['#9d8bff', '#f5eecc', '#ffffff', '#7df5f5'],
+    dust:     ['#f5eecc', '#fff4c4', '#ffffff', '#c5b8ff'],
+    sparks:   ['#fff4c4', '#f5eecc', '#ffffff'],
+    ringPrimary:  '#f5d678',
+    ringSecondary:'rgba(245,214,120,0.4)',
+    ringMark:     '#fff4c4',
+    flashRgba:    'rgba(255,244,196,0.4)'
+  },
+  platinum: {
+    fountain: ['#c5b8ff', '#7df5f5', '#9d8bff', '#e0d0ff'],
+    cannon:   ['#7df5f5', '#c5b8ff', '#ffffff', '#9d8bff'],
+    dust:     ['#ffffff', '#e0d0ff', '#c5f5f5', '#c5b8ff'],
+    sparks:   ['#c5f5f5', '#e0d0ff', '#ffffff'],
+    ringPrimary:  '#a8dcf0',
+    ringSecondary:'rgba(168,220,240,0.4)',
+    ringMark:     '#c5f5f5',
+    flashRgba:    'rgba(197,245,245,0.4)'
+  }
+};
+
+// Accepts optional rankId ('bronze','silver','gold','platinum'). Defaults to bronze.
+function fireRankUpCelebration(rankId){
+  rankId = rankId || 'bronze';
+  var palette = RANK_PALETTES[rankId] || RANK_PALETTES.bronze;
+  var hasGSAP = typeof gsap !== 'undefined';
+  var hasTSParticles = typeof tsParticles !== 'undefined';
+
+  // Apply palette to the rune ring elements (so future ranks get correct colors)
+  var scribeEl = document.getElementById('scribeCircle');
+  var scribeInnerEl = document.getElementById('scribeCircleInner');
+  if(scribeEl) scribeEl.setAttribute('stroke', palette.ringPrimary);
+  if(scribeInnerEl) scribeInnerEl.setAttribute('stroke', palette.ringSecondary);
+  // Update rune mark fills/strokes
+  document.querySelectorAll('.rune-mark circle[fill]:not([fill="none"])').forEach(function(el){
+    el.setAttribute('fill', palette.ringMark);
+  });
+  document.querySelectorAll('.rune-mark circle[stroke]:not([stroke="none"])').forEach(function(el){
+    el.setAttribute('stroke', palette.ringPrimary);
+  });
+  document.querySelectorAll('.rune-mark path').forEach(function(el){
+    el.setAttribute('stroke', palette.ringMark);
+  });
+  // Update flash color
+  var flashEl = document.getElementById('rankFlash');
+  if(flashEl){
+    flashEl.style.background = 'radial-gradient(circle at 50% 45%,rgba(255,255,255,0.7) 0%,' + palette.flashRgba + ' 20%,transparent 55%)';
+  }
+
+  // ========== LAYER 1: Screen flash (peak-moment impact) ==========
+  var flash = flashEl;
+  if(flash){
+    if(hasGSAP){
+      gsap.to(flash, { opacity: 1, duration: 0.12, ease: 'power2.out' });
+      gsap.to(flash, { opacity: 0, duration: 0.9, ease: 'power2.in', delay: 0.12 });
+    } else {
+      // Fallback: CSS transition
+      flash.style.transition = 'opacity 0.12s ease-out';
+      flash.style.opacity = '1';
+      setTimeout(function(){
+        flash.style.transition = 'opacity 0.9s ease-in';
+        flash.style.opacity = '0';
+      }, 120);
+    }
+  }
+
+  // ========== LAYER 2: Subtle screen shake ==========
+  var completionScreen = document.getElementById('completionScreen');
+  if(completionScreen && hasGSAP){
+    gsap.fromTo(completionScreen,
+      { x: 0, y: 0 },
+      {
+        x: 'random(-3,3)',
+        y: 'random(-2,2)',
+        duration: 0.05,
+        repeat: 8,
+        yoyo: true,
+        ease: 'rough({ strength:2, points:8, template:none.out, taper:none, randomize:true, clamp:false })',
+        onComplete: function(){ gsap.set(completionScreen, { x: 0, y: 0 }); }
+      }
+    );
+  }
+
+  // ========== LAYER 3: Arcane particle field (embers + magic dust) ==========
+  if(hasTSParticles){
+    tsParticles.load({
+      id: 'rankParticleField',
+      options: {
+        fpsLimit: 60,
+        fullScreen: { enable: false },
+        detectRetina: true,
+        background: { color: 'transparent' },
+        particles: {
+          // Two particle types mixed: slow-rising embers + fast magic dust
+          number: { value: 0 }, // we emit via emitters instead
+          color: { value: palette.fountain.concat(palette.cannon, palette.dust) },
+          shape: { type: ['circle', 'star'] },
+          opacity: {
+            value: { min: 0.3, max: 0.9 },
+            animation: { enable: true, speed: 0.6, sync: false, startValue: 'max', destroy: 'min' }
+          },
+          size: {
+            value: { min: 1, max: 3.5 },
+            animation: { enable: true, speed: 1.5, sync: false, startValue: 'max', destroy: 'min' }
+          },
+          move: {
+            enable: true,
+            speed: { min: 1, max: 4 },
+            direction: 'top',
+            outModes: { default: 'destroy', top: 'destroy', bottom: 'destroy' },
+            gravity: { enable: true, acceleration: -1.2 }, // negative = upward "anti-gravity"
+            drift: { min: -1, max: 1 },
+            random: true,
+            straight: false,
+            path: { enable: false }
+          }
+        },
+        emitters: [
+          // Emitter 1: Primary embers rising from bottom center
+          {
+            direction: 'top',
+            rate: { delay: 0.04, quantity: 3 },
+            life: { count: 1, duration: 2.4 },
+            size: { width: 60, height: 0, mode: 'percent' },
+            position: { x: 50, y: 100 },
+            particles: {
+              color: { value: palette.fountain },
+              size: { value: { min: 1.5, max: 3.5 } },
+              move: { speed: { min: 2, max: 5 }, gravity: { enable: true, acceleration: -1.5 } }
+            }
+          },
+          // Emitter 2: Left-side cannon burst
+          {
+            direction: 'top-right',
+            rate: { delay: 0.05, quantity: 4 },
+            life: { count: 1, duration: 0.8 },
+            size: { width: 0, height: 0, mode: 'percent' },
+            position: { x: 15, y: 75 },
+            particles: {
+              color: { value: palette.cannon },
+              size: { value: { min: 1, max: 3 } },
+              move: { speed: { min: 6, max: 12 }, gravity: { enable: true, acceleration: 2 } }
+            }
+          },
+          // Emitter 3: Right-side cannon burst
+          {
+            direction: 'top-left',
+            rate: { delay: 0.05, quantity: 4 },
+            life: { count: 1, duration: 0.8 },
+            size: { width: 0, height: 0, mode: 'percent' },
+            position: { x: 85, y: 75 },
+            particles: {
+              color: { value: palette.cannon },
+              size: { value: { min: 1, max: 3 } },
+              move: { speed: { min: 6, max: 12 }, gravity: { enable: true, acceleration: 2 } }
+            }
+          },
+          // Emitter 4: Magic dust raining from above (sustained longer)
+          {
+            direction: 'bottom',
+            rate: { delay: 0.1, quantity: 2 },
+            life: { count: 1, duration: 3.5 },
+            size: { width: 90, height: 0, mode: 'percent' },
+            position: { x: 50, y: 5 },
+            particles: {
+              color: { value: palette.dust },
+              size: { value: { min: 0.8, max: 2 } },
+              shape: { type: 'circle' },
+              move: {
+                speed: { min: 0.5, max: 2 },
+                gravity: { enable: true, acceleration: 0.3 },
+                drift: { min: -1.5, max: 1.5 }
+              },
+              opacity: { value: { min: 0.4, max: 0.9 }, animation: { enable: true, speed: 0.3, startValue: 'max', destroy: 'min' } }
+            }
+          }
+        ]
+      }
+    }).then(function(container){
+      // Auto-tear down emitters after 4 seconds — dust can continue falling for a bit
+      setTimeout(function(){
+        if(container && container.destroy) container.destroy();
+      }, 6500);
+    }).catch(function(err){
+      console.warn('tsParticles failed:', err);
+    });
+  }
+
+  // ========== LAYER 4: Rune inscription ring drawing itself around badge ==========
+  var runeRing = document.getElementById('runeRing');
+  var scribe = document.getElementById('scribeCircle');
+  var scribeInner = document.getElementById('scribeCircleInner');
+  var runeMarks = document.querySelectorAll('.rune-mark');
+
+  if(runeRing && scribe && hasGSAP){
+    // Measure circumference so we can animate stroke-dashoffset from full to 0
+    var circ = 2 * Math.PI * 80; // r=80, so ~502.65
+    gsap.set(scribe, { strokeDasharray: circ, strokeDashoffset: circ });
+    gsap.set(scribeInner, { opacity: 0 });
+    gsap.set(runeMarks, { scale: 0, opacity: 0, transformOrigin: 'center' });
+
+    var tl = gsap.timeline({ delay: 0.3 });
+
+    // 1. The ring fades in (opacity on parent)
+    tl.to(runeRing, { opacity: 1, duration: 0.4, ease: 'power1.out' });
+
+    // 2. Outer circle scribes itself — 1.6s ceremonial stroke-on
+    tl.to(scribe, { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, '<0.1');
+
+    // 3. Runes appear one by one, staggered
+    tl.to(runeMarks, {
+      scale: 1,
+      opacity: 1,
+      duration: 0.35,
+      stagger: 0.08,
+      ease: 'back.out(2)'
+    }, '-=1.0');
+
+    // 4. Inner ring subtly fades in after outer completes
+    tl.to(scribeInner, { opacity: 0.5, duration: 0.6 }, '-=0.3');
+
+    // 5. Ongoing sustained state — slow rotation via CSS class (SVG-safe)
+    var runeGroup = document.getElementById('runeRingGroup');
+    if(runeGroup){
+      runeGroup.classList.add('rune-ring-rotating');
+    }
+    // Gentle breathing pulse on the whole rune ring opacity
+    gsap.to(runeRing, {
+      opacity: 0.75,
+      duration: 3,
+      yoyo: true,
+      repeat: -1,
+      ease: 'sine.inOut',
+      delay: 3
+    });
+  }
+
+  // ========== LAYER 5: Sustained spark emissions after the opening burst ==========
+  // Small occasional sparks emitted from the badge position post-reveal
+  if(hasTSParticles){
+    setTimeout(function(){
+      tsParticles.load({
+        id: 'rankParticleField',
+        options: {
+          fpsLimit: 60,
+          fullScreen: { enable: false },
+          detectRetina: true,
+          background: { color: 'transparent' },
+          particles: { number: { value: 0 } },
+          emitters: [{
+            direction: 'none',
+            rate: { delay: 0.6, quantity: 1 },
+            life: { count: 0, duration: 0 }, // infinite while container alive
+            size: { width: 6, height: 6, mode: 'percent' },
+            position: { x: 50, y: 45 },
+            particles: {
+              color: { value: palette.sparks },
+              shape: { type: 'circle' },
+              size: { value: { min: 0.8, max: 1.8 } },
+              opacity: {
+                value: { min: 0.5, max: 1 },
+                animation: { enable: true, speed: 0.8, startValue: 'max', destroy: 'min' }
+              },
+              move: {
+                enable: true,
+                speed: { min: 1, max: 3 },
+                direction: 'none',
+                random: true,
+                straight: false,
+                outModes: 'destroy',
+                gravity: { enable: true, acceleration: 0.5 }
+              },
+              life: { duration: { value: 2 }, count: 1 }
+            }
+          }]
+        }
+      }).catch(function(err){ console.warn('sustained sparks failed:', err); });
+    }, 7000); // kicks in after opening burst fully clears
+  }
 }
 
 
@@ -4362,9 +4820,10 @@ window.addEventListener('load',function(){
   }
   // Rank system init
   updateRankDisplay();
-  // For returning users — if still Iron but all complete, catch the rank up
+  // For returning users — if still Iron but all complete, trigger the full
+  // rank-up ceremony (celebration + witnessed badge transition on close)
   if(getCurrentRank() === 'iron' && completed.length >= 5){
-    setTimeout(checkRankUp, 800);
+    setTimeout(showAllComplete, 800);
   }
   // Restore hidden nodes if quest accepted or complete
   if(getQuestState() === 'accepted' || getQuestState() === 'complete'){
