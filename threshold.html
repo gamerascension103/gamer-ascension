@@ -1291,7 +1291,11 @@ function triggerPullThrough(callback){
     if(prev && next){
       prev.classList.remove('active');
       next.classList.add('active');
-      // Don't use the normal showScene here — we're bypassing the fade
+      // CRITICAL: keep currentScene in sync. Otherwise the next showScene
+      // call (e.g. tutorial → dialogue) thinks we're still on arrival,
+      // tries to hide arrival (already hidden), and leaves tutorial visible
+      // underneath the new scene — resulting in overlapping scenes.
+      currentScene = 'tutorial';
     }
   }, null, 1.5);
 
@@ -1403,11 +1407,35 @@ var dialogueScript = [
 var dialogueIndex = 0;
 var typewriterTimeout = null;
 var sentinelWrap = null;
+var dialogueTapHandlerWired = false;
 
 function startDialogueSequence(){
   dialogueIndex = 0;
   sentinelWrap = document.getElementById('sentinelWrap');
+  wireDialogueTapToSkip();
   renderDialogueLine();
+}
+
+// Tap-to-skip: clicking the dialogue box or the Sentinel stage advances the
+// dialogue — either skipping the typewriter to completion (if mid-line) or
+// advancing to the next line (if complete). Matches the pattern used by the
+// Guide in pregame.html. Same advanceDialogue() handles both cases because
+// it already branches on continueBtn.disabled. Wired once (idempotent).
+function wireDialogueTapToSkip(){
+  if(dialogueTapHandlerWired) return;
+  var dialogueBox = document.getElementById('dialogueBox');
+  var sentinelStage = document.querySelector('#dialogue .sentinel-stage');
+
+  function handleSkipTap(e){
+    // Ignore clicks on the continue button itself (it has its own onclick)
+    // and any other interactive elements. This prevents double-fires.
+    if(e.target.closest('#dialogueContinue, a, button')) return;
+    advanceDialogue();
+  }
+
+  if(dialogueBox) dialogueBox.addEventListener('click', handleSkipTap);
+  if(sentinelStage) sentinelStage.addEventListener('click', handleSkipTap);
+  dialogueTapHandlerWired = true;
 }
 
 function renderDialogueLine(){
