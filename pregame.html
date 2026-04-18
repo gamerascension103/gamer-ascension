@@ -176,6 +176,20 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .lesson-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,4vw,44px);color:var(--text);line-height:1}
 .lesson-close{width:40px;height:40px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;flex-shrink:0}
 .lesson-close:hover{background:rgba(255,255,255,.1)}
+.lesson-header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.lesson-guide-btn{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 14px;background:rgba(157,139,255,0.08);border:1px solid rgba(157,139,255,0.35);border-radius:3px;color:rgba(197,184,255,0.95);font-family:'Cinzel',serif;font-size:10px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;transition:all .25s;white-space:nowrap}
+.lesson-guide-btn:hover{background:rgba(157,139,255,0.18);border-color:rgba(157,139,255,0.65);color:#e0d8ff;box-shadow:0 0 14px rgba(157,139,255,0.25)}
+.lesson-guide-btn svg{opacity:0.85;transition:opacity .25s}
+.lesson-guide-btn:hover svg{opacity:1}
+@media(max-width:640px){
+  .lesson-guide-btn span{display:none}
+  .lesson-guide-btn{width:40px;padding:0;justify-content:center}
+  .lesson-guide-btn svg{width:16px;height:16px}
+}
+
+/* Hide the floating Guide summon button when a lesson is open (fade out) */
+.guide-summon{transition:opacity .35s ease,transform .35s ease}
+body.lesson-open .guide-summon{opacity:0;pointer-events:none;transform:scale(0.85)}
 .lesson-progress-bar{height:2px;background:rgba(255,255,255,.06);flex-shrink:0}
 .lesson-progress-fill{height:100%;background:var(--gold);width:0%;transition:width .3s}
 .lesson-body{flex:1;overflow-y:auto;padding:40px 32px;max-width:800px;margin:0 auto;width:100%}
@@ -488,7 +502,17 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
       <div class="lesson-eyebrow" id="lessonEyebrow"></div>
       <div class="lesson-title" id="lessonTitle"></div>
     </div>
-    <button class="lesson-close" onclick="closeLesson()">✕</button>
+    <div class="lesson-header-actions">
+      <button class="lesson-guide-btn" onclick="summonGuideFromModule()" title="Summon the Guide for help with this module">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.2" fill="none"/>
+          <ellipse cx="12" cy="12" rx="6" ry="3" stroke="currentColor" stroke-width="1" fill="none"/>
+          <circle cx="12" cy="12" r="1.8" fill="currentColor"/>
+        </svg>
+        <span>Summon Guide</span>
+      </button>
+      <button class="lesson-close" onclick="closeLesson()">✕</button>
+    </div>
   </div>
   <div class="lesson-progress-bar"><div class="lesson-progress-fill" id="lessonProgressFill"></div></div>
   <div class="lesson-body" id="lessonBody" onscroll="updateReadProgress()"></div>
@@ -1137,9 +1161,9 @@ function updateAscensionSequence(){
   var seq = ascensionSequence;
   seq.timer++;
 
-  // Phase 1 — stillness beat (40 frames ~0.65s)
+  // Phase 1 — stillness beat (~70 frames, ~1.1s)
   if(seq.phase === 1){
-    if(seq.timer > 90){ seq.phase = 2; seq.timer = 0; }
+    if(seq.timer > 70){ seq.phase = 2; seq.timer = 0; }
     return;
   }
 
@@ -1148,7 +1172,7 @@ function updateAscensionSequence(){
     // Step 1: grow ley line
     if(!seq.leyLine.done){
       seq.leyLine.active = true;
-      seq.leyLine.progress = Math.min(1, seq.leyLine.progress + 0.006);
+      seq.leyLine.progress = Math.min(1, seq.leyLine.progress + 0.0075);
       if(seq.leyLine.progress >= 1){
         seq.leyLine.done = true;
         tesseractActive = true;
@@ -1178,9 +1202,9 @@ function updateAscensionSequence(){
     // Ley line done — now grow three tethers from Tesseract
     var allTethersDone = true;
     seq.tethers.forEach(function(te, i){
-      if(!te.active && seq.timer > 80 + i * 80){ te.active = true; }
+      if(!te.active && seq.timer > 60 + i * 60){ te.active = true; }
       if(te.active && !te.done){
-        te.progress = Math.min(1, te.progress + 0.004);
+        te.progress = Math.min(1, te.progress + 0.005);
         if(te.progress >= 1){ te.done = true; }
         allTethersDone = false;
       }
@@ -1232,11 +1256,11 @@ function updateAscensionSequence(){
     var pillarOrder = ['vitality','alignment','spirit'];
     pillarOrder.forEach(function(pillar, pi){
       var crawl = seq.crawl[pillar];
-      if(!crawl.started && seq.timer > pi * 60){ crawl.started = true; }
+      if(!crawl.started && seq.timer > pi * 45){ crawl.started = true; }
       if(!crawl.started) return;
       crawl.timer++;
-      // Light up next node every 12 frames
-      if(crawl.timer % 28 === 0 && crawl.queue.length > 0){
+      // Light up next node every 21 frames
+      if(crawl.timer % 21 === 0 && crawl.queue.length > 0){
         crawl.litNodes.push(crawl.queue.shift());
       }
       if(crawl.queue.length > 0 || crawl.litNodes.length < (
@@ -1247,7 +1271,7 @@ function updateAscensionSequence(){
     tetherOpacity = Math.min(0.18, tetherOpacity + 0.0005);
     drawPermanentTethers();
 
-    if(allCrawlsDone && seq.timer > 400){
+    if(allCrawlsDone && seq.timer > 300){
       // Fire the single dramatic pulse before transitioning
       spawnTesseractPulse();
       seq.phase = 4; seq.timer = 0;
@@ -3953,6 +3977,7 @@ function openLesson(id){
   document.getElementById('prevBtn').style.display=idx>0?'':'none';
   document.getElementById('nextBtn').style.display=idx<lessonOrder.length-1?'':'none';
   document.getElementById('lessonOverlay').classList.add('open');
+  document.body.classList.add('lesson-open');
   document.getElementById('lessonBody').scrollTop=0;
 }
 // ---- PENDING EFFECT QUEUE ----
@@ -3971,9 +3996,23 @@ function flushPendingEffects(){
 
 function closeLesson(){
   document.getElementById('lessonOverlay').classList.remove('open');
+  document.body.classList.remove('lesson-open');
   currentLesson = null;
   // Wait for overlay slide-out transition (400ms) then fire the sequence
   setTimeout(flushPendingEffects, 500);
+}
+
+// Summon Guide from within a lesson module.
+// For now plays the default Atheneum dialogue. Context-aware dialogue
+// (module-specific lines) is a future upgrade planned for the Guide system.
+function summonGuideFromModule(){
+  if(typeof Guide === 'undefined') return;
+  // Close the lesson first so the Guide has its full stage
+  closeLesson();
+  // Let the lesson overlay slide out before summoning
+  setTimeout(function(){
+    Guide.summon();
+  }, 450);
 }
 
 function markComplete(){
@@ -4059,7 +4098,7 @@ function showAllComplete(){
 
   msg.innerHTML =
     '<div id="rankAssemblyWrap" style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px">' +
-      '<div id="rankAchievedLabel" style="font-family:Cinzel,serif;font-size:13px;font-weight:400;letter-spacing:.22em;text-transform:uppercase;color:rgba(200,200,220,.35);margin-bottom:24px;opacity:0;transition:opacity 1.2s ease">Rank Achieved</div>' +
+      '<div id="rankAchievedLabel" style="font-family:Cinzel,serif;font-size:clamp(18px,2.4vw,22px);font-weight:600;letter-spacing:.32em;text-transform:uppercase;color:rgba(240,224,160,.85);margin-bottom:28px;opacity:0;transition:opacity 1.2s ease;text-shadow:0 0 20px rgba(201,168,76,.45),0 0 40px rgba(201,168,76,.2)">Rank Achieved</div>' +
       '<div id="rankAssemblyStage" style="position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">' +
         '<canvas id="assemblyCanvas" width="220" height="220" style="position:absolute;inset:0;pointer-events:none"></canvas>' +
         '<div id="bronzeBadgeFinal" style="position:absolute;width:80px;height:80px;border-radius:50%;border:1.5px solid rgba(205,127,50,0);display:flex;align-items:center;justify-content:center;opacity:0;transition:border-color 1.8s ease,box-shadow 1.8s ease,opacity .1s ease">' +
