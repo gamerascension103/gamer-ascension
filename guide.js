@@ -30,8 +30,7 @@
   var speakerNameEl = null;
   var progressEl = null;
   var continueBtn = null;
-  var orbBodyEl = null;
-  var orbRaysEl = null;
+  var sigilEl = null;
   var flareInterval = null;
   var dialogueBoxEl = null;
   var menuEl = null;
@@ -104,7 +103,7 @@
 
       speakerNameEl.textContent = 'The Guide';
       dialogueTextEl.innerHTML = '';
-      if(orbBodyEl) orbBodyEl.classList.add('speaking'); if(orbRaysEl) orbRaysEl.classList.add('speaking');
+      if(sigilEl) sigilEl.classList.add('speaking');
       if(dialogueBoxEl) dialogueBoxEl.classList.add('guide-pulsing-text');
 
       var full = message;
@@ -118,7 +117,7 @@
           typewriterTimeout = setTimeout(tick, 28);
         } else {
           dialogueTextEl.innerHTML = full;
-          if(orbBodyEl) orbBodyEl.classList.remove('speaking'); if(orbRaysEl) orbRaysEl.classList.remove('speaking');
+          if(sigilEl) sigilEl.classList.remove('speaking');
           if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
           setTimeout(function(){
             if(overlayEl) overlayEl.classList.add('guide-fading');
@@ -144,7 +143,7 @@
       overlayEl.classList.remove('active');
       document.body.classList.remove('guide-active');
 
-      if(orbBodyEl) orbBodyEl.classList.remove('speaking'); if(orbRaysEl) orbRaysEl.classList.remove('speaking');
+      if(sigilEl) sigilEl.classList.remove('speaking');
       if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
 
       try {
@@ -174,7 +173,24 @@
     summonEl.className = 'guide-summon';
     summonEl.setAttribute('aria-label', 'Summon the Guide');
     summonEl.setAttribute('title', 'Summon the Guide');
-    summonEl.innerHTML = '<img src="shard.png" alt="" class="guide-summon-img" draggable="false"><span class="guide-summon-orb"></span>';
+    summonEl.innerHTML = '<svg class="guide-summon-sigil" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
+      // Simplified outer ring — 4 arc segments
+      '<g class="guide-summon-ring">' +
+        '<path d="M 50 10 A 40 40 0 0 1 80 30" fill="none" stroke="rgba(255,235,170,0.85)" stroke-width="1.2" stroke-linecap="round"/>' +
+        '<path d="M 90 50 A 40 40 0 0 1 70 85" fill="none" stroke="rgba(255,235,170,0.85)" stroke-width="1.2" stroke-linecap="round"/>' +
+        '<path d="M 50 90 A 40 40 0 0 1 20 70" fill="none" stroke="rgba(255,235,170,0.85)" stroke-width="1.2" stroke-linecap="round"/>' +
+        '<path d="M 10 50 A 40 40 0 0 1 30 15" fill="none" stroke="rgba(255,235,170,0.85)" stroke-width="1.2" stroke-linecap="round"/>' +
+      '</g>' +
+      // Central almond eye
+      '<path d="M 38 50 Q 50 42, 62 50" fill="none" stroke="rgba(255,245,200,1)" stroke-width="1.4" stroke-linecap="round"/>' +
+      '<path d="M 38 50 Q 50 58, 62 50" fill="none" stroke="rgba(255,245,200,1)" stroke-width="1.4" stroke-linecap="round"/>' +
+      '<circle cx="50" cy="50" r="1.8" fill="rgba(255,253,235,1)"/>' +
+      // Four small anchor dots at cardinal positions
+      '<circle cx="50" cy="10" r="1.6" fill="rgba(255,240,190,1)"/>' +
+      '<circle cx="90" cy="50" r="1.6" fill="rgba(255,240,190,1)"/>' +
+      '<circle cx="50" cy="90" r="1.6" fill="rgba(255,240,190,1)"/>' +
+      '<circle cx="10" cy="50" r="1.6" fill="rgba(255,240,190,1)"/>' +
+    '</svg>';
     summonEl.addEventListener('click', function(e){
       e.preventDefault();
       Guide.summon();
@@ -206,16 +222,105 @@
       '<button class="guide-close" aria-label="Dismiss the Guide" title="Dismiss">&times;</button>' +
       '<div class="guide-stage">' +
         '<div class="guide-aura"></div>' +
-        '<div class="guide-shard">' +
-          '<img src="shard.png" alt="" class="guide-shard-img" draggable="false">' +
-          '<div class="guide-orb-wrap">' +
-            '<div class="guide-orb-rays" id="guideOrbRays"></div>' +
-            '<div class="guide-orb-aura"></div>' +
-            '<div class="guide-orb-body" id="guideOrbBody">' +
-              '<div class="guide-orb-core"></div>' +
-              '<div class="guide-orb-center"></div>' +
-            '</div>' +
-          '</div>' +
+        '<div class="guide-sigil-wrap" id="guideSigilWrap">' +
+          '<div class="guide-sigil-glow"></div>' +
+          '<svg class="guide-sigil" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">' +
+              '<defs>' +
+                '<filter id="sigilGlow" x="-50%" y="-50%" width="200%" height="200%">' +
+                  '<feGaussianBlur stdDeviation="2.5" result="blur"/>' +
+                  '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>' +
+                '</filter>' +
+                '<radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%">' +
+                  '<stop offset="0%" stop-color="#f0e8ff" stop-opacity="1"/>' +
+                  '<stop offset="35%" stop-color="#c5b8ff" stop-opacity="0.85"/>' +
+                  '<stop offset="100%" stop-color="#7a6ad9" stop-opacity="0.25"/>' +
+                '</radialGradient>' +
+                '<radialGradient id="particleGrad" cx="50%" cy="50%" r="50%">' +
+                  '<stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>' +
+                  '<stop offset="40%" stop-color="#b8f8f8" stop-opacity="0.95"/>' +
+                  '<stop offset="100%" stop-color="#5ad7e0" stop-opacity="0"/>' +
+                '</radialGradient>' +
+              '</defs>' +
+
+              // ANCHOR POINTS & THREADS (held-together structure)
+              '<g class="sm-anchors">' +
+                '<line class="sm-thread sm-thread-ne" x1="312" y1="88" x2="250" y2="150" stroke="rgba(197,184,255,0.5)" stroke-width="1" stroke-linecap="round"/>' +
+                '<line class="sm-thread sm-thread-se" x1="312" y1="312" x2="250" y2="250" stroke="rgba(197,184,255,0.5)" stroke-width="1" stroke-linecap="round"/>' +
+                '<line class="sm-thread sm-thread-sw" x1="88" y1="312" x2="150" y2="250" stroke="rgba(197,184,255,0.5)" stroke-width="1" stroke-linecap="round"/>' +
+                '<line class="sm-thread sm-thread-nw" x1="88" y1="88" x2="150" y2="150" stroke="rgba(197,184,255,0.5)" stroke-width="1" stroke-linecap="round"/>' +
+                '<path class="sm-anchor sm-anchor-ne" d="M 312 80 L 320 88 L 312 96 L 304 88 Z" fill="rgba(224,216,240,1)" stroke="rgba(240,232,255,0.9)" stroke-width="0.7"/>' +
+                '<path class="sm-anchor sm-anchor-se" d="M 312 320 L 320 312 L 312 304 L 304 312 Z" fill="rgba(224,216,240,1)" stroke="rgba(240,232,255,0.9)" stroke-width="0.7"/>' +
+                '<path class="sm-anchor sm-anchor-sw" d="M 88 320 L 96 312 L 88 304 L 80 312 Z" fill="rgba(224,216,240,1)" stroke="rgba(240,232,255,0.9)" stroke-width="0.7"/>' +
+                '<path class="sm-anchor sm-anchor-nw" d="M 88 80 L 96 88 L 88 96 L 80 88 Z" fill="rgba(224,216,240,1)" stroke="rgba(240,232,255,0.9)" stroke-width="0.7"/>' +
+              '</g>' +
+
+              // RUNIC MARKS drifting on perimeter
+              '<g class="sm-runes">' +
+                '<g class="sm-rune sm-rune-1" transform="rotate(0 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(224,216,240,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(197,184,255,0.6)" stroke-width="0.5"/></g>' +
+                '<g class="sm-rune sm-rune-2" transform="rotate(72 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(224,216,240,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(197,184,255,0.6)" stroke-width="0.5"/></g>' +
+                '<g class="sm-rune sm-rune-3" transform="rotate(144 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(224,216,240,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(197,184,255,0.6)" stroke-width="0.5"/></g>' +
+                '<g class="sm-rune sm-rune-4" transform="rotate(216 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(224,216,240,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(197,184,255,0.6)" stroke-width="0.5"/></g>' +
+                '<g class="sm-rune sm-rune-5" transform="rotate(288 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(224,216,240,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(197,184,255,0.6)" stroke-width="0.5"/></g>' +
+              '</g>' +
+
+              // ORBITAL 1 (outermost, pentagon) — radius 160, slow
+              '<g class="sm-orbit sm-orbit-1">' +
+                '<g class="sm-shape" transform="translate(360 200)">' +
+                  '<path d="M 0 -12 L 11.4 -3.7 L 7 9.7 L -7 9.7 L -11.4 -3.7 Z" fill="rgba(8,8,18,0.95)" stroke="rgba(125,245,245,0.95)" stroke-width="1.3" stroke-linejoin="round"/>' +
+                  '<circle cx="0" cy="0" r="1.8" fill="rgba(200,250,250,1)"/>' +
+                '</g>' +
+              '</g>' +
+
+              // ORBITAL 2 (triangle, clockwise) — radius 135
+              '<g class="sm-orbit sm-orbit-2">' +
+                '<g class="sm-shape" transform="translate(335 200)">' +
+                  '<path d="M 0 -10 L 8.7 5 L -8.7 5 Z" fill="rgba(8,8,18,0.95)" stroke="rgba(125,245,245,0.95)" stroke-width="1.3" stroke-linejoin="round"/>' +
+                  '<circle cx="0" cy="0" r="1.8" fill="rgba(200,250,250,1)"/>' +
+                '</g>' +
+              '</g>' +
+
+              // ORBITAL 3 (square, counter-clockwise) — radius 115
+              '<g class="sm-orbit sm-orbit-3">' +
+                '<g class="sm-shape" transform="translate(315 200)">' +
+                  '<rect x="-9" y="-9" width="18" height="18" fill="rgba(8,8,18,0.95)" stroke="rgba(125,245,245,0.95)" stroke-width="1.3" stroke-linejoin="round" rx="1"/>' +
+                  '<circle cx="0" cy="0" r="1.8" fill="rgba(200,250,250,1)"/>' +
+                '</g>' +
+              '</g>' +
+
+              // ORBITAL 4 (hexagon, clockwise faster) — radius 95
+              '<g class="sm-orbit sm-orbit-4">' +
+                '<g class="sm-shape" transform="translate(295 200)">' +
+                  '<path d="M 8 0 L 4 6.93 L -4 6.93 L -8 0 L -4 -6.93 L 4 -6.93 Z" fill="rgba(8,8,18,0.95)" stroke="rgba(125,245,245,0.95)" stroke-width="1.3" stroke-linejoin="round"/>' +
+                  '<circle cx="0" cy="0" r="1.8" fill="rgba(200,250,250,1)"/>' +
+                '</g>' +
+              '</g>' +
+
+              // ORBITAL 5 (innermost, circle-with-ring, counter-clockwise) — radius 78
+              '<g class="sm-orbit sm-orbit-5">' +
+                '<g class="sm-shape" transform="translate(278 200)">' +
+                  '<circle cx="0" cy="0" r="7" fill="rgba(8,8,18,0.95)" stroke="rgba(125,245,245,0.95)" stroke-width="1.3"/>' +
+                  '<circle cx="0" cy="0" r="3" fill="rgba(200,250,250,1)"/>' +
+                '</g>' +
+              '</g>' +
+
+              // PARTICLE LAYER — energy particles spawn here, animated by JS
+              '<g class="sm-particles" id="smParticles"></g>' +
+
+              // THE EYE — center stays fixed
+              '<g class="sm-eye" filter="url(#sigilGlow)">' +
+                // All elements that close during blink go in this inner group
+                '<g class="sm-eye-lids">' +
+                  '<path class="sm-eyelid sm-eyelid-upper" d="M 140 200 Q 200 165, 260 200" fill="none" stroke="rgba(197,184,255,0.55)" stroke-width="0.8" stroke-linecap="round"/>' +
+                  '<path class="sm-eyelid sm-eyelid-lower" d="M 140 200 Q 200 235, 260 200" fill="none" stroke="rgba(197,184,255,0.55)" stroke-width="0.8" stroke-linecap="round"/>' +
+                  '<ellipse class="sm-eye-halo" cx="200" cy="200" rx="55" ry="28" fill="url(#eyeGrad)" opacity="0.6"/>' +
+                  '<path class="sm-eye-upper" d="M 156 200 Q 200 178, 244 200" fill="none" stroke="rgba(240,232,255,1)" stroke-width="1.8" stroke-linecap="round"/>' +
+                  '<path class="sm-eye-lower" d="M 156 200 Q 200 222, 244 200" fill="none" stroke="rgba(240,232,255,1)" stroke-width="1.8" stroke-linecap="round"/>' +
+                  '<circle class="sm-iris-ring" cx="200" cy="200" r="12" fill="none" stroke="rgba(224,216,240,0.5)" stroke-width="0.6"/>' +
+                  '<circle class="sm-pupil" id="smPupil" cx="200" cy="200" r="5" fill="rgba(245,238,255,1)"/>' +
+                  '<circle class="sm-eye-bright" cx="200" cy="200" r="1.8" fill="#ffffff"/>' +
+                '</g>' +
+              '</g>' +
+            '</svg>' +
         '</div>' +
         '<div class="guide-ember-layer" id="guideEmberLayer"></div>' +
       '</div>' +
@@ -240,8 +345,7 @@
     speakerNameEl = document.getElementById('guideSpeaker');
     progressEl = document.getElementById('guideProgress');
     continueBtn = document.getElementById('guideContinue');
-    orbBodyEl = document.getElementById('guideOrbBody');
-    orbRaysEl = document.getElementById('guideOrbRays');
+    sigilEl = document.getElementById('guideSigilWrap');
     dialogueBoxEl = document.getElementById('guideDialogueBox');
     menuEl = document.getElementById('guideMenu');
     footerEl = document.getElementById('guideFooter');
@@ -258,7 +362,9 @@
     });
 
     startEmbers();
-    startFlares();
+    startParticleFeeding();
+    startEyeTracking();
+    startBlinking();
   }
 
   function renderMenu(){
@@ -266,7 +372,7 @@
     dialogueTextEl.innerHTML = '';
     if(footerEl) footerEl.classList.remove('active');
 
-    if(orbBodyEl) orbBodyEl.classList.add('speaking'); if(orbRaysEl) orbRaysEl.classList.add('speaking');
+    if(sigilEl) sigilEl.classList.add('speaking');
     if(dialogueBoxEl) dialogueBoxEl.classList.add('guide-pulsing-text');
 
     var greeting = 'How may I be of assistance, ascendant?';
@@ -280,7 +386,7 @@
         typewriterTimeout = setTimeout(tick, 28);
       } else {
         dialogueTextEl.innerHTML = greeting;
-        if(orbBodyEl) orbBodyEl.classList.remove('speaking'); if(orbRaysEl) orbRaysEl.classList.remove('speaking');
+        if(sigilEl) sigilEl.classList.remove('speaking');
         if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
         showMenuOptions();
       }
@@ -326,7 +432,7 @@
   function runBridgeLine(text, callback){
     speakerNameEl.textContent = 'The Guide';
     dialogueTextEl.innerHTML = '';
-    if(orbBodyEl) orbBodyEl.classList.add('speaking'); if(orbRaysEl) orbRaysEl.classList.add('speaking');
+    if(sigilEl) sigilEl.classList.add('speaking');
     if(dialogueBoxEl) dialogueBoxEl.classList.add('guide-pulsing-text');
 
     var i = 0;
@@ -339,7 +445,7 @@
         typewriterTimeout = setTimeout(tick, 28);
       } else {
         dialogueTextEl.innerHTML = text;
-        if(orbBodyEl) orbBodyEl.classList.remove('speaking'); if(orbRaysEl) orbRaysEl.classList.remove('speaking');
+        if(sigilEl) sigilEl.classList.remove('speaking');
         if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
         setTimeout(callback, 600);
       }
@@ -357,7 +463,7 @@
     continueBtn.disabled = true;
     continueBtn.textContent = 'Continue';
 
-    if(orbBodyEl) orbBodyEl.classList.add('speaking'); if(orbRaysEl) orbRaysEl.classList.add('speaking');
+    if(sigilEl) sigilEl.classList.add('speaking');
     if(dialogueBoxEl) dialogueBoxEl.classList.add('guide-pulsing-text');
 
     var full = line.text;
@@ -372,7 +478,7 @@
       } else {
         dialogueTextEl.innerHTML = full;
         continueBtn.disabled = false;
-        if(orbBodyEl) orbBodyEl.classList.remove('speaking'); if(orbRaysEl) orbRaysEl.classList.remove('speaking');
+        if(sigilEl) sigilEl.classList.remove('speaking');
         if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
         if(dialogueIndex === config.script.length - 1){
           continueBtn.textContent = 'Dismiss';
@@ -387,7 +493,7 @@
       if(typewriterTimeout) clearTimeout(typewriterTimeout);
       dialogueTextEl.innerHTML = config.script[dialogueIndex].text;
       continueBtn.disabled = false;
-      if(orbBodyEl) orbBodyEl.classList.remove('speaking'); if(orbRaysEl) orbRaysEl.classList.remove('speaking');
+      if(sigilEl) sigilEl.classList.remove('speaking');
       if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
       if(dialogueIndex === config.script.length - 1){
         continueBtn.textContent = 'Dismiss';
@@ -401,23 +507,6 @@
     } else {
       Guide.dismiss();
     }
-  }
-
-  function startFlares(){
-    // Occasional "thinking" flare every 8-10 seconds while the Guide is visible
-    function scheduleFlare(){
-      var delay = 7500 + Math.random() * 3500;
-      setTimeout(function(){
-        if(isOpen && orbBodyEl){
-          orbBodyEl.classList.add('flare');
-          setTimeout(function(){
-            if(orbBodyEl) orbBodyEl.classList.remove('flare');
-          }, 850);
-        }
-        scheduleFlare();
-      }, delay);
-    }
-    scheduleFlare();
   }
 
   function startEmbers(){
@@ -451,15 +540,315 @@
     setTimeout(spawn, 2000);
   }
 
+  // Energy particle feeding: periodically a random orbital shape releases a particle
+  // that travels to the eye. We compute the shape's live position from elapsed time
+  // and orbital period, since the SVG rotation is driven by CSS.
+  var ORBITALS = [
+    { radius: 160, period: 52000, dir:  1 },  // pentagon
+    { radius: 135, period: 44000, dir: -1 },  // triangle
+    { radius: 115, period: 36000, dir:  1 },  // square
+    { radius:  95, period: 28000, dir: -1 },  // hexagon
+    { radius:  78, period: 20000, dir:  1 }   // circle-with-ring
+  ];
+
+  function getShapePosition(orbitalIndex){
+    var elapsed = Date.now() - stylesInjectedAt;
+    var orb = ORBITALS[orbitalIndex];
+    // Angle in radians based on elapsed time and orbital period
+    var angleRad = orb.dir * (elapsed / orb.period) * 2 * Math.PI;
+    var x = 200 + orb.radius * Math.cos(angleRad);
+    var y = 200 + orb.radius * Math.sin(angleRad);
+    return { x: x, y: y };
+  }
+
+  // Blinking — slow, contemplative eye closure
+  var blinkingActive = false;
+
+  function startBlinking(){
+    if(blinkingActive) return;
+    blinkingActive = true;
+
+    function performBlink(onComplete){
+      var eye = document.querySelector('.sm-eye');
+      if(!eye){
+        if(onComplete) setTimeout(onComplete, 0);
+        return;
+      }
+      // Close
+      eye.classList.remove('blink-opening');
+      eye.classList.add('blinking');
+      // Hold closed briefly at bottom of the blink, then open
+      setTimeout(function(){
+        eye.classList.remove('blinking');
+        eye.classList.add('blink-opening');
+        setTimeout(function(){
+          eye.classList.remove('blink-opening');
+          if(onComplete) onComplete();
+        }, 500);
+      }, 420);
+    }
+
+    function scheduleNextBlink(){
+      if(!isOpen){
+        setTimeout(scheduleNextBlink, 2000);
+        return;
+      }
+      // Longer intervals for a contemplative being — 6 to 12 seconds between blinks
+      var delay = 6000 + Math.random() * 6000;
+      setTimeout(function(){
+        performBlink(scheduleNextBlink);
+      }, delay);
+    }
+
+    setTimeout(scheduleNextBlink, 3000);
+  }
+
+  // Eye tracking — pupil follows cursor, reverts to idle drift after inactivity
+  var eyeTrackingActive = false;
+  var pupilTargetX = 0, pupilTargetY = 0;
+  var pupilCurrentX = 0, pupilCurrentY = 0;
+  var lastMouseMoveTime = 0;
+  var IDLE_TIMEOUT_MS = 1500;
+
+  function startEyeTracking(){
+    if(eyeTrackingActive) return;
+    eyeTrackingActive = true;
+
+    var svgEl = null;
+    function getSvg(){
+      if(!svgEl) svgEl = document.querySelector('.guide-sigil');
+      return svgEl;
+    }
+
+    document.addEventListener('mousemove', function(e){
+      if(!isOpen) return;
+      var svg = getSvg();
+      if(!svg) return;
+      lastMouseMoveTime = Date.now();
+      var rect = svg.getBoundingClientRect();
+      var svgCenterX = rect.left + rect.width / 2;
+      var svgCenterY = rect.top + rect.height / 2;
+      var dx = e.clientX - svgCenterX;
+      var dy = e.clientY - svgCenterY;
+      var scaleX = 400 / rect.width;
+      var scaleY = 400 / rect.height;
+      var targetX = dx * scaleX;
+      var targetY = dy * scaleY;
+      var maxRange = 6;
+      var dist = Math.sqrt(targetX * targetX + targetY * targetY);
+      if(dist > 0){
+        var eased = Math.min(dist / 150, 1);
+        var factor = (maxRange * eased) / dist;
+        pupilTargetX = targetX * factor;
+        pupilTargetY = targetY * factor;
+      } else {
+        pupilTargetX = 0;
+        pupilTargetY = 0;
+      }
+    });
+
+    // Idle drift pattern: slow elliptical wander, returns cyclically
+    // Generated parametrically from elapsed time so it's smooth and endless
+    function computeIdleTarget(){
+      var t = Date.now() / 1000;
+      // Two overlapping sine waves at different frequencies — creates organic wandering
+      var x = Math.sin(t * 0.35) * 3 + Math.sin(t * 0.17) * 1.5;
+      var y = Math.cos(t * 0.29) * 2.2 + Math.sin(t * 0.13) * 1;
+      return { x: x, y: y };
+    }
+
+    // Smooth follow loop — lerps current position toward either cursor target or idle target
+    function followLoop(){
+      if(!isOpen){
+        requestAnimationFrame(followLoop);
+        return;
+      }
+      var pupil = document.getElementById('smPupil');
+      if(pupil){
+        var now = Date.now();
+        var isIdle = (now - lastMouseMoveTime) > IDLE_TIMEOUT_MS;
+        var tx, ty;
+        if(isIdle){
+          var idle = computeIdleTarget();
+          tx = idle.x;
+          ty = idle.y;
+        } else {
+          tx = pupilTargetX;
+          ty = pupilTargetY;
+        }
+        // Lerp: faster catch-up when tracking (0.08), slower when drifting (0.04) for calm feel
+        var lerp = isIdle ? 0.04 : 0.08;
+        pupilCurrentX += (tx - pupilCurrentX) * lerp;
+        pupilCurrentY += (ty - pupilCurrentY) * lerp;
+        pupil.style.transform = 'translate(' + pupilCurrentX.toFixed(2) + 'px,' + pupilCurrentY.toFixed(2) + 'px)';
+      }
+      requestAnimationFrame(followLoop);
+    }
+    requestAnimationFrame(followLoop);
+  }
+
+  function startParticleFeeding(){
+    var svgNS = 'http://www.w3.org/2000/svg';
+
+    // Fire one particle from a specific orbital toward the eye
+    function fireParticle(idx, opts){
+      opts = opts || {};
+      var particleLayer = document.getElementById('smParticles');
+      var pupil = document.getElementById('smPupil');
+      if(!particleLayer || !pupil) return;
+      if(idx < 0 || idx >= ORBITALS.length) return;
+
+      var startPos = getShapePosition(idx);
+
+      // Mark the source shape as "giving" so it dims briefly
+      var sourceShape = document.querySelector('.sm-orbit-' + (idx + 1) + ' .sm-shape');
+      if(sourceShape){
+        sourceShape.classList.remove('giving');
+        void sourceShape.offsetWidth; // reflow to restart animation
+        sourceShape.classList.add('giving');
+        setTimeout(function(){
+          if(sourceShape) sourceShape.classList.remove('giving');
+        }, 1600);
+      }
+
+      // Create particle at source position
+      var particle = document.createElementNS(svgNS, 'circle');
+      particle.setAttribute('class', 'sm-particle');
+      particle.setAttribute('cx', startPos.x);
+      particle.setAttribute('cy', startPos.y);
+      particle.setAttribute('r', opts.startR || 2);
+      particle.setAttribute('fill', 'url(#particleGrad)');
+      particle.setAttribute('opacity', 0);
+      particleLayer.appendChild(particle);
+
+      var duration = opts.duration || 1800;
+      var start = performance.now();
+      var isBurst = !!opts.isBurst;
+      var onArrive = opts.onArrive;
+
+      function animate(now){
+        var elapsed = now - start;
+        var t = Math.min(elapsed / duration, 1);
+        // Ease-in for gravitational "pull" feel
+        var eased = t * t;
+        var cx = startPos.x + (200 - startPos.x) * eased;
+        var cy = startPos.y + (200 - startPos.y) * eased;
+        particle.setAttribute('cx', cx);
+        particle.setAttribute('cy', cy);
+
+        // Opacity curve
+        var op;
+        if(t < 0.15) op = t / 0.15 * 0.9;
+        else if(t < 0.85) op = 0.9 + (t - 0.15) / 0.7 * 0.1;
+        else op = 1;
+        particle.setAttribute('opacity', op);
+
+        particle.setAttribute('r', (opts.startR || 2) + t * 2);
+
+        if(t < 1){
+          requestAnimationFrame(animate);
+        } else {
+          // Arrived — trigger pupil flash (unless burst handler takes over)
+          if(!isBurst){
+            pupil.classList.remove('absorbing');
+            void pupil.offsetWidth;
+            pupil.classList.add('absorbing');
+            setTimeout(function(){
+              if(pupil) pupil.classList.remove('absorbing');
+            }, 500);
+          }
+          if(onArrive) onArrive();
+          if(particle) particle.remove();
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+
+    // Fire a single random particle
+    function fireSingle(){
+      var idx = Math.floor(Math.random() * ORBITALS.length);
+      fireParticle(idx);
+    }
+
+    // Fire from 3 random shapes with small stagger
+    function fireMiniBurst(){
+      var indices = [0,1,2,3,4].sort(function(){ return Math.random() - 0.5; }).slice(0, 3);
+      indices.forEach(function(idx, i){
+        setTimeout(function(){
+          fireParticle(idx, { isBurst: true });
+        }, i * 120);
+      });
+      // Eye flashes after last particle arrives (~1.8s + stagger)
+      setTimeout(triggerBigAbsorb, 1800 + 240);
+    }
+
+    // Fire from ALL 5 shapes simultaneously — the full burst moment
+    function fireFullBurst(){
+      for(var i = 0; i < ORBITALS.length; i++){
+        (function(idx){
+          setTimeout(function(){
+            fireParticle(idx, { isBurst: true, startR: 2.5 });
+          }, idx * 60);
+        })(i);
+      }
+      // Big absorb flash after particles arrive
+      setTimeout(triggerBigAbsorb, 1800 + 300);
+    }
+
+    function triggerBigAbsorb(){
+      var pupil = document.getElementById('smPupil');
+      if(!pupil) return;
+      pupil.classList.remove('absorbing');
+      pupil.classList.remove('big-absorbing');
+      void pupil.offsetWidth;
+      pupil.classList.add('big-absorbing');
+      setTimeout(function(){
+        if(pupil) pupil.classList.remove('big-absorbing');
+      }, 900);
+    }
+
+    // Scheduler — randomly picks event type on each tick
+    function scheduleNext(){
+      if(!isOpen){
+        setTimeout(scheduleNext, 2000);
+        return;
+      }
+      var roll = Math.random();
+      // 45% single, 35% mini-burst, 20% full burst
+      var delay;
+      if(roll < 0.45){
+        fireSingle();
+        delay = 3500 + Math.random() * 3000;    // 3.5–6.5s
+      } else if(roll < 0.80){
+        fireMiniBurst();
+        delay = 7000 + Math.random() * 4000;    // 7–11s
+      } else {
+        fireFullBurst();
+        delay = 11000 + Math.random() * 6000;   // 11–17s
+      }
+      setTimeout(scheduleNext, delay);
+    }
+
+    // Initial delay before first event — shorter now
+    setTimeout(scheduleNext, 2500);
+  }
+
 
   var stylesInjected = false;
+  var stylesInjectedAt = 0;
   function injectStyles(){
     if(stylesInjected) return;
     stylesInjected = true;
+    stylesInjectedAt = Date.now();
 
     var style = document.createElement('style');
     style.id = 'guide-styles';
     style.textContent = '' +
+      // Reset — defeat any inherited borders/outlines/shadows on Guide containers
+      '.guide-stage,.guide-shard,.guide-shard-img,.guide-sigil-wrap{' +
+        'border:none!important;outline:none!important;box-shadow:none!important;' +
+        'background:transparent!important}' +
+
       '.guide-summon{position:fixed;bottom:20px;right:20px;width:64px;height:64px;' +
         'background:transparent;border:none;cursor:pointer;z-index:9998;padding:0;' +
         'display:flex;align-items:center;justify-content:center;' +
@@ -469,20 +858,13 @@
       '.guide-summon.guide-pulsing{animation:guide-summon-pulse 2.4s ease-in-out infinite}' +
       '@keyframes guide-summon-pulse{0%,100%{filter:drop-shadow(0 0 12px rgba(157,139,255,0.35))}' +
         '50%{filter:drop-shadow(0 0 24px rgba(201,168,76,0.65)) drop-shadow(0 0 40px rgba(157,139,255,0.4))}}' +
-      '.guide-summon .guide-summon-img{width:100%;height:100%;display:block;object-fit:contain;' +
-        'filter:drop-shadow(0 0 8px rgba(157,139,255,0.5))}' +
-      '.guide-summon .guide-summon-orb{position:absolute;top:43%;left:51%;transform:translate(-50%,-50%);' +
-        'width:8px;height:8px;border-radius:50%;' +
-        'background:radial-gradient(circle,rgba(255,248,220,1) 0%,rgba(255,230,170,0.8) 40%,rgba(201,168,76,0.3) 70%,transparent 100%);' +
-        'filter:blur(0.5px);' +
-        'box-shadow:0 0 8px rgba(255,240,200,0.8),0 0 14px rgba(201,168,76,0.5);' +
-        'animation:guide-summon-orb-breathe 3s ease-in-out infinite;pointer-events:none}' +
-      '@keyframes guide-summon-orb-breathe{0%,100%{opacity:0.85;transform:translate(-50%,-50%) scale(1)}' +
-        '50%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}}' +
+      '.guide-summon .guide-summon-sigil{width:100%;height:100%;display:block;overflow:visible;' +
+        'filter:drop-shadow(0 0 4px rgba(255,235,170,0.6)) drop-shadow(0 0 8px rgba(201,168,76,0.4))}' +
+      '.guide-summon .guide-summon-ring{transform-origin:50px 50px;animation:guide-summon-ring-rotate 20s linear infinite}' +
+      '@keyframes guide-summon-ring-rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}' +
 
       '.guide-overlay{position:fixed;inset:0;z-index:9999;opacity:0;pointer-events:none;' +
-        'transition:opacity .6s ease;display:flex;flex-direction:column;align-items:center;' +
-        'justify-content:center;padding:60px 20px 30px;overflow-y:auto}' +
+        'transition:opacity .6s ease;padding:0;overflow:hidden}' +
       '.guide-overlay.active{opacity:1;pointer-events:auto}' +
       '.guide-overlay.guide-fading{opacity:0;transition:opacity .8s ease}' +
       '.guide-overlay-bg{position:absolute;inset:0;background:rgba(4,4,10,0.92);' +
@@ -491,12 +873,16 @@
         'background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.55);' +
         'border-radius:50%;font-size:20px;cursor:pointer;z-index:2;transition:all .2s;' +
         'display:flex;align-items:center;justify-content:center;line-height:1;padding:0;' +
-        'font-family:sans-serif}' +
+        'font-family:sans-serif;outline:none;box-shadow:none}' +
+      '.guide-close:focus,.guide-close:focus-visible{outline:none;box-shadow:none}' +
       '.guide-close:hover{border-color:rgba(201,168,76,0.5);color:#c9a84c}' +
 
-      // Stage: shard PNG positioned, orb floating inside the hollow
-      '.guide-stage{position:relative;width:min(340px,75vw);height:min(520px,62vh);' +
-        'display:flex;align-items:center;justify-content:center;z-index:1;margin-bottom:16px}' +
+      // Stage: ABSOLUTELY positioned at the top — never moves regardless of dialogue content
+      '.guide-stage{position:absolute;top:12%;left:50%;transform:translateX(-50%);' +
+        'width:min(380px,78vw);height:min(500px,54vh);' +
+        'display:flex;align-items:center;justify-content:center;z-index:1;' +
+        'border:none;outline:none;background:transparent;box-shadow:none;' +
+        'contain:layout style;pointer-events:none}' +
       '.guide-aura{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
         'width:130%;height:85%;border-radius:50%;' +
         'background:radial-gradient(ellipse,rgba(157,139,255,0.18) 0%,rgba(127,119,221,0.08) 40%,transparent 70%);' +
@@ -509,88 +895,147 @@
       '.guide-shard{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
         'width:100%;height:100%;z-index:2;pointer-events:none;' +
         'filter:drop-shadow(0 0 24px rgba(157,139,255,0.35));' +
-        'animation:guide-shard-float 7s ease-in-out infinite}' +
+        'animation:guide-shard-float 7s ease-in-out infinite;' +
+        'border:none;outline:none;background:transparent;box-shadow:none}' +
       '.guide-shard-img{width:100%;height:100%;object-fit:contain;display:block;' +
-        'mix-blend-mode:screen}' +
+        'border:none;outline:none;box-shadow:none;background:transparent;' +
+        'mix-blend-mode:normal}' +
       '@keyframes guide-shard-float{0%,100%{transform:translate(-50%,-50%) translateY(0)}' +
         '50%{transform:translate(-50%,-50%) translateY(-8px)}}' +
 
-      // Orb wrap: anchored to the hollow center (51.3% x, 43.2% y of the shard PNG)
-      '.guide-orb-wrap{position:absolute;top:43.2%;left:51.3%;transform:translate(-50%,-50%);' +
-        'width:18%;height:12%;z-index:3;pointer-events:none}' +
+      // SENTINEL MARK: the Guide as a living sigil, contained within the stage
+      '.guide-sigil-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
+        'width:85%;height:85%;z-index:3;pointer-events:none;' +
+        'display:flex;align-items:center;justify-content:center;' +
+        'contain:layout style;' +
+        'animation:sm-float 8s ease-in-out infinite}' +
+      '@keyframes sm-float{0%,100%{transform:translate(-50%,-50%) translateY(0)}' +
+        '50%{transform:translate(-50%,-50%) translateY(-5px)}}' +
 
-      // Light rays radiating out from the orb into the cavity walls
-      '.guide-orb-rays{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:260%;height:260%;border-radius:50%;pointer-events:none;' +
-        'background:' +
-          'conic-gradient(from 0deg,' +
-            'transparent 0deg,rgba(255,240,200,0.18) 5deg,transparent 20deg,' +
-            'transparent 40deg,rgba(255,240,200,0.14) 48deg,transparent 60deg,' +
-            'transparent 90deg,rgba(255,240,200,0.2) 95deg,transparent 110deg,' +
-            'transparent 135deg,rgba(255,240,200,0.12) 142deg,transparent 160deg,' +
-            'transparent 180deg,rgba(255,240,200,0.18) 185deg,transparent 200deg,' +
-            'transparent 225deg,rgba(255,240,200,0.14) 232deg,transparent 250deg,' +
-            'transparent 270deg,rgba(255,240,200,0.2) 275deg,transparent 295deg,' +
-            'transparent 315deg,rgba(255,240,200,0.12) 322deg,transparent 340deg,' +
-            'transparent 360deg);' +
-        'mask:radial-gradient(circle,black 15%,transparent 55%);' +
-        '-webkit-mask:radial-gradient(circle,black 15%,transparent 55%);' +
-        'filter:blur(1.5px);opacity:0.6;' +
-        'animation:guide-orb-rays-rotate 40s linear infinite,guide-orb-rays-fade 5s ease-in-out infinite;' +
-        'mix-blend-mode:screen}' +
-      '@keyframes guide-orb-rays-rotate{from{transform:translate(-50%,-50%) rotate(0deg)}' +
-        'to{transform:translate(-50%,-50%) rotate(360deg)}}' +
-      '@keyframes guide-orb-rays-fade{0%,100%{opacity:0.35}50%{opacity:0.7}}' +
-      '.guide-orb-rays.speaking{animation:guide-orb-rays-rotate 40s linear infinite,guide-orb-rays-fade-speak 1.4s ease-in-out infinite;opacity:0.9}' +
-      '@keyframes guide-orb-rays-fade-speak{0%,100%{opacity:0.7}50%{opacity:1}}' +
-
-      // Soft outer aura around the orb — bleeds into the cavity
-      '.guide-orb-aura{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:200%;height:200%;border-radius:50%;pointer-events:none;' +
+      // Ambient glow behind the whole mark — violet
+      '.guide-sigil-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
+        'width:140%;height:140%;border-radius:50%;pointer-events:none;' +
         'background:radial-gradient(circle,' +
-          'rgba(255,240,200,0.45) 0%,' +
-          'rgba(255,220,150,0.22) 20%,' +
-          'rgba(201,168,76,0.1) 45%,' +
-          'transparent 75%);' +
-        'filter:blur(6px);mix-blend-mode:screen;' +
-        'animation:guide-orb-aura-breathe 4s ease-in-out infinite}' +
-      '@keyframes guide-orb-aura-breathe{0%,100%{opacity:0.75;transform:translate(-50%,-50%) scale(1)}' +
-        '50%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}' +
+          'rgba(197,184,255,0.3) 0%,' +
+          'rgba(157,139,255,0.18) 25%,' +
+          'rgba(122,106,217,0.1) 55%,' +
+          'rgba(80,60,160,0.05) 75%,' +
+          'transparent 90%);' +
+        'filter:blur(22px);mix-blend-mode:screen;' +
+        'opacity:0.75;transition:opacity 1.5s ease;' +
+        'animation:sm-glow-breathe 6s ease-in-out infinite}' +
+      '@keyframes sm-glow-breathe{0%,100%{transform:translate(-50%,-50%) scale(1)}' +
+        '50%{transform:translate(-50%,-50%) scale(1.04)}}' +
+      '.guide-sigil-wrap.speaking .guide-sigil-glow{opacity:0.95}' +
 
-      // The orb body — the main visible luminous presence
-      '.guide-orb-body{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:100%;height:150%;pointer-events:none;' +
-        'animation:guide-orb-breathe 4s ease-in-out infinite;' +
-        'will-change:transform,opacity}' +
-      '@keyframes guide-orb-breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.88}' +
-        '50%{transform:translate(-50%,-50%) scale(1.08);opacity:1}}' +
-      '.guide-orb-body.speaking{animation:guide-orb-breathe-speak 1.4s ease-in-out infinite}' +
-      '@keyframes guide-orb-breathe-speak{0%,100%{transform:translate(-50%,-50%) scale(1.12);opacity:0.95}' +
-        '50%{transform:translate(-50%,-50%) scale(1.28);opacity:1}}' +
+      // The whole SVG — gentle opacity breathing only
+      '.guide-sigil{position:relative;width:100%;height:100%;z-index:2;overflow:visible;' +
+        'filter:drop-shadow(0 0 4px rgba(197,184,255,0.55)) drop-shadow(0 0 12px rgba(157,139,255,0.35));' +
+        'will-change:filter;transition:filter 1.5s ease;' +
+        'animation:sm-wrap-breathe 9s ease-in-out infinite}' +
+      '@keyframes sm-wrap-breathe{0%,100%{opacity:0.92}50%{opacity:1}}' +
+      '.guide-sigil-wrap.speaking .guide-sigil{filter:drop-shadow(0 0 6px rgba(224,216,240,0.85)) drop-shadow(0 0 16px rgba(197,184,255,0.5)) drop-shadow(0 0 28px rgba(157,139,255,0.3))}' +
 
-      // Occasional flare — triggered by JS class toggle
-      '.guide-orb-body.flare{animation:guide-orb-flare 0.8s ease-out}' +
-      '@keyframes guide-orb-flare{0%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}' +
-        '40%{transform:translate(-50%,-50%) scale(1.3);filter:brightness(1.5)}' +
-        '100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}' +
+      // ===== 5 ORBITALS — invisible paths, shapes orbit around the eye =====
+      // Each orbital is a group that rotates around center (200, 200).
+      // The shape inside is positioned at the orbit radius from center.
+      // Alternating directions so adjacent orbitals counter-rotate.
+      '.sm-orbit{transform-origin:200px 200px}' +
+      '.sm-orbit-1{animation:sm-rot-cw 52s linear infinite}' +    // pentagon, outermost, slowest
+      '.sm-orbit-2{animation:sm-rot-ccw 44s linear infinite}' +   // triangle, counter-rotating
+      '.sm-orbit-3{animation:sm-rot-cw 36s linear infinite}' +    // square
+      '.sm-orbit-4{animation:sm-rot-ccw 28s linear infinite}' +   // hexagon
+      '.sm-orbit-5{animation:sm-rot-cw 20s linear infinite}' +    // circle-with-ring, innermost, fastest
+      '@keyframes sm-rot-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}' +
+      '@keyframes sm-rot-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}' +
 
-      // Main orb gradient body
-      '.guide-orb-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:100%;height:100%;border-radius:50%;' +
-        'background:radial-gradient(circle,' +
-          'rgba(255,248,220,1) 0%,' +
-          'rgba(255,240,200,0.95) 15%,' +
-          'rgba(255,220,140,0.7) 35%,' +
-          'rgba(201,168,76,0.35) 60%,' +
-          'transparent 85%);' +
-        'filter:blur(3px);mix-blend-mode:screen}' +
+      // Speaking state does NOT change orbital speeds — changing animation-duration
+      // mid-animation causes position jumps. Keep orbits constant, express speaking
+      // through the glow/filter/particles only.
 
-      // Bright innermost pinprick
-      '.guide-orb-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' +
-        'width:20%;height:20%;border-radius:50%;' +
-        'background:radial-gradient(circle,#fff8dc 0%,rgba(255,248,220,0.9) 40%,transparent 90%);' +
-        'box-shadow:0 0 12px rgba(255,248,220,0.9),0 0 20px rgba(255,220,140,0.5);' +
-        'filter:blur(0.5px)}' +
+      // Shapes rotate naturally with their orbit — no counter-rotation
+      // (Previously had counter-rotation but it conflicted with the translate transform)
+
+      // Shapes subtly fade — but NOT in lockstep
+      '.sm-orbit-1 .sm-shape{opacity:0.85}' +
+      '.sm-orbit-2 .sm-shape{opacity:0.9}' +
+      '.sm-orbit-3 .sm-shape{opacity:0.85}' +
+      '.sm-orbit-4 .sm-shape{opacity:0.9}' +
+      '.sm-orbit-5 .sm-shape{opacity:0.9}' +
+
+      // Shape "giving" state — when a particle spawns from them, they dim briefly
+      '.sm-shape.giving{animation:sm-shape-give 1.6s ease-out}' +
+      '@keyframes sm-shape-give{0%{opacity:1}30%{opacity:0.35}100%{opacity:0.9}}' +
+
+      // ===== PARTICLES =====
+      '.sm-particle{animation:sm-particle-travel 1.8s ease-in forwards}' +
+      '@keyframes sm-particle-travel{' +
+        '0%{opacity:0;r:1}' +
+        '15%{opacity:0.9;r:3}' +
+        '85%{opacity:1;r:4}' +
+        '100%{opacity:0;r:1}' +
+      '}' +
+
+      // When particle arrives, eye pupil flashes
+      '.sm-pupil.absorbing{animation:sm-pupil-absorb 0.5s ease-out !important}' +
+      '@keyframes sm-pupil-absorb{' +
+        '0%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}' +
+        '40%{r:7.5;fill:rgba(255,255,255,1);filter:brightness(1.8)}' +
+        '100%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}' +
+      '}' +
+
+      // Big absorb — fires when a mini-burst or full burst of particles lands
+      '.sm-pupil.big-absorbing{animation:sm-pupil-big-absorb 0.9s ease-out !important}' +
+      '@keyframes sm-pupil-big-absorb{' +
+        '0%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}' +
+        '30%{r:11;fill:rgba(255,255,255,1);filter:brightness(2.5) drop-shadow(0 0 12px rgba(200,250,250,1))}' +
+        '60%{r:8;fill:rgba(240,252,255,1);filter:brightness(1.6)}' +
+        '100%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}' +
+      '}' +
+
+      // ===== RUNES drift on perimeter =====
+      '.sm-runes{transform-origin:200px 200px;animation:sm-runes-drift 90s linear infinite}' +
+      '@keyframes sm-runes-drift{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}' +
+      '.sm-rune{animation:sm-rune-fade 6s ease-in-out infinite}' +
+      '.sm-rune-1{animation-delay:0s}' +
+      '.sm-rune-2{animation-delay:1.2s}' +
+      '.sm-rune-3{animation-delay:2.4s}' +
+      '.sm-rune-4{animation-delay:3.6s}' +
+      '.sm-rune-5{animation-delay:4.8s}' +
+      '@keyframes sm-rune-fade{0%,100%{opacity:0.45}50%{opacity:0.9}}' +
+
+      // ===== ANCHORS =====
+      '.sm-anchor{transform-origin:center;animation:sm-anchor-breathe 5s ease-in-out infinite}' +
+      '.sm-anchor-ne{animation-delay:0s}' +
+      '.sm-anchor-se{animation-delay:1.25s}' +
+      '.sm-anchor-sw{animation-delay:2.5s}' +
+      '.sm-anchor-nw{animation-delay:3.75s}' +
+      '@keyframes sm-anchor-breathe{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}' +
+
+      // ===== THREADS (quieter without the pulse-along-line flashiness) =====
+      '.sm-thread{animation:sm-thread-fade 8s ease-in-out infinite}' +
+      '.sm-thread-ne{animation-delay:0s}' +
+      '.sm-thread-se{animation-delay:2s}' +
+      '.sm-thread-sw{animation-delay:4s}' +
+      '.sm-thread-nw{animation-delay:6s}' +
+      '@keyframes sm-thread-fade{0%,100%{opacity:0.4}50%{opacity:0.8}}' +
+
+      // ===== EYELIDS =====
+      '.sm-eyelid{transform-origin:200px 200px;animation:sm-eyelid-drift 11s ease-in-out infinite}' +
+      '.sm-eyelid-lower{animation-delay:5.5s}' +
+      '@keyframes sm-eyelid-drift{0%,100%{opacity:0.55}50%{opacity:0.85}}' +
+
+      // ===== EYE stays fixed =====
+      '.sm-eye{transform-origin:200px 200px}' +
+
+      // ===== PUPIL — position driven by JS (eye tracking); transform-origin centered =====
+      '.sm-pupil{transform-origin:200px 200px;transition:r 0.3s ease,fill 0.3s ease}' +
+
+      // ===== BLINK MECHANICS =====
+      // Slow, gradual close — reads as "contemplative" rather than human snap-blink
+      '.sm-eye-lids{transform-origin:200px 200px;transform-box:view-box;transition:transform 360ms ease-in-out}' +
+      '.sm-eye.blinking .sm-eye-lids{transform:scaleY(0.02);transition:transform 360ms ease-in-out}' +
+      '.sm-eye.blink-opening .sm-eye-lids{transform:scaleY(1);transition:transform 480ms ease-in-out}' +
 
 
       '.guide-ember-layer{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:visible}' +
@@ -602,15 +1047,19 @@
         '100%{opacity:0;transform:translate(var(--drift,0px),-180px) scale(0.3)}}' +
 
       // TIER 3 DIALOGUE BOX
-      '.guide-dialogue-box{width:100%;max-width:680px;' +
+      // Dialogue: ABSOLUTELY anchored to bottom of overlay, independent of stage
+      '.guide-dialogue-box{position:absolute;bottom:5%;left:50%;transform:translateX(-50%);' +
+        'width:calc(100% - 40px);max-width:680px;' +
+        'min-height:180px;' +
         'background:linear-gradient(180deg,rgba(15,12,28,0.92) 0%,rgba(8,8,20,0.92) 100%);' +
         'border:1px solid rgba(201,168,76,0.35);border-radius:4px;padding:26px 30px 22px;' +
-        'backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:relative;z-index:1;' +
+        'backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:1;' +
         'box-shadow:0 0 40px rgba(157,139,255,0.2),' +
           '0 0 80px rgba(157,139,255,0.1),' +
           'inset 0 1px 0 rgba(255,240,200,0.08),' +
           'inset 0 0 60px rgba(157,139,255,0.05);' +
-        'transition:box-shadow .4s ease}' +
+        'transition:box-shadow .4s ease;' +
+        'display:flex;flex-direction:column}' +
 
       '.guide-box-corners{position:absolute;inset:0;pointer-events:none}' +
       '.guide-corner{position:absolute;width:14px;height:14px;border:1px solid rgba(201,168,76,0.7)}' +
@@ -671,7 +1120,7 @@
 
       '@media(max-width:640px){' +
         '.guide-summon{bottom:16px;right:16px;width:56px;height:56px}' +
-        '.guide-stage{width:min(260px,75vw);height:min(380px,48vh)}' +
+        '.guide-stage{width:min(320px,80vw);height:min(460px,52vh)}' +
         '.guide-dialogue-box{padding:20px 22px 18px}' +
         '.guide-text{font-size:14.5px}' +
         '.guide-menu-btn{font-size:12.5px;padding:11px 14px}' +
