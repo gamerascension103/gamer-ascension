@@ -4351,6 +4351,16 @@ window.addEventListener('resize',function(){centerTree();});
 
 <!-- The Guide — shared persistent character across all chambers -->
 <script src="guide.js"></script>
+<!-- Persistent chamber nav — compass icon top-left -->
+<script src="nav.js"></script>
+<script>
+  // Initialize persistent nav — mark Atheneum as current chamber
+  window.addEventListener('load', function(){
+    if(typeof Nav !== 'undefined'){
+      Nav.init({ current: 'atheneum' });
+    }
+  });
+</script>
 <script>
   // Initialize the Guide for the Atheneum chamber
   // The Guide auto-summons on first visit (once the tutorial has been seen/skipped),
