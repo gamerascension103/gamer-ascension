@@ -24,6 +24,12 @@
   var mode = 'dialogue';
   var hasBeenSeenThisChamber = false;
 
+  // State for tap-to-skip: every typewriter function sets these before
+  // running its tick(). completeCurrentTyping() reads them to finish the
+  // current line instantly and fire the completion callback.
+  var currentTypingFullText = '';
+  var currentTypingCompletion = null;
+
   var summonEl = null;
   var overlayEl = null;
   var dialogueTextEl = null;
@@ -110,22 +116,29 @@
       var i = 0;
       if(typewriterTimeout) clearTimeout(typewriterTimeout);
 
+      // Register for tap-to-skip
+      currentTypingFullText = full;
+      currentTypingCompletion = function(){
+        dialogueTextEl.innerHTML = full;
+        if(sigilEl) sigilEl.classList.remove('speaking');
+        if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
+        setTimeout(function(){
+          if(overlayEl) overlayEl.classList.add('guide-fading');
+          setTimeout(function(){
+            Guide.dismiss();
+            if(overlayEl) overlayEl.classList.remove('guide-fading');
+          }, 800);
+        }, 1200);
+      };
+
       function tick(){
         if(i <= full.length){
           dialogueTextEl.innerHTML = full.substring(0, i) + '<span class="guide-cursor"></span>';
           i++;
           typewriterTimeout = setTimeout(tick, 28);
         } else {
-          dialogueTextEl.innerHTML = full;
-          if(sigilEl) sigilEl.classList.remove('speaking');
-          if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
-          setTimeout(function(){
-            if(overlayEl) overlayEl.classList.add('guide-fading');
-            setTimeout(function(){
-              Guide.dismiss();
-              if(overlayEl) overlayEl.classList.remove('guide-fading');
-            }, 800);
-          }, 1200);
+          typewriterTimeout = null;
+          currentTypingCompletion();
         }
       }
       tick();
@@ -361,6 +374,40 @@
       if(e.key === 'Escape' && isOpen) Guide.dismiss();
     });
 
+    // Tap-to-skip: clicking the dialogue box or the Sentinel Mark itself will
+    // fast-forward through typing (or advance, if typing is complete). This
+    // lets users pace the conversation themselves. The dim background and the
+    // X button still dismiss the Guide entirely. Menu buttons and the
+    // Continue button ignore these taps (closest() check).
+    function handleSkipTap(e){
+      if(e.target.closest('.guide-menu-btn, #guideContinue, .guide-close, a, button')) return;
+      if(typewriterTimeout){
+        completeCurrentTyping();
+        return;
+      }
+      if(mode === 'dialogue'){
+        advanceDialogue();
+      }
+    }
+    if(dialogueBoxEl) dialogueBoxEl.addEventListener('click', handleSkipTap);
+    if(sigilEl) sigilEl.addEventListener('click', handleSkipTap);
+
+    // Called by handleSkipTap when user taps mid-typing. Cancels the active
+    // typewriter, fills the dialogue with its full text, and runs whatever
+    // completion callback the caller registered (which handles state cleanup,
+    // menu reveal, dismiss chain, etc. depending on which typewriter was running).
+    function completeCurrentTyping(){
+      if(typewriterTimeout){
+        clearTimeout(typewriterTimeout);
+        typewriterTimeout = null;
+      }
+      if(currentTypingCompletion){
+        var cb = currentTypingCompletion;
+        currentTypingCompletion = null;
+        cb();
+      }
+    }
+
     startEmbers();
     startParticleFeeding();
     startEyeTracking();
@@ -379,16 +426,23 @@
     var i = 0;
     if(typewriterTimeout) clearTimeout(typewriterTimeout);
 
+    // Register for tap-to-skip
+    currentTypingFullText = greeting;
+    currentTypingCompletion = function(){
+      dialogueTextEl.innerHTML = greeting;
+      if(sigilEl) sigilEl.classList.remove('speaking');
+      if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
+      showMenuOptions();
+    };
+
     function tick(){
       if(i <= greeting.length){
         dialogueTextEl.innerHTML = greeting.substring(0, i) + '<span class="guide-cursor"></span>';
         i++;
         typewriterTimeout = setTimeout(tick, 28);
       } else {
-        dialogueTextEl.innerHTML = greeting;
-        if(sigilEl) sigilEl.classList.remove('speaking');
-        if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
-        showMenuOptions();
+        typewriterTimeout = null;
+        currentTypingCompletion();
       }
     }
     tick();
@@ -438,16 +492,23 @@
     var i = 0;
     if(typewriterTimeout) clearTimeout(typewriterTimeout);
 
+    // Register for tap-to-skip
+    currentTypingFullText = text;
+    currentTypingCompletion = function(){
+      dialogueTextEl.innerHTML = text;
+      if(sigilEl) sigilEl.classList.remove('speaking');
+      if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
+      setTimeout(callback, 600);
+    };
+
     function tick(){
       if(i <= text.length){
         dialogueTextEl.innerHTML = text.substring(0, i) + '<span class="guide-cursor"></span>';
         i++;
         typewriterTimeout = setTimeout(tick, 28);
       } else {
-        dialogueTextEl.innerHTML = text;
-        if(sigilEl) sigilEl.classList.remove('speaking');
-        if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
-        setTimeout(callback, 600);
+        typewriterTimeout = null;
+        currentTypingCompletion();
       }
     }
     tick();
@@ -470,19 +531,26 @@
     var i = 0;
     if(typewriterTimeout) clearTimeout(typewriterTimeout);
 
+    // Register for tap-to-skip
+    currentTypingFullText = full;
+    currentTypingCompletion = function(){
+      dialogueTextEl.innerHTML = full;
+      continueBtn.disabled = false;
+      if(sigilEl) sigilEl.classList.remove('speaking');
+      if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
+      if(dialogueIndex === config.script.length - 1){
+        continueBtn.textContent = 'Dismiss';
+      }
+    };
+
     function tick(){
       if(i <= full.length){
         dialogueTextEl.innerHTML = full.substring(0, i) + '<span class="guide-cursor"></span>';
         i++;
         typewriterTimeout = setTimeout(tick, 22);
       } else {
-        dialogueTextEl.innerHTML = full;
-        continueBtn.disabled = false;
-        if(sigilEl) sigilEl.classList.remove('speaking');
-        if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
-        if(dialogueIndex === config.script.length - 1){
-          continueBtn.textContent = 'Dismiss';
-        }
+        typewriterTimeout = null;
+        currentTypingCompletion();
       }
     }
     tick();
