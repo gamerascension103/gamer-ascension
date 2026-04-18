@@ -4272,13 +4272,23 @@ function reopenTutorial(){
 function closeTutorial(){
   document.getElementById('tutorialOverlay').classList.remove('open');
   localStorage.setItem('ga_tutorial_seen', '1');
+  // Once tutorial is closed, summon the Guide if they haven't met us in the Atheneum yet
+  maybeSummonGuide();
 }
 function maybeShowTutorial(){
   if(!localStorage.getItem('ga_tutorial_seen')){
     setTimeout(function(){
       document.getElementById('tutorialOverlay').classList.add('open');
     }, 1200);
+  } else {
+    // Tutorial already seen — Guide takes over the first-visit duty
+    maybeSummonGuide();
   }
+}
+function maybeSummonGuide(){
+  // The Guide.init() call in the Guide script below handles auto-summon logic
+  // via its own localStorage key (ga_guide_seen_atheneum). This function exists
+  // as a hook in case we want to re-trigger summon on tutorial close in the future.
 }
 
 // ---- INIT ----
@@ -4338,5 +4348,71 @@ window.addEventListener('load',function(){
 });
 window.addEventListener('resize',function(){centerTree();});
 </script>
+
+<!-- The Guide — shared persistent character across all chambers -->
+<script src="guide.js"></script>
+<script>
+  // Initialize the Guide for the Atheneum chamber
+  // The Guide auto-summons on first visit (once the tutorial has been seen/skipped),
+  // and thereafter lives as a summon icon in the bottom-right corner.
+  window.addEventListener('load', function(){
+    // Small delay so the Guide initializes after the tutorial has had a chance to open
+    setTimeout(function(){
+      if(typeof Guide === 'undefined') return;
+
+      // If the tutorial is currently showing, wait for it to close before the Guide appears.
+      // Otherwise, Guide.init will handle auto-summon timing.
+      var tutorial = document.getElementById('tutorialOverlay');
+      var tutorialIsOpen = tutorial && tutorial.classList.contains('open');
+
+      Guide.init({
+        chamber: 'atheneum',
+        chamberName: 'The Atheneum',
+        chamberLabel: 'Skill Mastery',
+        autoSummonDelay: tutorialIsOpen ? 999999 : 2000, // suppress auto-summon while tutorial is open
+        summonPosition: { bottom: 170, right: 24 }, // sit above the zoom/home button stack
+        script: [
+          {
+            speaker: 'The Guide',
+            text: 'Welcome to the Atheneum — this is where you will learn all of the skills necessary to transform yourself over time.'
+          },
+          {
+            speaker: 'The Guide',
+            text: 'The first five core skills are available to you now — these are fundamental and critical to your ascension. Begin with Module 1, The Gap. It will be a floating pentagon pulsing with light in the center of the screen.'
+          },
+          {
+            speaker: 'The Guide',
+            text: 'After you complete each module, the next one will become available to you in sequence.'
+          },
+          {
+            speaker: 'The Guide',
+            text: 'I would encourage you to watch the videos provided and answer the reflection questions along the way. Exploration and engagement is rewarded here. So immerse yourself.'
+          },
+          {
+            speaker: 'The Guide',
+            text: 'My last words to you for now — this place holds many mysteries. There was much left behind from The Maker\'s departure from this place. Many questions unanswered, even to one such as myself. So indulge yourself in curiosity. There is much to be found.'
+          }
+        ]
+      });
+
+      // If the tutorial was open, re-invoke the Guide once it closes
+      if(tutorialIsOpen){
+        var observer = new MutationObserver(function(){
+          if(!tutorial.classList.contains('open')){
+            observer.disconnect();
+            // Tutorial just closed — if Guide hasn't been seen, summon now
+            try {
+              if(localStorage.getItem('ga_guide_seen_atheneum') !== '1'){
+                setTimeout(function(){ Guide.summon(); }, 600);
+              }
+            } catch(e){}
+          }
+        });
+        observer.observe(tutorial, {attributes: true, attributeFilter: ['class']});
+      }
+    }, 100);
+  });
+</script>
+
 </body>
 </html>
