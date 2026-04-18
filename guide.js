@@ -24,6 +24,13 @@
   var mode = 'dialogue';
   var hasBeenSeenThisChamber = false;
 
+  // Context-aware Guide state (session 8).
+  // Pages call Guide.setContext('module-open', {moduleId: 'training'}) when
+  // something relevant to Guide changes. On summon, we check context and play
+  // the matching script instead of the default chamber intro.
+  var currentContext = { key: 'default', meta: {} };
+  var contextScripts = {}; // { 'module-open:training': [scriptLines], ... }
+
   // State for tap-to-skip: every typewriter function sets these before
   // running its tick(). completeCurrentTyping() reads them to finish the
   // current line instantly and fire the completion callback.
@@ -159,6 +166,14 @@
       if(sigilEl) sigilEl.classList.remove('speaking');
       if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
 
+      // Restore the original chamber intro script if a context script was
+      // swapped in via summonContextDialogue. This preserves first-visit
+      // logic for future default summons.
+      if(config && config._restoreScriptOnDismiss){
+        config.script = config._restoreScriptOnDismiss;
+        delete config._restoreScriptOnDismiss;
+      }
+
       try {
         localStorage.setItem('ga_guide_seen_' + config.chamber, '1');
       } catch(e){}
@@ -166,11 +181,102 @@
     },
 
     summon: function(){
+      // Context-aware summoning (session 8, refined session 9).
+      // If a context script is registered for the current context key, open
+      // the context MENU first (not the script directly). The menu lets the
+      // user choose between hearing Guide's guidance or dismissing him.
+      // Default context still uses existing chamber behavior.
+      var contextKey = currentContext.key;
+      var scriptKey = contextKey + (currentContext.meta && currentContext.meta.moduleId ? ':' + currentContext.meta.moduleId : '');
+
+      // Check the specific script first (module-open:training), then the
+      // generic context script (module-open), then fall back to default.
+      var script = contextScripts[scriptKey] || contextScripts[contextKey] || null;
+
+      if(script && contextKey !== 'default'){
+        Guide.summonContextMenu(script);
+        return;
+      }
+
+      // Default behavior — chamber intro on first visit, menu on return
       if(!hasBeenSeenThisChamber){
         Guide.summonDialogue();
       } else {
         Guide.summonMenu();
       }
+    },
+
+    // Summon for a context (like an open module) — opens with a menu that
+    // gates access to the context script. The user can choose to hear what
+    // Guide has to say, or politely dismiss him and keep reading.
+    summonContextMenu: function(scriptLines){
+      if(!overlayEl || isOpen) return;
+      if(!Array.isArray(scriptLines) || scriptLines.length === 0) return;
+
+      isOpen = true;
+      mode = 'menu'; // starts in menu mode, may transition to dialogue
+
+      // Stash the script so handleContextMenuChoice can play it later.
+      // We also swap it into config.script so renderDialogueLine picks it up
+      // when we transition to dialogue, same pattern as summonContextDialogue.
+      var savedScript = config.script;
+      config.script = scriptLines;
+      config._restoreScriptOnDismiss = savedScript;
+
+      if(summonEl) summonEl.classList.remove('guide-pulsing');
+
+      overlayEl.classList.add('active');
+      document.body.classList.add('guide-active');
+
+      if(menuEl) menuEl.classList.remove('active');
+      if(footerEl) footerEl.classList.remove('active');
+
+      setTimeout(renderContextMenu, 400);
+    },
+
+    // Legacy method — still available but now only used programmatically.
+    // summon() routes to summonContextMenu instead of this for user-triggered
+    // context summoning. Kept for potential direct-dialogue use cases.
+    summonContextDialogue: function(scriptLines){
+      if(!overlayEl || isOpen) return;
+      if(!Array.isArray(scriptLines) || scriptLines.length === 0) return;
+      isOpen = true;
+      mode = 'dialogue';
+      dialogueIndex = 0;
+
+      var savedScript = config.script;
+      config.script = scriptLines;
+      config._restoreScriptOnDismiss = savedScript;
+
+      if(summonEl) summonEl.classList.remove('guide-pulsing');
+
+      overlayEl.classList.add('active');
+      document.body.classList.add('guide-active');
+
+      if(menuEl) menuEl.classList.remove('active');
+      if(footerEl) footerEl.classList.add('active');
+
+      setTimeout(renderDialogueLine, 400);
+    },
+
+    // Called by pages to tell Guide what's happening on screen.
+    // Examples:
+    //   Guide.setContext('default')
+    //   Guide.setContext('module-open', {moduleId: 'training'})
+    //   Guide.setContext('codex-open')
+    setContext: function(key, meta){
+      currentContext = {
+        key: key || 'default',
+        meta: meta || {}
+      };
+    },
+
+    // Register a script to play when a given context is active and Guide
+    // is summoned. Keys can be generic ('module-open') or specific
+    // ('module-open:training'). Specific keys take precedence.
+    registerContextScript: function(contextKey, scriptLines){
+      if(!contextKey || !Array.isArray(scriptLines)) return;
+      contextScripts[contextKey] = scriptLines;
     },
 
     reset: function(){
@@ -480,6 +586,85 @@
       });
     } else if(action === 'dismiss'){
       Guide.summonFarewell('As you wish, ascendant.');
+    }
+  }
+
+  // ---- CONTEXT MENU (session 9) ----
+  // Used when Guide is summoned inside a specific context (like an open module).
+  // Shows a short greeting and offers the user a choice: hear Guide's guidance
+  // or dismiss him politely. If they choose to hear him, the registered context
+  // script plays. If they dismiss, a brief farewell plays before he fades out.
+
+  function renderContextMenu(){
+    speakerNameEl.textContent = 'The Guide';
+    dialogueTextEl.innerHTML = '';
+    if(footerEl) footerEl.classList.remove('active');
+
+    if(sigilEl) sigilEl.classList.add('speaking');
+    if(dialogueBoxEl) dialogueBoxEl.classList.add('guide-pulsing-text');
+
+    var greeting = 'Yes, ascendant?';
+    var i = 0;
+    if(typewriterTimeout) clearTimeout(typewriterTimeout);
+
+    // Register for tap-to-skip
+    currentTypingFullText = greeting;
+    currentTypingCompletion = function(){
+      dialogueTextEl.innerHTML = greeting;
+      if(sigilEl) sigilEl.classList.remove('speaking');
+      if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
+      showContextMenuOptions();
+    };
+
+    function tick(){
+      if(i <= greeting.length){
+        dialogueTextEl.innerHTML = greeting.substring(0, i) + '<span class="guide-cursor"></span>';
+        i++;
+        typewriterTimeout = setTimeout(tick, 28);
+      } else {
+        typewriterTimeout = null;
+        currentTypingCompletion();
+      }
+    }
+    tick();
+  }
+
+  function showContextMenuOptions(){
+    if(!menuEl) return;
+    menuEl.innerHTML = '' +
+      '<button class="guide-menu-btn" data-action="context-explain">Help me understand this page</button>' +
+      '<button class="guide-menu-btn" data-action="context-dismiss">Nevermind, I will keep reading</button>';
+    menuEl.classList.add('active');
+
+    var btns = menuEl.querySelectorAll('.guide-menu-btn');
+    btns.forEach(function(btn, idx){
+      btn.style.animationDelay = (idx * 0.12) + 's';
+      btn.addEventListener('click', function(){
+        var action = btn.getAttribute('data-action');
+        handleContextMenuChoice(action);
+      });
+    });
+  }
+
+  function handleContextMenuChoice(action){
+    if(menuEl){
+      menuEl.classList.remove('active');
+      menuEl.innerHTML = '';
+    }
+
+    if(action === 'context-explain'){
+      // Bridge into the context script — script is already swapped into
+      // config.script by summonContextMenu, so renderDialogueLine picks it up.
+      runBridgeLine('Of course, ascendant.', function(){
+        mode = 'dialogue';
+        dialogueIndex = 0;
+        if(footerEl) footerEl.classList.add('active');
+        setTimeout(renderDialogueLine, 300);
+      });
+    } else if(action === 'context-dismiss'){
+      // Brief farewell that matches the context — acknowledges they're
+      // returning to their reading rather than "exploring" (default context).
+      Guide.summonFarewell('As you wish, ascendant. Return when the path grows unclear.');
     }
   }
 
@@ -937,6 +1122,12 @@
       '.guide-overlay.guide-fading{opacity:0;transition:opacity .8s ease}' +
       '.guide-overlay-bg{position:absolute;inset:0;background:rgba(4,4,10,0.92);' +
         'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:0;cursor:pointer}' +
+
+      // Companion mode: when Guide is summoned over an open lesson, use a
+      // lighter dim so the lesson stays visible as context behind Guide.
+      // (session 9 — in-module spatial pattern)
+      'body.guide-over-lesson .guide-overlay-bg{background:rgba(4,4,10,0.55);' +
+        'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}' +
       '.guide-close{position:absolute;top:16px;right:16px;width:36px;height:36px;' +
         'background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.55);' +
         'border-radius:50%;font-size:20px;cursor:pointer;z-index:2;transition:all .2s;' +
