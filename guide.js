@@ -190,6 +190,13 @@
         localStorage.setItem('ga_guide_seen_' + config.chamber, '1');
       } catch(e){}
       hasBeenSeenThisChamber = true;
+
+      // Fire the optional page-provided onDismiss hook. Runs AFTER the
+      // dismiss bookkeeping above so the hook can check Guide state or
+      // localStorage and make decisions accordingly.
+      if(config && typeof config.onDismiss === 'function'){
+        try { config.onDismiss(); } catch(e){ console.error('[Guide] onDismiss threw:', e); }
+      }
     },
 
     summon: function(){
