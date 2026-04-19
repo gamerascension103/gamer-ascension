@@ -62,6 +62,78 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .reflect-reset-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);color:rgba(240,236,228,.5)}
 .tutorial-reopen-btn{position:fixed;bottom:70px;left:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.2);border-radius:3px;color:rgba(201,168,76,.5);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.08em;padding:0 12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px);white-space:nowrap}
 .tutorial-reopen-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.5);color:rgba(201,168,76,.9)}
+
+/* ===== TUTORIAL BEACON (session 9) =====
+   Attention-grab for the Tutorial button after Guide's first-visit intro
+   dismisses and the tutorial hasn't been seen yet. Same visual language
+   as the Guide quest beacon (aura + "!" badge + flare) so the two
+   systems feel consistent. Differs in shape — the Tutorial button is a
+   horizontal capsule, not a circle, so aura rings match that shape. */
+.tutorial-reopen-btn.tutorial-beacon{
+  border-color:rgba(201,168,76,0.7);
+  color:rgba(201,168,76,0.95);
+  background:rgba(25,20,10,0.92);
+  box-shadow:0 0 14px rgba(201,168,76,0.35),0 0 28px rgba(201,168,76,0.15);
+  animation:tutorial-beacon-pulse 2.4s ease-in-out infinite;
+}
+@keyframes tutorial-beacon-pulse{
+  0%,100%{box-shadow:0 0 14px rgba(201,168,76,0.35),0 0 28px rgba(201,168,76,0.15)}
+  50%    {box-shadow:0 0 22px rgba(201,168,76,0.75),0 0 44px rgba(201,168,76,0.35)}
+}
+/* Sonar rings that expand outward from the button's shape. Two rings
+   offset so one is always in flight. */
+.tutorial-reopen-btn.tutorial-beacon::before,
+.tutorial-reopen-btn.tutorial-beacon::after{
+  content:"";position:absolute;inset:-4px;border-radius:5px;
+  border:1.5px solid rgba(201,168,76,0.65);pointer-events:none;
+  animation:tutorial-beacon-ring 2s ease-out infinite;
+  box-sizing:border-box;
+}
+.tutorial-reopen-btn.tutorial-beacon::after{animation-delay:1s}
+@keyframes tutorial-beacon-ring{
+  0%  {transform:scale(0.95);opacity:1;border-width:1.5px}
+  80% {opacity:0.15;border-width:1px}
+  100%{transform:scale(1.9);opacity:0;border-width:0.5px}
+}
+/* Gold "!" badge — mirrors the Guide quest badge. */
+.tutorial-beacon-badge{
+  position:absolute;top:-8px;right:-8px;
+  width:22px;height:22px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff6d8 0%,#e5c574 40%,#c9a84c 80%);
+  box-shadow:0 0 12px rgba(201,168,76,0.85),0 0 24px rgba(201,168,76,0.5),
+    0 2px 6px rgba(0,0,0,0.5);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel Decorative',serif;font-weight:700;font-size:13px;
+  color:#3a2a10;text-shadow:0 1px 0 rgba(255,246,216,0.8);
+  line-height:1;padding-top:1px;z-index:3;pointer-events:none;
+  opacity:0;transform:scale(0);
+  animation:tutorial-beacon-badge-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards,
+    tutorial-beacon-badge-bob 2.6s ease-in-out infinite 0.5s;
+}
+@keyframes tutorial-beacon-badge-in{
+  0%  {opacity:0;transform:scale(0) rotate(-45deg)}
+  60% {opacity:1;transform:scale(1.2) rotate(8deg)}
+  100%{opacity:1;transform:scale(1) rotate(0)}
+}
+@keyframes tutorial-beacon-badge-bob{
+  0%,100%{transform:translateY(0) scale(1);
+    box-shadow:0 0 12px rgba(201,168,76,0.85),0 0 24px rgba(201,168,76,0.5),0 2px 6px rgba(0,0,0,0.5)}
+  50%    {transform:translateY(-2px) scale(1.05);
+    box-shadow:0 0 18px rgba(201,168,76,1),0 0 34px rgba(201,168,76,0.7),0 3px 8px rgba(0,0,0,0.5)}
+}
+/* Flare — fires once when beacon first appears. */
+.tutorial-beacon-flare{
+  position:absolute;inset:-18px;border-radius:8px;
+  background:radial-gradient(ellipse,rgba(255,246,216,0.7) 0%,rgba(201,168,76,0.35) 40%,transparent 70%);
+  pointer-events:none;z-index:1;
+  animation:tutorial-beacon-flare-burst 1.2s ease-out forwards;
+}
+@keyframes tutorial-beacon-flare-burst{
+  0%  {opacity:0;transform:scale(0.6)}
+  20% {opacity:1;transform:scale(1.15)}
+  100%{opacity:0;transform:scale(2.4)}
+}
+/* ===== END TUTORIAL BEACON ===== */
 .respec-btn{position:fixed;bottom:24px;left:24px;z-index:50;width:36px;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(192,57,43,.2);border-radius:3px;color:rgba(192,57,43,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);opacity:0;pointer-events:none}
 .respec-btn.visible{opacity:1;pointer-events:all}
 .respec-btn:hover{background:rgba(192,57,43,.08);border-color:rgba(192,57,43,.5);color:var(--red)}
@@ -5704,23 +5776,69 @@ function fireRankUpCelebration(rankId){
 
 // ---- TUTORIAL ----
 function reopenTutorial(){
+  // User clicked the Tutorial button. Calm the beacon down immediately —
+  // the user has acknowledged it. Whether they watch or skip, the beacon
+  // has done its job.
+  stopTutorialBeacon();
   document.getElementById('tutorialOverlay').classList.add('open');
 }
 function closeTutorial(){
   document.getElementById('tutorialOverlay').classList.remove('open');
   localStorage.setItem('ga_tutorial_seen', '1');
-  // Once tutorial is closed, summon the Guide if they haven't met us in the Atheneum yet
-  maybeSummonGuide();
+  // Defensive: also stop the beacon here in case a future code path
+  // opens the tutorial without going through reopenTutorial().
+  stopTutorialBeacon();
 }
-function maybeShowTutorial(){
-  if(!localStorage.getItem('ga_tutorial_seen')){
-    setTimeout(function(){
-      document.getElementById('tutorialOverlay').classList.add('open');
-    }, 1200);
-  } else {
-    // Tutorial already seen — Guide takes over the first-visit duty
-    maybeSummonGuide();
+
+// Fire the attention beacon on the Tutorial button. Called from Guide's
+// onDismiss callback when the tutorial hasn't been seen yet. Applies the
+// pulsing class + injects the gold "!" badge + fires the one-shot flare.
+// All three layers mirror the Guide quest beacon pattern for visual
+// consistency between the two onboarding cues.
+function fireTutorialBeacon(){
+  var btn = document.getElementById('tutorialReopenBtn');
+  if(!btn) return;
+  btn.classList.add('tutorial-beacon');
+
+  // Badge — idempotent, safe to call repeatedly.
+  if(!btn.querySelector('.tutorial-beacon-badge')){
+    var badge = document.createElement('span');
+    badge.className = 'tutorial-beacon-badge';
+    badge.setAttribute('aria-hidden', 'true');
+    badge.textContent = '!';
+    btn.appendChild(badge);
   }
+
+  // One-shot flare. Remove any stale flare first so re-firing (unlikely,
+  // but possible in edge cases) replays cleanly.
+  var oldFlare = btn.querySelector('.tutorial-beacon-flare');
+  if(oldFlare) oldFlare.remove();
+  var flare = document.createElement('span');
+  flare.className = 'tutorial-beacon-flare';
+  flare.setAttribute('aria-hidden', 'true');
+  btn.appendChild(flare);
+  setTimeout(function(){ if(flare.parentNode) flare.remove(); }, 1400);
+}
+
+// Remove the beacon and all its DOM children. Called when the user
+// clicks the Tutorial button or closes the tutorial overlay.
+function stopTutorialBeacon(){
+  var btn = document.getElementById('tutorialReopenBtn');
+  if(!btn) return;
+  btn.classList.remove('tutorial-beacon');
+  var badge = btn.querySelector('.tutorial-beacon-badge');
+  if(badge) badge.remove();
+  var flare = btn.querySelector('.tutorial-beacon-flare');
+  if(flare) flare.remove();
+}
+
+function maybeShowTutorial(){
+  // Session 9 update: tutorial no longer auto-opens on first visit. Guide
+  // delivers his intro first, and on Guide's dismiss we light up the
+  // Tutorial button with a beacon (see fireTutorialBeacon above). Users
+  // who click the button watch or skip the tutorial; from then on the
+  // button returns to its dormant state. The Tutorial button itself has
+  // always existed and remains available for re-watching at any time.
 }
 function maybeSummonGuide(){
   // The Guide.init() call in the Guide script below handles auto-summon logic
@@ -5808,17 +5926,25 @@ window.addEventListener('resize',function(){centerTree();});
     setTimeout(function(){
       if(typeof Guide === 'undefined') return;
 
-      // If the tutorial is currently showing, wait for it to close before the Guide appears.
-      // Otherwise, Guide.init will handle auto-summon timing.
-      var tutorial = document.getElementById('tutorialOverlay');
-      var tutorialIsOpen = tutorial && tutorial.classList.contains('open');
-
+      // Session 9: tutorial no longer auto-opens, so Guide runs cleanly on
+      // first visit with his standard delay. On Guide's dismiss, we trigger
+      // the tutorial beacon (see fireTutorialBeacon below) if the tutorial
+      // hasn't been seen yet.
       Guide.init({
         chamber: 'atheneum',
         chamberName: 'The Atheneum',
         chamberLabel: 'Skill Mastery',
-        autoSummonDelay: tutorialIsOpen ? 999999 : 2000, // suppress auto-summon while tutorial is open
-        summonPosition: { bottom: 170, right: 24 }, // sit above the zoom/home button stack
+        autoSummonDelay: 2000,
+        summonPosition: { bottom: 170, right: 24 },
+        onDismiss: function(){
+          // When Guide dismisses for the first time AND tutorial hasn't
+          // been seen, light up the Tutorial button with an attention
+          // beacon. This hands off the onboarding from Guide's dialogue
+          // to the product-level tutorial.
+          if(!localStorage.getItem('ga_tutorial_seen')){
+            fireTutorialBeacon();
+          }
+        },
         script: [
           {
             speaker: 'The Guide',
