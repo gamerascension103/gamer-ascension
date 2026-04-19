@@ -395,6 +395,36 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 .codex-btn.codex-pulse{border-color:rgba(201,168,76,.9);color:rgba(201,168,76,1);animation:codex-pulse-anim 1.2s ease-in-out infinite}
 @keyframes codex-pulse-anim{0%,100%{box-shadow:0 0 6px rgba(201,168,76,.3)}50%{box-shadow:0 0 18px rgba(201,168,76,.8),0 0 4px rgba(201,168,76,.4) inset}}
 .codex-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.6);color:rgba(201,168,76,1)}
+
+/* ===== DEV RESET PANEL — temporary, remove before ship =====
+   Small red-tinged panel at bottom-center of the viewport. Wipes all
+   localStorage keys prefixed with 'ga_' (everything the app writes) and
+   reloads. Subtle opacity at rest so it doesn't dominate; brightens on
+   hover. Color intentionally off the brand palette to signal "this is not
+   production UI." */
+.dev-panel{
+  position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
+  z-index:9990;display:flex;align-items:center;gap:8px;
+  background:rgba(8,8,20,0.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(192,57,43,0.35);border-radius:3px;
+  padding:5px 10px;
+  font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;
+  color:rgba(240,236,228,0.45);text-transform:uppercase;
+  opacity:0.55;transition:opacity .2s;
+}
+.dev-panel:hover{opacity:1}
+.dev-panel-label{color:rgba(192,57,43,0.8);font-weight:500}
+.dev-reset-btn{
+  background:transparent;border:1px solid rgba(192,57,43,0.5);
+  color:rgba(240,236,228,0.7);
+  font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;
+  padding:4px 10px;border-radius:2px;cursor:pointer;text-transform:uppercase;
+  transition:all .2s;
+}
+.dev-reset-btn:hover{
+  background:rgba(192,57,43,0.18);color:#f0ece4;border-color:rgba(192,57,43,0.85);
+}
+/* ===== END DEV RESET PANEL ===== */
 .codex-panel{position:fixed;inset:0;z-index:450;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s}
 .codex-panel.open{opacity:1;pointer-events:all}
 .codex-card{background:rgba(8,8,20,.98);border:1px solid rgba(201,168,76,.25);border-radius:8px;max-width:560px;width:94%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 0 80px rgba(80,40,0,.3)}
@@ -698,6 +728,13 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
     <p class="quest-accepted-sub">Search the star map. Reach for what orbits before it drifts.</p>
     <button class="quest-accepted-btn" onclick="closeQuestAcceptedOverlay()">Begin the search</button>
   </div>
+</div>
+
+<!-- DEV RESET PANEL — wipes all ga_* localStorage keys and reloads.
+     Temporary dev affordance; remove before shipping to production. -->
+<div class="dev-panel" title="Development tools — clears all ga_* localStorage keys">
+  <span class="dev-panel-label">DEV</span>
+  <button class="dev-reset-btn" onclick="devFullReset()" title="Clear all Gamer Ascension localStorage keys and reload">Full Reset</button>
 </div>
 
 <canvas class="nebula-canvas" id="nebulaCanvas"></canvas>
@@ -4402,6 +4439,23 @@ function showQuestToast(msg){
   toast.textContent = msg;
   toast.classList.add('show');
   setTimeout(function(){ toast.classList.remove('show'); }, 3500);
+}
+
+// ===== DEV RESET (temporary) =====
+// Wipes every localStorage key prefixed with 'ga_' and reloads the page.
+// Attached to the dev panel's Full Reset button. Remove this function and
+// the accompanying DOM + CSS before shipping to production.
+function devFullReset(){
+  try {
+    var keys = Object.keys(localStorage).filter(function(k){
+      return k.indexOf('ga_') === 0;
+    });
+    keys.forEach(function(k){ localStorage.removeItem(k); });
+    console.log('[Dev] Full reset — cleared ' + keys.length + ' ga_* keys');
+  } catch(e){
+    console.error('[Dev] Reset failed:', e);
+  }
+  location.reload();
 }
 
 // ===== QUEST ACCEPTED OVERLAY =====
