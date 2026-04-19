@@ -4275,8 +4275,7 @@ function offerNextAvailableQuest(){
 // or the user dismisses it by clicking Guide.
 function pulseGuideButtonForQuest(){
   var btn = document.getElementById('guideSummon');
-  if(!btn){ console.log('[Quest] pulseGuideButtonForQuest — button not found yet'); return; }
-  console.log('[Quest] Quest beacon ON');
+  if(!btn) return;
 
   btn.classList.add('guide-quest-beacon');
 
@@ -5288,7 +5287,7 @@ function closeCompletionScreen(pendingRank){
     setRank(pendingRank);
     setTimeout(function(){
       playBadgeLandsAnimation(pendingRank);
-    }, 180); // tiny delay so user sees iron → new color transition
+    }, 180);
   }
 
   // Keep the existing post-overlay behavior
@@ -5741,16 +5740,8 @@ window.addEventListener('resize',function(){centerTree();});
 <script>
   // Initialize persistent nav — mark Atheneum as current chamber
   window.addEventListener('load', function(){
-    console.log('[Nav] window.load fired. typeof Nav:', typeof Nav);
     if(typeof Nav !== 'undefined'){
-      try {
-        Nav.init({ current: 'atheneum' });
-        console.log('[Nav] Nav.init() completed. trigger button in DOM:', !!document.querySelector('.nav-trigger'));
-      } catch(e){
-        console.error('[Nav] Nav.init() threw:', e);
-      }
-    } else {
-      console.error('[Nav] Nav is undefined at window.load. nav.js did not load or its IIFE did not run.');
+      Nav.init({ current: 'atheneum' });
     }
   });
 </script>
