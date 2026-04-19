@@ -381,8 +381,17 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 .quest-deny-btn:hover{border-color:rgba(255,255,255,.2);color:rgba(240,236,228,.7)}
 
 /* CODEX PANEL */
-.codex-btn{position:fixed;bottom:162px;right:24px;z-index:55;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;color:rgba(201,168,76,.7);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.1em;padding:0 14px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px)}
+.codex-btn{position:fixed;bottom:250px;right:24px;z-index:55;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;color:rgba(201,168,76,.7);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.1em;padding:0 14px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px)}
 .codex-btn.visible{display:flex}
+/* Attention-grab when the Codex button first appears (session 9). A brief
+   scale-up bounce so the user SEES the button arrive — paired with the
+   accepted-quest toast that tells them hints have been added. */
+.codex-btn.codex-arrival{animation:codex-arrival-in 0.8s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes codex-arrival-in{
+  0%   {transform:scale(0);opacity:0}
+  60%  {transform:scale(1.18);opacity:1}
+  100% {transform:scale(1);opacity:1}
+}
 .codex-btn.codex-pulse{border-color:rgba(201,168,76,.9);color:rgba(201,168,76,1);animation:codex-pulse-anim 1.2s ease-in-out infinite}
 @keyframes codex-pulse-anim{0%,100%{box-shadow:0 0 6px rgba(201,168,76,.3)}50%{box-shadow:0 0 18px rgba(201,168,76,.8),0 0 4px rgba(201,168,76,.4) inset}}
 .codex-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.6);color:rgba(201,168,76,1)}
@@ -400,6 +409,206 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 .codex-entry-eyebrow{font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:rgba(201,168,76,.6);margin-bottom:6px}
 .codex-entry-title{font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:#f0ece4;margin-bottom:12px}
 .codex-entry-text{font-size:13px;font-weight:300;color:rgba(240,236,228,.6);line-height:1.85;font-style:italic}
+
+/* ===== QUEST ACCEPTED OVERLAY (session 9) =====
+   Big centered modal shown when a quest is first accepted. Uses the Codex
+   panel's visual family so accepting a quest feels like stepping into the
+   same world the Codex lives in. Only visible when .open class is set.
+   Click outside the card, or on the Begin button, to dismiss. */
+.quest-accepted-overlay{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(8,8,16,.88);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;
+  transition:opacity .4s ease;
+  padding:20px;
+}
+.quest-accepted-overlay.open{opacity:1;pointer-events:all}
+.quest-accepted-card{
+  position:relative;
+  background:linear-gradient(180deg,rgba(18,16,32,.97) 0%,rgba(8,8,20,.98) 100%);
+  border:1px solid rgba(201,168,76,.35);
+  border-radius:6px;
+  max-width:520px;width:100%;
+  padding:44px 40px 36px;
+  text-align:center;
+  box-shadow:
+    0 0 80px rgba(157,139,255,.25),
+    0 0 160px rgba(201,168,76,.15),
+    inset 0 1px 0 rgba(255,240,200,.08),
+    inset 0 0 80px rgba(157,139,255,.06);
+  transform:scale(0.7) translateY(20px);opacity:0;
+  transition:transform .6s cubic-bezier(0.34,1.56,0.64,1),opacity .5s ease;
+}
+.quest-accepted-overlay.open .quest-accepted-card{
+  transform:scale(1) translateY(0);opacity:1;
+}
+/* Corner brackets — signals "important ceremonial card" like Sentinel Mark's dialogue box */
+.quest-accepted-corners{position:absolute;inset:0;pointer-events:none}
+.quest-accepted-corner{
+  position:absolute;width:18px;height:18px;
+  border:1px solid rgba(201,168,76,.75);
+}
+.quest-accepted-corner.tl{top:-1px;left:-1px;border-right:none;border-bottom:none}
+.quest-accepted-corner.tr{top:-1px;right:-1px;border-left:none;border-bottom:none}
+.quest-accepted-corner.bl{bottom:-1px;left:-1px;border-right:none;border-top:none}
+.quest-accepted-corner.br{bottom:-1px;right:-1px;border-left:none;border-top:none}
+/* Eyebrow above title */
+.quest-accepted-eyebrow{
+  font-family:'Cinzel',serif;font-size:11px;font-weight:400;
+  letter-spacing:.35em;text-transform:uppercase;
+  color:rgba(201,168,76,.75);margin-bottom:14px;
+  display:flex;align-items:center;justify-content:center;gap:14px;
+}
+.quest-accepted-eyebrow::before,
+.quest-accepted-eyebrow::after{
+  content:'';width:40px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.6));
+}
+.quest-accepted-eyebrow::after{
+  background:linear-gradient(90deg,rgba(201,168,76,.6),transparent);
+}
+/* Title — the quest name, prominent */
+.quest-accepted-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(28px,5vw,38px);font-weight:700;
+  color:#f5eecc;line-height:1.15;margin:0 0 4px;
+  letter-spacing:.02em;
+  text-shadow:0 0 30px rgba(201,168,76,.4),0 0 60px rgba(157,139,255,.2);
+}
+.quest-accepted-divider{
+  width:60px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.7),transparent);
+  margin:20px auto 22px;
+}
+.quest-accepted-body{
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:300;
+  line-height:1.75;color:rgba(240,236,228,.85);
+  margin:0 auto 14px;max-width:400px;
+}
+.quest-accepted-highlight{
+  color:#c9a84c;font-weight:500;
+  text-shadow:0 0 12px rgba(201,168,76,.5);
+}
+.quest-accepted-sub{
+  font-family:'DM Sans',sans-serif;font-style:italic;font-size:13px;font-weight:300;
+  color:rgba(240,236,228,.55);line-height:1.7;
+  margin:0 auto 28px;max-width:360px;
+}
+.quest-accepted-btn{
+  background:transparent;
+  border:1px solid rgba(201,168,76,.6);
+  color:#c9a84c;
+  font-family:'Cinzel',serif;font-size:12px;font-weight:500;
+  letter-spacing:.3em;text-transform:uppercase;
+  padding:14px 38px;border-radius:2px;cursor:pointer;
+  transition:all .3s;position:relative;overflow:hidden;
+}
+.quest-accepted-btn:hover{
+  border-color:var(--gold);color:#fff;
+  background:rgba(201,168,76,.08);
+  box-shadow:0 0 28px rgba(201,168,76,.35),inset 0 0 16px rgba(201,168,76,.1);
+  letter-spacing:.35em;
+}
+/* Mobile — tighten padding */
+@media(max-width:520px){
+  .quest-accepted-card{padding:34px 24px 28px}
+  .quest-accepted-title{font-size:26px}
+  .quest-accepted-body{font-size:14px}
+  .quest-accepted-btn{padding:13px 26px;letter-spacing:.25em}
+  .quest-accepted-btn:hover{letter-spacing:.3em}
+}
+/* ===== END QUEST ACCEPTED OVERLAY ===== */
+
+/* ===== Active Quests section (session 9) =====
+   Persistent quest log at the top of the Codex panel. Shows accepted
+   quests with their hints, marking hints as found once the target
+   fragment has been collected. Uses existing codex palette (gold + dark
+   violet) for cohesion with the Codex card it lives inside. */
+.codex-quest-log{
+  margin-bottom:28px;padding-bottom:24px;
+  border-bottom:1px solid rgba(201,168,76,.15);
+}
+.codex-quest-log-header{
+  font-family:'Cinzel',serif;font-size:9px;font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(201,168,76,.55);margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.codex-quest-log-header::before{
+  content:'';width:24px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.5));
+}
+.codex-quest-log-header::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(201,168,76,.3),transparent);
+}
+.codex-quest-entry{
+  background:rgba(201,168,76,.04);
+  border:1px solid rgba(201,168,76,.14);
+  border-radius:4px;padding:16px 18px;
+  margin-bottom:12px;
+}
+.codex-quest-entry:last-child{margin-bottom:0}
+.codex-quest-entry-header{
+  display:flex;justify-content:space-between;align-items:baseline;
+  gap:12px;margin-bottom:12px;
+}
+.codex-quest-entry-title{
+  font-family:'Cinzel Decorative',serif;font-size:14px;font-weight:600;
+  color:#f0ece4;letter-spacing:.02em;
+}
+.codex-quest-entry-progress{
+  font-family:'Cinzel',serif;font-size:10px;font-weight:400;
+  letter-spacing:.18em;color:rgba(201,168,76,.65);
+  flex-shrink:0;
+}
+.codex-quest-hints{display:flex;flex-direction:column;gap:8px}
+.codex-quest-hint{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:12.5px;font-weight:300;line-height:1.6;
+  color:rgba(240,236,228,.72);font-style:italic;
+  transition:all .35s ease;
+}
+.codex-quest-hint-marker{
+  font-style:normal;flex-shrink:0;line-height:1.6;
+  color:rgba(201,168,76,.75);
+  font-size:10px;margin-top:1px;
+  transition:color .35s ease;
+}
+.codex-quest-hint.found{
+  color:rgba(240,236,228,.35);
+  text-decoration:line-through;
+  text-decoration-color:rgba(201,168,76,.3);
+  text-decoration-thickness:1px;
+}
+.codex-quest-hint.found .codex-quest-hint-marker{
+  color:rgba(125,245,245,.7);
+  text-decoration:none;
+}
+.codex-quest-hint.found .codex-quest-hint-text{
+  text-decoration:line-through;
+  text-decoration-color:rgba(201,168,76,.3);
+}
+
+/* Section heading between quest log and fragment entries */
+.codex-section-heading{
+  font-family:'Cinzel',serif;font-size:9px;font-weight:500;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(201,168,76,.55);
+  margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.codex-section-heading::before{
+  content:'';width:24px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.5));
+}
+.codex-section-heading::after{
+  content:'';flex:1;height:1px;
+  background:linear-gradient(90deg,rgba(201,168,76,.3),transparent);
+}
+/* ===== END Active Quests ===== */
 
 /* QUEST COMPLETE TOAST */
 .quest-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);z-index:500;background:rgba(10,10,22,.97);border:1px solid rgba(201,168,76,.4);border-radius:4px;padding:14px 24px;font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:.1em;color:#c9a84c;text-align:center;opacity:0;pointer-events:none;transition:all .4s;white-space:nowrap}
@@ -437,35 +646,15 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 </div>
 
 
-<div class="quest-notif" id="questNotif">
-  <div class="quest-notif-inner">
-    <span class="quest-notif-mark">!</span>
-  </div>
-</div>
+<!-- Quest notification and quest offer panel retired in session 9. Quests
+     are now delivered by Guide via summonQuestOffer(). See the
+     QUEST_REGISTRY block in script for the new system.
 
-<!-- QUEST PANEL -->
-<div class="quest-panel" id="questPanel">
-  <div class="quest-card">
-    <div class="quest-card-header">
-      <div class="quest-card-dot"></div>
-      <div>
-        <div class="quest-card-eyebrow">New Quest Available</div>
-        <div class="quest-card-title">Hidden Knowledge</div>
-      </div>
-    </div>
-    <div class="quest-card-body">
-      <p class="quest-card-desc">Ancient wisdom has been buried in the star map. Two fragments wait to be found by those who look closely enough. The knowledge is small, quiet, orbiting the nodes you have already mastered. You will need to zoom in. You will need to look carefully.</p>
-      <div class="quest-card-hints">
-        <div class="quest-card-hint">&#9670; Something stirs near the place where the gap was first named.</div>
-        <div class="quest-card-hint">&#9670; Another fragment circles the practice the Stoics never abandoned.</div>
-      </div>
-      <div class="quest-card-actions">
-        <button class="quest-accept-btn" onclick="acceptQuest()">Accept the Quest</button>
-        <button class="quest-deny-btn" onclick="denyQuest()">Not now</button>
-      </div>
-    </div>
-  </div>
-</div>
+     NOTE: The questPanel div below is kept as a host container used by the
+     lore-reveal panel (showLorePanel / closeLorePanel). When the user
+     discovers a hidden fragment, its lore is rendered into this panel.
+     The panel's own chrome (quest-panel CSS class) is shared. -->
+<div class="quest-panel" id="questPanel"></div>
 
 <!-- CODEX PANEL -->
 <div class="codex-panel" id="codexPanel">
@@ -485,6 +674,31 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 
 <!-- QUEST COMPLETE TOAST -->
 <div class="quest-toast" id="questToast"></div>
+
+<!-- QUEST ACCEPTED OVERLAY (session 9)
+     Big centered moment the first time a user accepts a quest. Tells them
+     where the Codex lives and what the hints mean. Single dismissal button;
+     backdrop click also dismisses. Uses the same dark-blur palette as the
+     Codex panel for visual cohesion. -->
+<div class="quest-accepted-overlay" id="questAcceptedOverlay" onclick="closeQuestAcceptedOverlay(event)">
+  <div class="quest-accepted-card" onclick="event.stopPropagation()">
+    <div class="quest-accepted-corners">
+      <span class="quest-accepted-corner tl"></span>
+      <span class="quest-accepted-corner tr"></span>
+      <span class="quest-accepted-corner bl"></span>
+      <span class="quest-accepted-corner br"></span>
+    </div>
+    <div class="quest-accepted-eyebrow">A Quest Has Been Accepted</div>
+    <h2 class="quest-accepted-title" id="questAcceptedTitle">Hidden Knowledge</h2>
+    <div class="quest-accepted-divider"></div>
+    <p class="quest-accepted-body">
+      The <span class="quest-accepted-highlight">Codex</span> has been unlocked at the edge of your vision.
+      The Guide's hints have been inscribed within, to consult whenever the stars grow quiet.
+    </p>
+    <p class="quest-accepted-sub">Search the star map. Reach for what orbits before it drifts.</p>
+    <button class="quest-accepted-btn" onclick="closeQuestAcceptedOverlay()">Begin the search</button>
+  </div>
+</div>
 
 <canvas class="nebula-canvas" id="nebulaCanvas"></canvas>
 
@@ -3346,10 +3560,8 @@ var pinch={active:false,startDist:0,startScale:0};
 
 function applyTransform(){
   document.getElementById('canvasInner').style.transform='translate('+transform.x+'px,'+transform.y+'px) scale('+transform.scale+')';
-  // Keep quest notif aligned to Oracle
-  if(document.getElementById('questNotif').classList.contains('visible')){
-    positionQuestNotif();
-  }
+  // Quest notif positioning retired in session 9 — quest signal is now on
+  // the Guide summon button, which is fixed-position and needs no tracking.
 }
 
 function centerTree(){
@@ -3566,7 +3778,16 @@ document.getElementById('respecConfirmYes').onclick=function(e){
 
   // Reset quest + hidden nodes
   hiddenNodesActive = false;
-  document.getElementById('questNotif').classList.remove('visible');
+  // questNotif DOM retired; pulse/pending state clears itself
+  pendingQuestId = null;
+  stopGuideButtonPulse();
+  // Clear registry offered-flags so reset users see quests fresh again
+  try {
+    Object.keys(QUEST_REGISTRY).forEach(function(id){
+      localStorage.removeItem(QUEST_OFFERED_PREFIX + id);
+      localStorage.removeItem('ga_quest_state_' + id);
+    });
+  } catch(e){}
   document.getElementById('codexBtn').classList.remove('visible');
 
   // Reset reflections UI
@@ -3865,57 +4086,380 @@ function checkRankUp(){
   // setRank() here — the rank-up ceremony is the only path to new ranks.
 }
 
-// ---- QUEST SYSTEM ----
+// ============================================================================
+// QUEST SYSTEM (session 9 rebuild — registry-based, Guide-delivered)
+// ============================================================================
+// Quest delivery is now handled entirely by the Guide. When a new quest
+// becomes available (e.g. after rank-up), the Guide summon button pulses
+// with a quest marker. Clicking it summons Guide, who delivers the quest
+// dialogue and presents an accept/decline menu. See evermark_canon.md for
+// the narrative framing.
+//
+// The registry is extensible: adding new quests means adding entries to
+// QUEST_REGISTRY. Quest lines (Codex, Memoirs, future) are logical
+// groupings within the same flat registry — the `line` field organizes
+// them. Ordering within a line is via the `order` field.
+
+// Legacy localStorage key — kept so existing users' quest state migrates
+// cleanly. A user who accepted the quest under the old system will still
+// be treated as 'accepted' under the new one.
 var QUEST_STATE_KEY  = 'ga_quest_iron_bronze';
 var LORE_FOUND_KEY   = 'ga_lore_found';
 
+// Per-quest offered-flag prefix. We track which quests have been OFFERED
+// (shown to the user once) so we don't re-offer them constantly. Accepted
+// or declined both count as offered; declined quests can be re-offered at
+// the next trigger, accepted ones move on.
+var QUEST_OFFERED_PREFIX = 'ga_quest_offered_';
+
 // Quest states: 'none' | 'available' | 'accepted' | 'complete'
-function getQuestState(){ return localStorage.getItem(QUEST_STATE_KEY) || 'none'; }
-function setQuestState(s){ localStorage.setItem(QUEST_STATE_KEY, s); }
+// State is quest-id keyed going forward. The legacy single-key form is
+// migrated on first read.
+function getQuestState(id){
+  if(!id || id === 'codex_1'){
+    // Legacy migration: the old single-quest key maps to codex_1.
+    var legacy = localStorage.getItem(QUEST_STATE_KEY);
+    if(legacy) return legacy;
+  }
+  return localStorage.getItem('ga_quest_state_' + id) || 'none';
+}
+function setQuestState(id, s){
+  if(id === 'codex_1'){
+    // Dual-write for legacy compat during migration period.
+    localStorage.setItem(QUEST_STATE_KEY, s);
+  }
+  localStorage.setItem('ga_quest_state_' + id, s);
+}
 function getLoreFound(){ return JSON.parse(localStorage.getItem(LORE_FOUND_KEY) || '[]'); }
 function setLoreFound(arr){ localStorage.setItem(LORE_FOUND_KEY, JSON.stringify(arr)); }
 
+function hasBeenOffered(id){ return localStorage.getItem(QUEST_OFFERED_PREFIX + id) === '1'; }
+function markOffered(id){ localStorage.setItem(QUEST_OFFERED_PREFIX + id, '1'); }
+function clearOffered(id){ localStorage.removeItem(QUEST_OFFERED_PREFIX + id); }
+
+// ========== THE REGISTRY ==========
+// Each quest has:
+//   id:          unique string key
+//   line:        'codex' | 'memoir' | ... — grouping / line membership
+//   order:       number within its line (1, 2, 3...)
+//   unlock:      function() -> boolean; true when this quest can be offered
+//   dialogue:    array of {speaker, text} for Guide to deliver (2-4 lines)
+//   acceptLabel, declineLabel: menu button labels
+//   acceptFarewell, declineFarewell: Guide's closing line after choice
+//   onAccept:    function() — called after accept farewell dismisses
+//   onDecline:   function() — called after decline farewell dismisses
+//
+// Dialogue copy MUST match the canon (see evermark_canon.md). Changes to
+// quest copy should be reviewed against the canon before merging.
+var QUEST_REGISTRY = {
+
+  // ====== CODEX LINE — Quest 1: Hidden Knowledge ======
+  // Offered after Bronze rank-up. Introduces the fragment-preservation
+  // mechanic through Guide's voice. Canonical dialogue per evermark_canon.md
+  // section "The first quest (Codex Line, Quest 1)".
+  codex_1: {
+    id: 'codex_1',
+    line: 'codex',
+    order: 1,
+    unlock: function(){
+      // Available once user has earned at least Bronze rank.
+      // Rank is stored in localStorage under 'ga_rank'; default 'iron'.
+      var rank = localStorage.getItem('ga_rank') || 'iron';
+      return rank && rank !== 'iron';
+    },
+    dialogue: [
+      { speaker: 'The Guide',
+        text: "Ascendant. If I may have a moment of your time. I am in need of your assistance." },
+      { speaker: 'The Guide',
+        text: "You see\u2026 Evermark was not always as you have seen it. The wondrous nodes that teach you were once whole — burning bright with the complete knowledge that the Makers imbued into them. But the nebula is a patient thing. Unending in its desire to break, and pull. Pieces break away from these wondrous treasures, and most are lost to us before they can be saved." },
+      { speaker: 'The Guide',
+        text: "But sometimes — we are lucky — and a fragment falls into orbit around its parent skill node before it can drift away. Within that small window of time, it can be found. Preserved. Held against the loss we all fight. Will you find them for me, ascendant?" }
+    ],
+    acceptLabel:    'I will find them',
+    declineLabel:   'Not now',
+    acceptFarewell: 'Very good. Look closely, ascendant. They are easy to miss. Remember — the fragments orbit their parent skill nodes before they fall to the great pull of the nebula. Good luck.',
+    declineFarewell:'As you wish. Evermark has waited longer than this. It will wait again.',
+    // Quest title + hints shown in the Codex "Active Quests" panel after
+    // acceptance. Each hint is tied to a specific fragment id; when that
+    // fragment is collected (appears in getLoreFound()), the hint is
+    // marked as resolved. See renderActiveQuestLog() for rendering.
+    title: 'Hidden Knowledge',
+    hints: [
+      {
+        fragmentId: 'lore_acedia',
+        text: 'One stirs near the place where the gap was first named. The desert will whisper it to you.'
+      },
+      {
+        fragmentId: 'lore_seneca',
+        text: 'Another circles the practice the Stoics never abandoned. Look where the old words still wait to be read.'
+      }
+    ],
+    onAccept: function(){
+      setQuestState('codex_1', 'accepted');
+      spawnHiddenNodes();
+      // Show the big Quest Accepted overlay. The Codex button is revealed
+      // AFTER the user dismisses the overlay so they see it appear when
+      // they tap "Begin the search" — connecting the ritual moment to
+      // the ongoing UI that will guide them.
+      showQuestAcceptedOverlay('Hidden Knowledge');
+    },
+    onDecline: function(){
+      // Declining a quest leaves it in 'none' state so it can be offered
+      // again at the next rank-up trigger. We also clear the offered flag
+      // so the registry walker picks it up again.
+      setQuestState('codex_1', 'none');
+      clearOffered('codex_1');
+    }
+  }
+
+  // ====== MEMOIR LINE — stubbed, not yet offerable ======
+  // First memoir of a lost Maker. Unlocks after Silver rank (TBD). When
+  // activated, we'll fully populate dialogue. Registered here to validate
+  // the line-system shape; unlock function returns false until canon
+  // dialogue is written.
+  //
+  // memoir_1: {
+  //   id: 'memoir_1', line: 'memoir', order: 1,
+  //   unlock: function(){ return getRank() === 'silver'; },
+  //   dialogue: [ /* to be written */ ],
+  //   acceptLabel: '...', declineLabel: '...',
+  //   acceptFarewell: '...', declineFarewell: '...',
+  //   onAccept: function(){}, onDecline: function(){}
+  // }
+};
+
+// ========== DISPATCH ==========
+// Walk the registry and find the next quest that:
+//   - has unlock() === true
+//   - has not yet been offered (or was declined, so was cleared)
+// If found, pulse the Guide button to signal availability and register a
+// one-shot handler so the NEXT Guide summon plays the quest offer instead
+// of Guide's normal behavior.
+var pendingQuestId = null;
+
+function offerNextAvailableQuest(){
+  // Find first eligible quest in registry order (line+order sort)
+  var eligible = [];
+  Object.keys(QUEST_REGISTRY).forEach(function(key){
+    var q = QUEST_REGISTRY[key];
+    if(!q.unlock || !q.unlock()) return;
+    if(hasBeenOffered(q.id)) return;
+    var state = getQuestState(q.id);
+    if(state === 'accepted' || state === 'complete') return;
+    eligible.push(q);
+  });
+  eligible.sort(function(a, b){
+    if(a.line !== b.line) return a.line.localeCompare(b.line);
+    return a.order - b.order;
+  });
+
+  if(eligible.length === 0) return;
+  var quest = eligible[0];
+
+  // Mark pending so the next Guide summon picks it up. Also fire the
+  // quest beacon on the Guide button so the user has an obvious cue.
+  pendingQuestId = quest.id;
+  pulseGuideButtonForQuest();
+}
+
+// Pulse the Guide summon button to signal a quest is waiting. Uses the
+// existing 'guide-pulsing' class that Guide.js already defines for the
+// first-visit pulse — we just reuse it as our signal.
+// Pulse the Guide summon button to signal a quest is waiting. Session 9+:
+// this is a dedicated quest beacon, NOT the ambient guide-pulsing glow.
+// Three layers:
+//   - aura ring (CSS pseudo-elements, continuous sonar ping)
+//   - gold "!" badge (DOM child, bobs and glows)
+//   - one-shot arrival flare (DOM child, burns briefly on first appearance)
+// The beacon persists until the quest is consumed (accepted or declined)
+// or the user dismisses it by clicking Guide.
+function pulseGuideButtonForQuest(){
+  var btn = document.getElementById('guideSummon');
+  if(!btn){ console.log('[Quest] pulseGuideButtonForQuest — button not found yet'); return; }
+  console.log('[Quest] Quest beacon ON');
+
+  btn.classList.add('guide-quest-beacon');
+
+  // Inject badge if not already present. Idempotent — repeat calls are safe.
+  if(!btn.querySelector('.guide-quest-badge')){
+    var badge = document.createElement('span');
+    badge.className = 'guide-quest-badge';
+    badge.setAttribute('aria-hidden', 'true');
+    badge.textContent = '!';
+    btn.appendChild(badge);
+  }
+
+  // Fire the one-shot flare. Remove any prior flare first so re-entry
+  // (e.g. a second quest offered later in the same session) re-plays it.
+  var oldFlare = btn.querySelector('.guide-quest-flare');
+  if(oldFlare) oldFlare.remove();
+  var flare = document.createElement('span');
+  flare.className = 'guide-quest-flare';
+  flare.setAttribute('aria-hidden', 'true');
+  btn.appendChild(flare);
+  // Remove flare element after animation completes so it can re-fire clean.
+  setTimeout(function(){ if(flare.parentNode) flare.remove(); }, 1400);
+}
+
+function stopGuideButtonPulse(){
+  var btn = document.getElementById('guideSummon');
+  if(!btn) return;
+  btn.classList.remove('guide-quest-beacon');
+  btn.classList.remove('guide-pulsing');  // in case the old class lingered
+  var badge = btn.querySelector('.guide-quest-badge');
+  if(badge) badge.remove();
+  var flare = btn.querySelector('.guide-quest-flare');
+  if(flare) flare.remove();
+}
+
+// When the user clicks the Guide button: if a quest is pending, deliver
+// the quest offer. Otherwise let Guide's default summon flow run.
+//
+// The Guide button is created inside Guide.init() which runs AFTER
+// window.load + a delay in pregame. We poll for it and wire up when it
+// appears. Idempotent via the guideQuestWired flag so repeat calls to
+// this function don't stack handlers.
+var guideQuestWired = false;
+function wireGuideQuestInterception(){
+  if(guideQuestWired) return;
+  var attempts = 0;
+  var pollId = setInterval(function(){
+    var btn = document.getElementById('guideSummon');
+    if(btn){
+      clearInterval(pollId);
+      guideQuestWired = true;
+      attachQuestHandlerToButton(btn);
+    } else if(++attempts > 60){
+      // Give up after ~6 seconds. Guide probably didn't initialize.
+      clearInterval(pollId);
+    }
+  }, 100);
+}
+
+function attachQuestHandlerToButton(btn){
+  // Capture phase so we run BEFORE Guide's own click handler. If we find a
+  // pending quest, we stop propagation and call summonQuestOffer ourselves.
+  btn.addEventListener('click', function(e){
+    if(!pendingQuestId) return;  // let Guide handle it normally
+    if(!window.Guide || typeof window.Guide.summonQuestOffer !== 'function') return;
+
+    e.stopImmediatePropagation();
+    e.preventDefault();
+
+    var quest = QUEST_REGISTRY[pendingQuestId];
+    if(!quest){
+      pendingQuestId = null;
+      return;
+    }
+
+    // Mark offered BEFORE delivering so a mid-delivery refresh doesn't
+    // re-trigger. If declined, onDecline will clear this via clearOffered().
+    markOffered(quest.id);
+    stopGuideButtonPulse();
+
+    pendingQuestId = null;
+
+    window.Guide.summonQuestOffer({
+      dialogueLines:   quest.dialogue,
+      acceptLabel:     quest.acceptLabel,
+      declineLabel:    quest.declineLabel,
+      acceptFarewell:  quest.acceptFarewell,
+      declineFarewell: quest.declineFarewell,
+      onAccept:        quest.onAccept,
+      onDecline:       function(){
+        if(typeof quest.onDecline === 'function') quest.onDecline();
+        // Declined quests may be re-offered on next trigger (rank-up etc).
+      }
+    });
+  }, true);  // capture phase
+}
+
+// ========== LEGACY SHIMS ==========
+// Kept so existing callsites still work until they're fully migrated.
+
 function showQuestNotification(){
-  if(getQuestState() !== 'none') return;
-  setQuestState('available');
-  positionQuestNotif();
-  document.getElementById('questNotif').classList.add('visible');
+  // Repurposed: instead of showing the "!" notification near Oracle, we
+  // now dispatch through the registry. Called from closeCompletionScreen
+  // after rank-up. Safe to call multiple times — dispatch is idempotent
+  // per quest (offered-flag prevents re-offers).
+  offerNextAvailableQuest();
 }
-
-function positionQuestNotif(){
-  // Position near Oracle in screen space
-  var wrap = document.getElementById('canvasWrap');
-  var rect = wrap.getBoundingClientRect();
-  var sx = rect.left + transform.x + ORACLE_X * transform.scale;
-  var sy = rect.top  + transform.y + ORACLE_Y * transform.scale;
-  var notif = document.getElementById('questNotif');
-  notif.style.left = (sx + 40) + 'px';
-  notif.style.top  = (sy - 40) + 'px';
-}
-
-document.getElementById('questNotif').addEventListener('click', function(){
-  document.getElementById('questNotif').classList.remove('visible');
-  document.getElementById('questPanel').classList.add('open');
-});
 
 function acceptQuest(){
-  document.getElementById('questPanel').classList.remove('open');
-  setQuestState('accepted');
-  spawnHiddenNodes();
-  showQuestToast('Quest accepted. Search the star map.');
+  // Legacy callsite — still referenced by the old quest-panel buttons if
+  // anything hung on to them. Functionally equivalent to codex_1's
+  // onAccept handler for backward compat.
+  QUEST_REGISTRY.codex_1.onAccept();
 }
 
 function denyQuest(){
-  document.getElementById('questPanel').classList.remove('open');
-  setQuestState('none'); // allow re-offer later
+  // Legacy callsite — mirrors onDecline of codex_1 for backward compat.
+  QUEST_REGISTRY.codex_1.onDecline();
 }
 
 function showQuestToast(msg){
   var toast = document.getElementById('questToast');
+  if(!toast) return;
   toast.textContent = msg;
   toast.classList.add('show');
   setTimeout(function(){ toast.classList.remove('show'); }, 3500);
 }
+
+// ===== QUEST ACCEPTED OVERLAY =====
+// Big centered modal shown when a quest is accepted. Gives first-time
+// users a clear orientation: names the quest, tells them about the Codex,
+// invites them to begin. Only one button (Begin) — acceptance is already
+// confirmed before this fires; this is purely onboarding.
+function showQuestAcceptedOverlay(questTitle){
+  var overlay = document.getElementById('questAcceptedOverlay');
+  var titleEl = document.getElementById('questAcceptedTitle');
+  if(!overlay) return;
+  if(titleEl && questTitle) titleEl.textContent = questTitle;
+  // Small delay before showing so Guide's farewell animation has fully
+  // dismissed and the screen is clear. Without this the card can pop up
+  // over Guide's fading overlay and look chaotic.
+  setTimeout(function(){
+    overlay.classList.add('open');
+  }, 150);
+}
+
+// Close handler. Accepts an optional event so backdrop-click can route
+// here as well — when called from the backdrop we verify the click was
+// actually on the overlay itself (not a bubbled event from inside the
+// card) before dismissing.
+function closeQuestAcceptedOverlay(event){
+  var overlay = document.getElementById('questAcceptedOverlay');
+  if(!overlay) return;
+  // Backdrop click check: if an event was passed and its target isn't the
+  // overlay itself, it bubbled from inside the card — don't dismiss.
+  if(event && event.target !== overlay) return;
+
+  overlay.classList.remove('open');
+
+  // After the overlay fades away, reveal the Codex button with the
+  // arrival bounce + pulse so the user watches it appear in response to
+  // their tapping "Begin the search". Ceremonial handoff: they complete
+  // the ritual, the world responds.
+  setTimeout(function(){
+    updateCodexBtn();
+    var codexBtn = document.getElementById('codexBtn');
+    if(codexBtn){
+      codexBtn.classList.add('codex-arrival');
+      codexBtn.classList.add('codex-pulse');
+      setTimeout(function(){
+        codexBtn.classList.remove('codex-arrival');
+      }, 900);
+      setTimeout(function(){
+        codexBtn.classList.remove('codex-pulse');
+      }, 4500);
+    }
+  }, 500);
+}
+
+// Retired — the Oracle-adjacent "!" notification is replaced by the Guide
+// button pulse. Stub kept so any lingering callsites don't throw.
+function positionQuestNotif(){ /* no-op — retired in session 9 rebuild */ }
+
 
 // ---- HIDDEN META NODES ----
 var HIDDEN_NODES = [
@@ -4028,17 +4572,13 @@ function openLoreFragment(hn){
     found.push(hn.id);
     setLoreFound(found);
     updateCodexBtn();
-    // Check if quest complete
-    if(found.length >= HIDDEN_NODES.length && getQuestState() === 'accepted'){
-      setQuestState('complete');
-      setTimeout(function(){
-        showQuestToast('Quest complete \u2014 The Codex has been unlocked.');
-        document.getElementById('codexBtn').classList.add('visible');
-        document.getElementById('codexBtn').classList.add('codex-pulse');
-        setTimeout(function(){
-          document.getElementById('codexBtn').classList.remove('codex-pulse');
-        }, 6000);
-      }, 400);
+    // Check if quest complete. The acceptance flow already revealed the
+    // Codex button and told the user where hints live, so completion just
+    // transitions state quietly — no redundant "Codex unlocked" toast.
+    // The active quest entry vanishes naturally from the Codex panel once
+    // all hints are resolved (see renderActiveQuestLog).
+    if(found.length >= HIDDEN_NODES.length && getQuestState('codex_1') === 'accepted'){
+      setQuestState('codex_1', 'complete');
     }
   }
 
@@ -4061,38 +4601,109 @@ function openLoreFragment(hn){
 function closeLorePanel(){
   var panel = document.getElementById('questPanel');
   panel.classList.remove('open');
-  // Restore original quest panel content
-  panel.innerHTML = '<div class="quest-card">' +
-    '<div class="quest-card-header"><div class="quest-card-dot"></div>' +
-    '<div><div class="quest-card-eyebrow">New Quest Available</div>' +
-    '<div class="quest-card-title">Hidden Knowledge</div></div></div>' +
-    '<div class="quest-card-body">' +
-    '<p class="quest-card-desc">Ancient wisdom has been buried in the star map. Two fragments wait to be found by those who look closely enough. The knowledge is small, quiet, orbiting the nodes you have already mastered. You will need to zoom in. You will need to look carefully.</p>' +
-    '<div class="quest-card-hints">' +
-    '<div class="quest-card-hint">&#9670; Something stirs near the place where the gap was first named.</div>' +
-    '<div class="quest-card-hint">&#9670; Another fragment circles the practice the Stoics never abandoned.</div>' +
-    '</div><div class="quest-card-actions">' +
-    '<button class="quest-accept-btn" onclick="acceptQuest()">Accept the Quest</button>' +
-    '<button class="quest-deny-btn" onclick="denyQuest()">Not now</button>' +
-    '</div></div></div>';
+  // Clear the host — the quest-offer content is no longer part of this
+  // panel (Guide handles quest offers now). Leave it empty for next lore
+  // reveal to populate.
+  panel.innerHTML = '';
 }
 
 // ---- CODEX ----
 function updateCodexBtn(){
   var found = getLoreFound();
-  if(found.length > 0 || getQuestState() === 'complete'){
+  // Show the Codex button when EITHER:
+  //   - the user has found any fragments (show what they've collected), OR
+  //   - the user has an accepted quest (show hints to guide them)
+  // This means the Codex becomes useful the moment a quest is accepted,
+  // not just after the first fragment is caught.
+  var hasActiveQuest = false;
+  Object.keys(QUEST_REGISTRY).forEach(function(key){
+    if(getQuestState(QUEST_REGISTRY[key].id) === 'accepted') hasActiveQuest = true;
+  });
+  if(found.length > 0 || getQuestState('codex_1') === 'complete' || hasActiveQuest){
     document.getElementById('codexBtn').classList.add('visible');
   }
+}
+
+// Build HTML for the "Active Quests" section at the top of the Codex panel.
+// For each quest the user has accepted (but not yet completed), show the
+// quest title and its hints. Hints whose target fragment has already been
+// collected are marked as 'found' so users can see their progress at a
+// glance.
+// Returns empty string if no active quests — caller decides whether to
+// show anything at all based on that.
+function renderActiveQuestLog(){
+  var found = getLoreFound();
+  var activeQuests = [];
+  Object.keys(QUEST_REGISTRY).forEach(function(key){
+    var q = QUEST_REGISTRY[key];
+    if(getQuestState(q.id) !== 'accepted') return;
+    if(!Array.isArray(q.hints) || q.hints.length === 0) return;
+    // Skip quests where all hints are resolved — they're effectively done
+    // from the user's perspective even if marked 'accepted' in storage.
+    var allResolved = q.hints.every(function(h){
+      return found.indexOf(h.fragmentId) !== -1;
+    });
+    if(allResolved) return;
+    activeQuests.push(q);
+  });
+
+  if(activeQuests.length === 0) return '';
+
+  var html = '<div class="codex-quest-log">' +
+    '<div class="codex-quest-log-header">Active Quests</div>';
+
+  activeQuests.forEach(function(q){
+    var totalHints = q.hints.length;
+    var resolvedHints = q.hints.filter(function(h){
+      return found.indexOf(h.fragmentId) !== -1;
+    }).length;
+
+    html += '<div class="codex-quest-entry">' +
+      '<div class="codex-quest-entry-header">' +
+        '<div class="codex-quest-entry-title">' + q.title + '</div>' +
+        '<div class="codex-quest-entry-progress">' + resolvedHints + ' / ' + totalHints + '</div>' +
+      '</div>' +
+      '<div class="codex-quest-hints">';
+
+    q.hints.forEach(function(h){
+      var isFound = found.indexOf(h.fragmentId) !== -1;
+      html += '<div class="codex-quest-hint' + (isFound ? ' found' : '') + '">' +
+        '<span class="codex-quest-hint-marker">' + (isFound ? '\u2713' : '\u25C6') + '</span>' +
+        '<span class="codex-quest-hint-text">' + h.text + '</span>' +
+      '</div>';
+    });
+
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+  return html;
 }
 
 function openCodex(){
   var found = getLoreFound();
   var body  = document.getElementById('codexBody');
 
+  // Active quest log at the top (if any)
+  var questLog = renderActiveQuestLog();
+
   if(found.length === 0){
-    body.innerHTML = '<div class="codex-empty">No fragments discovered yet. Accept the quest and search the star map.</div>';
+    // No fragments yet. If there's a quest log, show it. Otherwise show
+    // the empty state. The wording shifts depending on whether a quest is
+    // active — with a quest, the user has hints; without, they haven't
+    // even accepted a quest yet.
+    if(questLog){
+      body.innerHTML = questLog +
+        '<div class="codex-empty">No fragments preserved yet. Follow the hints above.</div>';
+    } else {
+      body.innerHTML = '<div class="codex-empty">No fragments discovered yet. Accept the quest and search the star map.</div>';
+    }
   } else {
-    var html = '';
+    var html = questLog;
+    // Section heading if we have both quest log AND collected fragments
+    if(questLog){
+      html += '<div class="codex-section-heading">Preserved Fragments</div>';
+    }
     HIDDEN_NODES.forEach(function(hn){
       if(found.indexOf(hn.id) === -1) return;
       html += '<div class="codex-entry">' +
@@ -5102,16 +5713,16 @@ window.addEventListener('load',function(){
     setTimeout(showAllComplete, 800);
   }
   // Restore hidden nodes if quest accepted or complete
-  if(getQuestState() === 'accepted' || getQuestState() === 'complete'){
+  if(getQuestState('codex_1') === 'accepted' || getQuestState('codex_1') === 'complete'){
     hiddenNodesActive = true;
   }
-  // Re-show quest notification if still available
-  if(getQuestState() === 'available'){
-    setTimeout(function(){
-      positionQuestNotif();
-      document.getElementById('questNotif').classList.add('visible');
-    }, 1500);
-  }
+  // Re-offer any pending quest on page load via the registry. If the user
+  // had a quest pulsing but closed the tab, this restores the pulse.
+  // Wait a moment so Guide button is wired and DOM is settled.
+  setTimeout(function(){
+    wireGuideQuestInterception();
+    offerNextAvailableQuest();
+  }, 800);
   // Show codex button if any fragments found
   updateCodexBtn();
   updateRespecBtn();
@@ -5130,8 +5741,16 @@ window.addEventListener('resize',function(){centerTree();});
 <script>
   // Initialize persistent nav — mark Atheneum as current chamber
   window.addEventListener('load', function(){
+    console.log('[Nav] window.load fired. typeof Nav:', typeof Nav);
     if(typeof Nav !== 'undefined'){
-      Nav.init({ current: 'atheneum' });
+      try {
+        Nav.init({ current: 'atheneum' });
+        console.log('[Nav] Nav.init() completed. trigger button in DOM:', !!document.querySelector('.nav-trigger'));
+      } catch(e){
+        console.error('[Nav] Nav.init() threw:', e);
+      }
+    } else {
+      console.error('[Nav] Nav is undefined at window.load. nav.js did not load or its IIFE did not run.');
     }
   });
 </script>
