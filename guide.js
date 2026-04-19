@@ -37,6 +37,12 @@
   var currentTypingFullText = '';
   var currentTypingCompletion = null;
 
+  // Active quest offer being delivered via summonQuestOffer (session 9).
+  // When the final dialogue line completes, renderDialogueLine checks this
+  // and hands off to renderQuestOfferMenu instead of showing the Continue
+  // button. Null when no quest is being offered.
+  var activeQuestOffer = null;
+
   var summonEl = null;
   var overlayEl = null;
   var dialogueTextEl = null;
@@ -160,6 +166,12 @@
         typewriterTimeout = null;
       }
 
+      // Clear any active quest offer so stale state doesn't leak into the
+      // next summon. Normally quest offers clear themselves in the choice
+      // handler, but dismiss-via-Escape or dismiss-via-click-outside
+      // bypasses that, so we clear here as a safety net.
+      activeQuestOffer = null;
+
       overlayEl.classList.remove('active');
       document.body.classList.remove('guide-active');
 
@@ -259,6 +271,51 @@
       setTimeout(renderDialogueLine, 400);
     },
 
+    // Quest offer: Guide delivers quest dialogue, presents accept/decline
+    // menu on final line, then plays a short farewell and dismisses.
+    // questConfig shape:
+    //   dialogueLines: [{speaker:'The Guide', text:'...'}, ...]  (2-4 lines)
+    //   acceptLabel:    string — e.g. 'I accept'
+    //   declineLabel:   string — e.g. 'Not now'
+    //   acceptFarewell: string — Guide's line after accept
+    //   declineFarewell:string — Guide's line after decline
+    //   onAccept:       function — fires after acceptFarewell dismisses
+    //   onDecline:      function — fires after declineFarewell dismisses
+    //
+    // Structurally similar to summonContextDialogue but appends a custom
+    // menu (not the built-in one) after the final dialogue line, and
+    // routes the menu choice through custom farewells before firing the
+    // page-provided callbacks. The page's callback handlers are what
+    // actually mutate quest state — Guide just orchestrates the UI.
+    summonQuestOffer: function(questConfig){
+      if(!overlayEl || isOpen) return;
+      if(!questConfig || !Array.isArray(questConfig.dialogueLines) || questConfig.dialogueLines.length === 0) return;
+
+      isOpen = true;
+      mode = 'dialogue';
+      dialogueIndex = 0;
+
+      // Swap dialogue script the same way summonContextDialogue does.
+      var savedScript = config.script;
+      config.script = questConfig.dialogueLines;
+      config._restoreScriptOnDismiss = savedScript;
+
+      // Stash the quest config where the dialogue-completion hook can
+      // find it. We detect "last line of quest script" inside the
+      // dialogue flow and hand off to the quest menu renderer.
+      activeQuestOffer = questConfig;
+
+      if(summonEl) summonEl.classList.remove('guide-pulsing');
+
+      overlayEl.classList.add('active');
+      document.body.classList.add('guide-active');
+
+      if(menuEl) menuEl.classList.remove('active');
+      if(footerEl) footerEl.classList.add('active');
+
+      setTimeout(renderDialogueLine, 400);
+    },
+
     // Called by pages to tell Guide what's happening on screen.
     // Examples:
     //   Guide.setContext('default')
@@ -290,6 +347,7 @@
   function buildDOM(){
     summonEl = document.createElement('button');
     summonEl.className = 'guide-summon';
+    summonEl.id = 'guideSummon';  // stable id so pages can hook onto it
     summonEl.setAttribute('aria-label', 'Summon the Guide');
     summonEl.setAttribute('title', 'Summon the Guide');
     summonEl.innerHTML = '<svg class="guide-summon-sigil" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
@@ -668,6 +726,66 @@
     }
   }
 
+  // ========== QUEST OFFER MENU ==========
+  // Rendered after the final dialogue line of a quest offer. Uses the same
+  // menu-button styling as the context menu for visual consistency, but with
+  // quest-specific labels and handler wiring. On choice, plays the
+  // corresponding farewell and then fires the page-provided callback.
+  function renderQuestOfferMenu(){
+    if(!activeQuestOffer) return;
+    if(!menuEl) return;
+
+    var q = activeQuestOffer;
+    var acceptLabel  = q.acceptLabel  || 'I accept';
+    var declineLabel = q.declineLabel || 'Not now';
+
+    // Hide the footer (no Continue button — menu replaces it entirely)
+    if(footerEl) footerEl.classList.remove('active');
+
+    menuEl.innerHTML = '' +
+      '<button class="guide-menu-btn" data-action="quest-accept">' + acceptLabel + '</button>' +
+      '<button class="guide-menu-btn" data-action="quest-decline">' + declineLabel + '</button>';
+    menuEl.classList.add('active');
+
+    var btns = menuEl.querySelectorAll('.guide-menu-btn');
+    btns.forEach(function(btn, idx){
+      btn.style.animationDelay = (idx * 0.12) + 's';
+      btn.addEventListener('click', function(){
+        var action = btn.getAttribute('data-action');
+        handleQuestOfferChoice(action);
+      });
+    });
+  }
+
+  function handleQuestOfferChoice(action){
+    if(!activeQuestOffer) return;
+    var q = activeQuestOffer;
+    activeQuestOffer = null;  // consumed — don't fire twice
+
+    if(menuEl){
+      menuEl.classList.remove('active');
+      menuEl.innerHTML = '';
+    }
+
+    // summonFarewell plays the line and dismisses Guide automatically after.
+    // The farewell duration varies with text length, so we use a generous
+    // delay before firing the page callback. 2200ms covers ~85 chars at the
+    // 28ms-per-char typewriter speed plus the fade-out time.
+    if(action === 'quest-accept'){
+      var acceptLine = q.acceptFarewell || 'Good. Return when the work begins.';
+      Guide.summonFarewell(acceptLine);
+      if(typeof q.onAccept === 'function'){
+        setTimeout(q.onAccept, 2200 + acceptLine.length * 12);
+      }
+    } else if(action === 'quest-decline'){
+      var declineLine = q.declineFarewell || 'As you wish, ascendant.';
+      Guide.summonFarewell(declineLine);
+      if(typeof q.onDecline === 'function'){
+        setTimeout(q.onDecline, 2200 + declineLine.length * 12);
+      }
+    }
+  }
+
   function runBridgeLine(text, callback){
     speakerNameEl.textContent = 'The Guide';
     dialogueTextEl.innerHTML = '';
@@ -724,7 +842,15 @@
       if(sigilEl) sigilEl.classList.remove('speaking');
       if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
       if(dialogueIndex === config.script.length - 1){
-        continueBtn.textContent = 'Dismiss';
+        // Quest offer hook: if the user is seeing the final line of a quest
+        // offer, hand off to the quest menu rather than waiting for a Dismiss
+        // click. The user's choice of accept/decline replaces the built-in
+        // Continue/Dismiss flow from here on.
+        if(activeQuestOffer){
+          setTimeout(renderQuestOfferMenu, 450);
+        } else {
+          continueBtn.textContent = 'Dismiss';
+        }
       }
     };
 
@@ -749,7 +875,13 @@
       if(sigilEl) sigilEl.classList.remove('speaking');
       if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
       if(dialogueIndex === config.script.length - 1){
-        continueBtn.textContent = 'Dismiss';
+        // Same quest-menu hand-off as in renderDialogueLine. Keeps behavior
+        // identical whether the user skipped the typing or waited it out.
+        if(activeQuestOffer){
+          setTimeout(renderQuestOfferMenu, 450);
+        } else {
+          continueBtn.textContent = 'Dismiss';
+        }
       }
       return;
     }
@@ -758,7 +890,18 @@
       dialogueIndex++;
       renderDialogueLine();
     } else {
-      Guide.dismiss();
+      // If a quest is active and the user clicks Dismiss on the final line,
+      // treat it as "decline" — same as they hit the decline button. This
+      // is a graceful fallback that shouldn't normally fire (the menu takes
+      // over before Dismiss is clickable) but covers the edge case.
+      if(activeQuestOffer){
+        var q = activeQuestOffer;
+        activeQuestOffer = null;
+        Guide.summonFarewell(q.declineFarewell || 'As you wish, ascendant.');
+        if(typeof q.onDecline === 'function') setTimeout(q.onDecline, 2200);
+      } else {
+        Guide.dismiss();
+      }
     }
   }
 
@@ -1111,6 +1254,69 @@
       '.guide-summon.guide-pulsing{animation:guide-summon-pulse 2.4s ease-in-out infinite}' +
       '@keyframes guide-summon-pulse{0%,100%{filter:drop-shadow(0 0 12px rgba(157,139,255,0.35))}' +
         '50%{filter:drop-shadow(0 0 24px rgba(201,168,76,0.65)) drop-shadow(0 0 40px rgba(157,139,255,0.4))}}' +
+
+      // ======= QUEST BEACON (session 9) =======
+      // A distinct, high-visibility state for when a quest is waiting. This
+      // is different from guide-pulsing (the ambient first-visit cue) —
+      // quest-beacon is an explicit "you have a quest" signal that must be
+      // unmistakable at a glance. Three layers: aura ring, badge, and
+      // one-shot flare.
+      //
+      // Layer 1: Aura rings — ::before and ::after pseudo-elements that
+      // expand outward like sonar. Two rings offset by 1s so there is
+      // always a visible expansion in flight.
+      '.guide-summon.guide-quest-beacon::before,' +
+      '.guide-summon.guide-quest-beacon::after{' +
+        'content:"";position:absolute;inset:-6px;border-radius:50%;' +
+        'border:2px solid rgba(201,168,76,0.7);pointer-events:none;' +
+        'animation:guide-quest-ring 2s ease-out infinite;' +
+        'box-sizing:border-box}' +
+      '.guide-summon.guide-quest-beacon::after{animation-delay:1s}' +
+      '@keyframes guide-quest-ring{' +
+        '0%{transform:scale(0.9);opacity:1;border-width:2px}' +
+        '80%{opacity:0.2;border-width:1px}' +
+        '100%{transform:scale(2.4);opacity:0;border-width:0.5px}}' +
+      // Layer 2: The badge. A gold "!" circle in the top-right of the
+      // button. Bobs and pulses. Carries the highest information density.
+      // We append this as a DOM child (.guide-quest-badge) because pseudo-
+      // elements can't hold text cleanly and we want the "!" legible.
+      '.guide-quest-badge{position:absolute;top:-6px;right:-6px;' +
+        'width:24px;height:24px;border-radius:50%;' +
+        'background:radial-gradient(circle at 35% 30%,#fff6d8 0%,#e5c574 40%,#c9a84c 80%);' +
+        'box-shadow:0 0 12px rgba(201,168,76,0.85),0 0 24px rgba(201,168,76,0.5),' +
+          '0 2px 6px rgba(0,0,0,0.5);' +
+        'display:flex;align-items:center;justify-content:center;' +
+        'font-family:"Cinzel Decorative",serif;font-weight:700;font-size:15px;' +
+        'color:#3a2a10;text-shadow:0 1px 0 rgba(255,246,216,0.8);' +
+        'line-height:1;padding-top:1px;z-index:2;pointer-events:none;' +
+        'opacity:0;transform:scale(0);' +
+        'animation:guide-quest-badge-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards,' +
+          'guide-quest-badge-bob 2.6s ease-in-out infinite 0.5s}' +
+      '@keyframes guide-quest-badge-in{' +
+        '0%{opacity:0;transform:scale(0) rotate(-45deg)}' +
+        '60%{opacity:1;transform:scale(1.2) rotate(8deg)}' +
+        '100%{opacity:1;transform:scale(1) rotate(0)}}' +
+      '@keyframes guide-quest-badge-bob{' +
+        '0%,100%{transform:translateY(0) scale(1);' +
+          'box-shadow:0 0 12px rgba(201,168,76,0.85),0 0 24px rgba(201,168,76,0.5),0 2px 6px rgba(0,0,0,0.5)}' +
+        '50%{transform:translateY(-3px) scale(1.05);' +
+          'box-shadow:0 0 18px rgba(201,168,76,1),0 0 36px rgba(201,168,76,0.7),0 4px 8px rgba(0,0,0,0.5)}}' +
+      // Layer 3: One-shot arrival flare. Runs once when the beacon first
+      // appears. Brief gold burst that expands and fades. Grabs the eye
+      // even in peripheral vision for users who just closed the rank-up
+      // overlay and might be looking elsewhere.
+      '.guide-quest-flare{position:absolute;inset:-20px;border-radius:50%;' +
+        'background:radial-gradient(circle,rgba(255,246,216,0.8) 0%,rgba(201,168,76,0.4) 40%,transparent 70%);' +
+        'pointer-events:none;z-index:1;' +
+        'animation:guide-quest-flare-burst 1.2s ease-out forwards}' +
+      '@keyframes guide-quest-flare-burst{' +
+        '0%{opacity:0;transform:scale(0.5)}' +
+        '20%{opacity:1;transform:scale(1.2)}' +
+        '100%{opacity:0;transform:scale(2.8)}}' +
+      // Make the summon button a positioning context for the badge/flare
+      '.guide-summon{position:fixed}' + /* no-op override — already fixed, but ensures stacking context */
+      // ======= END QUEST BEACON =======
+
       '.guide-summon .guide-summon-sigil{width:100%;height:100%;display:block;overflow:visible;' +
         'filter:drop-shadow(0 0 4px rgba(255,235,170,0.6)) drop-shadow(0 0 8px rgba(201,168,76,0.4))}' +
       '.guide-summon .guide-summon-ring{transform-origin:50px 50px;animation:guide-summon-ring-rotate 20s linear infinite}' +
