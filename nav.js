@@ -2,7 +2,7 @@
  * nav.js — Persistent chamber navigation for Gamer Ascension
  *
  * Usage:
- *   1. Include <script src="nav.js"></script> near end of <body>
+ *   1. Include as a script tag (src="nav.js") near end of body
  *   2. Call Nav.init({ current: 'atheneum' }) to mark the current chamber
  *      (valid values: 'threshold', 'atheneum', 'arcanium', 'scriptorium', 'agora')
  *
@@ -49,16 +49,17 @@
     style.id = 'nav-styles';
     style.textContent = '' +
       // Trigger button — compass icon + "Chambers" label, positioned below the page header
-      '.nav-trigger{position:fixed;top:68px;left:12px;height:34px;' +
-        'background:rgba(8,8,20,0.75);border:1px solid rgba(201,168,76,0.3);' +
-        'border-radius:20px;cursor:pointer;z-index:9997;padding:0 14px 0 10px;' +
+      '.nav-trigger{position:fixed;top:68px;left:12px;height:36px;' +
+        'background:rgba(8,8,20,0.85);border:1px solid rgba(201,168,76,0.5);' +
+        'border-radius:20px;cursor:pointer;z-index:9997;padding:0 16px 0 12px;' +
         'display:inline-flex;align-items:center;gap:8px;' +
         'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);' +
-        'transition:all .25s;outline:none;box-shadow:0 2px 12px rgba(0,0,0,0.3);' +
-        'font-family:\'Cinzel\',serif;font-size:10px;letter-spacing:.22em;' +
-        'color:rgba(240,236,228,0.75);text-transform:uppercase}' +
-      '.nav-trigger:hover{border-color:rgba(201,168,76,0.6);' +
-        'color:#f0ece4;box-shadow:0 2px 12px rgba(0,0,0,0.3),0 0 14px rgba(201,168,76,0.25)}' +
+        'transition:all .25s;outline:none;' +
+        'box-shadow:0 2px 14px rgba(0,0,0,0.4),0 0 18px rgba(201,168,76,0.15);' +
+        'font-family:\'Cinzel\',serif;font-size:10.5px;letter-spacing:.22em;' +
+        'color:rgba(240,236,228,0.88);text-transform:uppercase}' +
+      '.nav-trigger:hover{border-color:rgba(201,168,76,0.85);' +
+        'color:#f0ece4;box-shadow:0 2px 14px rgba(0,0,0,0.4),0 0 20px rgba(201,168,76,0.45)}' +
       '.nav-trigger:focus,.nav-trigger:focus-visible{outline:none;box-shadow:0 2px 12px rgba(0,0,0,0.3)}' +
       '.nav-trigger.open{border-color:rgba(201,168,76,0.75);' +
         'background:rgba(30,22,12,0.85);color:#f0ece4}' +
