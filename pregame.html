@@ -875,7 +875,7 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
       <button class="tutorial-skip" onclick="closeTutorial()">Skip ✕</button>
     </div>
     <div class="tutorial-video">
-      <iframe src="https://www.youtube.com/embed/j3N0Y3gCTRA?autoplay=1&mute=0" title="Skill Tree Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      <iframe id="tutorialIframe" src="" data-src="https://www.youtube.com/embed/j3N0Y3gCTRA?autoplay=1&mute=0" title="Skill Tree Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
     <button class="tutorial-btn" onclick="closeTutorial()">Got it, let's go →</button>
   </div>
@@ -5780,11 +5780,31 @@ function reopenTutorial(){
   // the user has acknowledged it. Whether they watch or skip, the beacon
   // has done its job.
   stopTutorialBeacon();
+
+  // Load the video src from data-src. We keep src empty when the overlay
+  // is closed so the iframe doesn't load YouTube in the background on
+  // page load, and so playback stops the moment the user closes it.
+  // Re-assigning src each open causes the video to reload from the start,
+  // which is the desired behavior — if a user reopens the tutorial, they
+  // get a fresh playthrough rather than resuming mid-video.
+  var iframe = document.getElementById('tutorialIframe');
+  if(iframe){
+    var srcToLoad = iframe.getAttribute('data-src');
+    if(srcToLoad && iframe.src !== srcToLoad) iframe.src = srcToLoad;
+  }
+
   document.getElementById('tutorialOverlay').classList.add('open');
 }
 function closeTutorial(){
   document.getElementById('tutorialOverlay').classList.remove('open');
   localStorage.setItem('ga_tutorial_seen', '1');
+
+  // Wipe the iframe src to stop YouTube playback. Just hiding the overlay
+  // would let the video keep playing in the background — this is the only
+  // reliable way to halt a YouTube iframe without the IFrame API.
+  var iframe = document.getElementById('tutorialIframe');
+  if(iframe) iframe.src = '';
+
   // Defensive: also stop the beacon here in case a future code path
   // opens the tutorial without going through reopenTutorial().
   stopTutorialBeacon();
