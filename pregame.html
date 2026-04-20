@@ -4641,33 +4641,119 @@ function drawHiddenNodes(){
     var pos = getHiddenNodePos(hn);
     var isFound = isFounded;
 
-    // Slow twinkle
-    var twinkle = 0.5 + Math.sin(t * 0.015 + hn.orbitPhase) * 0.5;
+    // Slow gleam sweep — phase runs 0→1 over ~6s, triggers a brightness
+    // peak as it crosses the shard. Each fragment has its own phase via
+    // orbitPhase so they don't all pulse in sync.
+    var gleamPhase = (t * 0.003 + hn.orbitPhase) % (Math.PI * 2);
+    var gleam = 0.5 + Math.sin(gleamPhase) * 0.5; // 0→1
+
+    // Slow rotation so the shard doesn't feel static. Runs at roughly
+    // 1/5th the orbital speed so movement is felt, not seen.
+    var rotation = (t * 0.0004 + hn.orbitPhase * 0.5);
+
+    // Shard dimensions — tall diamond (rhombus). Visually distinct from
+    // the round parent nodes and from anything else on the star map.
+    var w = 6;   // half-width
+    var h = 9;   // half-height
 
     treeCtx.save();
+    treeCtx.translate(pos.x, pos.y);
+    treeCtx.rotate(rotation);
 
     if(isFound){
-      // Found state — brighter, gold tint
-      treeCtx.fillStyle = 'rgba(201,168,76,' + (0.7 + twinkle * 0.3) + ')';
-      treeCtx.shadowBlur = 12;
-      treeCtx.shadowColor = 'rgba(201,168,76,0.8)';
-      treeCtx.beginPath();
-      treeCtx.arc(pos.x, pos.y, 5.5, 0, Math.PI*2);
-      treeCtx.fill();
-      // Outer glow ring
-      treeCtx.strokeStyle = 'rgba(201,168,76,0.25)';
+      // ===== FOUND STATE =====
+      // Preserved — stable gold, brighter, with a ring of permanence.
+      // The gleam still runs for life, but the shard is clearly "caught."
+
+      // Outer aura ring (permanence marker)
+      treeCtx.strokeStyle = 'rgba(201,168,76,0.28)';
       treeCtx.lineWidth = 1;
       treeCtx.beginPath();
-      treeCtx.arc(pos.x, pos.y, 9, 0, Math.PI*2);
+      treeCtx.arc(0, 0, 13, 0, Math.PI * 2);
       treeCtx.stroke();
-    } else {
-      // Undiscovered — very small, barely visible, faint violet
-      var alpha = 0.12 + twinkle * 0.18;
-      treeCtx.fillStyle = 'rgba(180,140,255,' + alpha + ')';
-      treeCtx.shadowBlur = 6;
-      treeCtx.shadowColor = 'rgba(180,140,255,0.4)';
+
+      // Outer shard outline — bright gold edge
+      treeCtx.shadowBlur = 14;
+      treeCtx.shadowColor = 'rgba(245,220,140,0.85)';
+      treeCtx.strokeStyle = 'rgba(245,220,140,' + (0.85 + gleam * 0.15) + ')';
+      treeCtx.lineWidth = 1.2;
       treeCtx.beginPath();
-      treeCtx.arc(pos.x, pos.y, 3.5, 0, Math.PI*2);
+      treeCtx.moveTo(0, -h);
+      treeCtx.lineTo(w, 0);
+      treeCtx.lineTo(0, h);
+      treeCtx.lineTo(-w, 0);
+      treeCtx.closePath();
+      treeCtx.stroke();
+
+      // Inner fill — warm gold gradient, darker at edges, bright center
+      var fillGrad = treeCtx.createLinearGradient(-w, -h, w, h);
+      fillGrad.addColorStop(0,   'rgba(201,168,76,0.35)');
+      fillGrad.addColorStop(0.5, 'rgba(245,220,140,' + (0.65 + gleam * 0.25) + ')');
+      fillGrad.addColorStop(1,   'rgba(201,168,76,0.35)');
+      treeCtx.shadowBlur = 0;
+      treeCtx.fillStyle = fillGrad;
+      treeCtx.beginPath();
+      treeCtx.moveTo(0, -h);
+      treeCtx.lineTo(w, 0);
+      treeCtx.lineTo(0, h);
+      treeCtx.lineTo(-w, 0);
+      treeCtx.closePath();
+      treeCtx.fill();
+
+      // Inner highlight facet — the "catch of light" on one edge
+      treeCtx.strokeStyle = 'rgba(255,245,200,' + (0.7 + gleam * 0.3) + ')';
+      treeCtx.lineWidth = 0.8;
+      treeCtx.beginPath();
+      treeCtx.moveTo(0, -h * 0.7);
+      treeCtx.lineTo(w * 0.5, -h * 0.1);
+      treeCtx.stroke();
+
+    } else {
+      // ===== UNDISCOVERED STATE =====
+      // Still small, still a pull for the eye — but NOW a shape, not a
+      // smear. Faceted crystal silhouette in faded violet-gold with a
+      // gold glint at the center showing the light the nebula is trying
+      // to drink.
+
+      // Faint outer halo (so the shard reads against busy backgrounds)
+      treeCtx.shadowBlur = 10;
+      treeCtx.shadowColor = 'rgba(180,140,255,' + (0.35 + gleam * 0.25) + ')';
+
+      // Outer shard outline — violet, with gleam modulation
+      treeCtx.strokeStyle = 'rgba(200,170,255,' + (0.65 + gleam * 0.3) + ')';
+      treeCtx.lineWidth = 1;
+      treeCtx.beginPath();
+      treeCtx.moveTo(0, -h);
+      treeCtx.lineTo(w, 0);
+      treeCtx.lineTo(0, h);
+      treeCtx.lineTo(-w, 0);
+      treeCtx.closePath();
+      treeCtx.stroke();
+
+      // Inner fill — dark violet, slight gradient so it feels solid
+      // rather than a flat cutout
+      treeCtx.shadowBlur = 0;
+      var undFill = treeCtx.createLinearGradient(-w, -h, w, h);
+      undFill.addColorStop(0,   'rgba(40,30,70,0.85)');
+      undFill.addColorStop(0.5, 'rgba(70,50,110,0.9)');
+      undFill.addColorStop(1,   'rgba(40,30,70,0.85)');
+      treeCtx.fillStyle = undFill;
+      treeCtx.beginPath();
+      treeCtx.moveTo(0, -h);
+      treeCtx.lineTo(w, 0);
+      treeCtx.lineTo(0, h);
+      treeCtx.lineTo(-w, 0);
+      treeCtx.closePath();
+      treeCtx.fill();
+
+      // The gold glint — small bright dot at the center. This is the
+      // "caught knowledge" glowing inside the faceted shell. Modulates
+      // with gleam so it looks like light refracting through rotation.
+      treeCtx.shadowBlur = 6;
+      treeCtx.shadowColor = 'rgba(245,220,140,' + (0.5 + gleam * 0.5) + ')';
+      treeCtx.fillStyle = 'rgba(255,235,170,' + (0.6 + gleam * 0.4) + ')';
+      treeCtx.beginPath();
+      treeCtx.arc(0, 0, 1.4, 0, Math.PI * 2);
       treeCtx.fill();
     }
 
