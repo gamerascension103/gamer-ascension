@@ -163,10 +163,80 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .quiz-float-dot{width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,.7);animation:hint-blink 2s ease-in-out infinite}
 .quiz-float-label{font-family:'Cinzel',serif;font-size:8px;font-weight:400;letter-spacing:.06em;color:rgba(201,168,76,.6);writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);line-height:1.3}
 
-/* QUIZ PANEL */
-.quiz-panel{position:fixed;inset:0;z-index:300;background:rgba(6,6,14,.98);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);overflow:hidden}
+/* QUIZ PANEL — session 9: now the "inner room" of the Tesseract, with a
+   deeper violet-gold atmosphere and subtle geometric echoes of the
+   artifact we entered through. */
+.quiz-panel{position:fixed;inset:0;z-index:300;background:radial-gradient(ellipse at 50% 45%,rgba(24,18,42,.98) 0%,rgba(8,6,18,.99) 60%,rgba(4,4,12,1) 100%);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);overflow:hidden}
 .quiz-panel.open{transform:translateY(0)}
-.quiz-nebula{position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 30% 40%,rgba(80,0,140,.18) 0%,transparent 60%),radial-gradient(ellipse at 70% 60%,rgba(160,20,40,.12) 0%,transparent 55%),radial-gradient(ellipse at 50% 20%,rgba(40,0,100,.1) 0%,transparent 50%)}
+.quiz-nebula{position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 30% 40%,rgba(120,80,200,.22) 0%,transparent 55%),radial-gradient(ellipse at 70% 60%,rgba(201,168,76,.08) 0%,transparent 50%),radial-gradient(ellipse at 50% 20%,rgba(80,40,160,.14) 0%,transparent 55%)}
+/* Tesseract inner-room echo — faint rotating square behind the quiz content,
+   suggests we are inside the artifact itself. */
+.quiz-panel::before,
+.quiz-panel::after{
+  content:"";position:absolute;top:50%;left:50%;
+  width:min(520px,72vw);height:min(520px,72vw);
+  transform:translate(-50%,-50%);
+  border:1px solid rgba(201,168,76,0.07);
+  pointer-events:none;z-index:0;
+  box-shadow:inset 0 0 80px rgba(120,80,200,0.05);
+}
+.quiz-panel::before{animation:quiz-room-outer 48s linear infinite}
+.quiz-panel::after{
+  width:min(360px,50vw);height:min(360px,50vw);
+  animation:quiz-room-inner 36s linear infinite reverse;
+  border-color:rgba(120,80,200,0.08);
+}
+@keyframes quiz-room-outer{
+  from{transform:translate(-50%,-50%) rotate(0deg)}
+  to  {transform:translate(-50%,-50%) rotate(360deg)}
+}
+@keyframes quiz-room-inner{
+  from{transform:translate(-50%,-50%) rotate(0deg)}
+  to  {transform:translate(-50%,-50%) rotate(360deg)}
+}
+
+/* ===== TESSERACT DIVE FLASH (session 9) =====
+   The white-wash cover layer used during the dive-through transition.
+   Scene swaps happen while this is at peak opacity, so the user sees no
+   flicker between star map and inner room. */
+.tess-dive-flash{
+  position:fixed;inset:0;z-index:600;pointer-events:none;
+  background:radial-gradient(ellipse at center,
+    rgba(255,255,255,1) 0%,
+    rgba(220,220,255,0.95) 30%,
+    rgba(180,180,255,0.7) 60%,
+    rgba(40,20,80,0.2) 100%);
+  opacity:0;transition:opacity .35s ease;
+}
+.tess-dive-flash.tess-dive-flash-peak{opacity:1;transition:opacity .2s ease-in}
+.tess-dive-flash.tess-dive-flash-fadeout{opacity:0;transition:opacity .9s ease-out}
+/* ===== END DIVE FLASH ===== */
+
+/* ===== TESSERACT ORIENTATION TEXT (session 9) =====
+   Gold Cinzel line that fades in beside the Tesseract after the rank-up
+   overlay closes. Pure orientation — "this is where you go next." Fades
+   out after a beat, leaving the camera focused on the Tesseract. */
+.tesseract-orient-text{
+  position:fixed;top:62%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:150;pointer-events:none;
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(20px,3.2vw,30px);font-weight:400;
+  letter-spacing:.14em;
+  color:#e5c574;
+  text-shadow:
+    0 0 20px rgba(201,168,76,0.65),
+    0 0 40px rgba(201,168,76,0.35),
+    0 0 80px rgba(120,80,200,0.25);
+  opacity:0;
+  transition:opacity 0.7s ease;
+  white-space:nowrap;
+  text-align:center;
+}
+.tesseract-orient-text.orient-visible{opacity:1;transition:opacity 0.7s ease}
+.tesseract-orient-text.orient-fading{opacity:0;transition:opacity 0.9s ease}
+/* ===== END ORIENT TEXT ===== */
+
 .quiz-panel-header{flex-shrink:0;padding:24px 32px;border-bottom:1px solid rgba(201,168,76,.12);display:flex;align-items:center;justify-content:center;position:relative;z-index:1;text-align:center}
 .quiz-panel-header-inner{display:flex;flex-direction:column;align-items:center;gap:6px}
 .quiz-panel-title-wrap{display:flex;align-items:center;gap:10px;justify-content:center}
@@ -1190,63 +1260,78 @@ function buildClickTargets(){
 
   // Pregame nodes handled via live hit-testing (they orbit)
   // Constellation nodes handled via live hit-testing too (see hitTestAllNodes)
-  // Only Oracle and badge use SVG since they never move
+  // Only Tesseract + badge use SVG since they never move.
+  // SESSION 9: Oracle removed — Tesseract is now the assessment portal.
+  // The Tesseract is only clickable once activated (all 5 core nodes done).
 
-  // Oracle click target
-  var oracleSvg = document.createElementNS('http://www.w3.org/2000/svg','circle');
-  oracleSvg.setAttribute('cx', ORACLE_X);
-  oracleSvg.setAttribute('cy', ORACLE_Y);
-  oracleSvg.setAttribute('r', ORACLE_R + 30);
-  oracleSvg.setAttribute('fill','transparent');
-  oracleSvg.setAttribute('stroke','none');
-  oracleSvg.style.cursor='pointer';
-  oracleSvg.addEventListener('mousedown',function(e){e.stopPropagation();});
-  oracleSvg.addEventListener('click',function(e){
+  // Tesseract click target — larger generous hit area covering the outer square.
+  var tesseractSvg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  var tessHitSize = 140; // generous hit region, slightly bigger than the outer square
+  tesseractSvg.setAttribute('x', TESSERACT_X - tessHitSize);
+  tesseractSvg.setAttribute('y', TESSERACT_Y - tessHitSize);
+  tesseractSvg.setAttribute('width',  tessHitSize * 2);
+  tesseractSvg.setAttribute('height', tessHitSize * 2);
+  tesseractSvg.setAttribute('fill','transparent');
+  tesseractSvg.setAttribute('stroke','none');
+  tesseractSvg.style.cursor = 'default';
+  tesseractSvg.id = 'tesseractClickTarget';
+  tesseractSvg.addEventListener('mousedown',function(e){e.stopPropagation();});
+  tesseractSvg.addEventListener('click',function(e){
     e.stopPropagation();
-    if(!drag.moved) openQuiz();
+    if(drag.moved) return;
+
+    // Yield to pregame nodes orbiting over us. The Tesseract's SVG hit
+    // target is a big (280x280) rect, and the core skill nodes can
+    // legitimately orbit into that region — when they do, user clicks
+    // should hit the node, not fall through to the Tesseract. Check
+    // pregame nodes first; if one is under the click, open THAT instead.
+    var pregameHit = hitTestPregameNode(e.clientX, e.clientY);
+    if(pregameHit){
+      openNodePanel(pregameHit.node.id);
+      return;
+    }
+
+    if(!tesseractActive){
+      // Not ready yet — give hover feedback only. Tooltip already explains
+      // why (complete the 5 core skills). No interaction.
+      return;
+    }
+    // Ready — play the dive-in transition, then open the quiz.
+    diveIntoTesseract();
   });
-  oracleSvg.addEventListener('mouseenter',function(e){
+  tesseractSvg.addEventListener('mouseenter',function(e){
+    // Same yield logic as click — if a pregame node is orbiting under the
+    // cursor, let the node's own hover tooltip display instead of ours.
+    var pregameHit = hitTestPregameNode(e.clientX, e.clientY);
+    if(pregameHit){
+      // Don't show Tesseract tooltip. The node's handler will show its own.
+      return;
+    }
     var tt=document.getElementById('nodeTooltip');
-    document.getElementById('ttNum').textContent='Astral Artifact';
-    document.getElementById('ttName').textContent='The Oracle';
-    document.getElementById('ttAction').textContent=window.quizResult?'Assessment complete':'Tap to discover your path';
+    var pillarNames = {vitality:'Vitality', spirit:'Spirit', alignment:'Alignment'};
+    if(window.quizResult){
+      document.getElementById('ttNum').textContent='Astral Artifact';
+      document.getElementById('ttName').textContent='The Tesseract';
+      document.getElementById('ttAction').textContent='Your path: ' + pillarNames[window.quizResult];
+    } else if(tesseractActive){
+      document.getElementById('ttNum').textContent='Astral Artifact';
+      document.getElementById('ttName').textContent='The Tesseract';
+      document.getElementById('ttAction').textContent='Discover your path';
+      tesseractSvg.style.cursor = 'pointer';
+    } else {
+      document.getElementById('ttNum').textContent='Astral Artifact';
+      document.getElementById('ttName').textContent='The Tesseract';
+      document.getElementById('ttAction').textContent='Complete the 5 core skills to discover your path';
+      tesseractSvg.style.cursor = 'default';
+    }
     var x=e.clientX+16,y=e.clientY-40;
-    if(x+220>window.innerWidth)x=e.clientX-230;
+    if(x+260>window.innerWidth)x=e.clientX-270;
     if(y<70)y=e.clientY+16;
     tt.style.left=x+'px';tt.style.top=y+'px';
     tt.classList.add('visible');
   });
-  oracleSvg.addEventListener('mouseleave',function(){document.getElementById('nodeTooltip').classList.remove('visible');});
-  svg.appendChild(oracleSvg);
-
-  // Badge hover target
-  if(window.quizResult){
-    var pillarNames = {vitality:'Vitality', spirit:'Spirit', alignment:'Alignment'};
-    var badgeSvg = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    var bx2 = ORACLE_X + ORACLE_R + 50;
-    var by2 = ORACLE_Y - 10;
-    badgeSvg.setAttribute('x', bx2);
-    badgeSvg.setAttribute('y', by2);
-    badgeSvg.setAttribute('width', 160);
-    badgeSvg.setAttribute('height', 54);
-    badgeSvg.setAttribute('rx', 4);
-    badgeSvg.setAttribute('fill','transparent');
-    badgeSvg.setAttribute('stroke','none');
-    badgeSvg.style.cursor='default';
-    badgeSvg.addEventListener('mouseenter',function(e){
-      var tt=document.getElementById('nodeTooltip');
-      document.getElementById('ttNum').textContent='Skill focus';
-      document.getElementById('ttName').textContent=pillarNames[window.quizResult]+' Pillar';
-      document.getElementById('ttAction').textContent='This is where you may benefit the most at this time';
-      var x=e.clientX+16,y=e.clientY-40;
-      if(x+260>window.innerWidth)x=e.clientX-270;
-      if(y<70)y=e.clientY+16;
-      tt.style.left=x+'px';tt.style.top=y+'px';
-      tt.classList.add('visible');
-    });
-    badgeSvg.addEventListener('mouseleave',function(){document.getElementById('nodeTooltip').classList.remove('visible');});
-    svg.appendChild(badgeSvg);
-  }
+  tesseractSvg.addEventListener('mouseleave',function(){document.getElementById('nodeTooltip').classList.remove('visible');});
+  svg.appendChild(tesseractSvg);
 }
 
 // ========================================
@@ -1860,6 +1945,19 @@ function drawTesseract(){
   var baseAlpha = active ? 0.85 : 0.12;
   var glowAlpha = active ? 0.18 : 0.03;
 
+  // Pillar tint — once the user has completed the assessment, the Tesseract
+  // takes on the color of their chosen pillar. This replaces the separate
+  // Oracle badge we used to have.
+  var pillarTint = null;
+  if(window.quizResult){
+    var pillarRGB = {
+      vitality:  '255,110,70',   // warm red-orange
+      spirit:    '190,158,255',  // violet
+      alignment: '90,240,175'    // green-cyan
+    };
+    pillarTint = pillarRGB[window.quizResult] || null;
+  }
+
   // Gentle pulse on activation
   var pulseScale = 1 + (active ? Math.sin(t * 0.022) * 0.03 : 0);
   if(tesseractPulse > 0){
@@ -1867,8 +1965,28 @@ function drawTesseract(){
     tesseractPulse = Math.max(0, tesseractPulse - 0.015);
   }
 
-  var oS = outerS * pulseScale;
-  var iS = innerS * pulseScale;
+  // Click-me beacon — when Tesseract is active (5 core nodes done) AND the
+  // quiz hasn't been taken yet, add a secondary pulse that broadcasts
+  // "there is something waiting for you here." Slower breath than the
+  // ambient pulse above so it reads as a distinct signal.
+  var beaconActive = active && !window.quizResult;
+  var beaconPulse = beaconActive ? 0.5 + Math.sin(t * 0.01) * 0.5 : 0;
+
+  var oS = outerS * pulseScale * (tessDiveActive ? tessDiveScale : 1);
+  var iS = innerS * pulseScale * (tessDiveActive ? tessDiveScale : 1);
+  // During dive: outer rotation slows, inner accelerates. Creates "folding"
+  // feel distinct from normal rotation.
+  if(tessDiveActive){
+    if(tessDivePhase === 1){
+      // Acknowledgment — outer slows, inner speeds up
+      outerRot = t * 0.0004;
+      innerRot = -t * 0.0035 + Math.PI / 4;
+    } else if(tessDivePhase >= 2){
+      // Approach — both rotations fade toward aligned (inner going fast)
+      outerRot = t * 0.0002;
+      innerRot = -t * 0.005 + Math.PI / 4;
+    }
+  }
 
   // Compute corners
   function corners(size, rot){
@@ -1886,29 +2004,89 @@ function drawTesseract(){
   var outer = corners(oS, outerRot);
   var inner = corners(iS, innerRot);
 
-  // Color: ice blue-white
-  var col  = active ? 'rgba(200,230,255,' : 'rgba(180,200,240,';
-  var colB = active ? 'rgba(240,250,255,' : 'rgba(200,220,255,';
+  // Color: ice blue-white by default, pillar-tinted once chosen.
+  // When pillarTint is set we lerp about 40% of the way to the pillar color
+  // so the Tesseract still READS as the Tesseract (geometry, blue-white)
+  // but now carries the user's chosen hue as a signature.
+  var col, colB;
+  if(pillarTint){
+    col  = 'rgba(' + pillarTint + ',';
+    colB = 'rgba(' + pillarTint + ',';
+  } else {
+    col  = active ? 'rgba(200,230,255,' : 'rgba(180,200,240,';
+    colB = active ? 'rgba(240,250,255,' : 'rgba(200,220,255,';
+  }
+
+  // Dive brightness wash — during the approach phase, colors lerp toward
+  // pure white. Increases dramatically as the approach progresses, so the
+  // Tesseract feels like it's bleeding into the flash seam ahead.
+  if(tessDiveActive && tessDiveBrightness > 0){
+    var b = tessDiveBrightness;
+    col  = 'rgba(' + Math.floor(200 + (255-200)*b) + ',' + Math.floor(230 + (255-230)*b) + ',255,';
+    colB = 'rgba(255,255,255,';
+  }
 
   treeCtx.save();
 
-  // Outer bloom
+  // Beacon sonar rings — fire when Tesseract is active but quiz hasn't been
+  // taken yet. Two rings expanding outward, offset in phase, like the quest
+  // beacon on the Guide button. Tells the user "this is ready for you."
+  if(beaconActive){
+    for(var bRing = 0; bRing < 2; bRing++){
+      var bPhase = ((t * 0.006 + bRing * Math.PI) % (Math.PI * 2)) / (Math.PI * 2);
+      // bPhase runs 0→1 continuously. Expand radius 0.9→2.4x, fade alpha 1→0.
+      var bRadius = oS * (0.9 + bPhase * 1.5);
+      var bAlpha  = (1 - bPhase) * 0.4;
+      treeCtx.strokeStyle = 'rgba(201,168,76,' + bAlpha + ')'; // gold beacon
+      treeCtx.lineWidth = 1.5;
+      treeCtx.shadowBlur = 0;
+      treeCtx.globalAlpha = 1;
+      treeCtx.beginPath();
+      treeCtx.arc(tx, ty, bRadius, 0, Math.PI * 2);
+      treeCtx.stroke();
+    }
+  }
+
+  // Outer bloom — tinted to pillar color once chosen, otherwise ice-blue.
   if(active){
     var bloom = treeCtx.createRadialGradient(tx, ty, oS * 0.3, tx, ty, oS * 2.2);
-    bloom.addColorStop(0, 'rgba(180,220,255,' + (glowAlpha * 0.8) + ')');
-    bloom.addColorStop(0.5,'rgba(140,180,255,' + (glowAlpha * 0.4) + ')');
-    bloom.addColorStop(1,  'rgba(0,0,0,0)');
+    if(pillarTint){
+      bloom.addColorStop(0, 'rgba(' + pillarTint + ',' + (glowAlpha * 1.1) + ')');
+      bloom.addColorStop(0.5,'rgba(' + pillarTint + ',' + (glowAlpha * 0.45) + ')');
+      bloom.addColorStop(1,  'rgba(0,0,0,0)');
+    } else {
+      bloom.addColorStop(0, 'rgba(180,220,255,' + (glowAlpha * 0.8) + ')');
+      bloom.addColorStop(0.5,'rgba(140,180,255,' + (glowAlpha * 0.4) + ')');
+      bloom.addColorStop(1,  'rgba(0,0,0,0)');
+    }
     treeCtx.fillStyle = bloom;
     treeCtx.beginPath();
     treeCtx.arc(tx, ty, oS * 2.2, 0, Math.PI * 2);
     treeCtx.fill();
   }
 
+  // Pillar signature ring — only shown once the quiz is complete. A single
+  // thin gold-tinted circle around the Tesseract in the pillar color,
+  // marking "this artifact has been attuned to your path."
+  if(pillarTint){
+    treeCtx.globalAlpha = 1;
+    treeCtx.strokeStyle = 'rgba(' + pillarTint + ',0.55)';
+    treeCtx.lineWidth = 1;
+    treeCtx.shadowBlur = 14;
+    treeCtx.shadowColor = 'rgba(' + pillarTint + ',0.8)';
+    treeCtx.setLineDash([6, 4]);
+    treeCtx.beginPath();
+    treeCtx.arc(tx, ty, oS * 1.45, 0, Math.PI * 2);
+    treeCtx.stroke();
+    treeCtx.setLineDash([]);
+    treeCtx.shadowBlur = 0;
+  }
+
   function drawSquare(pts, lineW, alpha, shadow){
     treeCtx.globalAlpha = alpha;
     treeCtx.lineWidth = lineW;
     treeCtx.shadowBlur = shadow;
-    treeCtx.shadowColor = 'rgba(180,220,255,0.8)';
+    treeCtx.shadowColor = pillarTint ? ('rgba(' + pillarTint + ',0.8)') : 'rgba(180,220,255,0.8)';
     treeCtx.beginPath();
     pts.forEach(function(p, i){
       if(i === 0) treeCtx.moveTo(p.x, p.y);
@@ -1971,14 +2149,36 @@ function drawTesseract(){
   treeCtx.arc(tx, ty, active ? 4 : 2, 0, Math.PI * 2);
   treeCtx.fill();
 
-  // Label
-  treeCtx.globalAlpha = active ? 0.5 : 0.1;
-  treeCtx.fillStyle = 'rgba(200,230,255,1)';
+  // Label — state-aware. Dormant = faint "TESSERACT". Active and
+  // awaiting assessment = pulsing gold "Discover your path". Quiz
+  // complete = pillar name.
+  var labelText, labelAlpha, labelColor;
+  if(window.quizResult){
+    var pillarLabels = {vitality:'VITALITY', spirit:'SPIRIT', alignment:'ALIGNMENT'};
+    labelText = pillarLabels[window.quizResult] || 'TESSERACT';
+    labelAlpha = 0.7;
+    labelColor = 'rgba(' + pillarTint + ',1)';
+  } else if(beaconActive){
+    labelText = 'DISCOVER YOUR PATH';
+    labelAlpha = 0.6 + beaconPulse * 0.4;
+    labelColor = 'rgba(201,168,76,1)';
+  } else if(active){
+    labelText = 'THE TESSERACT';
+    labelAlpha = 0.5;
+    labelColor = 'rgba(200,230,255,1)';
+  } else {
+    labelText = 'THE TESSERACT';
+    labelAlpha = 0.1;
+    labelColor = 'rgba(200,230,255,1)';
+  }
+  treeCtx.globalAlpha = labelAlpha;
+  treeCtx.fillStyle = labelColor;
   treeCtx.font = '400 10px Cinzel, serif';
   treeCtx.textAlign = 'center';
-  treeCtx.shadowBlur = active ? 8 : 0;
-  treeCtx.letterSpacing = '0.12em';
-  treeCtx.fillText('TESSERACT', tx, ty + oS + 22);
+  treeCtx.shadowBlur = (beaconActive || window.quizResult) ? 12 : (active ? 8 : 0);
+  treeCtx.shadowColor = labelColor;
+  treeCtx.letterSpacing = '0.22em';
+  treeCtx.fillText(labelText, tx, ty + oS + 26);
 
   treeCtx.restore();
 }
@@ -2111,9 +2311,10 @@ function drawFrame(){
   drawPregameNodes();
   drawHiddenNodes();
   updateParticles();
-  drawOracle();
+  // Oracle removed in session 9 — the Tesseract is now the assessment portal.
+  // Any drifting oracle particles are still flushed here for a clean decay
+  // in case they were in-flight when the upgrade landed.
   updateOracleParticles();
-  drawOracleBadge();
 
   // Effects layer — drawn last so they sit on top of everything
   updateEffects();
@@ -4020,6 +4221,158 @@ var quizStep = 0;
 var quizAnswers = [];
 var quizSelected = null;
 
+// ===== TESSERACT DIVE-THROUGH (session 9) =====
+// A choreographed pull-into-the-artifact transition that precedes opening
+// the quiz. The Tesseract is the assessment portal — entering it should
+// feel like folded geometry, not a simple modal popup. Phases:
+//   1. Acknowledgment — outer square brightens, inner accelerates
+//   2. Approach     — Tesseract scales toward camera, colors shift white
+//   3. Seam         — brief white flash, quiz overlay opens inside flash
+//   4. Emerge       — quiz fades in from the brightness
+// The reverse animation plays when the quiz is dismissed, compressing the
+// inner-room back into the artifact and leaving the user where they were.
+//
+// Implementation note: we don't need a separate canvas renderer for this —
+// we drive the existing drawTesseract() via globals it reads (tessDive*
+// state) and layer a DOM flash overlay on top. This keeps the animation
+// in the same render pipeline as the rest of the star map.
+var tessDiveActive = false;
+var tessDivePhase = 0;       // 0 = idle, 1 = acknowledging, 2 = approach, 3 = seam, 4 = emerging
+var tessDivePhaseStart = 0;  // ms timestamp when current phase began
+var tessDiveScale = 1;       // multiplies rendered tesseract size, fed into drawTesseract
+var tessDiveBrightness = 0;  // 0 → 1, whitewashes rendered squares at peak
+
+function diveIntoTesseract(){
+  if(tessDiveActive) return;   // guard against double-clicks
+  if(window.quizResult){
+    // Already complete — skip the big ritual, just open the result screen.
+    openQuiz();
+    return;
+  }
+  tessDiveActive = true;
+  tessDivePhase = 1;
+  tessDivePhaseStart = performance.now();
+
+  // Inject the flash overlay. We make it here (not in HTML) so it's torn
+  // down cleanly after use — no stray DOM between dives.
+  var flash = document.getElementById('tessDiveFlash');
+  if(!flash){
+    flash = document.createElement('div');
+    flash.id = 'tessDiveFlash';
+    flash.className = 'tess-dive-flash';
+    document.body.appendChild(flash);
+  }
+  flash.classList.remove('tess-dive-flash-peak');
+  flash.style.opacity = '0';
+
+  // Phase timings (ms) — feel free to tune.
+  var P1 = 400;   // acknowledgment
+  var P2 = 1400;  // approach — tesseract scales toward camera (longer for deeper dive)
+  var P3 = 350;   // seam — white flash, scene swap
+  var P4 = 900;   // emerge — quiz fades in
+
+  // ===== Phase 1 → 2 transition (t = P1) =====
+  setTimeout(function(){
+    tessDivePhase = 2;
+    tessDivePhaseStart = performance.now();
+    // Smoothly animate scale and brightness via requestAnimationFrame.
+    var rampStart = performance.now();
+    function ramp(){
+      var dt = (performance.now() - rampStart) / P2;
+      if(dt >= 1) dt = 1;
+      // Ease-in cubic: slow start, dramatic end — feels like falling into it
+      var e = dt * dt * dt;
+      tessDiveScale = 1 + e * 17;         // 1 → 18x (was 8x — deeper plunge)
+      tessDiveBrightness = e;             // 0 → 1
+      if(dt < 1 && tessDivePhase === 2) requestAnimationFrame(ramp);
+    }
+    requestAnimationFrame(ramp);
+  }, P1);
+
+  // ===== Phase 2 → 3 transition (t = P1 + P2) =====
+  setTimeout(function(){
+    tessDivePhase = 3;
+    tessDivePhaseStart = performance.now();
+    // Peak brightness — whitewash the screen. This is the moment where
+    // we swap the scene behind the flash.
+    flash.classList.add('tess-dive-flash-peak');
+    // Open quiz while screen is white. User sees no flicker.
+    setTimeout(function(){
+      // Quiz panel opens beneath the flash layer.
+      openQuiz();
+    }, 120);
+  }, P1 + P2);
+
+  // ===== Phase 3 → 4 transition (t = P1 + P2 + P3) =====
+  setTimeout(function(){
+    tessDivePhase = 4;
+    tessDivePhaseStart = performance.now();
+    // Fade the flash away, revealing the quiz (inner room).
+    flash.classList.remove('tess-dive-flash-peak');
+    flash.classList.add('tess-dive-flash-fadeout');
+  }, P1 + P2 + P3);
+
+  // ===== Phase 4 → idle (t = P1 + P2 + P3 + P4) =====
+  setTimeout(function(){
+    tessDivePhase = 0;
+    tessDiveActive = false;
+    tessDiveScale = 1;
+    tessDiveBrightness = 0;
+    if(flash && flash.parentNode){
+      flash.classList.remove('tess-dive-flash-fadeout');
+      // Don't remove the element; we reuse it on next dive. Just hidden.
+    }
+  }, P1 + P2 + P3 + P4);
+}
+
+// Reverse dive — called when the quiz is closed. Compresses the inner
+// room back into the Tesseract. Shorter than the entry animation because
+// "exiting" doesn't need the same build-up as "entering."
+function emergeFromTesseract(){
+  var flash = document.getElementById('tessDiveFlash');
+  if(!flash){
+    flash = document.createElement('div');
+    flash.id = 'tessDiveFlash';
+    flash.className = 'tess-dive-flash';
+    document.body.appendChild(flash);
+  }
+  flash.classList.remove('tess-dive-flash-fadeout');
+
+  // Brief flash to cover the quiz-closed moment.
+  flash.classList.add('tess-dive-flash-peak');
+
+  setTimeout(function(){
+    // Close quiz beneath the flash.
+    document.getElementById('quizPanel').classList.remove('open');
+  }, 150);
+
+  setTimeout(function(){
+    flash.classList.remove('tess-dive-flash-peak');
+    flash.classList.add('tess-dive-flash-fadeout');
+  }, 350);
+
+  setTimeout(function(){
+    flash.classList.remove('tess-dive-flash-fadeout');
+
+    // SESSION 9 sequencing: if the user just completed the assessment
+    // (quiz result is set AND they don't yet have codex_1 accepted/complete),
+    // dispatch the quest now. This is the narrative handoff moment —
+    // user has emerged from the Tesseract with a path chosen, and Guide
+    // responds with a new task. One thing follows another, nothing
+    // competes.
+    if(window.quizResult){
+      var codexState = getQuestState('codex_1');
+      if(codexState !== 'accepted' && codexState !== 'complete'){
+        // Wait a beat after emerge-flash clears before dispatching, so the
+        // Guide beacon has air and the user can register where they are.
+        setTimeout(function(){
+          offerNextAvailableQuest();
+        }, 800);
+      }
+    }
+  }, 900);
+}
+
 function openQuiz(){
   if(window.quizResult){
     // Already completed — show result screen directly
@@ -4037,7 +4390,9 @@ function openQuiz(){
 }
 
 function closeQuiz(){
-  document.getElementById('quizPanel').classList.remove('open');
+  // Play the reverse-dive transition — compresses inner-room back into
+  // the Tesseract, then removes the overlay behind the cover flash.
+  emergeFromTesseract();
 }
 
 function renderQuizStep(){
@@ -4271,10 +4626,11 @@ var QUEST_REGISTRY = {
     line: 'codex',
     order: 1,
     unlock: function(){
-      // Available once user has earned at least Bronze rank.
-      // Rank is stored in localStorage under 'ga_rank'; default 'iron'.
-      var rank = localStorage.getItem('ga_rank') || 'iron';
-      return rank && rank !== 'iron';
+      // Session 9 sequencing: Codex-1 unlocks once the user has completed
+      // the assessment (dove into the Tesseract and chose a path). This
+      // keeps the flow one-thing-at-a-time: rank up → Tesseract → quest.
+      // Guide doesn't impose a new task until the primary ritual is done.
+      return !!window.quizResult;
     },
     dialogue: [
       { speaker: 'The Guide',
@@ -4313,11 +4669,18 @@ var QUEST_REGISTRY = {
       showQuestAcceptedOverlay('Hidden Knowledge');
     },
     onDecline: function(){
-      // Declining a quest leaves it in 'none' state so it can be offered
-      // again at the next rank-up trigger. We also clear the offered flag
-      // so the registry walker picks it up again.
+      // Declining leaves the quest in 'none' state and clears the offered
+      // flag so it's eligible for dispatch again. We then schedule a
+      // silent re-dispatch after Guide's farewell has had time to play
+      // and be dismissed — the beacon quietly returns to the Guide
+      // button as a persistent "something is still here for you" cue.
+      // No dialogue plays again; user can click Guide whenever they're
+      // ready to accept.
       setQuestState('codex_1', 'none');
       clearOffered('codex_1');
+      setTimeout(function(){
+        offerNextAvailableQuest();
+      }, 8000);
     }
   }
 
@@ -5131,6 +5494,12 @@ function closeLesson(){
   }
   // Wait for overlay slide-out transition (400ms) then fire the sequence
   setTimeout(flushPendingEffects, 500);
+
+  // Re-offer any pending declined quest. Natural "what's next" moment —
+  // user has just finished a module and is back at the star map. If a
+  // quest is eligible but not offered (e.g. previously declined), the
+  // beacon will re-light on the Guide button without any dialogue.
+  setTimeout(offerNextAvailableQuest, 900);
 }
 
 // Summon Guide from within a lesson module (session 9).
@@ -5290,7 +5659,7 @@ function showAllComplete(){
     '<div id="completionBelow" style="display:flex;flex-direction:column;align-items:center;opacity:0;transition:opacity 1.2s ease;position:relative;z-index:5">' +
       '<div style="width:60px;height:1px;background:rgba(255,255,255,.08);margin-bottom:28px"></div>' +
       '<div style="font-family:Cinzel Decorative,serif;font-size:clamp(18px,3vw,26px);color:#f0ece4;text-align:center;line-height:1.3;margin-bottom:14px">Ascension Paths<br><span style="color:#c084fc">Unlocked</span></div>' +
-      '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:380px;line-height:1.8;margin-bottom:28px">The three astral trees are now visible.<br>Find the Oracle. Discover your skill focus.</div>' +
+      '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:440px;line-height:1.8;margin-bottom:28px">The three astral trees are now visible.<br>Click to enter the Tesseract and discover your primary Astral Path.</div>' +
       '<a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;text-decoration:none;margin-bottom:12px">Book your PlayBook call →</a>' +
       '<button onclick="closeCompletionScreen(\'' + (pendingRank || '') + '\')" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;padding:8px">Continue exploring →</button>' +
     '</div>';
@@ -5502,9 +5871,94 @@ function closeCompletionScreen(pendingRank){
     }, 180);
   }
 
-  // Keep the existing post-overlay behavior
-  setTimeout(showQuestNotification, 1400);
+  // SESSION 9 choreography: quest NO LONGER dispatches here. After rank-up,
+  // the next single piece of attention is the Tesseract. Guide's quest
+  // will auto-fire after the user completes the assessment. This keeps
+  // the journey one-thing-at-a-time: rank up → Tesseract → assessment →
+  // Guide's quest.
+  //
+  // Also note: if this is a returning user (pendingRank is null because
+  // they were already bronze), we skip the ceremony — they've been here
+  // before, the Tesseract is already part of their world.
+  if(pendingRank){
+    setTimeout(playTesseractPowerUpCeremony, 900);
+  }
 }
+
+// ===== TESSERACT ORIENTATION CEREMONY =====
+// After the rank-up overlay dismisses, we smoothly pan the camera toward
+// the Tesseract and fade in a single line of gold text — "Your path awaits."
+// The Tesseract is already lit up with its ambient beacon at this point
+// (ascension sequence handled that); this moment is purely ORIENTATION,
+// not activation. Camera holds on the Tesseract after the text fades so
+// it's the only thing the user is looking at when the ceremony ends.
+function playTesseractPowerUpCeremony(){
+  if(!tesseractActive) return;   // safety: only run if Tesseract actually powered up
+
+  var wrap = document.getElementById('canvasWrap');
+  var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
+
+  // Target transform — zoom in on Tesseract, slight vertical offset so
+  // it sits in the upper-middle of the viewport (leaves room for text)
+  var targetScale = Math.min(0.78, vw / 560); // fit a ~560px frame around Tesseract
+  var targetX = (vw / 2) - (TESSERACT_X * targetScale);
+  var targetY = (vh / 2) - (TESSERACT_Y * targetScale) + 20;
+
+  // Capture start transform for the tween
+  var startX = transform.x;
+  var startY = transform.y;
+  var startScale = transform.scale;
+
+  // Tween camera with cubic ease-in-out
+  function tween(from, to, duration, onDone){
+    var t0 = performance.now();
+    var fromX = from.x, fromY = from.y, fromS = from.scale;
+    var toX = to.x, toY = to.y, toS = to.scale;
+    function step(){
+      var dt = Math.min(1, (performance.now() - t0) / duration);
+      var e = dt < 0.5 ? 4*dt*dt*dt : 1 - Math.pow(-2*dt + 2, 3)/2;
+      transform.x = fromX + (toX - fromX) * e;
+      transform.y = fromY + (toY - fromY) * e;
+      transform.scale = fromS + (toS - fromS) * e;
+      applyTransform();
+      if(dt < 1) requestAnimationFrame(step);
+      else if(onDone) onDone();
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Create (or reuse) the orientation text element. It lives as an
+  // absolutely-positioned DOM element over the canvas so we can use real
+  // typography and fade effects without wrestling with canvas text metrics.
+  var text = document.getElementById('tesseractOrientText');
+  if(!text){
+    text = document.createElement('div');
+    text.id = 'tesseractOrientText';
+    text.className = 'tesseract-orient-text';
+    text.textContent = 'Your path awaits.';
+    document.body.appendChild(text);
+  }
+  text.classList.remove('orient-visible');
+  text.classList.remove('orient-fading');
+
+  // Beat 1 — pan in (1500ms)
+  tween(
+    {x: startX, y: startY, scale: startScale},
+    {x: targetX, y: targetY, scale: targetScale},
+    1500,
+    function afterZoomIn(){
+      // Beat 2 — fade in the text (700ms), hold for 1800ms, then fade out (900ms)
+      setTimeout(function(){ text.classList.add('orient-visible'); }, 150);
+      setTimeout(function(){
+        text.classList.remove('orient-visible');
+        text.classList.add('orient-fading');
+      }, 150 + 700 + 1800);
+      // Camera stays on the Tesseract. No pan back — user is now
+      // focused on the thing they need to interact with.
+    }
+  );
+}
+// ===== END ORIENTATION CEREMONY =====
 
 // =============================================================================
 // BADGE LANDS — the header rank badge's witnessed arrival moment
