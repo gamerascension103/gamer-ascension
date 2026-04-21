@@ -212,6 +212,33 @@
               '<clipPath id="aureliusIrisClip">' +
                 '<ellipse cx="200" cy="200" rx="11" ry="22"/>' +
               '</clipPath>' +
+              // Flame gradient — dark amber base at the wick through warm
+              // gold middle to bright cream tip. Used for both the central
+              // hearth and the three anchor candle flames.
+              '<linearGradient id="aureliusFlameGrad" x1="50%" y1="100%" x2="50%" y2="0%">' +
+                '<stop offset="0%" stop-color="#6b4818" stop-opacity="0.95"/>' +
+                '<stop offset="25%" stop-color="#cd7f32" stop-opacity="1"/>' +
+                '<stop offset="55%" stop-color="#e5c574" stop-opacity="1"/>' +
+                '<stop offset="85%" stop-color="#fff4c8" stop-opacity="1"/>' +
+                '<stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>' +
+              '</linearGradient>' +
+              // Inner flame gradient — hotter, more compact. Used for
+              // the inner "core" of each flame visible inside the outer
+              // shape to suggest a blue-hot center without actually using
+              // blue (which would break the palette).
+              '<linearGradient id="aureliusFlameCore" x1="50%" y1="100%" x2="50%" y2="0%">' +
+                '<stop offset="0%" stop-color="#b58a2f" stop-opacity="0.8"/>' +
+                '<stop offset="50%" stop-color="#fff4c8" stop-opacity="0.95"/>' +
+                '<stop offset="100%" stop-color="#ffffff" stop-opacity="0.7"/>' +
+              '</linearGradient>' +
+              // Filter that gives flames a soft bloom/glow on their edges.
+              '<filter id="aureliusFlameGlow" x="-80%" y="-30%" width="260%" height="160%">' +
+                '<feGaussianBlur stdDeviation="1.8" result="flameBlur"/>' +
+                '<feMerge>' +
+                  '<feMergeNode in="flameBlur"/>' +
+                  '<feMergeNode in="SourceGraphic"/>' +
+                '</feMerge>' +
+              '</filter>' +
             '</defs>' +
 
             // THREE ANCHORS in triangle formation — writer, page, witness.
@@ -229,6 +256,33 @@
               '<circle cx="200" cy="60" r="1.5" fill="#f5eecc"/>' +
               '<circle cx="90" cy="300" r="1.5" fill="#f5eecc"/>' +
               '<circle cx="310" cy="300" r="1.5" fill="#f5eecc"/>' +
+            '</g>' +
+
+            // THREE ANCHOR CANDLE FLAMES — one small flame rising from
+            // each iron-rivet anchor. Each is a gold teardrop pointing
+            // upward, with a brighter inner core. Lightly flickering
+            // independently so they look alive but not agitated.
+            //
+            // Flame shape: two cubic bezier curves forming a teardrop
+            // pointed upward. The base is ~6px wide, the flame ~12px
+            // tall, tip at anchor_y - 14. All three flames use the same
+            // shape but are positioned at the three anchor points.
+            '<g class="au-candles">' +
+              // TOP ANCHOR flame — at (200, 50), burning upward
+              '<g class="au-candle au-candle-top" filter="url(#aureliusFlameGlow)">' +
+                '<path d="M 200 48 C 197 42, 195 36, 200 28 C 205 36, 203 42, 200 48 Z" fill="url(#aureliusFlameGrad)"/>' +
+                '<path d="M 200 46 C 198.5 42, 197.5 38, 200 33 C 202.5 38, 201.5 42, 200 46 Z" fill="url(#aureliusFlameCore)" opacity="0.9"/>' +
+              '</g>' +
+              // BOTTOM-LEFT anchor flame — at (90, 290)
+              '<g class="au-candle au-candle-bl" filter="url(#aureliusFlameGlow)">' +
+                '<path d="M 90 288 C 87 282, 85 276, 90 268 C 95 276, 93 282, 90 288 Z" fill="url(#aureliusFlameGrad)"/>' +
+                '<path d="M 90 286 C 88.5 282, 87.5 278, 90 273 C 92.5 278, 91.5 282, 90 286 Z" fill="url(#aureliusFlameCore)" opacity="0.9"/>' +
+              '</g>' +
+              // BOTTOM-RIGHT anchor flame — at (310, 290)
+              '<g class="au-candle au-candle-br" filter="url(#aureliusFlameGlow)">' +
+                '<path d="M 310 288 C 307 282, 305 276, 310 268 C 315 276, 313 282, 310 288 Z" fill="url(#aureliusFlameGrad)"/>' +
+                '<path d="M 310 286 C 308.5 282, 307.5 278, 310 273 C 312.5 278, 311.5 282, 310 286 Z" fill="url(#aureliusFlameCore)" opacity="0.9"/>' +
+              '</g>' +
             '</g>' +
 
             // SEVEN RUNIC PERIMETER MARKS — one for each day of the
@@ -276,6 +330,28 @@
             '<g class="au-orbit au-orbit-5">' +
               '<circle cx="200" cy="200" r="78" fill="none" stroke="#000000" stroke-width="2.2" stroke-dasharray="450 40" stroke-linecap="round" opacity="0.75"/>' +
               '<circle cx="200" cy="200" r="78" fill="none" stroke="rgba(245,238,204,1)" stroke-width="1" stroke-dasharray="450 40" stroke-linecap="round"/>' +
+            '</g>' +
+
+            // CENTRAL HEARTH — the flame Aurelius watches over. Sits in
+            // the lower portion of the inner ring, below the eye. The eye
+            // renders after this group so it appears to watch down over
+            // the flame tip. Scriptorium as candlelit library: he is the
+            // keeper of the fire at his center.
+            //
+            // Base at (200, 272), tip at (200, 240). Height = 32, flame
+            // width at base roughly 14. Slightly larger than the anchor
+            // candles (visually the primary flame), but still compact
+            // enough to sit within the innermost ring.
+            '<g class="au-hearth" filter="url(#aureliusFlameGlow)">' +
+              // Small base glow — a dim amber pool at the wick base
+              '<ellipse cx="200" cy="273" rx="10" ry="2.5" fill="#cd7f32" opacity="0.55"/>' +
+              // Outer flame body — larger, softer teardrop
+              '<path d="M 200 272 C 192 262, 188 252, 200 234 C 212 252, 208 262, 200 272 Z" fill="url(#aureliusFlameGrad)"/>' +
+              // Inner flame core — brighter, narrower, suggests the hot
+              // heart of the fire without using blue
+              '<path d="M 200 270 C 195 262, 193 254, 200 242 C 207 254, 205 262, 200 270 Z" fill="url(#aureliusFlameCore)" opacity="0.92"/>' +
+              // Innermost bright point — the wick spark at the very base
+              '<circle cx="200" cy="270" r="1.5" fill="#ffffff" opacity="0.9"/>' +
             '</g>' +
 
             // THE EYE — dragon eye, regal and watchful. Vertical slit
@@ -570,6 +646,38 @@
         '25%{transform:translate(0.8px,-1px)}' +
         '50%{transform:translate(-0.5px,1px)}' +
         '75%{transform:translate(-1px,-0.5px)}' +
+      '}' +
+
+      // FLAME FLICKER — each flame has a slight scale + skew animation
+      // to suggest draft-induced motion. Different timings on each flame
+      // so they don't sync up into a weird coordinated pulse. Scale the
+      // Y axis more than the X (flames flicker vertically more than they
+      // sway horizontally) and keep scale values close to 1 so the
+      // overall silhouette stays stable.
+      '.au-hearth{transform-origin:200px 273px;animation:au-flame-hearth 2.4s ease-in-out infinite}' +
+      '@keyframes au-flame-hearth{' +
+        '0%,100%{transform:scaleY(1) scaleX(1)}' +
+        '25%{transform:scaleY(1.06) scaleX(0.96)}' +
+        '50%{transform:scaleY(0.96) scaleX(1.04)}' +
+        '75%{transform:scaleY(1.03) scaleX(0.98)}' +
+      '}' +
+      '.au-candle-top{transform-origin:200px 48px;animation:au-flame-candle-1 2.1s ease-in-out infinite}' +
+      '.au-candle-bl{transform-origin:90px 288px;animation:au-flame-candle-2 2.7s ease-in-out infinite}' +
+      '.au-candle-br{transform-origin:310px 288px;animation:au-flame-candle-3 2.3s ease-in-out infinite}' +
+      '@keyframes au-flame-candle-1{' +
+        '0%,100%{transform:scaleY(1) scaleX(1)}' +
+        '30%{transform:scaleY(1.08) scaleX(0.94)}' +
+        '60%{transform:scaleY(0.94) scaleX(1.05)}' +
+      '}' +
+      '@keyframes au-flame-candle-2{' +
+        '0%,100%{transform:scaleY(1) scaleX(1)}' +
+        '40%{transform:scaleY(0.95) scaleX(1.04)}' +
+        '70%{transform:scaleY(1.07) scaleX(0.96)}' +
+      '}' +
+      '@keyframes au-flame-candle-3{' +
+        '0%,100%{transform:scaleY(1) scaleX(1)}' +
+        '35%{transform:scaleY(1.06) scaleX(0.97)}' +
+        '65%{transform:scaleY(0.95) scaleX(1.03)}' +
       '}' +
 
       // Dialogue box — anchored lower portion of screen
