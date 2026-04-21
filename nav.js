@@ -18,11 +18,11 @@
   'use strict';
 
   var CHAMBERS = [
-    { id: 'threshold',   name: 'The Threshold',   func: 'World Map',         href: '/threshold.html', status: 'open' },
-    { id: 'atheneum',    name: 'The Atheneum',    func: 'Skill Mastery',     href: '/pregame.html',   status: 'open' },
-    { id: 'arcanium',    name: 'The Arcanium',    func: 'Library',           href: null,              status: 'sealed' },
-    { id: 'scriptorium', name: 'The Scriptorium', func: 'Mail and Journal',  href: null,              status: 'sealed' },
-    { id: 'agora',       name: 'The Agora',       func: 'Community Forum',   href: null,              status: 'sealed' }
+    { id: 'threshold',   name: 'The Threshold',   func: 'World Map',         href: '/threshold.html',   status: 'open' },
+    { id: 'atheneum',    name: 'The Atheneum',    func: 'Skill Mastery',     href: '/pregame.html',     status: 'open' },
+    { id: 'arcanium',    name: 'The Arcanium',    func: 'Library',           href: null,                status: 'sealed' },
+    { id: 'scriptorium', name: 'The Scriptorium', func: 'Journal',           href: '/scriptorium.html', status: 'open' },
+    { id: 'agora',       name: 'The Agora',       func: 'Community Forum',   href: null,                status: 'sealed' }
   ];
 
   var currentChamberId = null;
