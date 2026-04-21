@@ -46,6 +46,12 @@
   var typewriterTimeout = null;
   var isOpen = false;
 
+  // currentScript holds whichever dialogue array is playing right now —
+  // could be the intro, the return greeting, the sigil branch, or a
+  // one-off. Separate from config.script so the three configured scripts
+  // stay intact and can be referenced.
+  var currentScript = null;
+
   // Tap-to-skip: typewriter functions set these so the completion handler
   // can finish the current line instantly if the user taps mid-typing.
   var currentTypingFullText = '';
@@ -71,69 +77,121 @@
       buildDOM();
       bindEvents();
 
-      // Auto-summon on first visit. Subsequent visits are quiet — no
-      // auto-dialogue, the user can summon by clicking the persistent
-      // sigil if they want him.
+      // Three dialogue types, three triggers:
+      //   1. FIRST VISIT EVER — plays config.script (the full intro).
+      //      Sets ga_aurelius_seen_{chamber} flag.
+      //   2. RETURN VISIT (once per day) — plays config.returnScript if
+      //      provided. Tracks ga_aurelius_last_visit_date so we only
+      //      auto-greet once per calendar day.
+      //   3. SIGIL SUMMON — plays config.sigilScript when the user
+      //      clicks the corner summon button. No frequency limit.
+      //
+      // All auto-summons on page load respect a short delay so the
+      // page has a chance to render first.
+      var delay = (typeof config.autoSummonDelay === 'number') ? config.autoSummonDelay : 1500;
+
       try {
         var seen = localStorage.getItem('ga_aurelius_seen_' + config.chamber);
+        var today = getTodayDateStr();
+        var lastVisit = localStorage.getItem('ga_aurelius_last_visit_date_' + config.chamber);
+
         if(seen !== '1'){
-          var delay = (typeof config.autoSummonDelay === 'number') ? config.autoSummonDelay : 1500;
+          // First visit ever — play the full intro. Will mark as seen.
           setTimeout(function(){ Aurelius.summon(); }, delay);
+        } else if(lastVisit !== today && Array.isArray(config.returnScript) && config.returnScript.length > 0){
+          // Return visit, new day — play the shorter return greeting.
+          setTimeout(function(){ Aurelius.summonReturn(); }, delay);
         }
+        // else: same day, stays quiet until user clicks the sigil.
       } catch(e){}
     },
 
-    // Summon the vessel with the default first-visit script.
+    // Summon the vessel with the default first-visit script. Marks the
+    // user as "seen" so they don't get the intro again.
     summon: function(){
       if(!overlayEl || isOpen) return;
-      isOpen = true;
-      dialogueIndex = 0;
+      setCurrentScript(config.script);
+      openOverlay();
+      try {
+        localStorage.setItem('ga_aurelius_seen_' + config.chamber, '1');
+        localStorage.setItem('ga_aurelius_last_visit_date_' + config.chamber, getTodayDateStr());
+      } catch(e){}
+    },
 
-      overlayEl.classList.add('active');
-      document.body.classList.add('aurelius-active');
+    // Summon with the return-visit script (shorter, once-per-day
+    // greeting for users who have been here before).
+    summonReturn: function(){
+      if(!overlayEl || isOpen) return;
+      if(!Array.isArray(config.returnScript) || config.returnScript.length === 0){
+        // No return script configured — skip entirely rather than
+        // replay the intro.
+        return;
+      }
+      setCurrentScript(config.returnScript);
+      openOverlay();
+      try {
+        localStorage.setItem('ga_aurelius_last_visit_date_' + config.chamber, getTodayDateStr());
+      } catch(e){}
+    },
 
-      // Mark as seen so subsequent page loads don't auto-summon.
-      try { localStorage.setItem('ga_aurelius_seen_' + config.chamber, '1'); } catch(e){}
-
-      // Start ambient systems — particles rising from flames, eye
-      // tracking following cursor. Both run on RAF loops and stop
-      // gracefully on dismiss.
-      startParticles();
-      startEyeTracking();
-
-      setTimeout(renderDialogueLine, 500);
+    // Summon via the persistent sigil button. Plays the sigilScript
+    // which typically starts with a short acknowledgment and then
+    // offers the user choices (e.g., "explain the page" or "nevermind").
+    // Falls back to the return script, then to the intro if no
+    // sigilScript is configured.
+    summonSigil: function(){
+      if(!overlayEl || isOpen) return;
+      var script = (Array.isArray(config.sigilScript) && config.sigilScript.length > 0)
+        ? config.sigilScript
+        : (Array.isArray(config.returnScript) && config.returnScript.length > 0
+           ? config.returnScript
+           : config.script);
+      setCurrentScript(script);
+      openOverlay();
     },
 
     // Play a custom dialogue line set (e.g., session milestone lines).
-    // Does not overwrite the default script.
+    // Does not overwrite any of the three main scripts.
     summonOneOff: function(scriptLines){
       if(!overlayEl || isOpen) return;
       if(!Array.isArray(scriptLines) || scriptLines.length === 0) return;
-
-      isOpen = true;
-      dialogueIndex = 0;
-
-      // Temporarily swap in the one-off script. Restored on dismiss.
-      var savedScript = config.script;
-      config.script = scriptLines;
-      config._restoreScriptOnDismiss = savedScript;
-
-      overlayEl.classList.add('active');
-      document.body.classList.add('aurelius-active');
-
-      // Same ambient systems as the default summon
-      startParticles();
-      startEyeTracking();
-
-      setTimeout(renderDialogueLine, 500);
+      setCurrentScript(scriptLines);
+      openOverlay();
     },
 
-    // Manually clear the "seen" flag. Useful for dev reset.
+    // Manually clear the "seen" flags. Useful for dev reset.
     reset: function(){
-      try { localStorage.removeItem('ga_aurelius_seen_' + config.chamber); } catch(e){}
+      try {
+        localStorage.removeItem('ga_aurelius_seen_' + config.chamber);
+        localStorage.removeItem('ga_aurelius_last_visit_date_' + config.chamber);
+      } catch(e){}
       location.reload();
     }
   };
+
+  // Today's date as a YYYY-MM-DD string (used for once-per-day logic).
+  function getTodayDateStr(){
+    var d = new Date();
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
+    return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
+  }
+
+  // Swap the currently-playing script. Resets dialogue index.
+  function setCurrentScript(scriptArr){
+    currentScript = scriptArr;
+    dialogueIndex = 0;
+  }
+
+  // Common overlay-opening sequence — shared by all four summon methods.
+  function openOverlay(){
+    isOpen = true;
+    overlayEl.classList.add('active');
+    document.body.classList.add('aurelius-active');
+    startParticles();
+    startEyeTracking();
+    setTimeout(renderDialogueLine, 500);
+  }
 
   // ==================================================================
   // DOM construction
@@ -462,10 +520,12 @@
   }
 
   function bindEvents(){
-    // Summon button click — re-invoke Aurelius
+    // Summon button click — open the sigil-summon branching dialogue.
+    // This is different from the first-visit intro or the return-visit
+    // greeting: it's the short "you called?" with choice prompt.
     summonEl.addEventListener('click', function(){
       if(isOpen) return;
-      Aurelius.summon();
+      Aurelius.summonSigil();
     });
 
     // Continue button — advance dialogue
@@ -500,22 +560,71 @@
 
   // ==================================================================
   // Dialogue rendering
+  // Lines are objects with shape:
+  //   { speaker: 'Aurelius', text: '...' }                         — normal line
+  //   { speaker: '...', text: '...', choices: [                    — branching line
+  //       { label: 'Option A', next: [ ...more lines... ] },
+  //       { label: 'Option B', next: [ ...more lines... ] }
+  //   ]}
+  // A choice line hides the Continue button and shows choice buttons
+  // instead. Picking a choice swaps currentScript to the `next` array.
   // ==================================================================
 
   function renderDialogueLine(){
-    var line = config.script[dialogueIndex];
+    if(!currentScript) { dismiss(); return; }
+    var line = currentScript[dialogueIndex];
     if(!line){ dismiss(); return; }
 
     speakerNameEl.textContent = line.speaker || 'Aurelius';
-    progressEl.textContent = (dialogueIndex + 1) + ' / ' + config.script.length;
+    progressEl.textContent = (dialogueIndex + 1) + ' / ' + currentScript.length;
 
-    // Continue button shows "Continue" or "Close" on last line.
-    continueBtn.textContent = (dialogueIndex === config.script.length - 1) ? 'Close' : 'Continue';
-    continueBtn.style.visibility = 'hidden'; // hidden until typing completes
+    // Hide both the Continue button and any previously-rendered choices
+    // until typing completes.
+    continueBtn.style.visibility = 'hidden';
+    clearChoiceButtons();
 
     typeOut(line.text, function(){
-      continueBtn.style.visibility = 'visible';
+      if(Array.isArray(line.choices) && line.choices.length > 0){
+        // Choice line — swap Continue for choice buttons.
+        continueBtn.style.display = 'none';
+        renderChoiceButtons(line.choices);
+      } else {
+        continueBtn.style.display = '';
+        continueBtn.textContent = (dialogueIndex === currentScript.length - 1) ? 'Close' : 'Continue';
+        continueBtn.style.visibility = 'visible';
+      }
     });
+  }
+
+  // Render choice buttons in place of the Continue button. Each choice
+  // has a label and a `next` array of dialogue lines to play when chosen.
+  function renderChoiceButtons(choices){
+    var footer = continueBtn.parentNode;
+    if(!footer) return;
+    var container = document.createElement('div');
+    container.className = 'aurelius-choices';
+    container.id = 'aureliusChoices';
+    choices.forEach(function(choice){
+      var btn = document.createElement('button');
+      btn.className = 'aurelius-choice';
+      btn.textContent = choice.label;
+      btn.addEventListener('click', function(){
+        // Swap to the chosen branch and render its first line.
+        if(Array.isArray(choice.next) && choice.next.length > 0){
+          setCurrentScript(choice.next);
+          renderDialogueLine();
+        } else {
+          dismiss();
+        }
+      });
+      container.appendChild(btn);
+    });
+    footer.appendChild(container);
+  }
+
+  function clearChoiceButtons(){
+    var existing = document.getElementById('aureliusChoices');
+    if(existing && existing.parentNode) existing.parentNode.removeChild(existing);
   }
 
   function typeOut(text, onComplete){
@@ -555,8 +664,9 @@
   }
 
   function advanceDialogue(){
+    if(!currentScript){ dismiss(); return; }
     dialogueIndex++;
-    if(dialogueIndex >= config.script.length){
+    if(dialogueIndex >= currentScript.length){
       dismiss();
       return;
     }
@@ -572,21 +682,20 @@
     currentTypingFullText = '';
     currentTypingCompletion = null;
 
+    // Clear any lingering choice buttons and restore Continue.
+    clearChoiceButtons();
+    if(continueBtn) continueBtn.style.display = '';
+
     overlayEl.classList.remove('active');
     document.body.classList.remove('aurelius-active');
     isOpen = false;
     dialogueIndex = 0;
+    currentScript = null;
 
     // Stop ambient systems. Eye tracking stays active behind the scenes
     // (its follow loop no-ops when !isOpen); particles need explicit
     // cleanup so we don't leak nodes.
     stopParticles();
-
-    // If a one-off script was swapped in, restore the original.
-    if(config._restoreScriptOnDismiss){
-      config.script = config._restoreScriptOnDismiss;
-      config._restoreScriptOnDismiss = null;
-    }
   }
 
   // ==================================================================
@@ -718,6 +827,16 @@
       '.aurelius-progress{font-family:"DM Sans",sans-serif;font-size:11px;color:rgba(245,238,204,0.45);letter-spacing:.1em}' +
       '.aurelius-continue{font-family:"Cinzel",serif;font-size:12px;letter-spacing:.14em;text-transform:uppercase;background:linear-gradient(180deg,rgba(229,197,116,0.2),rgba(229,197,116,0.08));border:1px solid rgba(229,197,116,0.5);color:rgba(245,238,204,0.95);padding:8px 18px;border-radius:3px;cursor:pointer;transition:all 0.25s}' +
       '.aurelius-continue:hover{background:linear-gradient(180deg,rgba(229,197,116,0.3),rgba(229,197,116,0.14));border-color:rgba(229,197,116,0.75);color:#fff4c8;box-shadow:0 0 20px rgba(229,197,116,0.25)}' +
+
+      // Choice buttons — shown in place of Continue when a dialogue line
+      // has choices. Stack vertically on narrow screens, side-by-side on
+      // wider ones. Softer styling than Continue to read as "options
+      // you pick" rather than "the forward button."
+      '.aurelius-choices{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;animation:aurelius-choices-fade 0.4s ease both}' +
+      '@keyframes aurelius-choices-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}' +
+      '.aurelius-choice{font-family:"Cinzel",serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;background:rgba(13,10,4,0.6);border:1px solid rgba(229,197,116,0.35);color:rgba(245,238,204,0.82);padding:8px 14px;border-radius:3px;cursor:pointer;transition:all 0.2s}' +
+      '.aurelius-choice:hover{background:rgba(229,197,116,0.12);border-color:rgba(229,197,116,0.65);color:#fff4c8;box-shadow:0 0 14px rgba(229,197,116,0.2)}' +
+      '@media(max-width:520px){.aurelius-choices{width:100%;flex-direction:column;align-items:stretch}.aurelius-choice{text-align:center}}' +
 
       '@media(max-width:640px){' +
         '.aurelius-dialogue-box{padding:18px 20px 14px;bottom:20px}' +
