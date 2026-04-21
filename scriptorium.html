@@ -285,6 +285,10 @@ body{
         <div class="home-stat-value" id="statWords">0</div>
         <div class="home-stat-label">Words Written</div>
       </div>
+      <div class="home-stat">
+        <div class="home-stat-value" id="statEssence">0</div>
+        <div class="home-stat-label">Essence</div>
+      </div>
     </div>
   </div>
 
@@ -766,6 +770,7 @@ function refreshHomeState() {
   var index = Storage.get('index') || [];
   var statSessions = document.getElementById('statSessions');
   var statWords = document.getElementById('statWords');
+  var statEssence = document.getElementById('statEssence');
   statSessions.textContent = index.length;
   var totalWords = 0;
   index.forEach(function(sid){
@@ -773,6 +778,11 @@ function refreshHomeState() {
     if(s && s.wordCount) totalWords += s.wordCount;
   });
   statWords.textContent = totalWords.toLocaleString();
+  // Essence total — shared across the whole program. Read-only display
+  // in the Scriptorium; the number grows when the user finishes a
+  // journal session (20 per, capped once per day) or earns Essence
+  // elsewhere (retrievals in the Atheneum, etc.).
+  if(statEssence) statEssence.textContent = getEssence().toLocaleString();
 
   // Archive description
   var archiveDesc = document.getElementById('archiveDesc');
@@ -988,6 +998,113 @@ function updateStatus(state) {
 }
 
 // ---- FINISH ----
+// ---- ESSENCE (shared currency with Atheneum) ----
+// The Scriptorium reads and writes to the same ga_essence localStorage key
+// as pregame.html, so totals flow into the same pool across the program.
+// Per our scriptorium_research.md decision record: flat 20 Essence per
+// finished session, capped at one session per calendar day. Reward follows
+// the writing, never precedes it or shapes it.
+
+var SCRIPTORIUM_ESSENCE_PER_SESSION = 20;
+
+function getEssence(){
+  var v = parseInt(localStorage.getItem('ga_essence') || '0', 10);
+  return isNaN(v) ? 0 : v;
+}
+
+function addEssence(n){
+  var current = getEssence();
+  var updated = current + n;
+  localStorage.setItem('ga_essence', String(updated));
+  // Mirror to ga_xp (legacy key still used by rank logic in Atheneum).
+  try {
+    var xp = parseInt(localStorage.getItem('ga_xp') || '0', 10);
+    if(isNaN(xp)) xp = 0;
+    localStorage.setItem('ga_xp', String(xp + n));
+  } catch(e){}
+  return updated;
+}
+
+function todayDateStr(){
+  var d = new Date();
+  var m = d.getMonth() + 1;
+  var day = d.getDate();
+  return d.getFullYear() + '-' + (m < 10 ? '0' + m : m) + '-' + (day < 10 ? '0' + day : day);
+}
+
+// Returns true if the user has already earned Scriptorium Essence today.
+// Prevents farming by writing many short sessions in one day.
+function scriptoriumEssenceAlreadyEarnedToday(){
+  return localStorage.getItem('ga_scriptorium_essence_last_date') === todayDateStr();
+}
+
+function markScriptoriumEssenceEarnedToday(){
+  localStorage.setItem('ga_scriptorium_essence_last_date', todayDateStr());
+}
+
+// ---- MILESTONE DIALOGUES ----
+// Aurelius speaks briefly at specific session counts. These are character
+// acknowledgments, not gamification rewards — he reacts to the user's
+// return, not to a point total. Fires after the finish modal closes, so
+// we don't stack two overlays.
+//
+// Milestones keyed on the user's total finished-session count (from the
+// session index). We fire ONCE per milestone, tracked by storage flags.
+var MILESTONES = [
+  {
+    count: 1,
+    flagKey: 'ga_aurelius_milestone_1',
+    script: [
+      { speaker: 'Aurelius',
+        text: "So. You have written your first session." },
+      { speaker: 'Aurelius',
+        text: "Whatever is on the page is now out of you, at least a little. That matters, whether you felt anything shift or not. Most of the work is invisible at first." },
+      { speaker: 'Aurelius',
+        text: "Come back tomorrow, Ascendant. That is when the practice begins." }
+    ]
+  },
+  {
+    count: 7,
+    flagKey: 'ga_aurelius_milestone_7',
+    script: [
+      { speaker: 'Aurelius',
+        text: "Seven sessions. You have made it through a week, Ascendant." },
+      { speaker: 'Aurelius',
+        text: "I notice you returning. That is the part most people do not manage \u2014 and the part that matters most. The practice is mostly about whether you show up." },
+      { speaker: 'Aurelius',
+        text: "Keep going. I will not make a ceremony of every return. But I see you." }
+    ]
+  },
+  {
+    count: 30,
+    flagKey: 'ga_aurelius_milestone_30',
+    script: [
+      { speaker: 'Aurelius',
+        text: "Thirty sessions, Ascendant. A month." },
+      { speaker: 'Aurelius',
+        text: "By now something has likely changed in how you move through your days \u2014 some small thing you might not have noticed yet. Look for it. It will be quieter than you expect." },
+      { speaker: 'Aurelius',
+        text: "I used to think my role was to teach. It is not. My role is to keep the fires lit so you have a place to come back to. You have done the teaching, on yourself." },
+      { speaker: 'Aurelius',
+        text: "Go well." }
+    ]
+  }
+];
+
+// Return a milestone script if this session count triggers one and hasn't
+// already fired. Returns null otherwise.
+function checkMilestone(sessionCount){
+  for(var i = 0; i < MILESTONES.length; i++){
+    var m = MILESTONES[i];
+    if(m.count === sessionCount){
+      if(localStorage.getItem(m.flagKey) === '1') return null; // already fired
+      localStorage.setItem(m.flagKey, '1');
+      return m.script;
+    }
+  }
+  return null;
+}
+
 function finishSession() {
   if(!currentSession) return;
   if(currentSession.wordCount < MIN_WORDS_TO_FINISH) return;
@@ -1004,16 +1121,62 @@ function finishSession() {
   // Clear the draft
   Storage.remove('draft');
 
-  // Show confirmation modal
-  var body = 'You wrote ' + currentSession.wordCount + ' words. That writing is yours, saved privately, and can be reread any time from Past Sessions.';
+  // --- ESSENCE AWARD ---
+  // Flat 20 per session, capped once per calendar day. Research rule:
+  // reward follows the writing, doesn't shape it. User sees this AFTER
+  // clicking Finish, never before.
+  var essenceAwarded = 0;
+  if(!scriptoriumEssenceAlreadyEarnedToday()){
+    essenceAwarded = SCRIPTORIUM_ESSENCE_PER_SESSION;
+    addEssence(essenceAwarded);
+    markScriptoriumEssenceEarnedToday();
+  }
+
+  // Build the finish modal body — acknowledges Essence if earned,
+  // stays restrained in tone either way.
+  var body;
+  if(essenceAwarded > 0){
+    body = 'You wrote ' + currentSession.wordCount + ' words. ' +
+           'You earned ' + essenceAwarded + ' Essence for your first session today. ' +
+           'The writing is yours, saved privately, and can be reread any time from Past Sessions.';
+  } else {
+    body = 'You wrote ' + currentSession.wordCount + ' words. ' +
+           'That writing is yours, saved privately, and can be reread any time from Past Sessions.';
+  }
   document.getElementById('finishModalBody').textContent = body;
   document.getElementById('finishModal').classList.add('open');
+
+  // Check for milestone after the session is counted. Stash the script
+  // on the modal so closeFinishModal can fire Aurelius afterward.
+  var sessionCount = (Storage.get('index') || []).length;
+  var milestoneScript = checkMilestone(sessionCount);
+  if(milestoneScript){
+    document.getElementById('finishModal').dataset.pendingMilestone = JSON.stringify(milestoneScript);
+  }
 
   currentSession = null;
 }
 
 function closeFinishModal() {
-  document.getElementById('finishModal').classList.remove('open');
+  var modal = document.getElementById('finishModal');
+  modal.classList.remove('open');
+
+  // Fire Aurelius milestone dialogue if one is pending. Small delay so
+  // the modal fade completes before the overlay appears on top.
+  var pending = modal.dataset.pendingMilestone;
+  if(pending){
+    delete modal.dataset.pendingMilestone;
+    try {
+      var script = JSON.parse(pending);
+      setTimeout(function(){
+        if(typeof Aurelius !== 'undefined' && typeof Aurelius.summonOneOff === 'function'){
+          Aurelius.summonOneOff(script);
+        }
+      }, 600);
+    } catch(e){
+      console.error('[Scriptorium] Failed to parse milestone script:', e);
+    }
+  }
 }
 
 // ---- DISCARD ----
