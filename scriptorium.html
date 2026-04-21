@@ -193,9 +193,44 @@ body{
   .prompt-card{padding:20px 18px}
   .prompt-text{font-size:17px}
 }
+
+/* ===== DEV RESET PANEL — temporary, remove before ship =====
+   Same pattern as the pregame page. Small red-tinged panel at bottom-
+   center that wipes all ga_* localStorage keys and reloads. Useful for
+   testing first-visit/return-visit/sigil-summon flows cleanly. */
+.dev-panel{
+  position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
+  z-index:9990;display:flex;align-items:center;gap:8px;
+  background:rgba(8,8,20,0.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(192,57,43,0.35);border-radius:3px;
+  padding:5px 10px;
+  font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;
+  color:rgba(240,236,228,0.45);text-transform:uppercase;
+  opacity:0.55;transition:opacity .2s;
+}
+.dev-panel:hover{opacity:1}
+.dev-panel-label{color:rgba(192,57,43,0.8);font-weight:500}
+.dev-reset-btn{
+  background:transparent;border:1px solid rgba(192,57,43,0.5);
+  color:rgba(240,236,228,0.7);
+  font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;
+  padding:4px 10px;border-radius:2px;cursor:pointer;text-transform:uppercase;
+  transition:all .2s;
+}
+.dev-reset-btn:hover{
+  background:rgba(192,57,43,0.18);color:#f0ece4;border-color:rgba(192,57,43,0.85);
+}
+/* ===== END DEV RESET PANEL ===== */
 </style>
 </head>
 <body>
+
+<!-- DEV RESET PANEL — wipes all ga_* localStorage keys and reloads.
+     Temporary dev affordance; remove before shipping to production. -->
+<div class="dev-panel" title="Development tools — clears all ga_* localStorage keys">
+  <span class="dev-panel-label">DEV</span>
+  <button class="dev-reset-btn" onclick="devFullReset()" title="Clear all Gamer Ascension localStorage keys and reload">Full Reset</button>
+</div>
 
 <!-- Floating embers (ambient aesthetic) -->
 <div class="ember-layer" id="emberLayer"></div>
@@ -652,6 +687,31 @@ var autosaveTimer = null;
 var MIN_WORDS_TO_FINISH = 20; // minimum word count before finish is enabled
 
 // ---- UTILS ----
+
+// ===== DEV RESET (temporary) =====
+// Wipes every localStorage key prefixed with 'ga_' and reloads the page.
+// Attached to the dev panel's Full Reset button. Remove this function and
+// the accompanying DOM + CSS before shipping to production.
+//
+// For the Scriptorium specifically, this clears:
+//   - ga_scriptorium_* (session index, drafts, finished sessions)
+//   - ga_aurelius_seen_scriptorium (first-visit flag)
+//   - ga_aurelius_last_visit_date_scriptorium (once-per-day gate)
+// ... plus every other ga_* key across the program, so you can test
+// the whole Evermark flow from zero.
+function devFullReset(){
+  try {
+    var keys = Object.keys(localStorage).filter(function(k){
+      return k.indexOf('ga_') === 0;
+    });
+    keys.forEach(function(k){ localStorage.removeItem(k); });
+    console.log('[Dev] Full reset — cleared ' + keys.length + ' ga_* keys');
+  } catch(e){
+    console.error('[Dev] Reset failed:', e);
+  }
+  location.reload();
+}
+
 function genSessionId() {
   return 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 }
