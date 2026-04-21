@@ -139,12 +139,30 @@
     summonEl.setAttribute('title', 'Summon Aurelius');
     summonEl.innerHTML =
       '<svg class="aurelius-summon-sigil" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
-        '<circle cx="50" cy="50" r="36" fill="none" stroke="rgba(229,197,116,0.35)" stroke-width="1"/>' +
-        '<circle cx="50" cy="50" r="28" fill="none" stroke="rgba(229,197,116,0.55)" stroke-width="0.8"/>' +
-        '<circle cx="50" cy="50" r="20" fill="none" stroke="rgba(229,197,116,0.75)" stroke-width="0.7"/>' +
-        // Vertical slit eye — small version for the summon button
-        '<ellipse cx="50" cy="50" rx="3" ry="10" fill="rgba(245,238,204,0.95)"/>' +
-        '<ellipse cx="50" cy="50" rx="1.2" ry="6" fill="rgba(40,25,10,0.95)"/>' +
+        '<defs>' +
+          '<radialGradient id="aureliusSummonIris" cx="50%" cy="50%" r="50%">' +
+            '<stop offset="0%" stop-color="#fff4c8" stop-opacity="1"/>' +
+            '<stop offset="18%" stop-color="#f5c85a" stop-opacity="1"/>' +
+            '<stop offset="50%" stop-color="#b58a2f" stop-opacity="1"/>' +
+            '<stop offset="85%" stop-color="#6b4818" stop-opacity="1"/>' +
+            '<stop offset="100%" stop-color="#2a1a08" stop-opacity="1"/>' +
+          '</radialGradient>' +
+        '</defs>' +
+        // Concentric gold rings with black underlay (matches main sigil aesthetic)
+        '<circle cx="50" cy="50" r="38" fill="none" stroke="#000000" stroke-width="2" opacity="0.7"/>' +
+        '<circle cx="50" cy="50" r="38" fill="none" stroke="rgba(229,197,116,0.5)" stroke-width="1"/>' +
+        '<circle cx="50" cy="50" r="28" fill="none" stroke="#000000" stroke-width="1.8" opacity="0.7"/>' +
+        '<circle cx="50" cy="50" r="28" fill="none" stroke="rgba(229,197,116,0.7)" stroke-width="0.9"/>' +
+        // Socket backing for the eye
+        '<ellipse cx="50" cy="50" rx="8" ry="15" fill="#0a0604" opacity="0.85"/>' +
+        // Sclera + iris
+        '<ellipse cx="50" cy="50" rx="5" ry="11" fill="url(#aureliusSummonIris)"/>' +
+        // Pupil
+        '<ellipse cx="50" cy="50" rx="1.5" ry="5" fill="#000000"/>' +
+        // Highlight
+        '<circle cx="50.8" cy="47.5" r="0.6" fill="#ffffff"/>' +
+        // Eye outline
+        '<path d="M 50 39 Q 42 50, 50 61 Q 58 50, 50 39 Z" fill="none" stroke="rgba(245,238,204,0.9)" stroke-width="0.8"/>' +
       '</svg>';
     document.body.appendChild(summonEl);
 
@@ -166,78 +184,162 @@
                 '<feGaussianBlur stdDeviation="2.5" result="blur"/>' +
                 '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>' +
               '</filter>' +
+              // Ambient halo behind the eye — warm firelight bleed. Sits
+              // behind the whole eye assembly to give it presence.
               '<radialGradient id="aureliusEyeGrad" cx="50%" cy="50%" r="50%">' +
                 '<stop offset="0%" stop-color="#fff4c8" stop-opacity="1"/>' +
                 '<stop offset="35%" stop-color="#e5c574" stop-opacity="0.85"/>' +
                 '<stop offset="100%" stop-color="#8a6020" stop-opacity="0.25"/>' +
               '</radialGradient>' +
+              // Dragon iris gradient — bright gold core around pupil,
+              // mid-amber midband, dark amber at outer rim. This is the
+              // core of the dragon-eye aesthetic.
+              '<radialGradient id="aureliusIrisGrad" cx="50%" cy="50%" r="50%">' +
+                '<stop offset="0%" stop-color="#fff4c8" stop-opacity="1"/>' +
+                '<stop offset="18%" stop-color="#f5c85a" stop-opacity="1"/>' +
+                '<stop offset="50%" stop-color="#b58a2f" stop-opacity="1"/>' +
+                '<stop offset="85%" stop-color="#6b4818" stop-opacity="1"/>' +
+                '<stop offset="100%" stop-color="#2a1a08" stop-opacity="1"/>' +
+              '</radialGradient>' +
+              // Eye socket — dark radial behind the eye for depth.
+              '<radialGradient id="aureliusEyeSocket" cx="50%" cy="50%" r="50%">' +
+                '<stop offset="0%" stop-color="#000000" stop-opacity="0.9"/>' +
+                '<stop offset="70%" stop-color="#0a0604" stop-opacity="0.7"/>' +
+                '<stop offset="100%" stop-color="#1a0f05" stop-opacity="0"/>' +
+              '</radialGradient>' +
+              // Clip path matching the iris ellipse — used to constrain
+              // the striation lines to stay inside the iris.
+              '<clipPath id="aureliusIrisClip">' +
+                '<ellipse cx="200" cy="200" rx="11" ry="22"/>' +
+              '</clipPath>' +
             '</defs>' +
 
             // THREE ANCHORS in triangle formation — writer, page, witness.
-            // Top (200,60), bottom-left (90,300), bottom-right (310,300)
+            // Top (200,60), bottom-left (90,300), bottom-right (310,300).
+            // Rendered as iron rivets: black fill with gold rim, holding
+            // the form together like blacksmith's work.
             '<g class="au-anchors">' +
               '<line class="au-thread" x1="200" y1="60" x2="200" y2="140" stroke="rgba(229,197,116,0.5)" stroke-width="1" stroke-linecap="round"/>' +
               '<line class="au-thread" x1="90" y1="300" x2="155" y2="240" stroke="rgba(229,197,116,0.5)" stroke-width="1" stroke-linecap="round"/>' +
               '<line class="au-thread" x1="310" y1="300" x2="245" y2="240" stroke="rgba(229,197,116,0.5)" stroke-width="1" stroke-linecap="round"/>' +
-              '<path class="au-anchor" d="M 200 52 L 208 60 L 200 68 L 192 60 Z" fill="rgba(245,238,204,1)" stroke="rgba(255,244,200,0.9)" stroke-width="0.7"/>' +
-              '<path class="au-anchor" d="M 90 292 L 98 300 L 90 308 L 82 300 Z" fill="rgba(245,238,204,1)" stroke="rgba(255,244,200,0.9)" stroke-width="0.7"/>' +
-              '<path class="au-anchor" d="M 310 292 L 318 300 L 310 308 L 302 300 Z" fill="rgba(245,238,204,1)" stroke="rgba(255,244,200,0.9)" stroke-width="0.7"/>' +
+              '<path class="au-anchor" d="M 200 50 L 210 60 L 200 70 L 190 60 Z" fill="#0a0604" stroke="rgba(245,238,204,1)" stroke-width="1" stroke-linejoin="round"/>' +
+              '<path class="au-anchor" d="M 90 290 L 100 300 L 90 310 L 80 300 Z" fill="#0a0604" stroke="rgba(245,238,204,1)" stroke-width="1" stroke-linejoin="round"/>' +
+              '<path class="au-anchor" d="M 310 290 L 320 300 L 310 310 L 300 300 Z" fill="#0a0604" stroke="rgba(245,238,204,1)" stroke-width="1" stroke-linejoin="round"/>' +
+              // Small bright center on each anchor — a gold nail-head dot
+              '<circle cx="200" cy="60" r="1.5" fill="#f5eecc"/>' +
+              '<circle cx="90" cy="300" r="1.5" fill="#f5eecc"/>' +
+              '<circle cx="310" cy="300" r="1.5" fill="#f5eecc"/>' +
             '</g>' +
 
             // SEVEN RUNIC PERIMETER MARKS — one for each day of the
-            // weekly cycle. Spaced 360/7 ≈ 51.4 degrees apart.
+            // weekly cycle. Spaced 360/7 ≈ 51.4 degrees apart. Each rune
+            // is a gold mark set in a small black socket, giving them
+            // the feel of iron-riveted studs around the perimeter.
             '<g class="au-runes">' +
-              '<g class="au-rune" transform="rotate(0 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(245,238,204,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(229,197,116,0.6)" stroke-width="0.5"/></g>' +
-              '<g class="au-rune" transform="rotate(51.4 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(245,238,204,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(229,197,116,0.6)" stroke-width="0.5"/></g>' +
-              '<g class="au-rune" transform="rotate(102.8 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(245,238,204,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(229,197,116,0.6)" stroke-width="0.5"/></g>' +
-              '<g class="au-rune" transform="rotate(154.2 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(245,238,204,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(229,197,116,0.6)" stroke-width="0.5"/></g>' +
-              '<g class="au-rune" transform="rotate(205.6 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(245,238,204,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(229,197,116,0.6)" stroke-width="0.5"/></g>' +
-              '<g class="au-rune" transform="rotate(257 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(245,238,204,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(229,197,116,0.6)" stroke-width="0.5"/></g>' +
-              '<g class="au-rune" transform="rotate(308.4 200 200)"><circle cx="360" cy="200" r="2" fill="rgba(245,238,204,1)"/><circle cx="360" cy="200" r="4" fill="none" stroke="rgba(229,197,116,0.6)" stroke-width="0.5"/></g>' +
+              '<g class="au-rune" transform="rotate(0 200 200)"><circle cx="360" cy="200" r="4" fill="#0a0604" stroke="rgba(229,197,116,0.7)" stroke-width="0.6"/><circle cx="360" cy="200" r="1.6" fill="rgba(245,238,204,1)"/></g>' +
+              '<g class="au-rune" transform="rotate(51.4 200 200)"><circle cx="360" cy="200" r="4" fill="#0a0604" stroke="rgba(229,197,116,0.7)" stroke-width="0.6"/><circle cx="360" cy="200" r="1.6" fill="rgba(245,238,204,1)"/></g>' +
+              '<g class="au-rune" transform="rotate(102.8 200 200)"><circle cx="360" cy="200" r="4" fill="#0a0604" stroke="rgba(229,197,116,0.7)" stroke-width="0.6"/><circle cx="360" cy="200" r="1.6" fill="rgba(245,238,204,1)"/></g>' +
+              '<g class="au-rune" transform="rotate(154.2 200 200)"><circle cx="360" cy="200" r="4" fill="#0a0604" stroke="rgba(229,197,116,0.7)" stroke-width="0.6"/><circle cx="360" cy="200" r="1.6" fill="rgba(245,238,204,1)"/></g>' +
+              '<g class="au-rune" transform="rotate(205.6 200 200)"><circle cx="360" cy="200" r="4" fill="#0a0604" stroke="rgba(229,197,116,0.7)" stroke-width="0.6"/><circle cx="360" cy="200" r="1.6" fill="rgba(245,238,204,1)"/></g>' +
+              '<g class="au-rune" transform="rotate(257 200 200)"><circle cx="360" cy="200" r="4" fill="#0a0604" stroke="rgba(229,197,116,0.7)" stroke-width="0.6"/><circle cx="360" cy="200" r="1.6" fill="rgba(245,238,204,1)"/></g>' +
+              '<g class="au-rune" transform="rotate(308.4 200 200)"><circle cx="360" cy="200" r="4" fill="#0a0604" stroke="rgba(229,197,116,0.7)" stroke-width="0.6"/><circle cx="360" cy="200" r="1.6" fill="rgba(245,238,204,1)"/></g>' +
             '</g>' +
 
             // FIVE CONCENTRIC RINGS — not polygons like Guide. Each ring
             // rotates slowly at a different rate (slower than Guide's),
             // with gap positions arranged so visually a "pulse" of gaps
             // runs through the layers. Rings use stroke-dasharray to
-            // create the opening.
+            // create the opening. Each ring is paired with a black
+            // underlay stroke at slightly wider width, giving it the
+            // relief of gold inlaid in black iron.
             // Ring 1 (outermost) — radius 160, slowest
             '<g class="au-orbit au-orbit-1">' +
-              '<circle cx="200" cy="200" r="160" fill="none" stroke="rgba(229,197,116,0.75)" stroke-width="1.4" stroke-dasharray="940 65" stroke-linecap="round"/>' +
+              '<circle cx="200" cy="200" r="160" fill="none" stroke="#000000" stroke-width="2.6" stroke-dasharray="940 65" stroke-linecap="round" opacity="0.75"/>' +
+              '<circle cx="200" cy="200" r="160" fill="none" stroke="rgba(229,197,116,0.85)" stroke-width="1.4" stroke-dasharray="940 65" stroke-linecap="round"/>' +
             '</g>' +
             // Ring 2 — radius 135
             '<g class="au-orbit au-orbit-2">' +
-              '<circle cx="200" cy="200" r="135" fill="none" stroke="rgba(229,197,116,0.85)" stroke-width="1.3" stroke-dasharray="790 55" stroke-linecap="round"/>' +
+              '<circle cx="200" cy="200" r="135" fill="none" stroke="#000000" stroke-width="2.5" stroke-dasharray="790 55" stroke-linecap="round" opacity="0.75"/>' +
+              '<circle cx="200" cy="200" r="135" fill="none" stroke="rgba(229,197,116,0.9)" stroke-width="1.3" stroke-dasharray="790 55" stroke-linecap="round"/>' +
             '</g>' +
             // Ring 3 — radius 115
             '<g class="au-orbit au-orbit-3">' +
-              '<circle cx="200" cy="200" r="115" fill="none" stroke="rgba(229,197,116,0.9)" stroke-width="1.2" stroke-dasharray="670 50" stroke-linecap="round"/>' +
+              '<circle cx="200" cy="200" r="115" fill="none" stroke="#000000" stroke-width="2.4" stroke-dasharray="670 50" stroke-linecap="round" opacity="0.75"/>' +
+              '<circle cx="200" cy="200" r="115" fill="none" stroke="rgba(229,197,116,0.95)" stroke-width="1.2" stroke-dasharray="670 50" stroke-linecap="round"/>' +
             '</g>' +
             // Ring 4 — radius 95
             '<g class="au-orbit au-orbit-4">' +
-              '<circle cx="200" cy="200" r="95" fill="none" stroke="rgba(229,197,116,0.95)" stroke-width="1.1" stroke-dasharray="550 45" stroke-linecap="round"/>' +
+              '<circle cx="200" cy="200" r="95" fill="none" stroke="#000000" stroke-width="2.3" stroke-dasharray="550 45" stroke-linecap="round" opacity="0.75"/>' +
+              '<circle cx="200" cy="200" r="95" fill="none" stroke="rgba(245,215,140,1)" stroke-width="1.1" stroke-dasharray="550 45" stroke-linecap="round"/>' +
             '</g>' +
             // Ring 5 (innermost) — radius 78, fastest
             '<g class="au-orbit au-orbit-5">' +
+              '<circle cx="200" cy="200" r="78" fill="none" stroke="#000000" stroke-width="2.2" stroke-dasharray="450 40" stroke-linecap="round" opacity="0.75"/>' +
               '<circle cx="200" cy="200" r="78" fill="none" stroke="rgba(245,238,204,1)" stroke-width="1" stroke-dasharray="450 40" stroke-linecap="round"/>' +
             '</g>' +
 
-            // THE EYE — vertical slit, inward-watching. Narrower than
-            // Guide's horizontal almond, communicating concentrated
-            // introspective attention rather than outward teaching-gaze.
+            // THE EYE — dragon eye, regal and watchful. Vertical slit
+            // pupil, detailed amber iris with radial striations, sharp
+            // black outer rim, bright specular highlight, subtle upper
+            // brow ridge. Inward-watching but calm — the eye of something
+            // ancient and patient, not predatory.
             '<g class="au-eye" filter="url(#aureliusSigilGlow)">' +
               '<g class="au-eye-lids">' +
-                // Vertical-oriented eye shape. Ellipse rotated/stretched vertically.
-                '<ellipse class="au-eye-halo" cx="200" cy="200" rx="28" ry="55" fill="url(#aureliusEyeGrad)" opacity="0.6"/>' +
-                // Vertical almond/lemon shape made of two curves
-                '<path class="au-eye-left" d="M 200 156 Q 178 200, 200 244" fill="none" stroke="rgba(255,244,200,1)" stroke-width="1.8" stroke-linecap="round"/>' +
-                '<path class="au-eye-right" d="M 200 156 Q 222 200, 200 244" fill="none" stroke="rgba(255,244,200,1)" stroke-width="1.8" stroke-linecap="round"/>' +
-                // Iris ring — vertical oval
-                '<ellipse class="au-iris-ring" cx="200" cy="200" rx="6" ry="12" fill="none" stroke="rgba(245,238,204,0.5)" stroke-width="0.6"/>' +
-                // Vertical slit pupil — narrow vertical ellipse
-                '<ellipse class="au-pupil" id="auPupil" cx="200" cy="200" rx="2.5" ry="8" fill="rgba(40,25,10,0.95)"/>' +
-                // Highlight spot
-                '<circle class="au-eye-bright" cx="200" cy="197" r="1.2" fill="#fff4c8"/>' +
+                // Ambient halo — warm firelight bleed behind the eye
+                '<ellipse class="au-eye-halo" cx="200" cy="200" rx="30" ry="56" fill="url(#aureliusEyeGrad)" opacity="0.55"/>' +
+                // Eye socket — dark radial gives the eye a backing so
+                // the iris gold pops against it
+                '<ellipse class="au-eye-socket" cx="200" cy="200" rx="20" ry="44" fill="url(#aureliusEyeSocket)"/>' +
+                // Black outer rim of the eye opening — inside-drawn,
+                // creates the hard edge that makes it read as dragon
+                '<path class="au-eye-rim-outer" d="M 200 152 Q 180 200, 200 248 Q 220 200, 200 152 Z" fill="#000000" stroke="none"/>' +
+                // The lens opening — slightly smaller than the rim, fills
+                // with a cream-gold that represents the sclera
+                '<path class="au-eye-sclera" d="M 200 156 Q 182 200, 200 244 Q 218 200, 200 156 Z" fill="#2a1a08" stroke="none"/>' +
+                // Iris — large vertical ellipse with radial gradient.
+                // The gradient runs from bright gold center to dark amber
+                // outer edge, which is the core of the dragon-eye look.
+                '<ellipse class="au-eye-iris" cx="200" cy="200" rx="11" ry="22" fill="url(#aureliusIrisGrad)"/>' +
+                // Iris striations — 16 fine radial lines from the pupil
+                // edge to the iris edge. Clipped to stay inside the iris.
+                // These are what make the eye read as living/textured
+                // rather than flat.
+                '<g class="au-iris-striations" clip-path="url(#aureliusIrisClip)">' +
+                  '<line x1="200" y1="182" x2="200" y2="178" stroke="#2a1a08" stroke-width="0.5" opacity="0.75"/>' +
+                  '<line x1="200" y1="218" x2="200" y2="222" stroke="#2a1a08" stroke-width="0.5" opacity="0.75"/>' +
+                  '<line x1="204" y1="184" x2="205.5" y2="180" stroke="#2a1a08" stroke-width="0.4" opacity="0.65"/>' +
+                  '<line x1="196" y1="184" x2="194.5" y2="180" stroke="#2a1a08" stroke-width="0.4" opacity="0.65"/>' +
+                  '<line x1="204" y1="216" x2="205.5" y2="220" stroke="#2a1a08" stroke-width="0.4" opacity="0.65"/>' +
+                  '<line x1="196" y1="216" x2="194.5" y2="220" stroke="#2a1a08" stroke-width="0.4" opacity="0.65"/>' +
+                  '<line x1="207" y1="190" x2="210" y2="186" stroke="#2a1a08" stroke-width="0.4" opacity="0.6"/>' +
+                  '<line x1="193" y1="190" x2="190" y2="186" stroke="#2a1a08" stroke-width="0.4" opacity="0.6"/>' +
+                  '<line x1="207" y1="210" x2="210" y2="214" stroke="#2a1a08" stroke-width="0.4" opacity="0.6"/>' +
+                  '<line x1="193" y1="210" x2="190" y2="214" stroke="#2a1a08" stroke-width="0.4" opacity="0.6"/>' +
+                  '<line x1="208" y1="196" x2="211" y2="194" stroke="#2a1a08" stroke-width="0.4" opacity="0.55"/>' +
+                  '<line x1="192" y1="196" x2="189" y2="194" stroke="#2a1a08" stroke-width="0.4" opacity="0.55"/>' +
+                  '<line x1="208" y1="204" x2="211" y2="206" stroke="#2a1a08" stroke-width="0.4" opacity="0.55"/>' +
+                  '<line x1="192" y1="204" x2="189" y2="206" stroke="#2a1a08" stroke-width="0.4" opacity="0.55"/>' +
+                  '<line x1="208" y1="200" x2="211" y2="200" stroke="#2a1a08" stroke-width="0.4" opacity="0.5"/>' +
+                  '<line x1="192" y1="200" x2="189" y2="200" stroke="#2a1a08" stroke-width="0.4" opacity="0.5"/>' +
+                '</g>' +
+                // Iris outer ring — thin dark line defining the iris edge
+                '<ellipse class="au-iris-ring" cx="200" cy="200" rx="11" ry="22" fill="none" stroke="#1a0f05" stroke-width="0.8"/>' +
+                // Inner iris hot ring — bright thin ring just around the
+                // pupil, intensifies the glow at the center
+                '<ellipse class="au-iris-hot" cx="200" cy="200" rx="4.5" ry="10" fill="none" stroke="#fff4c8" stroke-width="0.5" opacity="0.8"/>' +
+                // Pupil — sharp-edged deep black vertical ellipse. The
+                // defining feature of a dragon eye.
+                '<ellipse class="au-pupil" id="auPupil" cx="200" cy="200" rx="2.8" ry="9" fill="#000000"/>' +
+                // Specular highlight — small bright off-center dot that
+                // makes the eye look wet and alive
+                '<ellipse class="au-eye-bright" cx="201.5" cy="195" rx="0.9" ry="1.6" fill="#ffffff" opacity="0.95"/>' +
+                // Upper brow ridge — thin dark arc above the eye, adds
+                // gravity without aggression. Subtle.
+                '<path class="au-brow" d="M 184 148 Q 200 140, 216 148" fill="none" stroke="#1a0f05" stroke-width="1.4" stroke-linecap="round" opacity="0.7"/>' +
+                // Lens-opening outline — pointed top and bottom, not
+                // rounded almond. This shape is what makes it read as
+                // dragon rather than cat/snake.
+                '<path class="au-eye-outline" d="M 200 152 Q 180 200, 200 248 Q 220 200, 200 152 Z" fill="none" stroke="rgba(245,238,204,0.9)" stroke-width="1.4" stroke-linejoin="round"/>' +
               '</g>' +
             '</g>' +
           '</svg>' +
@@ -450,13 +552,15 @@
       '.au-thread{animation:au-thread-pulse 8s ease-in-out infinite}' +
       '@keyframes au-thread-pulse{0%,100%{opacity:0.5}50%{opacity:0.85}}' +
 
-      // Eye — periodic slow blink
+      // Eye — periodic slow blink. For a vertical slit eye, a blink
+      // scales the Y axis down, mimicking an upper and lower lid meeting
+      // at the horizontal center line (not scaling X like a normal eye).
       '.au-eye{transform-origin:200px 200px;animation:au-breath 4.5s ease-in-out infinite}' +
       '@keyframes au-breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}' +
-      '.au-eye-lids{animation:au-blink 11s ease-in-out infinite}' +
+      '.au-eye-lids{transform-origin:200px 200px;animation:au-blink 11s ease-in-out infinite}' +
       '@keyframes au-blink{' +
-        '0%,47%,52%,100%{transform:scaleX(1) scaleY(1)}' + // normal
-        '49%{transform:scaleX(0.05) scaleY(1)}' + // vertical slit closes horizontally
+        '0%,47%,53%,100%{transform:scaleY(1)}' +
+        '50%{transform:scaleY(0.05)}' +
       '}' +
 
       // Pupil — tiny drift so the eye looks alive
