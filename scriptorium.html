@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Scriptorium · Gamer Ascension</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   THE SCRIPTORIUM
+   A private journal surface. Users enter to write, either guided
+   by a prompt or unguided. Sessions persist to localStorage.
+   Past sessions are read-only archives.
+   Aesthetic: parchment and candlelight within the Evermark
+   dark-gold palette. Slightly warmer than Atheneum (the star map).
+============================================================ */
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#c0392b;--gold:#c9a84c;--gold-warm:#cd9f4e;--gold-light:#e5c574;--gold-pale:#f5eecc;
+  --ember:#cd7f32;
+  --bg:#080810;--bg-deep:#04040a;--bg-parchment:#15110a;
+  --border:rgba(255,255,255,0.06);--border-warm:rgba(201,168,76,.18);
+  --text:#f0ece4;--tdim:rgba(240,236,228,0.6);--tmuted:rgba(240,236,228,0.32);
+  --arcane:#9d8bff;--silver:#e0d8f0;--cyan:#7df5f5;
+}
+html,body{
+  min-height:100%;background:var(--bg-deep);
+  font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text);
+}
+body{
+  background:
+    radial-gradient(ellipse at 20% 30%, rgba(201,168,76,0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 80% 70%, rgba(205,127,50,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(127,119,221,0.04) 0%, transparent 40%),
+    var(--bg-deep);
+  min-height:100vh;
+}
+
+/* subtle floating ember particles — matches threshold aesthetic */
+.ember-layer{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ember{position:absolute;width:2px;height:2px;border-radius:50%;background:#e5c574;opacity:0;animation:emberFloat 14s linear infinite;box-shadow:0 0 4px rgba(201,168,76,.6)}
+@keyframes emberFloat{
+  0%{opacity:0;transform:translateY(0) translateX(0)}
+  10%{opacity:.55}
+  90%{opacity:.35}
+  100%{opacity:0;transform:translateY(-100vh) translateX(20px)}
+}
+
+/* ============ HEADER ============ */
+.header{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(8,8,16,0.75);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
+.header-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.05em;color:var(--text);text-decoration:none;white-space:nowrap}
+.header-logo span{color:var(--red)}
+.header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.header-back{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.14em;color:var(--tdim);text-decoration:none;text-transform:uppercase;padding:6px 10px;border:1px solid var(--border);border-radius:3px;transition:all .2s}
+.header-back:hover{color:var(--gold-light);border-color:var(--border-warm)}
+@media(min-width:500px){
+  .header{padding:0 24px}
+  .header-logo{font-size:20px}
+}
+
+/* ============ STAGE ============ */
+.stage{padding:96px 20px 60px;max-width:760px;margin:0 auto;position:relative;z-index:2}
+
+/* ============ VIEWS ============ */
+.view{display:none;animation:viewFadeIn .5s ease both}
+.view.active{display:block}
+@keyframes viewFadeIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ============ HOME VIEW ============ */
+.home-eyebrow{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.24em;color:rgba(201,168,76,.7);text-transform:uppercase;text-align:center;margin-bottom:10px}
+.home-title{font-family:'Cinzel Decorative',serif;font-size:clamp(32px,6vw,46px);font-weight:400;color:var(--gold-light);text-align:center;line-height:1.15;margin-bottom:20px;text-shadow:0 0 36px rgba(201,168,76,.2)}
+.home-intro{font-family:'Crimson Pro',serif;font-size:17px;line-height:1.65;color:var(--tdim);text-align:center;max-width:540px;margin:0 auto 44px;font-style:italic}
+
+.home-actions{display:flex;flex-direction:column;gap:14px;max-width:480px;margin:0 auto}
+.home-action{display:flex;align-items:center;justify-content:space-between;padding:22px 24px;background:rgba(13,13,26,0.6);border:1px solid var(--border-warm);border-radius:4px;text-decoration:none;color:var(--text);cursor:pointer;transition:all .3s;text-align:left;font-family:inherit;font-size:inherit;width:100%;backdrop-filter:blur(6px)}
+.home-action:hover{border-color:rgba(201,168,76,.5);background:rgba(20,20,35,.75);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3),0 0 20px rgba(201,168,76,.08)}
+.home-action:disabled{opacity:.4;cursor:not-allowed}
+.home-action:disabled:hover{transform:none;border-color:var(--border-warm);background:rgba(13,13,26,.6);box-shadow:none}
+.home-action-text{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.home-action-name{font-family:'Cinzel',serif;font-size:15px;letter-spacing:.08em;color:var(--gold-light);text-transform:uppercase}
+.home-action-desc{font-family:'Crimson Pro',serif;font-size:14px;color:var(--tdim);line-height:1.4;font-style:italic}
+.home-action-arrow{font-family:'Cinzel',serif;color:var(--gold);font-size:18px;margin-left:16px;transition:transform .2s;flex-shrink:0}
+.home-action:hover .home-action-arrow{transform:translateX(4px)}
+
+.home-stats{margin-top:48px;padding-top:28px;border-top:1px solid var(--border);display:flex;justify-content:center;gap:36px;flex-wrap:wrap}
+.home-stat{text-align:center}
+.home-stat-value{font-family:'Cinzel',serif;font-size:22px;color:var(--gold-light);letter-spacing:.04em}
+.home-stat-label{font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.2em;color:var(--tmuted);text-transform:uppercase;margin-top:4px}
+
+/* ============ STATE-SELECT (emotion gate) ============ */
+.state-gate-header{text-align:center;margin-bottom:36px}
+.state-gate-eyebrow{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.24em;color:rgba(201,168,76,.7);text-transform:uppercase;margin-bottom:10px}
+.state-gate-title{font-family:'Cinzel Decorative',serif;font-size:clamp(24px,4.5vw,34px);font-weight:400;color:var(--gold-light);line-height:1.2;margin-bottom:10px;text-shadow:0 0 28px rgba(201,168,76,.18)}
+.state-gate-hint{font-family:'Crimson Pro',serif;font-size:14px;line-height:1.5;color:var(--tdim);font-style:italic;max-width:440px;margin:0 auto}
+.state-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:28px}
+.state-btn{padding:18px 18px;background:rgba(13,13,26,.55);border:1px solid var(--border-warm);border-radius:4px;color:var(--text);cursor:pointer;transition:all .25s;text-align:left;font-family:inherit;display:flex;flex-direction:column;gap:4px}
+.state-btn:hover{border-color:rgba(201,168,76,.5);background:rgba(20,20,35,.75);transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.3),0 0 16px rgba(201,168,76,.08)}
+.state-btn:focus{outline:none;border-color:rgba(201,168,76,.65)}
+.state-btn-label{font-family:'Cinzel',serif;font-size:14px;letter-spacing:.1em;color:var(--gold-light);text-transform:uppercase;line-height:1.2}
+.state-btn-sublabel{font-family:'Crimson Pro',serif;font-size:12px;line-height:1.4;color:var(--tdim);font-style:italic}
+.state-gate-footer{text-align:center;padding-top:8px;border-top:1px solid var(--border)}
+.state-gate-footer .prompt-action-btn{margin-top:18px}
+
+@media(max-width:520px){
+  .state-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .state-btn{padding:14px 14px}
+  .state-btn-label{font-size:12px}
+  .state-btn-sublabel{font-size:11px}
+}
+
+/* ============ WRITING VIEW ============ */
+.writing-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.writing-breadcrumb{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.2em;color:var(--tmuted);text-transform:uppercase}
+.writing-breadcrumb a{color:var(--tdim);text-decoration:none;transition:color .2s}
+.writing-breadcrumb a:hover{color:var(--gold-light)}
+.writing-date{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--tmuted);letter-spacing:.06em}
+
+.prompt-card{padding:24px 26px;background:linear-gradient(180deg,rgba(201,168,76,.06),rgba(201,168,76,.02));border:1px solid var(--border-warm);border-radius:6px;margin-bottom:24px;position:relative}
+.prompt-card::before{content:'';position:absolute;top:-1px;left:24px;right:24px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.5),transparent)}
+.prompt-eyebrow{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.2em;color:rgba(201,168,76,.75);text-transform:uppercase;margin-bottom:10px}
+.prompt-text{font-family:'Crimson Pro',serif;font-size:19px;line-height:1.5;color:var(--gold-pale);margin-bottom:14px;font-weight:500}
+.prompt-guidance{font-family:'Crimson Pro',serif;font-size:14px;line-height:1.5;color:var(--tdim);font-style:italic;padding-top:12px;border-top:1px dashed rgba(201,168,76,.18)}
+.prompt-guidance::before{content:'What this teaches · ';font-style:normal;font-family:'Cinzel',serif;font-size:10px;letter-spacing:.18em;color:rgba(201,168,76,.6);text-transform:uppercase}
+.prompt-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.prompt-action-btn{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.14em;color:var(--tdim);text-transform:uppercase;background:transparent;border:1px solid var(--border);padding:7px 12px;border-radius:3px;cursor:pointer;transition:all .2s}
+.prompt-action-btn:hover{color:var(--gold-light);border-color:var(--border-warm)}
+
+.unguided-notice{padding:18px 22px;background:rgba(13,13,26,.4);border:1px dashed rgba(201,168,76,.2);border-radius:4px;margin-bottom:24px;text-align:center}
+.unguided-label{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.2em;color:rgba(201,168,76,.7);text-transform:uppercase;margin-bottom:6px}
+.unguided-desc{font-family:'Crimson Pro',serif;font-size:14px;color:var(--tdim);font-style:italic}
+.unguided-action{margin-top:10px}
+.unguided-action .prompt-action-btn{font-size:10px}
+
+.writing-surface{position:relative;margin-bottom:16px}
+.writing-textarea{width:100%;min-height:400px;padding:24px 26px;background:rgba(21,17,10,.55);border:1px solid var(--border-warm);border-radius:4px;font-family:'Crimson Pro',serif;font-size:17px;line-height:1.7;color:var(--text);resize:vertical;transition:border-color .3s,background .3s}
+.writing-textarea::placeholder{color:var(--tmuted);font-style:italic}
+.writing-textarea:focus{outline:none;border-color:rgba(201,168,76,.4);background:rgba(21,17,10,.75)}
+
+.writing-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+.writing-status{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--tmuted);font-style:italic;letter-spacing:.04em}
+.writing-status.saving{color:rgba(201,168,76,.6)}
+.writing-status.saved{color:rgba(201,168,76,.8)}
+.writing-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-finish{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.14em;color:var(--gold-light);text-transform:uppercase;background:linear-gradient(180deg,rgba(201,168,76,.2),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.45);padding:11px 22px;border-radius:3px;cursor:pointer;transition:all .25s}
+.btn-finish:hover{background:linear-gradient(180deg,rgba(201,168,76,.3),rgba(201,168,76,.14));border-color:rgba(201,168,76,.7);color:var(--gold-pale);box-shadow:0 0 20px rgba(201,168,76,.2)}
+.btn-finish:disabled{opacity:.4;cursor:not-allowed}
+.btn-finish:disabled:hover{background:linear-gradient(180deg,rgba(201,168,76,.2),rgba(201,168,76,.08));border-color:rgba(201,168,76,.45);box-shadow:none}
+.btn-cancel{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.14em;color:var(--tdim);text-transform:uppercase;background:transparent;border:1px solid var(--border);padding:11px 18px;border-radius:3px;cursor:pointer;transition:all .2s}
+.btn-cancel:hover{color:var(--text);border-color:rgba(240,236,228,.25)}
+
+/* ============ ARCHIVE VIEW ============ */
+.archive-title{font-family:'Cinzel Decorative',serif;font-size:clamp(24px,4vw,30px);font-weight:400;color:var(--gold-light);margin-bottom:8px}
+.archive-subtitle{font-family:'Crimson Pro',serif;font-size:15px;color:var(--tdim);font-style:italic;margin-bottom:32px}
+.archive-empty{padding:48px 20px;text-align:center;color:var(--tmuted);font-family:'Crimson Pro',serif;font-size:15px;font-style:italic;border:1px dashed var(--border);border-radius:4px}
+.archive-list{display:flex;flex-direction:column;gap:10px}
+.archive-item{display:block;padding:18px 20px;background:rgba(13,13,26,.55);border:1px solid var(--border);border-radius:4px;text-decoration:none;color:var(--text);cursor:pointer;transition:all .3s;text-align:left;font-family:inherit;width:100%}
+.archive-item:hover{border-color:var(--border-warm);background:rgba(20,20,35,.7);transform:translateY(-1px)}
+.archive-item-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:12px;flex-wrap:wrap}
+.archive-item-date{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.14em;color:var(--gold-light);text-transform:uppercase}
+.archive-item-length{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--tmuted);letter-spacing:.06em}
+.archive-item-prompt{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.14em;color:rgba(157,139,255,.65);text-transform:uppercase;margin-bottom:8px}
+.archive-item-prompt.unguided{color:var(--tmuted)}
+.archive-item-preview{font-family:'Crimson Pro',serif;font-size:14px;line-height:1.5;color:var(--tdim);font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+
+/* ============ READ VIEW (read-only past session) ============ */
+.read-header{margin-bottom:24px}
+.read-date{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.14em;color:var(--gold-light);text-transform:uppercase;margin-bottom:6px}
+.read-meta{font-family:'DM Sans',sans-serif;font-size:12px;color:var(--tmuted);letter-spacing:.04em}
+.read-prompt-card{padding:20px 24px;background:linear-gradient(180deg,rgba(201,168,76,.05),rgba(201,168,76,.01));border:1px solid var(--border-warm);border-radius:4px;margin-bottom:24px}
+.read-prompt-label{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.18em;color:rgba(201,168,76,.65);text-transform:uppercase;margin-bottom:8px}
+.read-prompt-text{font-family:'Crimson Pro',serif;font-size:16px;line-height:1.5;color:var(--gold-pale);font-weight:500}
+.read-body{font-family:'Crimson Pro',serif;font-size:17px;line-height:1.75;color:var(--text);white-space:pre-wrap;padding:24px 26px;background:rgba(21,17,10,.4);border:1px solid var(--border);border-radius:4px;min-height:200px}
+.read-footer{margin-top:20px;display:flex;gap:10px}
+
+/* ============ FINISH MODAL ============ */
+.modal-backdrop{position:fixed;inset:0;background:rgba(4,4,10,.8);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal{max-width:420px;width:100%;background:rgba(13,13,26,.95);border:1px solid var(--border-warm);border-radius:6px;padding:32px 28px;text-align:center;animation:viewFadeIn .4s ease both}
+.modal-rune{font-size:32px;color:var(--gold-light);margin-bottom:16px;text-shadow:0 0 24px rgba(201,168,76,.5)}
+.modal-title{font-family:'Cinzel',serif;font-size:18px;letter-spacing:.1em;color:var(--gold-light);text-transform:uppercase;margin-bottom:10px}
+.modal-body{font-family:'Crimson Pro',serif;font-size:15px;line-height:1.6;color:var(--tdim);margin-bottom:24px;font-style:italic}
+.modal-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+
+@media(max-width:520px){
+  .stage{padding:80px 14px 40px}
+  .home-title{font-size:28px}
+  .home-action{padding:18px 18px}
+  .writing-textarea{min-height:300px;padding:20px 18px;font-size:16px}
+  .prompt-card{padding:20px 18px}
+  .prompt-text{font-size:17px}
+}
+</style>
+</head>
+<body>
+
+<!-- Floating embers (ambient aesthetic) -->
+<div class="ember-layer" id="emberLayer"></div>
+
+<div class="header">
+  <a href="/threshold.html" class="header-logo">Gamer<span>Ascension</span></a>
+  <div class="header-right">
+    <a href="/threshold.html" class="header-back">← Threshold</a>
+  </div>
+</div>
+
+<div class="stage">
+
+  <!-- ============ HOME VIEW ============ -->
+  <div class="view active" id="view-home">
+    <div class="home-eyebrow">The Scriptorium</div>
+    <h1 class="home-title">A Place to Reflect</h1>
+    <p class="home-intro">Welcome to the Scriptorium. This is where you practice your journaling and learn how to observe yourself for who you really are, not what you think you should be.</p>
+
+    <div class="home-actions">
+      <button class="home-action" id="actBegin" onclick="beginNewSession()">
+        <div class="home-action-text">
+          <div class="home-action-name">Begin a new session</div>
+          <div class="home-action-desc">A new prompt. A new page. Fresh writing.</div>
+        </div>
+        <span class="home-action-arrow">→</span>
+      </button>
+
+      <button class="home-action" id="actContinue" onclick="continueSession()" style="display:none">
+        <div class="home-action-text">
+          <div class="home-action-name">Continue where you left off</div>
+          <div class="home-action-desc" id="continueDesc">A session from earlier is still open.</div>
+        </div>
+        <span class="home-action-arrow">→</span>
+      </button>
+
+      <button class="home-action" id="actArchive" onclick="showArchive()">
+        <div class="home-action-text">
+          <div class="home-action-name">Past sessions</div>
+          <div class="home-action-desc" id="archiveDesc">Read what you have written before.</div>
+        </div>
+        <span class="home-action-arrow">→</span>
+      </button>
+    </div>
+
+    <div class="home-stats" id="homeStats">
+      <div class="home-stat">
+        <div class="home-stat-value" id="statSessions">0</div>
+        <div class="home-stat-label">Sessions</div>
+      </div>
+      <div class="home-stat">
+        <div class="home-stat-value" id="statWords">0</div>
+        <div class="home-stat-label">Words Written</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ STATE-SELECT VIEW (emotion gate) ============ -->
+  <div class="view" id="view-select-state">
+    <div class="writing-header">
+      <div class="writing-breadcrumb"><a href="#" onclick="event.preventDefault();showHome()">← Scriptorium</a></div>
+    </div>
+    <div class="state-gate-header">
+      <div class="state-gate-eyebrow">Before you begin</div>
+      <h2 class="state-gate-title">What are you bringing in today?</h2>
+      <p class="state-gate-hint">Pick what's closest. If nothing fits, choose "Unsure."</p>
+    </div>
+    <div class="state-grid" id="stateGrid"></div>
+    <div class="state-gate-footer">
+      <button class="prompt-action-btn" onclick="goUnguidedFromGate()">Or write unguided instead</button>
+    </div>
+  </div>
+
+  <!-- ============ WRITING VIEW ============ -->
+  <div class="view" id="view-writing">
+    <div class="writing-header">
+      <div class="writing-breadcrumb"><a href="#" onclick="event.preventDefault();confirmLeaveWriting()">← Scriptorium</a></div>
+      <div class="writing-date" id="writingDate"></div>
+    </div>
+
+    <!-- Prompt card (hidden if unguided session) -->
+    <div class="prompt-card" id="promptCard" style="display:none">
+      <div class="prompt-eyebrow">Today's prompt</div>
+      <div class="prompt-text" id="promptText"></div>
+      <div class="prompt-guidance" id="promptGuidance"></div>
+      <div class="prompt-actions">
+        <button class="prompt-action-btn" onclick="getDifferentPrompt()">Get a different prompt</button>
+        <button class="prompt-action-btn" onclick="goUnguided()">Write unguided instead</button>
+      </div>
+    </div>
+
+    <!-- Unguided notice (shown instead of prompt card) -->
+    <div class="unguided-notice" id="unguidedNotice" style="display:none">
+      <div class="unguided-label">Unguided session</div>
+      <div class="unguided-desc">Write whatever needs writing.</div>
+      <div class="unguided-action">
+        <button class="prompt-action-btn" onclick="switchToGuided()">Use a prompt instead</button>
+      </div>
+    </div>
+
+    <div class="writing-surface">
+      <textarea class="writing-textarea" id="writingTextarea" placeholder="Begin writing. Nothing here is seen by anyone but you." oninput="handleWritingInput()"></textarea>
+    </div>
+
+    <div class="writing-footer">
+      <div class="writing-status" id="writingStatus">Auto-saved</div>
+      <div class="writing-actions">
+        <button class="btn-cancel" onclick="discardSession()">Discard</button>
+        <button class="btn-finish" id="btnFinish" onclick="finishSession()" disabled>Finish session</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ARCHIVE VIEW ============ -->
+  <div class="view" id="view-archive">
+    <div class="writing-header">
+      <div class="writing-breadcrumb"><a href="#" onclick="event.preventDefault();showHome()">← Scriptorium</a></div>
+    </div>
+    <h2 class="archive-title">Past Sessions</h2>
+    <p class="archive-subtitle">A record of the writing you have done here. Read back to see who you have been.</p>
+    <div id="archiveList"></div>
+  </div>
+
+  <!-- ============ READ VIEW ============ -->
+  <div class="view" id="view-read">
+    <div class="writing-header">
+      <div class="writing-breadcrumb"><a href="#" onclick="event.preventDefault();showArchive()">← Past Sessions</a></div>
+    </div>
+    <div class="read-header">
+      <div class="read-date" id="readDate"></div>
+      <div class="read-meta" id="readMeta"></div>
+    </div>
+    <div class="read-prompt-card" id="readPromptCard" style="display:none">
+      <div class="read-prompt-label">Prompt</div>
+      <div class="read-prompt-text" id="readPromptText"></div>
+    </div>
+    <div class="read-body" id="readBody"></div>
+    <div class="read-footer">
+      <button class="btn-cancel" onclick="showArchive()">Back to archive</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ FINISH MODAL ============ -->
+<div class="modal-backdrop" id="finishModal">
+  <div class="modal">
+    <div class="modal-rune">&#9830;</div>
+    <div class="modal-title">Session Complete</div>
+    <div class="modal-body" id="finishModalBody">Your writing has been saved. You can find it in the archive any time.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeFinishModal();showHome()">Return to Scriptorium</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// THE SCRIPTORIUM — journaling system
+// Private, local-first. All data lives in localStorage.
+// Storage keys (all prefixed ga_scriptorium_):
+//   ga_scriptorium_index   — JSON array of session IDs, newest first
+//   ga_scriptorium_session_{id}  — JSON blob per session
+//   ga_scriptorium_draft   — the in-progress session (auto-saved every
+//                             few keystrokes). Cleared on finish/discard.
+//
+// Session blob shape:
+//   { id, createdAt, finishedAt, promptId, promptText, promptGuidance,
+//     body, wordCount }
+// ============================================================
+
+// ---- PROMPT LIBRARY ----
+// v1 seed library. Each prompt has a one-sentence "what this teaches"
+// note that appears below it in the UI. The guidance note names the
+// specific skill the prompt is developing — the user learns to journal
+// by seeing what each attempt is practicing.
+//
+// When adding prompts: keep the voice plain. State the prompt directly.
+// No curiosity-gap hooks, no self-help register. The guidance note
+// states the plain observation about what the prompt teaches, not an
+// abstract claim about "deep work."
+var EMOTION_STATES = [
+  {
+    id: 'joy',
+    label: 'Joy',
+    sublabel: 'Contentment, satisfaction, lightness'
+  },
+  {
+    id: 'trust',
+    label: 'Trust',
+    sublabel: 'Safety, confidence, faith in someone'
+  },
+  {
+    id: 'fear',
+    label: 'Fear',
+    sublabel: 'Anxiety, apprehension, dread'
+  },
+  {
+    id: 'surprise',
+    label: 'Surprise',
+    sublabel: 'Caught off-guard, expectation missed'
+  },
+  {
+    id: 'sadness',
+    label: 'Sadness',
+    sublabel: 'Grief, loss, disappointment'
+  },
+  {
+    id: 'disgust',
+    label: 'Disgust',
+    sublabel: 'Revulsion, moral objection'
+  },
+  {
+    id: 'anger',
+    label: 'Anger',
+    sublabel: 'Frustration, irritation, rage'
+  },
+  {
+    id: 'anticipation',
+    label: 'Anticipation',
+    sublabel: 'Excitement, eagerness, waiting'
+  },
+  {
+    id: 'numb',
+    label: 'Numb',
+    sublabel: 'Disconnected, flat, offline'
+  },
+  {
+    id: 'unsure',
+    label: 'Unsure',
+    sublabel: 'Ambiguous, confused, not sure yet'
+  }
+];
+
+// Prompts organized by emotion state. The user selects a state on the
+// emotion-gate screen, then sees prompts drawn from that state's set.
+// Research principles applied to every prompt:
+//   1. Specific over general — each prompt names a concrete operation
+//   2. Invites coherence (organizing a state) not catharsis (venting it)
+//   3. Accepts emotion, never demands its correction
+//   4. No guru language, no "from within", no abstract hedging
+//   5. One question, not three
+//   6. The guidance note names the specific skill being practiced
+var PROMPTS_BY_STATE = {
+  joy: [
+    {
+      id: 'joy-01',
+      text: 'Describe the moment this showed up today. Where were you, what were you doing, what was the specific quality of it?',
+      guidance: 'The skill of attending to pleasant experience with the same precision you attend to painful experience.'
+    },
+    {
+      id: 'joy-02',
+      text: 'Is this joy something you produced, or something that happened to you? Trace it back to whatever caused it.',
+      guidance: 'The skill of distinguishing between the joy you can repeat and the joy you can only receive.'
+    },
+    {
+      id: 'joy-03',
+      text: 'Who or what made this possible? Name them. Decide whether you will tell them.',
+      guidance: 'The skill of letting gratitude become action rather than a private feeling.'
+    }
+  ],
+  trust: [
+    {
+      id: 'trust-01',
+      text: 'Name a person or structure in your life that has earned your trust. What specifically have they done that proves it?',
+      guidance: 'The skill of identifying trust as a track record, not a feeling.'
+    },
+    {
+      id: 'trust-02',
+      text: 'Where in your life are you trusting something or someone you should be examining more carefully? Write down your hesitation.',
+      guidance: 'The skill of noticing what you are choosing not to look at.'
+    },
+    {
+      id: 'trust-03',
+      text: 'Write about the last time someone you trusted let you down. What did you learn about trust from how you responded?',
+      guidance: 'The skill of extracting principle from experience rather than collapsing into grievance.'
+    }
+  ],
+  fear: [
+    {
+      id: 'fear-01',
+      text: 'Name the fear directly. What specifically are you afraid will happen, and what happens next in your head if it does?',
+      guidance: 'The skill of following the feared thing to its actual consequence, which is often smaller than the dread suggests.'
+    },
+    {
+      id: 'fear-02',
+      text: 'Separate the fear from its object. Is this fear about the thing you think it is about, or is it about something older underneath?',
+      guidance: 'The skill of recognizing when a current fear is carrying weight from an earlier one.'
+    },
+    {
+      id: 'fear-03',
+      text: 'What would you do right now if this fear were not in the room? Write that down. Then notice whether you could do it anyway.',
+      guidance: 'The skill of locating the action the fear is preventing, which is often still available.'
+    }
+  ],
+  surprise: [
+    {
+      id: 'surprise-01',
+      text: 'What did you expect that did not happen? Write the expectation out plainly. Where did it come from?',
+      guidance: 'The skill of examining expectations you did not know you were holding.'
+    },
+    {
+      id: 'surprise-02',
+      text: 'Is this surprise pleasant or unpleasant? Does your reaction match the event, or something about the event you have not yet named?',
+      guidance: 'The skill of separating the event from the reaction to the event.'
+    },
+    {
+      id: 'surprise-03',
+      text: 'What does this surprise tell you about how you have been seeing things? What needs updating in your model?',
+      guidance: 'The skill of treating surprise as data about your prior beliefs, not just as a feeling.'
+    }
+  ],
+  sadness: [
+    {
+      id: 'sadness-01',
+      text: 'What are you losing, or what have you lost? Describe it specifically, not as a category.',
+      guidance: 'The skill of staying with the particular rather than abstracting into the general.'
+    },
+    {
+      id: 'sadness-02',
+      text: 'Write to whoever or whatever you are grieving. Do not edit. It will not be sent.',
+      guidance: 'The skill of completing a conversation that reality has not allowed you to finish.'
+    },
+    {
+      id: 'sadness-03',
+      text: 'What does this sadness know that the rest of you has been trying not to know? Let it speak.',
+      guidance: 'The skill of treating sadness as a messenger rather than a weather pattern.'
+    }
+  ],
+  disgust: [
+    {
+      id: 'disgust-01',
+      text: 'What exactly are you disgusted by? Describe it without the word "disgusting" — name the specific thing.',
+      guidance: 'The skill of moving past the reaction to the underlying observation.'
+    },
+    {
+      id: 'disgust-02',
+      text: 'What does this disgust tell you about what you value? A violation implies a standard — what is yours?',
+      guidance: 'The skill of reading your values backward from what you reject.'
+    },
+    {
+      id: 'disgust-03',
+      text: 'Is the thing you are disgusted by in the world, or in yourself? Be honest about which one.',
+      guidance: 'The skill of distinguishing between moral objection to others and moral objection to yourself.'
+    }
+  ],
+  anger: [
+    {
+      id: 'anger-01',
+      text: 'What line was crossed? Name the specific thing that happened and what standard it violated.',
+      guidance: 'The skill of locating the principle under the anger rather than staying inside the reaction.'
+    },
+    {
+      id: 'anger-02',
+      text: 'What is this anger protecting? Fear, grief, or an unmet need is almost always underneath. Which one is here?',
+      guidance: 'The skill of recognizing anger as a secondary emotion and finding the primary one.'
+    },
+    {
+      id: 'anger-03',
+      text: 'If you had to say what you actually need — not what you want to demand — what is it?',
+      guidance: 'The skill of translating anger into a specific unmet need, which is the form of it that can be addressed.'
+    }
+  ],
+  anticipation: [
+    {
+      id: 'anticipation-01',
+      text: 'What are you anticipating? Describe it. Then ask: is the thing itself what you want, or is it what the thing represents?',
+      guidance: 'The skill of distinguishing between an object and what you are projecting onto it.'
+    },
+    {
+      id: 'anticipation-02',
+      text: 'If this thing does not happen, what do you lose? If it does happen and is less than you hoped, what then?',
+      guidance: 'The skill of pre-examining the gap between expectation and event.'
+    },
+    {
+      id: 'anticipation-03',
+      text: 'What are you not doing right now because you are waiting for this? Is the wait serving you?',
+      guidance: 'The skill of noticing when anticipation has become a reason to postpone life.'
+    }
+  ],
+  numb: [
+    {
+      id: 'numb-01',
+      text: 'Describe your body right now. Temperature, tension, tiredness, hunger, breath. Start there.',
+      guidance: 'The skill of finding your way back through the body when the feelings are offline.'
+    },
+    {
+      id: 'numb-02',
+      text: 'When did you last feel anything strongly? What was it, and what happened between then and now?',
+      guidance: 'The skill of tracing the gap between the last live moment and the current flatness.'
+    },
+    {
+      id: 'numb-03',
+      text: 'Write about the numbness itself. When did it arrive? What does it feel like to be inside it?',
+      guidance: 'The skill of making the numbness the subject rather than waiting for it to lift before writing.'
+    }
+  ],
+  unsure: [
+    {
+      id: 'unsure-01',
+      text: 'Describe what you can see, in the most literal terms. Where are you. What time is it. What is around you. Start there and see what surfaces.',
+      guidance: 'The skill of using external description to let the internal state emerge at its own pace.'
+    },
+    {
+      id: 'unsure-02',
+      text: 'What is one thing you know to be true about today, however small? Build from there.',
+      guidance: 'The skill of starting from the firm ground instead of the uncertain ground.'
+    },
+    {
+      id: 'unsure-03',
+      text: 'If a friend asked you how you were and you had to give an honest answer in three sentences, what would you say?',
+      guidance: 'The skill of finding the one sentence you would actually say out loud, which is often more accurate than what you think you feel.'
+    }
+  ]
+};
+
+// Flat list of all prompts, for lookup by id (used when reopening a past
+// session from the archive).
+var PROMPTS = [];
+Object.keys(PROMPTS_BY_STATE).forEach(function(stateId){
+  PROMPTS_BY_STATE[stateId].forEach(function(p){
+    PROMPTS.push(Object.assign({}, p, { state: stateId }));
+  });
+});
+
+// ---- STORAGE MODULE ----
+// Centralized localStorage helper. All Scriptorium state goes through
+// here. When we eventually swap to a real backend, these four methods
+// become API calls and nothing else changes.
+var Storage = {
+  get: function(key) {
+    try {
+      var v = localStorage.getItem('ga_scriptorium_' + key);
+      return v ? JSON.parse(v) : null;
+    } catch(e) { return null; }
+  },
+  set: function(key, value) {
+    try {
+      localStorage.setItem('ga_scriptorium_' + key, JSON.stringify(value));
+      return true;
+    } catch(e) { return false; }
+  },
+  remove: function(key) {
+    try {
+      localStorage.removeItem('ga_scriptorium_' + key);
+      return true;
+    } catch(e) { return false; }
+  }
+};
+
+// ---- SESSION STATE ----
+var currentSession = null;    // live editing session object
+var autosaveTimer = null;
+var MIN_WORDS_TO_FINISH = 20; // minimum word count before finish is enabled
+
+// ---- UTILS ----
+function genSessionId() {
+  return 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+}
+function countWords(text) {
+  if(!text) return 0;
+  var trimmed = text.trim();
+  if(!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+function formatDate(ts) {
+  var d = new Date(ts);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var h = d.getHours();
+  var ampm = h >= 12 ? 'pm' : 'am';
+  h = h % 12; if(h === 0) h = 12;
+  var m = d.getMinutes();
+  return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' · ' + h + ':' + (m < 10 ? '0' + m : m) + ampm;
+}
+function formatDateShort(ts) {
+  var d = new Date(ts);
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+// ---- VIEW MANAGEMENT ----
+function showView(id) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+  var target = document.getElementById('view-' + id);
+  if(target) target.classList.add('active');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ---- HOME VIEW ----
+function showHome() {
+  showView('home');
+  refreshHomeState();
+}
+function refreshHomeState() {
+  // Check for in-progress draft
+  var draft = Storage.get('draft');
+  var continueBtn = document.getElementById('actContinue');
+  var continueDesc = document.getElementById('continueDesc');
+  if(draft && draft.body && draft.body.trim().length > 0) {
+    continueBtn.style.display = '';
+    var wc = countWords(draft.body);
+    continueDesc.textContent = wc + ' words · ' + formatDateShort(draft.createdAt);
+  } else {
+    continueBtn.style.display = 'none';
+  }
+
+  // Stats
+  var index = Storage.get('index') || [];
+  var statSessions = document.getElementById('statSessions');
+  var statWords = document.getElementById('statWords');
+  statSessions.textContent = index.length;
+  var totalWords = 0;
+  index.forEach(function(sid){
+    var s = Storage.get('session_' + sid);
+    if(s && s.wordCount) totalWords += s.wordCount;
+  });
+  statWords.textContent = totalWords.toLocaleString();
+
+  // Archive description
+  var archiveDesc = document.getElementById('archiveDesc');
+  if(index.length === 0) {
+    archiveDesc.textContent = 'Nothing here yet. Start writing to build your archive.';
+  } else if(index.length === 1) {
+    archiveDesc.textContent = '1 session in the archive.';
+  } else {
+    archiveDesc.textContent = index.length + ' sessions in the archive.';
+  }
+}
+
+// ---- SESSION LIFECYCLE ----
+// Flow: Home → [click Begin] → State Select → [pick state] → Writing
+//       Home → [click Continue] → resume existing draft (skip state gate)
+//       State Select → [click unguided] → Writing (unguided)
+function beginNewSession() {
+  // If a draft exists, warn before overwriting
+  var existingDraft = Storage.get('draft');
+  if(existingDraft && existingDraft.body && existingDraft.body.trim().length > 0) {
+    var ok = confirm('You have an unfinished session. Starting a new one will discard it. Continue?');
+    if(!ok) return;
+  }
+  Storage.remove('draft');
+  // Go to state-selection gate first. The gate is a compulsory step
+  // that names what the user is bringing in. The prompt pool they see
+  // next is drawn from whatever state they choose.
+  showStateSelect();
+}
+
+// Show the state-select grid. Builds buttons for each emotion state.
+function showStateSelect() {
+  showView('select-state');
+  renderStateGrid();
+}
+
+function renderStateGrid() {
+  var grid = document.getElementById('stateGrid');
+  if(!grid) return;
+  var html = '';
+  EMOTION_STATES.forEach(function(state){
+    html += '<button class="state-btn" onclick="selectStateAndBegin(\'' + state.id + '\')">' +
+            '<div class="state-btn-label">' + escapeHtml(state.label) + '</div>' +
+            '<div class="state-btn-sublabel">' + escapeHtml(state.sublabel) + '</div>' +
+            '</button>';
+  });
+  grid.innerHTML = html;
+}
+
+// User picked a state. Create the session with a prompt drawn from
+// that state's pool and route to the writing view.
+function selectStateAndBegin(stateId) {
+  var prompt = pickPromptForState(stateId, null);
+  if(!prompt) {
+    // Defensive fallback — should never happen if PROMPTS_BY_STATE is
+    // populated correctly.
+    console.warn('No prompts found for state:', stateId);
+    return;
+  }
+  currentSession = {
+    id: genSessionId(),
+    createdAt: Date.now(),
+    finishedAt: null,
+    state: stateId,
+    promptId: prompt.id,
+    promptText: prompt.text,
+    promptGuidance: prompt.guidance,
+    body: '',
+    wordCount: 0,
+    unguided: false
+  };
+  Storage.set('draft', currentSession);
+  openWritingView();
+}
+
+// User chose unguided from the state-select gate. No state, no prompt.
+function goUnguidedFromGate() {
+  currentSession = {
+    id: genSessionId(),
+    createdAt: Date.now(),
+    finishedAt: null,
+    state: null,
+    promptId: null,
+    promptText: null,
+    promptGuidance: null,
+    body: '',
+    wordCount: 0,
+    unguided: true
+  };
+  Storage.set('draft', currentSession);
+  openWritingView();
+}
+
+function continueSession() {
+  var draft = Storage.get('draft');
+  if(!draft) { beginNewSession(); return; }
+  currentSession = draft;
+  openWritingView();
+}
+
+function openWritingView() {
+  showView('writing');
+  document.getElementById('writingDate').textContent = formatDate(currentSession.createdAt);
+  if(currentSession.unguided) {
+    document.getElementById('promptCard').style.display = 'none';
+    document.getElementById('unguidedNotice').style.display = '';
+  } else {
+    document.getElementById('promptCard').style.display = '';
+    document.getElementById('unguidedNotice').style.display = 'none';
+    document.getElementById('promptText').textContent = currentSession.promptText;
+    document.getElementById('promptGuidance').textContent = currentSession.promptGuidance;
+  }
+  var ta = document.getElementById('writingTextarea');
+  ta.value = currentSession.body || '';
+  updateFinishButton();
+  updateStatus('saved');
+  setTimeout(function(){ ta.focus(); }, 200);
+}
+
+// Pick a prompt from a specific state's pool. excludeId lets the user
+// rotate through different prompts within the same state.
+function pickPromptForState(stateId, excludeId) {
+  var pool = PROMPTS_BY_STATE[stateId];
+  if(!pool || pool.length === 0) return null;
+  var filtered = excludeId ? pool.filter(function(p){ return p.id !== excludeId; }) : pool;
+  if(filtered.length === 0) filtered = pool; // fallback if only one prompt in state
+  return filtered[Math.floor(Math.random() * filtered.length)];
+}
+
+function getDifferentPrompt() {
+  if(!currentSession) return;
+  // Stay within the same state — users picked this state for a reason,
+  // we shouldn't yank them to a different one just because they wanted
+  // a different prompt.
+  var stateId = currentSession.state;
+  if(!stateId) {
+    // Edge case — session has no state (shouldn't happen for a guided
+    // session post-gate, but handle defensively).
+    return;
+  }
+  var newPrompt = pickPromptForState(stateId, currentSession.promptId);
+  if(!newPrompt) return;
+  currentSession.promptId = newPrompt.id;
+  currentSession.promptText = newPrompt.text;
+  currentSession.promptGuidance = newPrompt.guidance;
+  currentSession.unguided = false;
+  Storage.set('draft', currentSession);
+  document.getElementById('promptText').textContent = newPrompt.text;
+  document.getElementById('promptGuidance').textContent = newPrompt.guidance;
+  document.getElementById('promptCard').style.display = '';
+  document.getElementById('unguidedNotice').style.display = 'none';
+}
+
+function goUnguided() {
+  if(!currentSession) return;
+  currentSession.unguided = true;
+  currentSession.state = null;
+  currentSession.promptId = null;
+  currentSession.promptText = null;
+  currentSession.promptGuidance = null;
+  Storage.set('draft', currentSession);
+  document.getElementById('promptCard').style.display = 'none';
+  document.getElementById('unguidedNotice').style.display = '';
+}
+
+function switchToGuided() {
+  if(!currentSession) return;
+  // Send the user back to the state-select gate so they can name what
+  // they're bringing in. This is more useful than quietly picking a
+  // random prompt from a random state.
+  // Keep their in-progress body in the draft so they don't lose it.
+  showStateSelect();
+}
+
+// ---- WRITING / AUTOSAVE ----
+function handleWritingInput() {
+  if(!currentSession) return;
+  var ta = document.getElementById('writingTextarea');
+  currentSession.body = ta.value;
+  currentSession.wordCount = countWords(ta.value);
+  updateFinishButton();
+  updateStatus('saving');
+
+  // Debounce autosave — saves ~1.5s after last keystroke
+  if(autosaveTimer) clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(function(){
+    Storage.set('draft', currentSession);
+    updateStatus('saved');
+  }, 1500);
+}
+
+function updateFinishButton() {
+  var btn = document.getElementById('btnFinish');
+  if(!currentSession) { btn.disabled = true; return; }
+  btn.disabled = currentSession.wordCount < MIN_WORDS_TO_FINISH;
+  if(currentSession.wordCount < MIN_WORDS_TO_FINISH) {
+    btn.textContent = 'Finish session (' + (MIN_WORDS_TO_FINISH - currentSession.wordCount) + ' more words)';
+  } else {
+    btn.textContent = 'Finish session';
+  }
+}
+
+function updateStatus(state) {
+  var el = document.getElementById('writingStatus');
+  el.classList.remove('saving','saved');
+  if(state === 'saving') {
+    el.textContent = 'Saving…';
+    el.classList.add('saving');
+  } else if(state === 'saved') {
+    el.textContent = 'Auto-saved';
+    el.classList.add('saved');
+  }
+}
+
+// ---- FINISH ----
+function finishSession() {
+  if(!currentSession) return;
+  if(currentSession.wordCount < MIN_WORDS_TO_FINISH) return;
+
+  // Move from draft to permanent session record
+  currentSession.finishedAt = Date.now();
+  Storage.set('session_' + currentSession.id, currentSession);
+
+  // Add to the index (newest first)
+  var index = Storage.get('index') || [];
+  index.unshift(currentSession.id);
+  Storage.set('index', index);
+
+  // Clear the draft
+  Storage.remove('draft');
+
+  // Show confirmation modal
+  var body = 'You wrote ' + currentSession.wordCount + ' words. That writing is yours, saved privately, and can be reread any time from Past Sessions.';
+  document.getElementById('finishModalBody').textContent = body;
+  document.getElementById('finishModal').classList.add('open');
+
+  currentSession = null;
+}
+
+function closeFinishModal() {
+  document.getElementById('finishModal').classList.remove('open');
+}
+
+// ---- DISCARD ----
+function discardSession() {
+  if(!currentSession) { showHome(); return; }
+  if(currentSession.wordCount > 0) {
+    var ok = confirm('Discard this session? The writing will not be saved.');
+    if(!ok) return;
+  }
+  Storage.remove('draft');
+  currentSession = null;
+  showHome();
+}
+
+// ---- LEAVE PROMPT ----
+function confirmLeaveWriting() {
+  // Writing is auto-saved, so leaving is safe. No confirm needed.
+  // Kept as a hook point for future "are you sure?" logic if needed.
+  showHome();
+}
+
+// ---- ARCHIVE ----
+function showArchive() {
+  showView('archive');
+  renderArchive();
+}
+function renderArchive() {
+  var listEl = document.getElementById('archiveList');
+  var index = Storage.get('index') || [];
+  if(index.length === 0) {
+    listEl.innerHTML = '<div class="archive-empty">Nothing here yet. When you finish a session, it will appear here.</div>';
+    return;
+  }
+  var html = '<div class="archive-list">';
+  index.forEach(function(sid){
+    var s = Storage.get('session_' + sid);
+    if(!s) return;
+    var dateStr = formatDate(s.finishedAt || s.createdAt);
+    var promptHtml = s.unguided || !s.promptText
+      ? '<div class="archive-item-prompt unguided">Unguided session</div>'
+      : '<div class="archive-item-prompt">' + escapeHtml(s.promptText) + '</div>';
+    var preview = escapeHtml((s.body || '').replace(/\n+/g, ' ').slice(0, 200));
+    html += '<button class="archive-item" onclick="openSession(\'' + s.id + '\')">' +
+            '<div class="archive-item-top">' +
+              '<div class="archive-item-date">' + dateStr + '</div>' +
+              '<div class="archive-item-length">' + s.wordCount + ' words</div>' +
+            '</div>' +
+            promptHtml +
+            '<div class="archive-item-preview">' + preview + '</div>' +
+            '</button>';
+  });
+  html += '</div>';
+  listEl.innerHTML = html;
+}
+
+function openSession(sid) {
+  var s = Storage.get('session_' + sid);
+  if(!s) return;
+  showView('read');
+  document.getElementById('readDate').textContent = formatDate(s.finishedAt || s.createdAt);
+  document.getElementById('readMeta').textContent = s.wordCount + ' words';
+  var pc = document.getElementById('readPromptCard');
+  if(s.unguided || !s.promptText) {
+    pc.style.display = 'none';
+  } else {
+    pc.style.display = '';
+    document.getElementById('readPromptText').textContent = s.promptText;
+  }
+  document.getElementById('readBody').textContent = s.body || '';
+}
+
+// ---- UTIL ----
+function escapeHtml(str) {
+  if(!str) return '';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ---- EMBER PARTICLES (ambient) ----
+function spawnEmbers() {
+  var layer = document.getElementById('emberLayer');
+  if(!layer) return;
+  var count = 14;
+  for(var i = 0; i < count; i++) {
+    var e = document.createElement('div');
+    e.className = 'ember';
+    e.style.left = Math.random() * 100 + '%';
+    e.style.bottom = '-4px';
+    e.style.animationDelay = (Math.random() * 14) + 's';
+    e.style.animationDuration = (10 + Math.random() * 8) + 's';
+    layer.appendChild(e);
+  }
+}
+
+// ---- INIT ----
+window.addEventListener('load', function(){
+  spawnEmbers();
+  refreshHomeState();
+});
+
+// Expose for debugging in console
+window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
+</script>
+
+</body>
+</html>
