@@ -1428,6 +1428,12 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
       // Mark as seen so subsequent page loads don't auto-summon.
       try { localStorage.setItem('ga_aurelius_seen_' + config.chamber, '1'); } catch(e){}
 
+      // Start ambient systems — particles rising from flames, eye
+      // tracking following cursor. Both run on RAF loops and stop
+      // gracefully on dismiss.
+      startParticles();
+      startEyeTracking();
+
       setTimeout(renderDialogueLine, 500);
     },
 
@@ -1447,6 +1453,10 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
 
       overlayEl.classList.add('active');
       document.body.classList.add('aurelius-active');
+
+      // Same ambient systems as the default summon
+      startParticles();
+      startEyeTracking();
 
       setTimeout(renderDialogueLine, 500);
     },
@@ -1687,6 +1697,12 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
               '<circle cx="200" cy="270" r="1.5" fill="#ffffff" opacity="0.9"/>' +
             '</g>' +
 
+            // PARTICLE LAYER — empty group that JS populates with rising
+            // ember circles. Rendered before the eye so embers pass
+            // behind the eye, giving the impression he watches through
+            // rising firelight.
+            '<g class="au-particles" id="auParticles"></g>' +
+
             // THE EYE — dragon eye, regal and watchful. Vertical slit
             // pupil, detailed amber iris with radial striations, sharp
             // black outer rim, bright specular highlight, subtle upper
@@ -1894,6 +1910,11 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
     isOpen = false;
     dialogueIndex = 0;
 
+    // Stop ambient systems. Eye tracking stays active behind the scenes
+    // (its follow loop no-ops when !isOpen); particles need explicit
+    // cleanup so we don't leak nodes.
+    stopParticles();
+
     // If a one-off script was swapped in, restore the original.
     if(config._restoreScriptOnDismiss){
       config.script = config._restoreScriptOnDismiss;
@@ -1930,8 +1951,8 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
       '@media(max-width:640px){.aurelius-stage{width:300px;height:300px;transform:translate(-50%,-60%)}}' +
 
       // Ambient aura — warm firelight glow behind the sigil
-      '.aurelius-aura{position:absolute;top:50%;left:50%;width:480px;height:480px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(229,197,116,0.18) 0%,rgba(205,127,50,0.08) 40%,transparent 70%);animation:aurelius-aura-breathe 6s ease-in-out infinite}' +
-      '@keyframes aurelius-aura-breathe{0%,100%{opacity:0.55;transform:translate(-50%,-50%) scale(1)}50%{opacity:0.85;transform:translate(-50%,-50%) scale(1.08)}}' +
+      '.aurelius-aura{position:absolute;top:50%;left:50%;width:480px;height:480px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(229,197,116,0.22) 0%,rgba(205,127,50,0.1) 40%,transparent 70%);animation:aurelius-aura-breathe 5s ease-in-out infinite}' +
+      '@keyframes aurelius-aura-breathe{0%,100%{opacity:0.5;transform:translate(-50%,-50%) scale(0.96)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}' +
 
       // Sigil wrap — the container that floats
       '.aurelius-sigil-wrap{position:absolute;top:50%;left:50%;width:400px;height:400px;transform:translate(-50%,-50%);animation:aurelius-float 7s ease-in-out infinite;opacity:0.92}' +
@@ -1939,23 +1960,27 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
       '@keyframes aurelius-float{0%,100%{transform:translate(-50%,-50%) translateY(0)}50%{transform:translate(-50%,-50%) translateY(-6px)}}' +
 
       // Sigil inner glow
-      '.aurelius-sigil-glow{position:absolute;top:50%;left:50%;width:280px;height:280px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(245,238,204,0.25) 0%,rgba(229,197,116,0.1) 50%,transparent 70%);animation:aurelius-glow-breathe 5s ease-in-out infinite}' +
-      '@keyframes aurelius-glow-breathe{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:0.7}50%{transform:translate(-50%,-50%) scale(1.1);opacity:1}}' +
+      '.aurelius-sigil-glow{position:absolute;top:50%;left:50%;width:280px;height:280px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(245,238,204,0.32) 0%,rgba(229,197,116,0.14) 50%,transparent 70%);animation:aurelius-glow-breathe 4.5s ease-in-out infinite}' +
+      '@keyframes aurelius-glow-breathe{0%,100%{transform:translate(-50%,-50%) scale(0.95);opacity:0.65}50%{transform:translate(-50%,-50%) scale(1.14);opacity:1}}' +
 
       '.aurelius-sigil{width:100%;height:100%;position:relative;z-index:2}' +
 
-      // ORBITAL RING ROTATIONS — slower than Guide, breath-like
+      // ORBITAL RING ROTATIONS — slower than Guide's but clearly visible.
+      // Inner rings spin faster (shorter period); outer rings drift more
+      // slowly. Alternating directions give a counter-rotation that reads
+      // as active without being frantic.
       '.au-orbit{transform-origin:200px 200px}' +
-      '.au-orbit-1{animation:au-rot-cw 68s linear infinite}' +
-      '.au-orbit-2{animation:au-rot-ccw 56s linear infinite}' +
-      '.au-orbit-3{animation:au-rot-cw 48s linear infinite}' +
-      '.au-orbit-4{animation:au-rot-ccw 42s linear infinite}' +
-      '.au-orbit-5{animation:au-rot-cw 36s linear infinite}' +
+      '.au-orbit-1{animation:au-rot-cw 48s linear infinite}' +
+      '.au-orbit-2{animation:au-rot-ccw 38s linear infinite}' +
+      '.au-orbit-3{animation:au-rot-cw 30s linear infinite}' +
+      '.au-orbit-4{animation:au-rot-ccw 26s linear infinite}' +
+      '.au-orbit-5{animation:au-rot-cw 22s linear infinite}' +
       '@keyframes au-rot-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}' +
       '@keyframes au-rot-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}' +
 
-      // Runic marks — very slow collective rotation
-      '.au-runes{transform-origin:200px 200px;animation:au-rot-ccw 180s linear infinite}' +
+      // Runic marks — perimeter stud rotation. Speeded up from 180s to
+      // 90s so the slow collective drift is perceptible.
+      '.au-runes{transform-origin:200px 200px;animation:au-rot-ccw 90s linear infinite}' +
 
       // Anchor lines — subtle pulse
       '.au-thread{animation:au-thread-pulse 8s ease-in-out infinite}' +
@@ -1972,14 +1997,10 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
         '50%{transform:scaleY(0.05)}' +
       '}' +
 
-      // Pupil — tiny drift so the eye looks alive
-      '.au-pupil{animation:au-pupil-drift 9s ease-in-out infinite}' +
-      '@keyframes au-pupil-drift{' +
-        '0%,100%{transform:translate(0,0)}' +
-        '25%{transform:translate(0.8px,-1px)}' +
-        '50%{transform:translate(-0.5px,1px)}' +
-        '75%{transform:translate(-1px,-0.5px)}' +
-      '}' +
+      // Pupil drift is now driven by JS eye-tracking (startEyeTracking),
+      // which makes the pupil follow the cursor with idle drift fallback.
+      // The old CSS-keyframe drift has been removed to avoid the CSS
+      // animation fighting the JS-set inline transform.
 
       // FLAME FLICKER — each flame has a slight scale + skew animation
       // to suggest draft-induced motion. Different timings on each flame
@@ -2036,6 +2057,334 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
         '.aurelius-text{font-size:15px}' +
       '}';
     document.head.appendChild(style);
+  }
+
+  // ==================================================================
+  // PARTICLE SYSTEM — rising embers
+  // Ambient golden embers drift up from the hearth and the three anchor
+  // candles while Aurelius is visible. Each particle is an SVG circle
+  // that travels a curved upward path, fades out, and respawns. Runs
+  // on requestAnimationFrame so timing stays smooth across frame rates.
+  //
+  // Particles live at 4 source points:
+  //   - Hearth (central flame, ~y=270)  — denser source
+  //   - Top anchor candle (200, 48)
+  //   - Bottom-left candle (90, 288)
+  //   - Bottom-right candle (310, 288)
+  //
+  // Plus occasional rune sparks — one of the 7 perimeter marks pulses
+  // a single spark outward now and then. Rarer than the ember drift.
+  // ==================================================================
+
+  var particlesActive = false;
+  var particles = []; // live particle objects
+  var particleLayer = null;
+
+  // Particle source definitions — where embers spawn from.
+  // `rate` controls emission probability per frame (not absolute rate,
+  // but the chance a new particle spawns when one is needed).
+  var EMBER_SOURCES = [
+    // The hearth — primary flame, most embers
+    { x: 200, y: 262, targetCount: 5, spreadX: 4,  drift: -1.2 },
+    // Top anchor candle
+    { x: 200, y: 42,  targetCount: 2, spreadX: 2,  drift: -1.0 },
+    // Bottom-left candle
+    { x: 90,  y: 280, targetCount: 2, spreadX: 2,  drift: -0.8 },
+    // Bottom-right candle
+    { x: 310, y: 280, targetCount: 2, spreadX: 2,  drift: -0.8 }
+  ];
+
+  function startParticles(){
+    if(particlesActive) return;
+    particlesActive = true;
+    particleLayer = document.getElementById('auParticles');
+    if(!particleLayer) return;
+
+    // Clear any leftover particles from previous summons
+    while(particleLayer.firstChild) particleLayer.removeChild(particleLayer.firstChild);
+    particles = [];
+
+    // Kick off the animation loop
+    requestAnimationFrame(particleLoop);
+
+    // Rune sparks — lower frequency, scheduled independently
+    scheduleRuneSpark();
+  }
+
+  function stopParticles(){
+    particlesActive = false;
+    if(particleLayer){
+      while(particleLayer.firstChild) particleLayer.removeChild(particleLayer.firstChild);
+    }
+    particles = [];
+  }
+
+  function spawnEmber(source){
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var circle = document.createElementNS(svgNS, 'circle');
+
+    // Jitter the start position slightly around the source for natural look
+    var startX = source.x + (Math.random() - 0.5) * 2;
+    var startY = source.y + (Math.random() - 0.5) * 2;
+
+    circle.setAttribute('cx', startX);
+    circle.setAttribute('cy', startY);
+    circle.setAttribute('r', 0.8 + Math.random() * 1.2); // 0.8-2px
+    circle.setAttribute('fill', '#fff4c8');
+    circle.setAttribute('opacity', 0);
+    circle.setAttribute('filter', 'url(#aureliusFlameGlow)');
+    particleLayer.appendChild(circle);
+
+    return {
+      el: circle,
+      source: source,
+      // Motion state
+      startX: startX,
+      startY: startY,
+      x: startX,
+      y: startY,
+      // Drift trajectory — slight horizontal sway as it rises
+      swayPhase: Math.random() * Math.PI * 2,
+      swayAmp: 3 + Math.random() * 4,
+      swayFreq: 0.8 + Math.random() * 0.5,
+      // Vertical rise speed — in SVG units per second (negative = up)
+      riseSpeed: 14 + Math.random() * 10, // 14-24 units/sec
+      // Horizontal drift (small bias from source, mostly centered)
+      driftX: (Math.random() - 0.5) * source.spreadX,
+      // Lifetime
+      age: 0,
+      maxAge: 2200 + Math.random() * 1400, // 2.2-3.6 sec
+      baseR: 0.8 + Math.random() * 1.2
+    };
+  }
+
+  function particleLoop(){
+    if(!particlesActive) return;
+
+    var now = performance.now();
+    if(!particleLoop.lastTime) particleLoop.lastTime = now;
+    var dt = (now - particleLoop.lastTime) / 1000; // seconds
+    particleLoop.lastTime = now;
+    if(dt > 0.1) dt = 0.1; // clamp if tab was backgrounded
+
+    // Maintain target particle count per source — respawn as they expire
+    EMBER_SOURCES.forEach(function(source){
+      var activeFromSource = particles.filter(function(p){ return p.source === source; }).length;
+      while(activeFromSource < source.targetCount){
+        var newP = spawnEmber(source);
+        // Stagger new particles with random initial age so they don't all
+        // bunch up at the source when the system starts
+        if(!startParticles.initialized){
+          newP.age = Math.random() * newP.maxAge;
+        }
+        particles.push(newP);
+        activeFromSource++;
+      }
+    });
+    startParticles.initialized = true;
+
+    // Update each particle
+    for(var i = particles.length - 1; i >= 0; i--){
+      var p = particles[i];
+      p.age += dt * 1000;
+
+      if(p.age >= p.maxAge){
+        if(p.el && p.el.parentNode) p.el.parentNode.removeChild(p.el);
+        particles.splice(i, 1);
+        continue;
+      }
+
+      var t = p.age / p.maxAge; // 0 to 1
+
+      // Vertical rise (embers go up)
+      p.y = p.startY - p.riseSpeed * (p.age / 1000);
+
+      // Horizontal sway — sinusoidal, decreases in amplitude as particle
+      // rises higher (embers stabilize as they rise)
+      var swayDecay = 1 - t * 0.5;
+      var sway = Math.sin(p.swayPhase + (p.age / 1000) * p.swayFreq) * p.swayAmp * swayDecay;
+      p.x = p.startX + p.driftX + sway;
+
+      // Opacity — fade in quickly, hold, fade out slowly
+      var opacity;
+      if(t < 0.1) opacity = t / 0.1;
+      else if(t < 0.6) opacity = 1 - (t - 0.1) * 0.2; // slow dim in middle
+      else opacity = Math.max(0, 0.9 - (t - 0.6) * 2.25);
+
+      // Color temperature — starts warm gold, fades to cream as it cools
+      // (real embers: yellow-hot at base, cooler orange at top, fading)
+      // We'll just fade opacity; color stays cream-gold via the fill.
+
+      // Size — slightly shrink as it rises (heat dispersing)
+      var r = p.baseR * (1 - t * 0.3);
+
+      p.el.setAttribute('cx', p.x.toFixed(2));
+      p.el.setAttribute('cy', p.y.toFixed(2));
+      p.el.setAttribute('r', r.toFixed(2));
+      p.el.setAttribute('opacity', opacity.toFixed(3));
+    }
+
+    requestAnimationFrame(particleLoop);
+  }
+
+  // Rune sparks — one of the 7 runic marks occasionally emits a single
+  // spark that drifts outward briefly before fading. Much less frequent
+  // than embers — adds occasional accent without overwhelming.
+  function scheduleRuneSpark(){
+    if(!particlesActive) return;
+    var delay = 2200 + Math.random() * 4500; // 2.2-6.7 seconds
+    setTimeout(function(){
+      if(!particlesActive) return;
+      fireRuneSpark();
+      scheduleRuneSpark();
+    }, delay);
+  }
+
+  function fireRuneSpark(){
+    if(!particleLayer) return;
+    // Pick a random rune (7 runes, angles 0, 51.4, 102.8, 154.2, 205.6, 257, 308.4)
+    var angles = [0, 51.4, 102.8, 154.2, 205.6, 257, 308.4];
+    var angleDeg = angles[Math.floor(Math.random() * angles.length)];
+    var angleRad = angleDeg * Math.PI / 180;
+    // Rune sits at radius 160 in sigil space
+    var cx = 200 + Math.cos(angleRad) * 160;
+    var cy = 200 + Math.sin(angleRad) * 160;
+
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var circle = document.createElementNS(svgNS, 'circle');
+    circle.setAttribute('cx', cx);
+    circle.setAttribute('cy', cy);
+    circle.setAttribute('r', 1.5);
+    circle.setAttribute('fill', '#fff4c8');
+    circle.setAttribute('opacity', 0);
+    circle.setAttribute('filter', 'url(#aureliusFlameGlow)');
+    particleLayer.appendChild(circle);
+
+    // Spark drifts outward from rune, fades
+    var dirX = Math.cos(angleRad);
+    var dirY = Math.sin(angleRad);
+    var startTime = performance.now();
+    var duration = 1100;
+
+    function animate(now){
+      var elapsed = now - startTime;
+      var t = elapsed / duration;
+      if(t >= 1){
+        if(circle.parentNode) circle.parentNode.removeChild(circle);
+        return;
+      }
+      var dist = t * 14; // drifts 14 units outward
+      var x = cx + dirX * dist;
+      var y = cy + dirY * dist;
+      var op;
+      if(t < 0.2) op = t / 0.2;
+      else op = 1 - (t - 0.2) / 0.8;
+      var r = 1.5 * (1 - t * 0.4);
+      circle.setAttribute('cx', x.toFixed(2));
+      circle.setAttribute('cy', y.toFixed(2));
+      circle.setAttribute('r', r.toFixed(2));
+      circle.setAttribute('opacity', op.toFixed(3));
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  }
+
+  // ==================================================================
+  // EYE TRACKING — dragon eye follows cursor, idles with gentle drift
+  // Adapted from Guide's pattern. The vertical slit pupil has
+  // constrained horizontal range (narrower iris) but full vertical
+  // range. When the user stops moving the cursor, the pupil drifts
+  // slowly in an idle pattern so the eye never appears frozen.
+  // ==================================================================
+
+  var eyeTrackingActive = false;
+  var pupilTargetX = 0, pupilTargetY = 0;
+  var pupilCurrentX = 0, pupilCurrentY = 0;
+  var lastMouseMoveTime = 0;
+  var EYE_IDLE_TIMEOUT_MS = 1500;
+
+  function startEyeTracking(){
+    if(eyeTrackingActive) return;
+    eyeTrackingActive = true;
+
+    var svgEl = null;
+    function getSvg(){
+      if(!svgEl) svgEl = document.querySelector('.aurelius-sigil');
+      return svgEl;
+    }
+
+    document.addEventListener('mousemove', function(e){
+      if(!isOpen) return;
+      var svg = getSvg();
+      if(!svg) return;
+      lastMouseMoveTime = Date.now();
+      var rect = svg.getBoundingClientRect();
+      var svgCenterX = rect.left + rect.width / 2;
+      var svgCenterY = rect.top + rect.height / 2;
+      var dx = e.clientX - svgCenterX;
+      var dy = e.clientY - svgCenterY;
+      var scaleX = 400 / rect.width;
+      var scaleY = 400 / rect.height;
+      var targetX = dx * scaleX;
+      var targetY = dy * scaleY;
+
+      // Vertical slit pupil: narrower X range (iris is 11 wide), fuller Y
+      // range (iris is 22 tall). Max travel: x=±2, y=±6.
+      var maxRangeX = 2;
+      var maxRangeY = 6;
+
+      var dist = Math.sqrt(targetX * targetX + targetY * targetY);
+      if(dist > 0){
+        // Normalize then scale by the elliptical eye range
+        var nx = targetX / dist;
+        var ny = targetY / dist;
+        var eased = Math.min(dist / 150, 1);
+        pupilTargetX = nx * maxRangeX * eased;
+        pupilTargetY = ny * maxRangeY * eased;
+      } else {
+        pupilTargetX = 0;
+        pupilTargetY = 0;
+      }
+    });
+
+    // Idle drift — two overlapping sine waves at different frequencies
+    // create gentle organic wandering. Constrained to same elliptical
+    // range as the cursor tracking.
+    function computeIdleTarget(){
+      var t = Date.now() / 1000;
+      var x = Math.sin(t * 0.35) * 1.0 + Math.sin(t * 0.17) * 0.5;
+      var y = Math.cos(t * 0.29) * 2.5 + Math.sin(t * 0.13) * 1.2;
+      return { x: x, y: y };
+    }
+
+    // Smooth follow loop — lerps current position toward target
+    function followLoop(){
+      if(!eyeTrackingActive){
+        requestAnimationFrame(followLoop);
+        return;
+      }
+      var pupil = document.getElementById('auPupil');
+      if(pupil && isOpen){
+        var now = Date.now();
+        var isIdle = (now - lastMouseMoveTime) > EYE_IDLE_TIMEOUT_MS;
+        var tx, ty;
+        if(isIdle){
+          var idle = computeIdleTarget();
+          tx = idle.x;
+          ty = idle.y;
+        } else {
+          tx = pupilTargetX;
+          ty = pupilTargetY;
+        }
+        // Faster lerp when tracking, slower when drifting (calmer feel)
+        var lerp = isIdle ? 0.04 : 0.09;
+        pupilCurrentX += (tx - pupilCurrentX) * lerp;
+        pupilCurrentY += (ty - pupilCurrentY) * lerp;
+        pupil.style.transform = 'translate(' + pupilCurrentX.toFixed(2) + 'px,' + pupilCurrentY.toFixed(2) + 'px)';
+      }
+      requestAnimationFrame(followLoop);
+    }
+    requestAnimationFrame(followLoop);
   }
 
   global.Aurelius = Aurelius;
