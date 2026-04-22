@@ -829,17 +829,17 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
    hover. Color intentionally off the brand palette to signal "this is not
    production UI." */
 .dev-panel{
-  position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
-  z-index:9990;display:flex;align-items:center;gap:8px;
+  position:fixed;right:10px;top:50%;transform:translateY(-50%);
+  z-index:9990;display:flex;flex-direction:column;align-items:stretch;gap:6px;
   background:rgba(8,8,20,0.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid rgba(192,57,43,0.35);border-radius:3px;
-  padding:5px 10px;
+  padding:8px 8px;
   font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;
   color:rgba(240,236,228,0.45);text-transform:uppercase;
   opacity:0.55;transition:opacity .2s;
 }
 .dev-panel:hover{opacity:1}
-.dev-panel-label{color:rgba(192,57,43,0.8);font-weight:500}
+.dev-panel-label{color:rgba(192,57,43,0.8);font-weight:500;text-align:center;padding-bottom:2px}
 .dev-reset-btn{
   background:transparent;border:1px solid rgba(192,57,43,0.5);
   color:rgba(240,236,228,0.7);
@@ -1211,6 +1211,7 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 <div class="dev-panel" title="Development tools — clears all ga_* localStorage keys">
   <span class="dev-panel-label">DEV</span>
   <button class="dev-reset-btn" onclick="devFullReset()" title="Clear all Gamer Ascension localStorage keys and reload">Full Reset</button>
+  <button class="dev-reset-btn" onclick="devAutoComplete()" title="Mark all modules complete and fire the ascension sequence">Auto-Complete</button>
 </div>
 
 <canvas class="nebula-canvas" id="nebulaCanvas"></canvas>
@@ -1373,10 +1374,13 @@ var VITALITY_X = VITALITY_CX, SPIRIT_X = SPIRIT_CX, ALIGNMENT_X = ALIGNMENT_CX;
 var PILLAR_Y = 1400;
 
 var completed = JSON.parse(localStorage.getItem('ga_pregame_v2_completed') || '[]');
+// Total pre-game module count. Single source of truth for the ascension /
+// tesseract powerup gates. Update this value when modules collapse.
+var TOTAL_MODULES = 4;
 var currentLesson = null;
 var animState = {
-  sphereCharge: completed.length / 5,
-  flowActive: completed.length >= 5,
+  sphereCharge: completed.length / TOTAL_MODULES,
+  flowActive: completed.length >= TOTAL_MODULES,
   energyParticles: [],
   flowParticles: []
 };
@@ -3219,8 +3223,8 @@ function drawFrame(){
   treeCtx.stroke();
   treeCtx.restore();
 
-  var charge = Math.min(1, completed.length / 5);
-  if(completed.length >= 5 && !nexusIgnited){
+  var charge = Math.min(1, completed.length / TOTAL_MODULES);
+  if(completed.length >= TOTAL_MODULES && !nexusIgnited){
     nexusIgnited = true;
     nexusFlare = 1;
     triggerIgnition();
@@ -3367,7 +3371,7 @@ function drawOracle(){
   }
 
   // Option B — slow beacon pulse every ~5 seconds (post-completion only)
-  var allComplete = completed.length >= 5;
+  var allComplete = completed.length >= TOTAL_MODULES;
   var beaconPeriod = 300;
   var beaconPhase = t % beaconPeriod;
   if(!activated && allComplete && beaconPhase < 120){
@@ -3952,7 +3956,7 @@ function drawNexus(charge){
   treeCtx.textAlign = 'center';
   treeCtx.letterSpacing = '0.12em';
   treeCtx.fillText(
-    charge >= 1 ? 'ASCENSION READY' : (count > 0 ? count + ' / 5  BRIEFINGS' : 'PRE-GAME NEXUS'),
+    charge >= 1 ? 'ASCENSION READY' : (count > 0 ? count + ' / ' + TOTAL_MODULES + '  BRIEFINGS' : 'PRE-GAME NEXUS'),
     cx, cy + nexusArmLen + 22
   );
 
@@ -5826,6 +5830,64 @@ function devFullReset(){
   location.reload();
 }
 
+// ===== DEV AUTO-COMPLETE (temporary) =====
+// Marks all pre-game modules as complete, locks their nodes into pentagon
+// position, awards the essence, and fires the ascension sequence. Useful for
+// testing the tesseract powerup without clicking through every module.
+// Remove this function, the button, and the accompanying CSS before shipping.
+function devAutoComplete(){
+  try {
+    // If ascension already firing or done, just reload to reset
+    if(ascensionSequence.active){
+      console.log('[Dev] Ascension already active — reload first');
+      return;
+    }
+    // Populate completed array with all modules in canonical order
+    completed.length = 0;
+    lessonOrder.forEach(function(id){ completed.push(id); });
+    localStorage.setItem('ga_pregame_v2_completed', JSON.stringify(completed));
+
+    // Award essence: each module = 4 prompts * ~10 Essence + 100 completion bonus.
+    // Roughly 140 per module * 4 modules = ~560 Essence for a full run.
+    var devEssence = TOTAL_MODULES * 140;
+    localStorage.setItem('ga_essence', String(devEssence));
+    localStorage.setItem('ga_xp', String(devEssence)); // legacy mirror
+
+    // Force each node into its locked pentagon position immediately.
+    // Skip the drift animation — we're simulating "everything was already done."
+    PREGAME_NODES.forEach(function(n, i){
+      var ls = nodeLockState[n.id];
+      if(ls){
+        ls.locked = true;
+        ls.drifting = false;
+        ls.progress = 1;
+      }
+    });
+
+    // Refresh any visible HUD elements
+    if(typeof updatePool === 'function') updatePool();
+    if(typeof refreshEssenceCounter === 'function') refreshEssenceCounter();
+
+    // Update the pips (tiny progress dots under the nexus label)
+    lessonOrder.forEach(function(id, i){
+      var pip = document.getElementById('pip-' + i);
+      if(pip) pip.classList.add('done');
+    });
+
+    buildClickTargets();
+    updateRespecBtn();
+
+    console.log('[Dev] Auto-complete — ' + TOTAL_MODULES + ' modules marked, ' + devEssence + ' essence. Firing sequence in 400ms.');
+
+    // Fire the sequence after a brief beat so the visual state settles
+    setTimeout(function(){
+      startAscensionSequence();
+    }, 400);
+  } catch(e){
+    console.error('[Dev] Auto-complete failed:', e);
+  }
+}
+
 // ===== QUEST ACCEPTED OVERLAY =====
 // Big centered modal shown when a quest is accepted. Gives first-time
 // users a clear orientation: names the quest, tells them about the Codex,
@@ -7238,7 +7300,7 @@ function markComplete(){
   updateRespecBtn();
 
   var node = PREGAME_NODES[idx];
-  var allDone = completed.length >= 5;
+  var allDone = completed.length >= TOTAL_MODULES;
 
   if(node){
     (function(capturedNode, capturedIdx, capturedAllDone){
@@ -7287,7 +7349,7 @@ function markComplete(){
     })(node, idx, allDone);
   }
 
-  if(completed.length >= 5){} // completion screen fires after ascension sequence
+  if(completed.length >= TOTAL_MODULES){} // completion screen fires after ascension sequence
 }
 function navLesson(dir){
   var idx=lessonOrder.indexOf(currentLesson);
@@ -8115,7 +8177,7 @@ window.addEventListener('load',function(){
     var idx=lessonOrder.indexOf(id);
     if(idx>=0)document.getElementById('pip-'+idx).classList.add('done');
   });
-  if(completed.length>=5){
+  if(completed.length>=TOTAL_MODULES){
     nexusIgnited=true; nexusArmLen=NEXUS_ARM_MAX;
     tesseractActive=true;
   }
@@ -8125,7 +8187,7 @@ window.addEventListener('load',function(){
     if(ls){ ls.locked=true; ls.drifting=false; ls.progress=1; }
   });
   // If all done and returning, skip straight to sequence done state
-  if(completed.length>=5){
+  if(completed.length>=TOTAL_MODULES){
     ascensionSequence.active=true; ascensionSequence.phase=5;
     ascensionSequence.leyLine={progress:1, active:true, done:true};
     ascensionSequence.tethers.forEach(function(te){ te.active=true; te.done=true; te.progress=1; });
@@ -8138,7 +8200,7 @@ window.addEventListener('load',function(){
   updateRankDisplay();
   // For returning users — if still Iron but all complete, trigger the full
   // rank-up ceremony (celebration + witnessed badge transition on close)
-  if(getCurrentRank() === 'iron' && completed.length >= 5){
+  if(getCurrentRank() === 'iron' && completed.length >= TOTAL_MODULES){
     setTimeout(showAllComplete, 800);
   }
   // Restore hidden nodes if quest accepted or complete
