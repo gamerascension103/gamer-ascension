@@ -748,6 +748,141 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 .quest-deny-btn{background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(240,236,228,.4);font-size:12px;font-weight:300;padding:12px 18px;border-radius:3px;cursor:pointer;transition:all .2s}
 .quest-deny-btn:hover{border-color:rgba(255,255,255,.2);color:rgba(240,236,228,.7)}
 
+/* ============================================================================
+   POST-INTERPRETER CEREMONY — REALM OVERLAY + CHAMBERS GLOW
+   Ceremony runs after rank-up closes. Guide speaks, camera pans the trees,
+   then this overlay fades in (realms grid), then suctions into the Chambers
+   nav button, which glows briefly. See runPostInterpreterCeremony() in JS.
+   ============================================================================ */
+.ceremony-realm-overlay{
+  position:fixed;inset:0;z-index:350;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:36px;
+  background:rgba(8,8,16,0.82);
+  backdrop-filter:blur(12px);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.9s ease-out;
+}
+.ceremony-realm-overlay.visible{opacity:1}
+.ceremony-realm-overlay.suctioning{
+  transition:transform 0.9s cubic-bezier(0.5, 0, 0.75, 0.05),
+             opacity 0.9s cubic-bezier(0.5, 0, 0.75, 0.05);
+}
+.ceremony-realm-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(22px, 3vw, 30px);
+  font-weight:400;
+  color:rgba(240,236,228,0.88);
+  letter-spacing:0.08em;
+  text-shadow:0 0 28px rgba(201,168,76,0.35);
+  opacity:0;
+  animation:ceremony-title-in 1.1s ease-out forwards 0.15s;
+}
+@keyframes ceremony-title-in{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.ceremony-realm-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(180px, 220px));
+  gap:14px;
+  max-width:90vw;
+}
+.ceremony-realm-card{
+  background:rgba(13,13,26,0.72);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:4px;
+  padding:16px 18px;
+  opacity:0;
+  animation:ceremony-card-in 0.7s ease-out forwards;
+  position:relative;
+  overflow:hidden;
+}
+.ceremony-realm-card.ceremony-realm-open{
+  border-color:rgba(201,168,76,0.35);
+  box-shadow:0 0 24px rgba(201,168,76,0.08) inset;
+}
+/* Light sweep for open realms — a bright diagonal band that traverses the
+   card once as it appears, reinforcing the illumination moment */
+.ceremony-realm-card.ceremony-realm-open::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(105deg,
+    transparent 35%,
+    rgba(255, 246, 216, 0.18) 50%,
+    transparent 65%);
+  transform:translateX(-120%);
+  animation:ceremony-card-sweep 1.2s ease-out forwards;
+  animation-delay:inherit;
+  pointer-events:none;
+}
+@keyframes ceremony-card-sweep{
+  0%   {transform:translateX(-120%)}
+  100% {transform:translateX(120%)}
+}
+@keyframes ceremony-card-in{
+  from{opacity:0;transform:translateY(8px) scale(0.96)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.ceremony-realm-name{
+  font-family:'Cinzel Decorative',serif;
+  font-size:17px;
+  font-weight:700;
+  color:#f0ece4;
+  letter-spacing:0.02em;
+  margin-bottom:6px;
+}
+.ceremony-realm-card.ceremony-realm-sealed .ceremony-realm-name{
+  color:rgba(240,236,228,0.55);
+}
+.ceremony-realm-func{
+  font-family:'Cinzel',serif;
+  font-size:10px;
+  letter-spacing:0.14em;
+  color:rgba(157,139,255,0.7);
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.ceremony-realm-status{
+  font-family:'Cinzel',serif;
+  font-size:9px;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  display:inline-block;
+  padding:3px 9px;
+  border-radius:2px;
+}
+.ceremony-realm-card.ceremony-realm-open .ceremony-realm-status{
+  color:#c9a84c;
+  border:1px solid rgba(201,168,76,0.4);
+  background:rgba(201,168,76,0.08);
+}
+.ceremony-realm-card.ceremony-realm-sealed .ceremony-realm-status{
+  color:rgba(240,236,228,0.35);
+  border:1px solid rgba(255,255,255,0.08);
+  background:transparent;
+}
+
+/* Chambers nav button glow — fires when the genie suction arrives.
+   Class applied programmatically by ceremonyBeat4_genieSuction and removed
+   after the glow duration. nav.js styles the button; we only add the glow. */
+.chambers-glow{
+  animation:chambers-arrival-glow 1.4s ease-out !important;
+  position:relative;
+}
+@keyframes chambers-arrival-glow{
+  0%   {box-shadow:0 0 0 0 rgba(201,168,76,0.85),
+                    0 0 0 0 rgba(201,168,76,0.6),
+                    0 0 24px 2px rgba(201,168,76,0.95)}
+  40%  {box-shadow:0 0 0 14px rgba(201,168,76,0.15),
+                    0 0 0 28px rgba(201,168,76,0.05),
+                    0 0 36px 4px rgba(201,168,76,0.8)}
+  100% {box-shadow:0 0 0 30px rgba(201,168,76,0),
+                    0 0 0 60px rgba(201,168,76,0),
+                    0 0 0 0 rgba(201,168,76,0)}
+}
+
 /* CODEX PANEL */
 .codex-btn{position:fixed;bottom:250px;right:24px;z-index:55;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;color:rgba(201,168,76,.7);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.1em;padding:0 14px;cursor:pointer;display:none;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px)}
 .codex-btn.visible{display:flex}
@@ -2568,6 +2703,11 @@ function buildClickTargets(){
       // why (complete the 3 core skills). No interaction.
       return;
     }
+    if(ceremonyInProgress){
+      // Tesseract is technically active but the final ceremony is still
+      // unfolding. Suppress taps so the ceremony can't be interrupted.
+      return;
+    }
     // Ready — play the dive-in transition, then open the quiz.
     diveIntoTesseract();
   });
@@ -3132,6 +3272,14 @@ function drawAscensionFlash(alpha){
 // ---- TESSERACT ----
 var tesseractActive = false;
 var tesseractPulse  = 0; // 0-1 life of activation burst
+
+// ---- FINAL CEREMONY GATE (2026-04 onboarding rebuild) ----
+// True while the post-Interpreter ceremony is running (after rank-up closes:
+// Guide speaks, camera pans across crawl-lit trees, realm overlay reveals,
+// genie suction, finally "Your path awaits" on Tesseract). During this window
+// the Tesseract must not be interactable — an early tap would open the quiz
+// mid-ceremony and break the flow. The flag clears on the final beat.
+var ceremonyInProgress = false;
 
 // Particle pools for ley line and energy distribution
 var leyParticles  = [];  // nexus → tesseract (violet)
@@ -7959,8 +8107,13 @@ function markComplete(){
             // If all nodes are now locked, start the ascension sequence
             var allLocked = PREGAME_NODES.every(function(n){ return nodeLockState[n.id].locked; });
             if(allLocked && capturedAllDone){
-              // All nodes locked — start sequence directly (we're already post-closeLesson)
-              setTimeout(startAscensionSequence, 800);
+              // 2026-04 onboarding rebuild: new ceremony ordering.
+              // Previously: ascension sequence runs, then showAllComplete fires.
+              // Now: rank-up fires immediately, then (on user close) Guide
+              // speaks, then the ascension sequence runs paired with a
+              // choreographed camera pan. See closeCompletionScreen for the
+              // rest of the sequence.
+              setTimeout(showAllComplete, 800);
             }
           }
         }, 16);
@@ -8247,18 +8400,250 @@ function closeCompletionScreen(pendingRank){
     }, 180);
   }
 
-  // SESSION 9 choreography: quest NO LONGER dispatches here. After rank-up,
-  // the next single piece of attention is the Tesseract. Guide's quest
-  // will auto-fire after the user completes the assessment. This keeps
-  // the journey one-thing-at-a-time: rank up → Tesseract → assessment →
-  // Guide's quest.
+  // 2026-04 onboarding rebuild: new ceremony sequence.
+  // If this was the first-ever completion (pendingRank set = Iron → Bronze),
+  // fire the full post-Interpreter ceremony:
+  //   1. Guide speaks (acknowledges the work, names the world opening)
+  //   2. Ascension sequence runs paired with a camera pan across the trees
+  //   3. Realm overlay fades in (four chambers illuminated)
+  //   4. Genie suction — overlay warps into the Chambers button
+  //   5. Camera to Tesseract + "Your path awaits" (final beat)
   //
-  // Also note: if this is a returning user (pendingRank is null because
-  // they were already bronze), we skip the ceremony — they've been here
-  // before, the Tesseract is already part of their world.
+  // Returning users (pendingRank null) skip the ceremony entirely — Tesseract
+  // is already part of their world.
   if(pendingRank){
-    setTimeout(playTesseractPowerUpCeremony, 900);
+    setTimeout(runPostInterpreterCeremony, 900);
   }
+}
+
+// ============================================================================
+// POST-INTERPRETER CEREMONY (2026-04 onboarding rebuild)
+// ============================================================================
+// Orchestrates the full post-rank-up sequence. Each beat is its own function
+// for clarity. Beats chain via setTimeout — a more formal state machine would
+// be cleaner but setTimeout is simpler to read and modify, and the sequence
+// is linear (no branching).
+//
+// The ceremonyInProgress flag is set true at the start and cleared on the
+// final beat. During this window the Tesseract's click handler returns
+// early so the ceremony can't be interrupted by a premature tap.
+function runPostInterpreterCeremony(){
+  ceremonyInProgress = true;
+  ceremonyBeat1_guide();
+}
+
+// Beat 1: Guide speaks. Two lines. Acknowledges the work and names what's
+// about to happen. Fires via Guide.summonOneOff so the script is one-shot
+// and doesn't persist for later summons.
+function ceremonyBeat1_guide(){
+  if(typeof Guide === 'undefined' || typeof Guide.summonOneOff !== 'function'){
+    // Guide unavailable — skip to next beat so the sequence doesn't hang
+    ceremonyBeat2_ascensionAndPan();
+    return;
+  }
+  Guide.summonOneOff([
+    { speaker: 'The Guide', text: 'You have done the foundational work. Above the chambers you just entered, a world was waiting for ground to stand on. It has it now.' },
+    { speaker: 'The Guide', text: 'Look at where you are. The Scriptorium is open to you now. The rest of Evermark waits.' }
+  ], {
+    onDismiss: function(){
+      // Small breath after Guide closes before the pan begins
+      setTimeout(ceremonyBeat2_ascensionAndPan, 700);
+    }
+  });
+}
+
+// Beat 2: Start ascension sequence and drive a camera pan across the trees.
+// The ascension sequence's phases 1-3 do the mechanical work (nexus ignite,
+// ley line grow to Tesseract, crawl-light constellations). The pan function
+// follows that same trajectory visually.
+function ceremonyBeat2_ascensionAndPan(){
+  // Start the ascension sequence (nexus ignite, ley line, crawl-light)
+  startAscensionSequence();
+  // Run the camera pan alongside. It takes ~8s and ends at the Tesseract.
+  runCeremonyCameraPan(function(){
+    // When pan completes, proceed to the realm overlay
+    ceremonyBeat3_realmOverlay();
+  });
+}
+
+// Camera pan across the trees, matching the ascension sequence's reveal
+// order. Pan down from pregame nodes → follow ley line toward Tesseract
+// (phase 2 territory) → sweep to Vitality (left) → Spirit (center) →
+// Alignment (right) → settle mid-canvas looking down on the trees.
+// Final beat (Tesseract close-up + "Your path awaits") comes later.
+function runCeremonyCameraPan(onComplete){
+  var wrap = document.getElementById('canvasWrap');
+  if(!wrap){ if(onComplete) onComplete(); return; }
+  var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
+
+  // Define pan waypoints as world-space targets with scale.
+  // Each waypoint is {cx, cy, scale, duration, hold} — duration is time
+  // to tween TO this waypoint, hold is time to stay once arrived.
+  var waypoints = [
+    // 0. Start state is current transform — no entry
+    // 1. Zoom slightly into the pregame pentagon area (ley line origin)
+    {cx: CX, cy: SPHERE_Y + 60, scale: 0.55, duration: 1200, hold: 600},
+    // 2. Vitality tree — sweep left
+    {cx: VITALITY_CX, cy: VITALITY_CY, scale: 0.7, duration: 1400, hold: 900},
+    // 3. Spirit tree — sweep right to center
+    {cx: SPIRIT_CX, cy: SPIRIT_CY, scale: 0.7, duration: 1300, hold: 900},
+    // 4. Alignment tree — sweep right
+    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY, scale: 0.7, duration: 1300, hold: 900},
+    // 5. Pull back to show all three trees + nexus in frame
+    {cx: SPIRIT_CX, cy: (SPHERE_Y + SPIRIT_CY) / 2, scale: 0.38, duration: 1400, hold: 500}
+  ];
+
+  var wpIdx = 0;
+
+  function runNextWaypoint(){
+    if(wpIdx >= waypoints.length){
+      if(onComplete) onComplete();
+      return;
+    }
+    var wp = waypoints[wpIdx];
+    var targetX = (vw / 2) - (wp.cx * wp.scale);
+    var targetY = (vh / 2) - (wp.cy * wp.scale);
+
+    var startScale = transform.scale;
+    var startX = transform.x;
+    var startY = transform.y;
+    var startTime = performance.now();
+
+    function tick(now){
+      var elapsed = now - startTime;
+      var progress = Math.min(1, elapsed / wp.duration);
+      // Cubic ease-in-out for smooth arrivals
+      var eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+      transform.scale = startScale + (wp.scale - startScale) * eased;
+      transform.x = startX + (targetX - startX) * eased;
+      transform.y = startY + (targetY - startY) * eased;
+      applyTransform();
+
+      if(progress < 1){
+        requestAnimationFrame(tick);
+      } else {
+        // Hold then advance to next waypoint
+        setTimeout(function(){
+          wpIdx++;
+          runNextWaypoint();
+        }, wp.hold);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  runNextWaypoint();
+}
+
+// Beat 3: Realm overlay fades in. Four chamber tiles illuminated in sequence.
+// Echoes the Threshold's realm picker visually but is its own element — this
+// is a ceremony, not a picker. Tiles are non-interactive.
+function ceremonyBeat3_realmOverlay(){
+  var overlay = document.createElement('div');
+  overlay.id = 'ceremonyRealmOverlay';
+  overlay.className = 'ceremony-realm-overlay';
+
+  var realms = [
+    { name: 'The Atheneum',    func: 'Skill Mastery',     status: 'open'   },
+    { name: 'The Arcanium',    func: 'Library',           status: 'sealed' },
+    { name: 'The Scriptorium', func: 'Journal',           status: 'open'   },
+    { name: 'The Agora',       func: 'Community Forum',   status: 'sealed' }
+  ];
+
+  var grid = document.createElement('div');
+  grid.className = 'ceremony-realm-grid';
+  realms.forEach(function(r, i){
+    var card = document.createElement('div');
+    card.className = 'ceremony-realm-card ceremony-realm-' + r.status;
+    card.style.animationDelay = (200 + i * 350) + 'ms';
+    card.innerHTML =
+      '<div class="ceremony-realm-name">' + r.name + '</div>' +
+      '<div class="ceremony-realm-func">' + r.func + '</div>' +
+      '<div class="ceremony-realm-status">' + (r.status === 'open' ? 'Open' : 'Sealed') + '</div>';
+    grid.appendChild(card);
+  });
+
+  var title = document.createElement('div');
+  title.className = 'ceremony-realm-title';
+  title.textContent = 'The realms of Evermark';
+
+  overlay.appendChild(title);
+  overlay.appendChild(grid);
+  document.body.appendChild(overlay);
+
+  // Fade in the overlay (CSS handles the opacity transition)
+  requestAnimationFrame(function(){ overlay.classList.add('visible'); });
+
+  // Hold duration: title fade-in (400ms) + 4 cards at 350ms stagger +
+  // settle time on the last card so user registers what's there.
+  // Total: 400 + 200 + 3*350 + 1200 = ~2800ms before suction starts.
+  setTimeout(ceremonyBeat4_genieSuction, 2800);
+}
+
+// Beat 4: Genie suction — the realm overlay contracts and warps into the
+// Chambers navigation button (top-left). The button glows briefly as the
+// overlay arrives.
+function ceremonyBeat4_genieSuction(){
+  var overlay = document.getElementById('ceremonyRealmOverlay');
+  if(!overlay){ ceremonyBeat5_tesseractOrientation(); return; }
+
+  // Find the Chambers nav button (styled as .nav-trigger by nav.js — top-left
+  // capsule with "Chambers" label). Fallback to approximate top-left if the
+  // button hasn't rendered (e.g., nav.js failed to load).
+  var navBtn = document.querySelector('.nav-trigger');
+  var targetX = 28; // fallback: approx top-left
+  var targetY = 86;
+  if(navBtn){
+    var rect = navBtn.getBoundingClientRect();
+    targetX = rect.left + rect.width / 2;
+    targetY = rect.top + rect.height / 2;
+  }
+
+  // Get overlay's current center to calculate the offset translation
+  var overlayRect = overlay.getBoundingClientRect();
+  var originX = overlayRect.left + overlayRect.width / 2;
+  var originY = overlayRect.top + overlayRect.height / 2;
+  var dx = targetX - originX;
+  var dy = targetY - originY;
+
+  // Set transform origin to the overlay center, then apply the suction
+  overlay.style.transformOrigin = 'center center';
+  overlay.classList.add('suctioning');
+  overlay.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(0.02)';
+  overlay.style.opacity = '0';
+
+  // When overlay arrives, glow the Chambers button briefly
+  setTimeout(function(){
+    if(navBtn){
+      navBtn.classList.add('chambers-glow');
+      setTimeout(function(){ navBtn.classList.remove('chambers-glow'); }, 1400);
+    }
+    // Clean up overlay
+    if(overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  }, 900);
+
+  // Proceed to final beat after suction + glow has landed
+  setTimeout(ceremonyBeat5_tesseractOrientation, 1500);
+}
+
+// Beat 5: Camera to Tesseract, "Your path awaits" text fades in. This is the
+// final beat — the orientation forward. After the text fades out, the
+// ceremonyInProgress flag clears and the Tesseract becomes tappable.
+function ceremonyBeat5_tesseractOrientation(){
+  // Re-use the existing Tesseract orientation ceremony. It already handles
+  // the camera pan to the Tesseract and the text fade. We just need to
+  // clear ceremonyInProgress when it finishes.
+  playTesseractPowerUpCeremony();
+
+  // The orientation ceremony is ~4 seconds: 1.5s pan + 0.15s delay +
+  // 0.7s text fade-in + 1.8s hold + 0.9s text fade-out. Clear the flag
+  // after that completes so the Tesseract becomes interactive.
+  setTimeout(function(){
+    ceremonyInProgress = false;
+  }, 5500);
 }
 
 // ===== TESSERACT ORIENTATION CEREMONY =====
