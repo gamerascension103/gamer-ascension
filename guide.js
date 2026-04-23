@@ -849,15 +849,25 @@
       if(sigilEl) sigilEl.classList.remove('speaking');
       if(dialogueBoxEl) dialogueBoxEl.classList.remove('guide-pulsing-text');
       if(dialogueIndex === config.script.length - 1){
-        // Quest offer hook: if the user is seeing the final line of a quest
-        // offer, hand off to the quest menu rather than waiting for a Dismiss
-        // click. The user's choice of accept/decline replaces the built-in
-        // Continue/Dismiss flow from here on.
+        // Last line. Quest offer hook: if the user is seeing the final line
+        // of a quest offer, hand off to the quest menu. Otherwise show the
+        // Dismiss button — user must tap to close. Never auto-advance the
+        // last line; the user needs a clear exit point.
         if(activeQuestOffer){
           setTimeout(renderQuestOfferMenu, 450);
         } else {
           continueBtn.textContent = 'Dismiss';
         }
+      } else {
+        // Non-final line: auto-advance to the next line on its own so the
+        // user doesn't have to click Continue every time. 1200ms dwell so
+        // the line has time to be read before moving on. User can still
+        // tap to skip this dwell (handleSkipTap → advanceDialogue).
+        setTimeout(function(){
+          if(isOpen && config && dialogueIndex < config.script.length - 1){
+            advanceDialogue();
+          }
+        }, 1200);
       }
     };
 
