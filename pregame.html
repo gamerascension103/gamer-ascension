@@ -880,7 +880,9 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 }
 
 /* Stage 1: Scriptorium card charging — seal icon glows + card brightens
-   to signal that something is about to happen. */
+   to signal that something is about to happen. No animation property
+   override here (just style changes), so the base ceremony-card-in
+   forwards state is preserved and opacity stays 1 naturally. */
 .ceremony-realm-card.ceremony-realm-unseal-charging{
   border-color:rgba(201,168,76,0.55);
   box-shadow:0 0 24px rgba(201,168,76,0.25) inset,
@@ -897,8 +899,14 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   75%     {transform:translateX(1.5px) rotate(2deg)}
 }
 
-/* Stage 2: Seal breaking — card flashes gold, seal icon fragments/fades. */
+/* Stage 2: Seal breaking — card flashes gold, seal icon fragments/fades.
+   Same opacity concern as Stage 3 (newly-opened): adding this animation
+   replaces ceremony-card-in on the element, so the forwards-held end state
+   is lost. Explicitly set opacity to keep the card visible through the
+   flash. */
 .ceremony-realm-card.ceremony-realm-unseal-breaking{
+  opacity:1 !important;
+  transform:translateY(0) scale(1);
   animation:ceremony-unseal-flash 0.6s ease-out forwards;
 }
 .ceremony-realm-card.ceremony-realm-unseal-breaking .ceremony-realm-seal{
@@ -921,8 +929,14 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 }
 
 /* Stage 3: Newly-opened state — the card now shows as open, with a
-   sustained gentle glow so it draws the eye relative to the other cards. */
+   sustained gentle glow so it draws the eye relative to the other cards.
+   IMPORTANT: explicitly set opacity:1 here because adding this class
+   replaces the `animation` property on the card, which loses the
+   `forwards`-held end state from the ceremony-card-in entry animation.
+   Without this override the card goes invisible. */
 .ceremony-realm-card.ceremony-realm-newly-opened{
+  opacity:1 !important;
+  transform:translateY(0) scale(1);
   animation:ceremony-newly-opened-pulse 2s ease-in-out infinite;
 }
 @keyframes ceremony-newly-opened-pulse{
