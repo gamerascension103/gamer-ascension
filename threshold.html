@@ -1814,18 +1814,38 @@ function followLoop(){
 requestAnimationFrame(followLoop);
 </script>
 
-<!-- DEV PANEL — reset localStorage to see the full arrival sequence again -->
+<!-- DEV PANEL — reset localStorage to replay the arrival sequence -->
 <div class="dev-panel" title="Development tools">
   <span class="dev-panel-label">DEV</span>
-  <button class="dev-reset-btn" onclick="devResetThreshold()" title="Clear localStorage and reload — see the full rift arrival again">Reset</button>
+  <button class="dev-reset-btn" onclick="devResetThreshold()" title="Clear threshold flags and reload this page — see the rift arrival again">Reset</button>
+  <button class="dev-reset-btn" onclick="devBackToStart()" title="Clear ALL localStorage and return to the Evermark intro video (full first-time experience)">Back to Start</button>
 </div>
 
 <script>
 function devResetThreshold(){
+  // Local reset — clears just the threshold flags so you see the rift birth
+  // again. Does not touch pregame or evermark intro state.
   try {
     localStorage.removeItem('ga_visited_threshold');
+    localStorage.removeItem('ga_first_threshold_crossed');
   } catch(e){}
   location.reload();
+}
+
+function devBackToStart(){
+  // Full reset — clears every ga_* key and routes to the Evermark intro.
+  // Absolute first-time experience: video, threshold birth, dive, fresh
+  // Atheneum. Matches devBackToStart() in pregame.html.
+  try {
+    var keys = Object.keys(localStorage).filter(function(k){
+      return k.indexOf('ga_') === 0;
+    });
+    keys.forEach(function(k){ localStorage.removeItem(k); });
+    console.log('[Dev] Back to start — cleared ' + keys.length + ' ga_* keys');
+  } catch(e){
+    console.error('[Dev] Back to start failed:', e);
+  }
+  window.location.href = '/evermark.html';
 }
 </script>
 
