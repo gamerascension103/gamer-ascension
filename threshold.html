@@ -632,7 +632,7 @@ body.horizon-collapsing .starfield{
           <span class="realm-status available">Open</span>
         </div>
         <div class="realm-function">Skill Mastery</div>
-        <div class="realm-desc">The living map of what there is to learn. Twenty-nine skill nodes across three pillars. The first five are free.</div>
+        <div class="realm-desc">The living map of what there is to learn. Twenty-nine skill nodes across three pillars. The first three modules are free.</div>
         <div class="realm-enter">Enter <span class="realm-enter-arrow">→</span></div>
       </a>
 
@@ -1198,11 +1198,25 @@ function wireButton(btn){
   });
 
   // Click — override inline onclick with cinematic dive into void.
-  // No callback needed: the scene transition fires INSIDE the timeline at
-  // the moment the blackout fully covers the screen.
+  // First-time visitors dive straight to the Atheneum, bypassing tutorial/
+  // dialogue/realms entirely. Returning visitors (flag already set) see the
+  // original flow so they can revisit the full threshold experience.
   btn.removeAttribute('onclick');
   btn.addEventListener('click', function(){
-    triggerPullThrough(function(){ /* scene already transitioned inside timeline */ });
+    var firstTime = localStorage.getItem('ga_first_threshold_crossed') !== '1';
+    if(firstTime){
+      // Set both flags BEFORE navigation:
+      //   - ga_first_threshold_crossed gates the dive-to-atheneum path
+      //   - ga_visited_threshold activates the "Welcome back" returning view
+      // Setting both at once means second+ visits see the returning view
+      // with "Enter the Realms" instead of being re-routed through the dive
+      // (which would trample their localStorage state).
+      localStorage.setItem('ga_first_threshold_crossed', '1');
+      localStorage.setItem('ga_visited_threshold', '1');
+      triggerPullThroughToAtheneum();
+    } else {
+      triggerPullThrough(function(){ /* scene already transitioned inside timeline */ });
+    }
   });
 }
 
@@ -1319,6 +1333,64 @@ function triggerPullThrough(callback){
     HORIZON_STATE.rotationSpeed = 1;
     if(idleTimeline) idleTimeline.resume();
   }, null, 3.0);
+}
+
+// ============================================================================
+// DIVE-TO-ATHENEUM (2026-04 onboarding rebuild)
+// ============================================================================
+// First-time visitors skip the tutorial/dialogue/realms scenes entirely. The
+// dive that currently ends on the Threshold tutorial is redirected to the
+// Atheneum, where pregame.html picks up the motion from the same visual
+// state (full darkness at peak dive velocity) and resolves into a zoom onto
+// the Gap node.
+//
+// Returning visitors (flag ga_first_threshold_crossed already set) continue
+// to see the original tutorial/dialogue/realms flow. This function is only
+// wired to the Cross button on first visit.
+//
+// Handoff contract:
+//   - At 1.5s (peak darkness), navigate to pregame.html?dive=1
+//   - pregame.html detects the query param, renders a full-screen black
+//     overlay immediately, then runs its own zoom-in-and-reveal timeline
+//   - The visual state at the moment of navigation (fully black screen)
+//     matches pregame.html's initial state (fully black overlay), so the
+//     user sees a single continuous darkness while the page swap happens
+//     underneath
+function triggerPullThroughToAtheneum(){
+  if(typeof gsap === 'undefined'){
+    // Fallback: just navigate. No animation, but still works.
+    window.location.href = '/pregame.html?dive=1';
+    return;
+  }
+  HORIZON_STATE.pullThroughActive = true;
+
+  var content = document.querySelector('.horizon-content');
+  var coreWrap = document.getElementById('horizonCoreWrap');
+  var corona = document.getElementById('horizonCorona');
+  var blackout = document.getElementById('voidBlackout');
+
+  if(idleTimeline) idleTimeline.pause();
+  gsap.set(blackout, { scale: 0, opacity: 1 });
+
+  var tl = gsap.timeline();
+
+  // BEAT 1 (0.0 to 0.45s): LEAN IN — content dims, disk slows (time dilation)
+  tl.to(content, { opacity: 0, scale: 0.92, duration: 0.45, ease: 'power2.in' }, 0);
+  tl.to(HORIZON_STATE, { rotationSpeed: 0.4, duration: 0.4, ease: 'power2.out' }, 0);
+
+  // BEAT 2 (0.4s to 1.4s): THE DIVE — horizon grows, blackout covers, disk accelerates
+  tl.to(coreWrap, { scale: 3.2, duration: 0.95, ease: 'power2.in' }, 0.4);
+  tl.to(corona, { scale: 2.4, opacity: 0.4, duration: 0.95, ease: 'power2.in' }, 0.4);
+  tl.to(blackout, { scale: 12, duration: 1.1, ease: 'power2.in' }, 0.5);
+  tl.to(HORIZON_STATE, { rotationSpeed: 2, duration: 0.8, ease: 'power2.in' }, 0.5);
+
+  // BEAT 3 (1.5s): NAVIGATE — the blackout is now full-screen. Navigate to
+  // pregame.html. The browser's page-swap happens under the darkness; the
+  // new page will render its own black overlay immediately so the darkness
+  // appears continuous.
+  tl.call(function(){
+    window.location.href = '/pregame.html?dive=1';
+  }, null, 1.5);
 }
 
 // ============================================================================
