@@ -1140,37 +1140,6 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   })();
 </script>
 
-<!-- ============================================================================
-     DEV DEBUG OVERLAY (TEMPORARY — remove before final ship)
-     Shows live state of pregame routing flags. Helps diagnose dev-reset issues.
-     ============================================================================ -->
-<script>
-  (function installPregameDebugOverlay(){
-    if(typeof window === 'undefined') return;
-    var overlay = document.createElement('div');
-    overlay.id = 'pregame-debug-overlay';
-    overlay.style.cssText = 'position:fixed;bottom:12px;left:12px;z-index:99999;background:rgba(0,0,0,0.85);color:#ff0;font-family:monospace;font-size:10px;padding:10px 12px;border:1px solid #ff0;max-width:360px;line-height:1.5;pointer-events:none;white-space:pre';
-    document.body.appendChild(overlay);
-
-    function refresh(){
-      try {
-        var state = {
-          'URL': window.location.href,
-          'has ?dive=1': window.location.search.indexOf('dive=1') !== -1,
-          'diveInRequested flag': !!window.__diveInRequested,
-          'ga_first_threshold_crossed': localStorage.getItem('ga_first_threshold_crossed'),
-          'ga_visited_threshold': localStorage.getItem('ga_visited_threshold'),
-          'ga_first_pregame_arrival': localStorage.getItem('ga_first_pregame_arrival')
-        };
-        var lines = Object.keys(state).map(function(k){ return k + ': ' + JSON.stringify(state[k]); });
-        overlay.textContent = 'PREGAME DEBUG\n' + lines.join('\n');
-      } catch(e){ overlay.textContent = 'DEBUG ERROR: ' + e.message; }
-    }
-    refresh();
-    setInterval(refresh, 500);
-  })();
-</script>
-
 <div class="header">
   <a href="/" class="header-logo">Gamer<span>Ascension</span></a>
   <div class="header-right">
@@ -6494,20 +6463,13 @@ function showQuestToast(msg){
 // the accompanying DOM + CSS before shipping to production.
 function devFullReset(){
   try {
-    var allKeys = Object.keys(localStorage);
-    var keysToRemove = allKeys.filter(function(k){
+    var keys = Object.keys(localStorage).filter(function(k){
       return k.indexOf('ga_') === 0;
     });
-    console.log('[Dev Reset] Before: localStorage has ' + allKeys.length + ' total keys, ' + keysToRemove.length + ' match ga_*');
-    console.log('[Dev Reset] Keys to remove:', keysToRemove);
-    keysToRemove.forEach(function(k){ localStorage.removeItem(k); });
-    var after = Object.keys(localStorage).filter(function(k){ return k.indexOf('ga_') === 0; });
-    console.log('[Dev Reset] After: ' + after.length + ' ga_* keys remain:', after);
-    if(after.length > 0){
-      console.warn('[Dev Reset] WARNING: keys survived removal. Browser may be blocking localStorage writes, or extension is interfering.');
-    }
+    keys.forEach(function(k){ localStorage.removeItem(k); });
+    console.log('[Dev] Full reset — cleared ' + keys.length + ' ga_* keys');
   } catch(e){
-    console.error('[Dev Reset] FAILED:', e);
+    console.error('[Dev] Reset failed:', e);
   }
   location.reload();
 }
