@@ -1265,7 +1265,8 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
      Temporary dev affordance; remove before shipping to production. -->
 <div class="dev-panel" title="Development tools — clears all ga_* localStorage keys">
   <span class="dev-panel-label">DEV</span>
-  <button class="dev-reset-btn" onclick="devFullReset()" title="Clear all Gamer Ascension localStorage keys and reload">Full Reset</button>
+  <button class="dev-reset-btn" onclick="devFullReset()" title="Clear all Gamer Ascension localStorage keys and reload this page">Full Reset</button>
+  <button class="dev-reset-btn" onclick="devBackToStart()" title="Clear all localStorage and return to the Evermark intro video (full first-time experience)">Back to Start</button>
   <button class="dev-reset-btn" onclick="devAutoComplete()" title="Mark all modules complete and fire the ascension sequence">Auto-Complete</button>
 </div>
 
@@ -6472,6 +6473,24 @@ function devFullReset(){
     console.error('[Dev] Reset failed:', e);
   }
   location.reload();
+}
+
+// ===== DEV BACK TO START =====
+// Clears every Gamer Ascension localStorage key and routes to the Evermark
+// intro video. The user gets the absolute first-time experience: video
+// plays, threshold birth animates, dive to Atheneum, everything fresh.
+// Temporary dev affordance; remove before shipping.
+function devBackToStart(){
+  try {
+    var keys = Object.keys(localStorage).filter(function(k){
+      return k.indexOf('ga_') === 0;
+    });
+    keys.forEach(function(k){ localStorage.removeItem(k); });
+    console.log('[Dev] Back to start — cleared ' + keys.length + ' ga_* keys, routing to evermark.html');
+  } catch(e){
+    console.error('[Dev] Back to start failed:', e);
+  }
+  window.location.href = '/evermark.html';
 }
 
 // ===== DEV AUTO-COMPLETE (temporary) =====
