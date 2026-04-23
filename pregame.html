@@ -9007,16 +9007,17 @@ window.addEventListener('resize',function(){centerTree();});
       // on first visit; returning users get the standard 2-second delay.
       var isFirstVisit = isFirstPregameVisit();
 
-      // Compressed first-visit script. Two lines. No UI-direction language.
-      // The dive delivered the welcome; Guide just points at the work.
+      // Compressed first-visit script. Two lines. No UI-direction language
+      // that breaks the fiction, but explicit enough that a first-time user
+      // knows exactly what to tap and what to expect.
       var firstVisitScript = [
         {
           speaker: 'The Guide',
-          text: 'This is the Atheneum. What pulses before you is where the work begins.'
+          text: 'Welcome to the Atheneum. This is the chamber of skills.'
         },
         {
           speaker: 'The Guide',
-          text: 'Begin with The Gap. It names what you have been feeling. The next two modules follow it in sequence.'
+          text: 'Tap the pulsing node at the center of the map. That is The Gap — the first of three modules. Each one unlocks the next.'
         }
       ];
 
