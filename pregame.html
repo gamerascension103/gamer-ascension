@@ -91,80 +91,6 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .respec-cancel:hover{border-color:rgba(255,255,255,.25);color:var(--text)}
 .reflect-reset-btn{position:fixed;bottom:116px;left:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(255,255,255,.08);border-radius:3px;color:rgba(240,236,228,.2);font-family:'Cinzel',serif;font-size:8px;font-weight:400;letter-spacing:.08em;padding:0 12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px);white-space:nowrap}
 .reflect-reset-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.15);color:rgba(240,236,228,.5)}
-.tutorial-reopen-btn{position:fixed;bottom:70px;left:24px;z-index:50;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(201,168,76,.2);border-radius:3px;color:rgba(201,168,76,.5);font-family:'Cinzel',serif;font-size:9px;font-weight:400;letter-spacing:.08em;padding:0 12px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;backdrop-filter:blur(8px);white-space:nowrap}
-.tutorial-reopen-btn:hover{background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.5);color:rgba(201,168,76,.9)}
-
-/* ===== TUTORIAL BEACON (session 9) =====
-   Attention-grab for the Tutorial button after Guide's first-visit intro
-   dismisses and the tutorial hasn't been seen yet. Same visual language
-   as the Guide quest beacon (aura + "!" badge + flare) so the two
-   systems feel consistent. Differs in shape — the Tutorial button is a
-   horizontal capsule, not a circle, so aura rings match that shape. */
-.tutorial-reopen-btn.tutorial-beacon{
-  border-color:rgba(201,168,76,0.7);
-  color:rgba(201,168,76,0.95);
-  background:rgba(25,20,10,0.92);
-  box-shadow:0 0 14px rgba(201,168,76,0.35),0 0 28px rgba(201,168,76,0.15);
-  animation:tutorial-beacon-pulse 2.4s ease-in-out infinite;
-}
-@keyframes tutorial-beacon-pulse{
-  0%,100%{box-shadow:0 0 14px rgba(201,168,76,0.35),0 0 28px rgba(201,168,76,0.15)}
-  50%    {box-shadow:0 0 22px rgba(201,168,76,0.75),0 0 44px rgba(201,168,76,0.35)}
-}
-/* Sonar rings that expand outward from the button's shape. Two rings
-   offset so one is always in flight. */
-.tutorial-reopen-btn.tutorial-beacon::before,
-.tutorial-reopen-btn.tutorial-beacon::after{
-  content:"";position:absolute;inset:-4px;border-radius:5px;
-  border:1.5px solid rgba(201,168,76,0.65);pointer-events:none;
-  animation:tutorial-beacon-ring 2s ease-out infinite;
-  box-sizing:border-box;
-}
-.tutorial-reopen-btn.tutorial-beacon::after{animation-delay:1s}
-@keyframes tutorial-beacon-ring{
-  0%  {transform:scale(0.95);opacity:1;border-width:1.5px}
-  80% {opacity:0.15;border-width:1px}
-  100%{transform:scale(1.9);opacity:0;border-width:0.5px}
-}
-/* Gold "!" badge — mirrors the Guide quest badge. */
-.tutorial-beacon-badge{
-  position:absolute;top:-8px;right:-8px;
-  width:22px;height:22px;border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#fff6d8 0%,#e5c574 40%,#c9a84c 80%);
-  box-shadow:0 0 12px rgba(201,168,76,0.85),0 0 24px rgba(201,168,76,0.5),
-    0 2px 6px rgba(0,0,0,0.5);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Cinzel Decorative',serif;font-weight:700;font-size:13px;
-  color:#3a2a10;text-shadow:0 1px 0 rgba(255,246,216,0.8);
-  line-height:1;padding-top:1px;z-index:3;pointer-events:none;
-  opacity:0;transform:scale(0);
-  animation:tutorial-beacon-badge-in 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards,
-    tutorial-beacon-badge-bob 2.6s ease-in-out infinite 0.5s;
-}
-@keyframes tutorial-beacon-badge-in{
-  0%  {opacity:0;transform:scale(0) rotate(-45deg)}
-  60% {opacity:1;transform:scale(1.2) rotate(8deg)}
-  100%{opacity:1;transform:scale(1) rotate(0)}
-}
-@keyframes tutorial-beacon-badge-bob{
-  0%,100%{transform:translateY(0) scale(1);
-    box-shadow:0 0 12px rgba(201,168,76,0.85),0 0 24px rgba(201,168,76,0.5),0 2px 6px rgba(0,0,0,0.5)}
-  50%    {transform:translateY(-2px) scale(1.05);
-    box-shadow:0 0 18px rgba(201,168,76,1),0 0 34px rgba(201,168,76,0.7),0 3px 8px rgba(0,0,0,0.5)}
-}
-/* Flare — fires once when beacon first appears. */
-.tutorial-beacon-flare{
-  position:absolute;inset:-18px;border-radius:8px;
-  background:radial-gradient(ellipse,rgba(255,246,216,0.7) 0%,rgba(201,168,76,0.35) 40%,transparent 70%);
-  pointer-events:none;z-index:1;
-  animation:tutorial-beacon-flare-burst 1.2s ease-out forwards;
-}
-@keyframes tutorial-beacon-flare-burst{
-  0%  {opacity:0;transform:scale(0.6)}
-  20% {opacity:1;transform:scale(1.15)}
-  100%{opacity:0;transform:scale(2.4)}
-}
-/* ===== END TUTORIAL BEACON ===== */
 .respec-btn{position:fixed;bottom:24px;left:24px;z-index:50;width:36px;height:36px;background:rgba(13,13,26,.9);border:1px solid rgba(192,57,43,.2);border-radius:3px;color:rgba(192,57,43,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);opacity:0;pointer-events:none}
 .respec-btn.visible{opacity:1;pointer-events:all}
 .respec-btn:hover{background:rgba(192,57,43,.08);border-color:rgba(192,57,43,.5);color:var(--red)}
@@ -739,21 +665,6 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 .lc-practice-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px}
 .lc-practice-desc{font-size:12px;font-weight:300;color:var(--tdim)}
 
-/* TUTORIAL OVERLAY */
-.tutorial-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.75);backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity .4s}
-.tutorial-overlay.open{opacity:1;pointer-events:all}
-.tutorial-card{background:rgba(10,10,20,.97);border:1px solid rgba(201,168,76,.3);border-radius:8px;padding:0 0 20px;max-width:380px;width:92%;box-shadow:0 0 60px rgba(80,0,140,.2)}
-.tutorial-header{padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
-.tutorial-title-wrap{display:flex;align-items:center;gap:10px}
-.tutorial-dot{width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,.8);animation:hint-blink 1.8s ease-in-out infinite;flex-shrink:0}
-.tutorial-title{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:rgba(201,168,76,.9);letter-spacing:.08em}
-.tutorial-skip{background:none;border:none;color:rgba(240,236,228,.3);font-size:12px;cursor:pointer;padding:0;transition:color .2s}
-.tutorial-skip:hover{color:rgba(240,236,228,.6)}
-.tutorial-video{margin:16px auto 0;border-radius:6px;overflow:hidden;background:#000;aspect-ratio:9/16;max-height:420px;max-width:240px;display:block}
-.tutorial-video iframe{width:100%;height:100%;display:block}
-.tutorial-btn{display:flex;align-items:center;justify-content:center;margin:16px 20px 0;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:12px 24px;border-radius:3px;border:none;cursor:pointer;transition:background .2s;box-sizing:border-box;width:calc(100% - 40px)}
-.tutorial-btn:hover{background:#a93226}
-
 /* COMPLETION FLASH */
 .completion-flash{position:fixed;inset:0;z-index:400;background:rgba(201,168,76,.08);pointer-events:none;opacity:0;transition:opacity .3s}
 .completion-flash.active{opacity:1}
@@ -1284,7 +1195,6 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   <button class="zoom-btn" id="zoomReset">⌂</button>
 </div>
 
-<button class="tutorial-reopen-btn" id="tutorialReopenBtn" onclick="reopenTutorial()">▶ Tutorial</button>
 <button class="reflect-reset-btn" onclick="resetReflections()" title="Reset all reflection data">↺ Reflections</button>
 
 <div class="quiz-panel" id="quizPanel">
@@ -1326,22 +1236,6 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 </div>
 
 <!-- TUTORIAL OVERLAY -->
-<div class="tutorial-overlay" id="tutorialOverlay">
-  <div class="tutorial-card">
-    <div class="tutorial-header">
-      <div class="tutorial-title-wrap">
-        <div class="tutorial-dot"></div>
-        <div class="tutorial-title">Skill Tree Tutorial</div>
-      </div>
-      <button class="tutorial-skip" onclick="closeTutorial()">Skip ✕</button>
-    </div>
-    <div class="tutorial-video">
-      <iframe id="tutorialIframe" src="" data-src="https://www.youtube.com/embed/j3N0Y3gCTRA?autoplay=1&mute=0" title="Skill Tree Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
-    <button class="tutorial-btn" onclick="closeTutorial()">Got it, let's go →</button>
-  </div>
-</div>
-
 <div class="hint" id="hint">
   <div class="hint-inner">
     <div class="hint-pulse"></div>
@@ -8797,91 +8691,6 @@ function fireRankUpCelebration(rankId){
 
 
 // ---- TUTORIAL ----
-function reopenTutorial(){
-  // User clicked the Tutorial button. Calm the beacon down immediately —
-  // the user has acknowledged it. Whether they watch or skip, the beacon
-  // has done its job.
-  stopTutorialBeacon();
-
-  // Load the video src from data-src. We keep src empty when the overlay
-  // is closed so the iframe doesn't load YouTube in the background on
-  // page load, and so playback stops the moment the user closes it.
-  // Re-assigning src each open causes the video to reload from the start,
-  // which is the desired behavior — if a user reopens the tutorial, they
-  // get a fresh playthrough rather than resuming mid-video.
-  var iframe = document.getElementById('tutorialIframe');
-  if(iframe){
-    var srcToLoad = iframe.getAttribute('data-src');
-    if(srcToLoad && iframe.src !== srcToLoad) iframe.src = srcToLoad;
-  }
-
-  document.getElementById('tutorialOverlay').classList.add('open');
-}
-function closeTutorial(){
-  document.getElementById('tutorialOverlay').classList.remove('open');
-  localStorage.setItem('ga_tutorial_seen', '1');
-
-  // Wipe the iframe src to stop YouTube playback. Just hiding the overlay
-  // would let the video keep playing in the background — this is the only
-  // reliable way to halt a YouTube iframe without the IFrame API.
-  var iframe = document.getElementById('tutorialIframe');
-  if(iframe) iframe.src = '';
-
-  // Defensive: also stop the beacon here in case a future code path
-  // opens the tutorial without going through reopenTutorial().
-  stopTutorialBeacon();
-}
-
-// Fire the attention beacon on the Tutorial button. Called from Guide's
-// onDismiss callback when the tutorial hasn't been seen yet. Applies the
-// pulsing class + injects the gold "!" badge + fires the one-shot flare.
-// All three layers mirror the Guide quest beacon pattern for visual
-// consistency between the two onboarding cues.
-function fireTutorialBeacon(){
-  var btn = document.getElementById('tutorialReopenBtn');
-  if(!btn) return;
-  btn.classList.add('tutorial-beacon');
-
-  // Badge — idempotent, safe to call repeatedly.
-  if(!btn.querySelector('.tutorial-beacon-badge')){
-    var badge = document.createElement('span');
-    badge.className = 'tutorial-beacon-badge';
-    badge.setAttribute('aria-hidden', 'true');
-    badge.textContent = '!';
-    btn.appendChild(badge);
-  }
-
-  // One-shot flare. Remove any stale flare first so re-firing (unlikely,
-  // but possible in edge cases) replays cleanly.
-  var oldFlare = btn.querySelector('.tutorial-beacon-flare');
-  if(oldFlare) oldFlare.remove();
-  var flare = document.createElement('span');
-  flare.className = 'tutorial-beacon-flare';
-  flare.setAttribute('aria-hidden', 'true');
-  btn.appendChild(flare);
-  setTimeout(function(){ if(flare.parentNode) flare.remove(); }, 1400);
-}
-
-// Remove the beacon and all its DOM children. Called when the user
-// clicks the Tutorial button or closes the tutorial overlay.
-function stopTutorialBeacon(){
-  var btn = document.getElementById('tutorialReopenBtn');
-  if(!btn) return;
-  btn.classList.remove('tutorial-beacon');
-  var badge = btn.querySelector('.tutorial-beacon-badge');
-  if(badge) badge.remove();
-  var flare = btn.querySelector('.tutorial-beacon-flare');
-  if(flare) flare.remove();
-}
-
-function maybeShowTutorial(){
-  // Session 9 update: tutorial no longer auto-opens on first visit. Guide
-  // delivers his intro first, and on Guide's dismiss we light up the
-  // Tutorial button with a beacon (see fireTutorialBeacon above). Users
-  // who click the button watch or skip the tutorial; from then on the
-  // button returns to its dormant state. The Tutorial button itself has
-  // always existed and remains available for re-watching at any time.
-}
 function maybeSummonGuide(){
   // The Guide.init() call in the Guide script below handles auto-summon logic
   // via its own localStorage key (ga_guide_seen_atheneum). This function exists
@@ -8953,7 +8762,6 @@ window.addEventListener('load',function(){
   // Show codex button if any fragments found
   updateCodexBtn();
   updateRespecBtn();
-  maybeShowTutorial();
   loadReflections();
   drawFrame();
   hintTimer=setTimeout(function(){document.getElementById('hint').classList.add('hidden');},7000);
@@ -9023,13 +8831,8 @@ window.addEventListener('resize',function(){centerTree();});
         autoSummonDelay: isFirstVisit ? 4000 : 2000,
         summonPosition: { bottom: 170, right: 24 },
         onDismiss: function(){
-          // Tutorial beacon suppressed on first visit — the dive and Guide
-          // together are sufficient onboarding. We keep the beacon for users
-          // who have seen Guide but never opened the tutorial, which is now
-          // an edge case (returning user who wants a refresher).
-          if(!isFirstPregameVisit() && !localStorage.getItem('ga_tutorial_seen')){
-            fireTutorialBeacon();
-          }
+          // Tutorial video removed from the product — no post-dismiss action.
+          // Users who want a refresher can summon Guide again.
         },
         script: isFirstVisit ? firstVisitScript : returningScript
       });
@@ -9057,28 +8860,6 @@ window.addEventListener('resize',function(){centerTree();});
         { speaker: 'The Guide', text: 'Two units. The first is the model \u2014 the interpreter, its functional states, what the traditions figured out about how to tune it. The second is the history \u2014 who engineered the environment, what they admitted on record, and what it has taken from you.' },
         { speaker: 'The Guide', text: 'Write your own answers. The retrievals in this module are not tests of recall. They are where belief shifts.' }
       ]);
-
-      // If the tutorial was open, re-invoke the Guide once it closes.
-      // Guarded with typeof because tutorialIsOpen was never declared in
-      // this scope — accessing it directly throws a ReferenceError which
-      // halts JS execution from this point forward and breaks downstream
-      // handlers including node click-through into subsequent modules.
-      var tutorial = document.getElementById('tutorialOverlay');
-      var tutorialCurrentlyOpen = tutorial && tutorial.classList.contains('open');
-      if(tutorialCurrentlyOpen){
-        var observer = new MutationObserver(function(){
-          if(!tutorial.classList.contains('open')){
-            observer.disconnect();
-            // Tutorial just closed — if Guide hasn't been seen, summon now
-            try {
-              if(localStorage.getItem('ga_guide_seen_atheneum') !== '1'){
-                setTimeout(function(){ Guide.summon(); }, 600);
-              }
-            } catch(e){}
-          }
-        });
-        observer.observe(tutorial, {attributes: true, attributeFilter: ['class']});
-      }
     }, 100);
   });
 </script>
