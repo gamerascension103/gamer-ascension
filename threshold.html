@@ -1344,41 +1344,6 @@ function triggerPullThrough(callback){
 }
 
 // ============================================================================
-// DEV DEBUG OVERLAY (TEMPORARY — remove before final ship)
-// ============================================================================
-// Shows live state of threshold routing flags and button wiring on screen.
-// Helps diagnose "clicked Enter the world but got tutorial instead of dive"
-// without needing devtools open.
-(function installDebugOverlay(){
-  if(typeof window === 'undefined') return;
-  var overlay = document.createElement('div');
-  overlay.id = 'threshold-debug-overlay';
-  overlay.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:99999;background:rgba(0,0,0,0.85);color:#0f0;font-family:monospace;font-size:10px;padding:10px 12px;border:1px solid #0f0;max-width:360px;line-height:1.5;pointer-events:none;white-space:pre';
-  document.body.appendChild(overlay);
-
-  function refresh(){
-    try {
-      var crossBtn = document.querySelector('.cross-btn');
-      var enterBtn = document.querySelector('.enter-btn');
-      var state = {
-        'GSAP loaded': (typeof gsap !== 'undefined'),
-        'ga_first_threshold_crossed': localStorage.getItem('ga_first_threshold_crossed'),
-        'ga_visited_threshold': localStorage.getItem('ga_visited_threshold'),
-        'ga_first_pregame_arrival': localStorage.getItem('ga_first_pregame_arrival'),
-        '.cross-btn exists': !!crossBtn,
-        '.cross-btn onclick attr': crossBtn ? crossBtn.getAttribute('onclick') : 'N/A',
-        '.enter-btn exists': !!enterBtn
-      };
-      var lines = Object.keys(state).map(function(k){ return k + ': ' + JSON.stringify(state[k]); });
-      overlay.textContent = 'DEBUG\n' + lines.join('\n');
-    } catch(e){ overlay.textContent = 'DEBUG ERROR: ' + e.message; }
-  }
-  refresh();
-  setInterval(refresh, 500);
-})();
-
-
-// ============================================================================
 // First-time visitors skip the tutorial/dialogue/realms scenes entirely. The
 // dive that currently ends on the Threshold tutorial is redirected to the
 // Atheneum, where pregame.html picks up the motion from the same visual
