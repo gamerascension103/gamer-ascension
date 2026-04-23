@@ -1206,25 +1206,20 @@ function wireButton(btn){
   });
 
   // Click — override inline onclick with cinematic dive into void.
-  // First-time visitors dive straight to the Atheneum, bypassing tutorial/
-  // dialogue/realms entirely. Returning visitors (flag already set) see the
-  // original flow so they can revisit the full threshold experience.
+  // The arrival view (with the Cross/Enter button) always dives straight to
+  // the Atheneum. Whether a user has dived before or not doesn't change the
+  // outcome — the old tutorial/dialogue/realms path is never the right
+  // behavior from this button. Returning users who want the realm picker
+  // reach it via the "Welcome back" view, which replaces the arrival view
+  // entirely when ga_visited_threshold is set.
+  //
+  // We still set ga_first_threshold_crossed on first dive so any legacy code
+  // paths that check it still work, but it's no longer a routing gate here.
   btn.removeAttribute('onclick');
   btn.addEventListener('click', function(){
-    var firstTime = localStorage.getItem('ga_first_threshold_crossed') !== '1';
-    if(firstTime){
-      // Set both flags BEFORE navigation:
-      //   - ga_first_threshold_crossed gates the dive-to-atheneum path
-      //   - ga_visited_threshold activates the "Welcome back" returning view
-      // Setting both at once means second+ visits see the returning view
-      // with "Enter the Realms" instead of being re-routed through the dive
-      // (which would trample their localStorage state).
-      localStorage.setItem('ga_first_threshold_crossed', '1');
-      localStorage.setItem('ga_visited_threshold', '1');
-      triggerPullThroughToAtheneum();
-    } else {
-      triggerPullThrough(function(){ /* scene already transitioned inside timeline */ });
-    }
+    localStorage.setItem('ga_first_threshold_crossed', '1');
+    localStorage.setItem('ga_visited_threshold', '1');
+    triggerPullThroughToAtheneum();
   });
 }
 
@@ -1593,11 +1588,14 @@ function advanceDialogue(){
 })();
 
 function resetThreshold(){
-  // "See the Introduction Again" — clear both the threshold and evermark
-  // intro flags, then route to the evermark landing so the user sees the
-  // video, then the threshold birth animation, as they did on first visit.
+  // "See the Introduction Again" — clear ALL threshold-related flags so the
+  // user gets the full first-time experience: video + threshold birth +
+  // Cross button that dives to the Atheneum. Missing any one of these flags
+  // leaves stale state that routes the user down the returning-user code
+  // path and re-shows old tutorial/dialogue scenes.
   try {
     localStorage.removeItem('ga_visited_threshold');
+    localStorage.removeItem('ga_first_threshold_crossed');
     localStorage.removeItem('ga_evermark_intro_seen');
   } catch(e){}
   window.location.href = '/evermark.html';
