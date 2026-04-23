@@ -38,6 +38,26 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .nebula-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .canvas-wrap{position:fixed;top:56px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;z-index:1}
 .canvas-wrap.dragging{cursor:grabbing}
+
+/* ===== DIVE-IN OVERLAY =====
+ * Full-screen black that covers the page on first arrival from threshold.html.
+ * Rendered inline in <style> so it's painted BEFORE the rest of the page,
+ * avoiding the flash-of-unstyled-content where the user briefly sees the
+ * star map before the overlay appears. The overlay is controlled by JS on
+ * the dive-in timeline — it fades out after the zoom-in animation settles.
+ *
+ * On pages without the ?dive=1 query param, this element is either not
+ * added to the DOM or is added with display:none. Only first-time arrivals
+ * from the threshold dive see it.
+ */
+.dive-in-overlay{
+  position:fixed;inset:0;background:#000;
+  z-index:9999;pointer-events:none;
+  opacity:1;
+  transition:opacity 1.4s ease-out;
+}
+.dive-in-overlay.fading{opacity:0}
+.dive-in-overlay.hidden{display:none}
 .canvas-inner{position:absolute;transform-origin:0 0;will-change:transform}
 
 /* HINT */
@@ -1085,6 +1105,30 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 </head>
 <body>
 
+<!-- ============================================================================
+     DIVE-IN OVERLAY
+     First-time arrivals from threshold.html come in via ?dive=1. We paint a
+     full-screen black overlay immediately so the darkness is visually
+     continuous with threshold.html's event-horizon blackout. The overlay is
+     faded out after the zoom-to-Gap animation settles (see runDiveIn below).
+     The inline script runs before any other JS to minimize flash.
+     ============================================================================ -->
+<script>
+  (function(){
+    try {
+      var params = new URLSearchParams(window.location.search);
+      if(params.get('dive') === '1'){
+        var overlay = document.createElement('div');
+        overlay.className = 'dive-in-overlay';
+        overlay.id = 'diveInOverlay';
+        document.body.appendChild(overlay);
+        // Flag for the init sequence to pick up
+        window.__diveInRequested = true;
+      }
+    } catch(e){ /* no-op — dive is nice-to-have, not critical */ }
+  })();
+</script>
+
 <div class="header">
   <a href="/" class="header-logo">Gamer<span>Ascension</span></a>
   <div class="header-right">
@@ -1378,6 +1422,32 @@ var completed = JSON.parse(localStorage.getItem('ga_pregame_v2_completed') || '[
 // tesseract powerup gates. Update this value when modules collapse.
 var TOTAL_MODULES = 3;
 var currentLesson = null;
+
+// ---- FIRST-VISIT GATE ----
+// True only on the very first time this page loads. Flag flips to false after
+// the dive-in completes. Used to:
+//   - suppress the 29-node skill-tree constellation until the pregame arc is finished
+//   - skip the Guide's tutorial-style welcome in favor of a compressed first arrival
+//   - trigger the dive-in animation that pairs with threshold.html's event horizon
+// Returning users (flag already set) see the normal Atheneum with its standard Guide summon.
+function isFirstPregameVisit(){
+  return localStorage.getItem('ga_first_pregame_arrival') !== '1';
+}
+function markFirstPregameVisitComplete(){
+  localStorage.setItem('ga_first_pregame_arrival', '1');
+}
+
+// True while the dive-in animation from Threshold is in progress. Gates UI elements
+// (Guide, tutorial beacon, hint) so they don't pop up during the cinematic arrival.
+var diveInActive = false;
+
+// True after the user has completed all three pregame modules. Controls whether
+// the wider skill-tree constellation and sealed-chamber peripherals are visible.
+// Before this is true: only the pregame nodes exist in the user's world.
+function isPregameComplete(){
+  return completed.length >= TOTAL_MODULES;
+}
+
 var animState = {
   sphereCharge: completed.length / TOTAL_MODULES,
   flowActive: completed.length >= TOTAL_MODULES,
@@ -2558,7 +2628,7 @@ function buildClickTargets(){
   // Constellation nodes handled via live hit-testing too (see hitTestAllNodes)
   // Only Tesseract + badge use SVG since they never move.
   // SESSION 9: Oracle removed — Tesseract is now the assessment portal.
-  // The Tesseract is only clickable once activated (all 5 core nodes done).
+  // The Tesseract is only clickable once activated (all 3 core nodes done).
 
   // Tesseract click target — larger generous hit area covering the outer square.
   var tesseractSvg = document.createElementNS('http://www.w3.org/2000/svg','rect');
@@ -2589,7 +2659,7 @@ function buildClickTargets(){
 
     if(!tesseractActive){
       // Not ready yet — give hover feedback only. Tooltip already explains
-      // why (complete the 5 core skills). No interaction.
+      // why (complete the 3 core skills). No interaction.
       return;
     }
     // Ready — play the dive-in transition, then open the quiz.
@@ -2617,7 +2687,7 @@ function buildClickTargets(){
     } else {
       document.getElementById('ttNum').textContent='Astral Artifact';
       document.getElementById('ttName').textContent='The Tesseract';
-      document.getElementById('ttAction').textContent='Complete the 5 core skills to discover your path';
+      document.getElementById('ttAction').textContent='Complete the 3 core skills to discover your path';
       tesseractSvg.style.cursor = 'default';
     }
     var x=e.clientX+16,y=e.clientY-40;
@@ -3261,7 +3331,7 @@ function drawTesseract(){
     tesseractPulse = Math.max(0, tesseractPulse - 0.015);
   }
 
-  // Click-me beacon — when Tesseract is active (5 core nodes done) AND the
+  // Click-me beacon — when Tesseract is active (3 core nodes done) AND the
   // quiz hasn't been taken yet, add a secondary pulse that broadcasts
   // "there is something waiting for you here." Slower breath than the
   // ambient pulse above so it reads as a distinct signal.
@@ -3602,7 +3672,21 @@ function drawFrame(){
   spawnTreeParticles();
   updateLeyParticles();
   updateTreeParticles();
-  drawAstralConstellations();
+  // Skill-tree constellation (29 nodes, three pillars) is suppressed until
+  // the pregame arc (Gap, Engine, Interpreter) is complete. The first-visit
+  // user experience is "one path, no choices" — only the three pregame nodes
+  // and the nexus are visible.
+  //
+  // Once the user completes the three modules, the ascension sequence fires
+  // and phases 3-5 progressively crawl-light the constellations from dark
+  // to bright. That IS the world-opens moment — built previously, preserved
+  // intact here. We allow drawAstralConstellations() whenever the pregame
+  // is complete OR the ascension sequence is actively running (which handles
+  // the transitional moment where the sequence has started but completed.length
+  // hasn't yet been updated on a reload).
+  if(isPregameComplete() || ascensionSequence.active){
+    drawAstralConstellations();
+  }
   drawNexus(charge);
   drawPregameNodes();
   drawHiddenNodes();
@@ -5178,6 +5262,99 @@ function centerTree(){
   transform.x=(vw/2)-(CX*transform.scale);
   transform.y=Math.max(10,(vh/2)-(SPHERE_Y*transform.scale)-30);
   applyTransform();
+}
+
+// ============================================================================
+// DIVE-IN ANIMATION (2026-04 onboarding rebuild)
+// ============================================================================
+// Fires on first arrival from threshold.html (URL param ?dive=1 + first-visit
+// localStorage flag unset). Pairs with threshold.html's event-horizon dive:
+// the user was pulled through the horizon on the prior page; on this page
+// they emerge, zoomed deep on the Gap node, then pull back to see the
+// Atheneum's pregame constellation.
+//
+// Timeline:
+//   0.0s - 0.4s : Black overlay holds at full opacity. Canvas camera
+//                 positioned deep-zoomed on Gap node. This is the continuation
+//                 of the threshold's full-darkness peak.
+//   0.4s - 1.2s : Overlay fades out, revealing the camera already positioned
+//                 on Gap. User sees Gap emerging from darkness.
+//   1.2s - 2.8s : Camera pulls back to centerTree() view. Gap remains in
+//                 frame throughout. Ease-out on the pull-back so the motion
+//                 feels like a deceleration from the dive.
+//   2.8s+       : Guide auto-summons (4s delay configured elsewhere).
+function runDiveIn(){
+  if(!window.__diveInRequested) return;
+  diveInActive = true;
+
+  var overlay = document.getElementById('diveInOverlay');
+  var wrap = document.getElementById('canvasWrap');
+  if(!wrap){ diveInActive = false; return; }
+
+  // Compute Gap node's current position in world coordinates.
+  // On first visit the node is orbiting — use nodePos() to get live position,
+  // but snapshot it at t=0 so the camera target is stable.
+  var gapNode = PREGAME_NODES.find(function(n){ return n.id === 'gap'; });
+  if(!gapNode){ diveInActive = false; return; }
+  var gapWorld = nodePos(gapNode);
+
+  // Deep-zoomed scale — fills the viewport with roughly the Gap's local area.
+  // Centered so the Gap node sits dead-center of the canvas wrap.
+  var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
+  var deepScale = 1.6;
+  var deepX = (vw / 2) - (gapWorld.x * deepScale);
+  var deepY = (vh / 2) - (gapWorld.y * deepScale);
+
+  // Snapshot the target (centered-tree) state so we have both endpoints.
+  var targetScale = Math.min(0.42, vw / W * 0.88);
+  var targetX = (vw / 2) - (CX * targetScale);
+  var targetY = Math.max(10, (vh / 2) - (SPHERE_Y * targetScale) - 30);
+
+  // Position camera deep-zoomed immediately (behind the overlay).
+  transform.scale = deepScale;
+  transform.x = deepX;
+  transform.y = deepY;
+  applyTransform();
+
+  // Phase 1: Hold darkness briefly, then fade the overlay.
+  setTimeout(function(){
+    if(overlay) overlay.classList.add('fading');
+  }, 400);
+
+  // Phase 2: Start pull-back after the fade reveals the Gap.
+  // Use a custom tween (no GSAP dependency here) so this works even if GSAP
+  // fails to load on pregame. 1.6s cubic ease-out.
+  setTimeout(function(){
+    var startScale = transform.scale;
+    var startX = transform.x;
+    var startY = transform.y;
+    var duration = 1600;
+    var startTime = performance.now();
+
+    function tick(now){
+      var elapsed = now - startTime;
+      var progress = Math.min(1, elapsed / duration);
+      // Cubic ease-out — starts fast, decelerates to a stop
+      var eased = 1 - Math.pow(1 - progress, 3);
+
+      transform.scale = startScale + (targetScale - startScale) * eased;
+      transform.x = startX + (targetX - startX) * eased;
+      transform.y = startY + (targetY - startY) * eased;
+      applyTransform();
+
+      if(progress < 1){
+        requestAnimationFrame(tick);
+      } else {
+        // Dive complete. Remove overlay from DOM entirely so it can't
+        // interfere with interactions.
+        if(overlay) overlay.classList.add('hidden');
+        diveInActive = false;
+        // Mark the first-visit flag so subsequent visits skip the dive.
+        markFirstPregameVisitComplete();
+      }
+    }
+    requestAnimationFrame(tick);
+  }, 1200);
 }
 
 document.getElementById('canvasWrap').addEventListener('mousedown',function(e){
@@ -8590,7 +8767,17 @@ function maybeSummonGuide(){
 // ---- INIT ----
 window.addEventListener('load',function(){
   initTreeCanvas();
-  centerTree();
+  // On first-visit dive-in arrivals, runDiveIn() positions the camera deep
+  // on the Gap node and animates out to the center view. Otherwise use the
+  // standard centerTree() default.
+  if(window.__diveInRequested){
+    // Run centerTree first so the target scale/position state is initialized,
+    // then runDiveIn immediately overrides the camera to deep-zoomed.
+    centerTree();
+    runDiveIn();
+  } else {
+    centerTree();
+  }
   // Restore quiz result from localStorage
   var savedQuiz = localStorage.getItem('ga_quiz_result');
   if(savedQuiz){ window.quizResult = savedQuiz; oracleActivated = true; }
@@ -8671,51 +8858,59 @@ window.addEventListener('resize',function(){centerTree();});
     setTimeout(function(){
       if(typeof Guide === 'undefined') return;
 
-      // Session 9: tutorial no longer auto-opens, so Guide runs cleanly on
-      // first visit with his standard delay. On Guide's dismiss, we trigger
-      // the tutorial beacon (see fireTutorialBeacon below) if the tutorial
-      // hasn't been seen yet.
+      // On first visit the dive-in animation runs first (see runDiveIn below).
+      // Guide must not appear until the dive completes — otherwise he pops up
+      // while the camera is still pulling in. We delay his auto-summon longer
+      // on first visit; returning users get the standard 2-second delay.
+      var isFirstVisit = isFirstPregameVisit();
+
+      // Compressed first-visit script. Two lines. No UI-direction language.
+      // The dive delivered the welcome; Guide just points at the work.
+      var firstVisitScript = [
+        {
+          speaker: 'The Guide',
+          text: 'This is the Atheneum. What pulses before you is where the work begins.'
+        },
+        {
+          speaker: 'The Guide',
+          text: 'Begin with The Gap. It names what you have been feeling. The next two modules follow it in sequence.'
+        }
+      ];
+
+      // Returning-user script. Acknowledges the return, offers orientation.
+      // Fires when the user opens pregame.html with ga_first_pregame_arrival
+      // already set but no completed modules yet — i.e. they bounced after
+      // the dive-in and are coming back.
+      var returningScript = [
+        {
+          speaker: 'The Guide',
+          text: 'You are back in the Atheneum. The work is where you left it.'
+        }
+      ];
+
       Guide.init({
         chamber: 'atheneum',
         chamberName: 'The Atheneum',
         chamberLabel: 'Skill Mastery',
-        autoSummonDelay: 2000,
+        // On first visit, delay long enough for the dive-in animation to
+        // complete (~3.5s total: 2s zoom settle + buffer). On return, snap
+        // to the normal 2s delay.
+        autoSummonDelay: isFirstVisit ? 4000 : 2000,
         summonPosition: { bottom: 170, right: 24 },
         onDismiss: function(){
-          // When Guide dismisses for the first time AND tutorial hasn't
-          // been seen, light up the Tutorial button with an attention
-          // beacon. This hands off the onboarding from Guide's dialogue
-          // to the product-level tutorial.
-          if(!localStorage.getItem('ga_tutorial_seen')){
+          // Tutorial beacon suppressed on first visit — the dive and Guide
+          // together are sufficient onboarding. We keep the beacon for users
+          // who have seen Guide but never opened the tutorial, which is now
+          // an edge case (returning user who wants a refresher).
+          if(!isFirstPregameVisit() && !localStorage.getItem('ga_tutorial_seen')){
             fireTutorialBeacon();
           }
         },
-        script: [
-          {
-            speaker: 'The Guide',
-            text: 'Welcome to the Atheneum — this is where you will learn all of the skills necessary to transform yourself over time.'
-          },
-          {
-            speaker: 'The Guide',
-            text: 'The first five core skills are available to you now — these are fundamental and critical to your ascension. Begin with Module 1, The Gap. It will be a floating pentagon pulsing with light in the center of the screen.'
-          },
-          {
-            speaker: 'The Guide',
-            text: 'After you complete each module, the next one will become available to you in sequence.'
-          },
-          {
-            speaker: 'The Guide',
-            text: 'I would encourage you to watch the videos provided and answer the reflection questions along the way. Exploration and engagement is rewarded here. So immerse yourself.'
-          },
-          {
-            speaker: 'The Guide',
-            text: 'My last words to you for now — this place holds many mysteries. There was much left behind from The Maker\'s departure from this place. Many questions unanswered, even to one such as myself. So indulge yourself in curiosity. There is much to be found.'
-          }
-        ]
+        script: isFirstVisit ? firstVisitScript : returningScript
       });
 
       // ---- CONTEXT-AWARE GUIDE SCRIPTS (session 8) ----
-      // Each of the 5 pre-game modules gets a unique script the Guide plays
+      // Each of the 3 pre-game modules gets a unique script the Guide plays
       // when summoned from inside that module. Sanderson framing:
       //   Promise — mystical/sage line setting the weight of what they're reading
       //   Progress — teacher pointer to the ONE concept that anchors the module
