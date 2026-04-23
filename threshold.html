@@ -1628,8 +1628,14 @@ function advanceDialogue(){
 })();
 
 function resetThreshold(){
-  try { localStorage.removeItem('ga_visited_threshold'); } catch(e){}
-  location.reload();
+  // "See the Introduction Again" — clear both the threshold and evermark
+  // intro flags, then route to the evermark landing so the user sees the
+  // video, then the threshold birth animation, as they did on first visit.
+  try {
+    localStorage.removeItem('ga_visited_threshold');
+    localStorage.removeItem('ga_evermark_intro_seen');
+  } catch(e){}
+  window.location.href = '/evermark.html';
 }
 
 // ========= SENTINEL MARK ANIMATIONS =========
