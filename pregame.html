@@ -1546,6 +1546,40 @@ var completed = JSON.parse(localStorage.getItem('ga_pregame_v2_completed') || '[
 var TOTAL_MODULES = 3;
 var currentLesson = null;
 
+// ============================================================================
+// MIGRATION — ga_ceremony_completed backfill (2026-04 onboarding rebuild)
+// ============================================================================
+// The fragments quest's unlock gate changed from window.quizResult (set by
+// the Tesseract quiz, now removed) to localStorage 'ga_ceremony_completed'
+// (set by ceremonyBeat5 when "Your path awaits" finishes).
+//
+// Existing users who finished the three modules BEFORE this change never
+// had the opportunity to set the new flag — they completed their ceremony
+// under the old code path. Without backfill, those users would never see
+// the fragments quest offered.
+//
+// Heuristic: if the user has all 3 modules completed AND the new flag isn't
+// set AND there's no in-flight ceremony, assume their ceremony was the old
+// pre-rebuild version and set the flag retroactively so the quest becomes
+// eligible. This runs exactly once per user — once the flag is set, the
+// migration short-circuits on future loads.
+(function migrateCeremonyComplete(){
+  try {
+    if(localStorage.getItem('ga_ceremony_completed') === '1') return; // already migrated or set naturally
+    if(completed.length < TOTAL_MODULES) return; // hasn't finished modules — don't backfill
+    // Safety: don't set the flag if ceremonyInProgress is somehow true at
+    // load time. That would only happen if the user closed the tab mid-
+    // ceremony, which is an edge case we let the real ceremony handle.
+    if(typeof ceremonyInProgress !== 'undefined' && ceremonyInProgress) return;
+
+    localStorage.setItem('ga_ceremony_completed', '1');
+    console.log('[Migration] Backfilled ga_ceremony_completed for returning user with ' +
+      completed.length + ' modules done.');
+  } catch(e){
+    console.error('[Migration] ceremony-complete backfill failed:', e);
+  }
+})();
+
 // ---- FIRST-VISIT GATE ----
 // True only on the very first time this page loads. Flag flips to false after
 // the dive-in completes. Used to:
@@ -2790,8 +2824,12 @@ function buildClickTargets(){
       // unfolding. Suppress taps so the ceremony can't be interrupted.
       return;
     }
-    // Ready — play the dive-in transition, then open the quiz.
-    diveIntoTesseract();
+    // Tesseract is currently inert — the quiz/assessment has been removed
+    // from the product. The Tesseract stays as a visual anchor but doesn't
+    // route anywhere. Dive-in is preserved in code (diveIntoTesseract) in
+    // case we repurpose it later. The user reaches skill trees by clicking
+    // the constellation nodes directly.
+    return;
   });
   tesseractSvg.addEventListener('mouseenter',function(e){
     // Same yield logic as click — if a pregame node is orbiting under the
@@ -2802,20 +2840,18 @@ function buildClickTargets(){
       return;
     }
     var tt=document.getElementById('nodeTooltip');
-    var pillarNames = {vitality:'Vitality', spirit:'Spirit', alignment:'Alignment'};
-    if(window.quizResult){
+    if(tesseractActive){
+      // Tesseract is active (ceremony completed) but currently inert — the
+      // quiz was removed in the 2026-04 rebuild. Tooltip just names the
+      // artifact without implying an interaction. Cursor stays default.
       document.getElementById('ttNum').textContent='Astral Artifact';
       document.getElementById('ttName').textContent='The Tesseract';
-      document.getElementById('ttAction').textContent='Your path: ' + pillarNames[window.quizResult];
-    } else if(tesseractActive){
-      document.getElementById('ttNum').textContent='Astral Artifact';
-      document.getElementById('ttName').textContent='The Tesseract';
-      document.getElementById('ttAction').textContent='Discover your path';
-      tesseractSvg.style.cursor = 'pointer';
+      document.getElementById('ttAction').textContent='A symbol of the path you have begun';
+      tesseractSvg.style.cursor = 'default';
     } else {
       document.getElementById('ttNum').textContent='Astral Artifact';
       document.getElementById('ttName').textContent='The Tesseract';
-      document.getElementById('ttAction').textContent='Complete the 3 core skills to discover your path';
+      document.getElementById('ttAction').textContent='Complete the 3 core skills to awaken it';
       tesseractSvg.style.cursor = 'default';
     }
     var x=e.clientX+16,y=e.clientY-40;
@@ -6332,11 +6368,14 @@ var QUEST_REGISTRY = {
     line: 'codex',
     order: 1,
     unlock: function(){
-      // Session 9 sequencing: Codex-1 unlocks once the user has completed
-      // the assessment (dove into the Tesseract and chose a path). This
-      // keeps the flow one-thing-at-a-time: rank up → Tesseract → quest.
-      // Guide doesn't impose a new task until the primary ritual is done.
-      return !!window.quizResult;
+      // Quest unlocks once the post-Interpreter ceremony has completed.
+      // Previously gated by window.quizResult (the Tesseract assessment),
+      // but that feature was removed in the 2026-04 onboarding rebuild.
+      // Now the ceremony itself gates the quest — ceremonyBeat5 sets
+      // ga_ceremony_completed when the final beat finishes.
+      try {
+        return localStorage.getItem('ga_ceremony_completed') === '1';
+      } catch(e){ return false; }
     },
     dialogue: [
       { speaker: 'The Guide',
@@ -8816,15 +8855,29 @@ function ceremonyBeat4_genieSuction(){
 // ceremonyInProgress flag clears and the Tesseract becomes tappable.
 function ceremonyBeat5_tesseractOrientation(){
   // Re-use the existing Tesseract orientation ceremony. It already handles
-  // the camera pan to the Tesseract and the text fade. We just need to
-  // clear ceremonyInProgress when it finishes.
+  // the camera pan to the Tesseract and the text fade.
   playTesseractPowerUpCeremony();
 
   // The orientation ceremony is ~4 seconds: 1.5s pan + 0.15s delay +
-  // 0.7s text fade-in + 1.8s hold + 0.9s text fade-out. Clear the flag
-  // after that completes so the Tesseract becomes interactive.
+  // 0.7s text fade-in + 1.8s hold + 0.9s text fade-out. After that:
+  //   1. Clear ceremonyInProgress (Tesseract becomes "tappable" again,
+  //      though currently inert — see tesseractSvg click handler)
+  //   2. Mark ceremony complete — this flag gates the fragments quest's
+  //      unlock() check, replacing the old quizResult gate
+  //   3. Fire offerNextAvailableQuest after a 1.5s breath so the ceremony
+  //      has a moment of quiet before Guide beacon pulses
   setTimeout(function(){
     ceremonyInProgress = false;
+    try { localStorage.setItem('ga_ceremony_completed', '1'); } catch(e){}
+
+    // Short pause, then light the Guide beacon for the fragments quest.
+    // The ceremony has earned a breath before the next thing arrives.
+    setTimeout(function(){
+      if(typeof offerNextAvailableQuest === 'function'){
+        console.log('[Ceremony] Complete — offering next quest');
+        offerNextAvailableQuest();
+      }
+    }, 1500);
   }, 5500);
 }
 
