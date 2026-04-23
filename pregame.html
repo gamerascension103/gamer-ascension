@@ -35,9 +35,17 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 }
 
 /* CANVAS */
-.nebula-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.nebula-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;transition:filter 0.9s ease-out, transform 1.8s ease-out;transform-origin:center center}
+/* Dive-in rush: heavy motion blur + slight scale bloom that decays to zero
+ * as the camera decelerates onto the Gap. Classes toggled by runDiveIn(). */
+.nebula-canvas.dive-rush{filter:blur(8px);transform:scale(1.18)}
+.nebula-canvas.dive-settle{filter:blur(0);transform:scale(1)}
 .canvas-wrap{position:fixed;top:56px;left:0;right:0;bottom:0;overflow:hidden;cursor:grab;z-index:1}
 .canvas-wrap.dragging{cursor:grabbing}
+/* Matching motion blur on the star map itself during dive-in. Short, subtle,
+ * bleeds off to zero as the camera settles. */
+.canvas-wrap.dive-rush{filter:blur(3px)}
+.canvas-wrap.dive-settle{filter:blur(0);transition:filter 0.7s ease-out}
 
 /* ===== DIVE-IN OVERLAY =====
  * Full-screen black that covers the page on first arrival from threshold.html.
@@ -54,7 +62,10 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
   position:fixed;inset:0;background:#000;
   z-index:9999;pointer-events:none;
   opacity:1;
-  transition:opacity 1.4s ease-out;
+  /* Fade duration matches the camera deceleration window. The user sees
+   * motion (blur + scale change) through a clearing overlay rather than
+   * a static reveal. */
+  transition:opacity 1.1s ease-out;
 }
 .dive-in-overlay.fading{opacity:0}
 .dive-in-overlay.hidden{display:none}
@@ -5289,6 +5300,7 @@ function runDiveIn(){
 
   var overlay = document.getElementById('diveInOverlay');
   var wrap = document.getElementById('canvasWrap');
+  var nebula = document.getElementById('nebulaCanvas');
   if(!wrap){ diveInActive = false; return; }
 
   // Compute Gap node's current position in world coordinates.
@@ -5298,63 +5310,156 @@ function runDiveIn(){
   if(!gapNode){ diveInActive = false; return; }
   var gapWorld = nodePos(gapNode);
 
-  // Deep-zoomed scale — fills the viewport with roughly the Gap's local area.
-  // Centered so the Gap node sits dead-center of the canvas wrap.
   var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
-  var deepScale = 1.6;
-  var deepX = (vw / 2) - (gapWorld.x * deepScale);
-  var deepY = (vh / 2) - (gapWorld.y * deepScale);
 
-  // Snapshot the target (centered-tree) state so we have both endpoints.
-  var targetScale = Math.min(0.42, vw / W * 0.88);
-  var targetX = (vw / 2) - (CX * targetScale);
-  var targetY = Math.max(10, (vh / 2) - (SPHERE_Y * targetScale) - 30);
+  // ============================================================
+  // DIVE-IN MOTION DESIGN
+  // ============================================================
+  // The threshold's event horizon animation pulls the user INTO darkness.
+  // On pregame arrival, the user must continue moving inward — the motion
+  // doesn't cut, it continues. We start the camera already past the Gap
+  // (overshoot scale), driving inward, and decelerate onto a resting
+  // scale over the full reveal.
+  //
+  // Three scales:
+  //   INITIAL  — camera far past the Gap, overshooting (scale 3.2).
+  //              Invisible — behind the black overlay.
+  //   DEEP     — camera at rest on the Gap, filling viewport (scale 1.6).
+  //              The felt landing. Gap dead-center.
+  //   CONTEXT  — camera pulled back to show three pregame nodes
+  //              (the default centerTree view). The resolution frame.
+  //
+  // Phases:
+  //   0.0 - 0.35s : INITIAL scale. Overlay full black. Camera racing inward
+  //                 even though user can't see it yet — motion is underway.
+  //   0.35 - 1.6s : INITIAL → DEEP. Overlay fades (starts at 0.35s, done
+  //                 by 1.5s). Camera decelerates from overshoot to resting
+  //                 on the Gap. Nebula motion blur falls off. User SEES
+  //                 the deceleration — they feel the dive landing.
+  //   1.6 - 2.0s  : Hold on Gap. Gap is the only thing. Beat of stillness.
+  //   2.0 - 3.4s  : DEEP → CONTEXT. Gentle pull-back to reveal the
+  //                 orbiting three-node constellation. This is the
+  //                 "where am I" moment.
 
-  // Position camera deep-zoomed immediately (behind the overlay).
-  transform.scale = deepScale;
-  transform.x = deepX;
-  transform.y = deepY;
+  var INITIAL_SCALE = 3.2;
+  var DEEP_SCALE = 1.6;
+  var CONTEXT_SCALE = Math.min(0.42, vw / W * 0.88);
+
+  // Gap center on viewport, offset slightly in the direction of travel so
+  // the camera "corrects" as it lands. 18px rightward at final scale — small
+  // enough to read as directional motion, not as a miss.
+  var LAND_OFFSET_X = 18;
+  var LAND_OFFSET_Y = 0;
+
+  // Helper: compute transform.x/.y that places gapWorld at viewport center
+  // given a scale, with optional pixel offset (post-scale, in viewport coords).
+  function computeGapCentered(scale, offX, offY){
+    return {
+      x: (vw / 2) - (gapWorld.x * scale) + (offX || 0),
+      y: (vh / 2) - (gapWorld.y * scale) + (offY || 0)
+    };
+  }
+
+  var initialPos = computeGapCentered(INITIAL_SCALE, LAND_OFFSET_X * 2, LAND_OFFSET_Y * 2);
+  var deepPos = computeGapCentered(DEEP_SCALE, 0, 0);  // resolved dead-center
+  var contextX = (vw / 2) - (CX * CONTEXT_SCALE);
+  var contextY = Math.max(10, (vh / 2) - (SPHERE_Y * CONTEXT_SCALE) - 30);
+
+  // Position camera at INITIAL — overshot, driving inward. Overlay is still
+  // opaque black so user sees nothing yet.
+  transform.scale = INITIAL_SCALE;
+  transform.x = initialPos.x;
+  transform.y = initialPos.y;
   applyTransform();
 
-  // Phase 1: Hold darkness briefly, then fade the overlay.
+  // Engage motion blur classes immediately. These bleed off during the
+  // deceleration phase, timed to the CSS transition durations we set
+  // (nebula: 0.9s; canvas-wrap: set to 0.7s on dive-settle).
+  if(nebula) nebula.classList.add('dive-rush');
+  wrap.classList.add('dive-rush');
+
+  // ----- PHASE A: INITIAL → DEEP (deceleration landing) -----
+  // Starts at ~0.35s to give the overlay a moment of pure black before any
+  // motion is visible. Duration 1.25s. Strong cubic ease-out so motion
+  // feels like a high-velocity dive shedding speed into a landing.
+  var phaseAStart = 350;
+  var phaseADuration = 1250;
+
+  // Start overlay fade slightly after camera starts decelerating — motion
+  // is already underway when the user's eye catches it.
   setTimeout(function(){
     if(overlay) overlay.classList.add('fading');
-  }, 400);
+    // Also transition the blur classes off — CSS handles the smooth drop
+    if(nebula){
+      nebula.classList.remove('dive-rush');
+      nebula.classList.add('dive-settle');
+    }
+    wrap.classList.remove('dive-rush');
+    wrap.classList.add('dive-settle');
+  }, phaseAStart + 50);
 
-  // Phase 2: Start pull-back after the fade reveals the Gap.
-  // Use a custom tween (no GSAP dependency here) so this works even if GSAP
-  // fails to load on pregame. 1.6s cubic ease-out.
   setTimeout(function(){
     var startScale = transform.scale;
     var startX = transform.x;
     var startY = transform.y;
-    var duration = 1600;
     var startTime = performance.now();
 
-    function tick(now){
+    function tickA(now){
       var elapsed = now - startTime;
-      var progress = Math.min(1, elapsed / duration);
-      // Cubic ease-out — starts fast, decelerates to a stop
+      var progress = Math.min(1, elapsed / phaseADuration);
+      // Cubic ease-out — aggressive deceleration, sells the landing
       var eased = 1 - Math.pow(1 - progress, 3);
 
-      transform.scale = startScale + (targetScale - startScale) * eased;
-      transform.x = startX + (targetX - startX) * eased;
-      transform.y = startY + (targetY - startY) * eased;
+      transform.scale = startScale + (DEEP_SCALE - startScale) * eased;
+      transform.x = startX + (deepPos.x - startX) * eased;
+      transform.y = startY + (deepPos.y - startY) * eased;
       applyTransform();
 
       if(progress < 1){
-        requestAnimationFrame(tick);
+        requestAnimationFrame(tickA);
       } else {
-        // Dive complete. Remove overlay from DOM entirely so it can't
-        // interfere with interactions.
-        if(overlay) overlay.classList.add('hidden');
-        diveInActive = false;
-        // Mark the first-visit flag so subsequent visits skip the dive.
-        markFirstPregameVisitComplete();
+        // Landed on the Gap. Brief hold, then pull back to context.
+        runDiveInPhaseB();
       }
     }
-    requestAnimationFrame(tick);
-  }, 1200);
+    requestAnimationFrame(tickA);
+  }, phaseAStart);
+
+  // ----- PHASE B: DEEP → CONTEXT (pull-back reveal) -----
+  function runDiveInPhaseB(){
+    // Hold on Gap for a beat before starting the pull-back
+    setTimeout(function(){
+      var startScale = transform.scale;
+      var startX = transform.x;
+      var startY = transform.y;
+      var duration = 1400;
+      var startTime = performance.now();
+
+      function tickB(now){
+        var elapsed = now - startTime;
+        var progress = Math.min(1, elapsed / duration);
+        // Gentler ease-out on the pull-back — this is reveal, not motion
+        var eased = 1 - Math.pow(1 - progress, 2.4);
+
+        transform.scale = startScale + (CONTEXT_SCALE - startScale) * eased;
+        transform.x = startX + (contextX - startX) * eased;
+        transform.y = startY + (contextY - startY) * eased;
+        applyTransform();
+
+        if(progress < 1){
+          requestAnimationFrame(tickB);
+        } else {
+          // Full dive complete. Clean up.
+          if(overlay) overlay.classList.add('hidden');
+          if(nebula) nebula.classList.remove('dive-settle');
+          wrap.classList.remove('dive-settle');
+          diveInActive = false;
+          markFirstPregameVisitComplete();
+        }
+      }
+      requestAnimationFrame(tickB);
+    }, 400);  // Hold beat before pull-back
+  }
 }
 
 document.getElementById('canvasWrap').addEventListener('mousedown',function(e){
