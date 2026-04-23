@@ -480,10 +480,10 @@ body.horizon-collapsing .starfield{
       <!-- Content inside the horizon -->
       <div class="horizon-content">
         <div class="arrival-eyebrow">You have arrived at</div>
-        <h1 class="arrival-title">The Threshold</h1>
-        <div class="arrival-subtitle">World Map</div>
-        <p class="arrival-lore">A sacred place of learning. The realms beyond were built for those ready to become.</p>
-        <button class="cross-btn" onclick="showTutorial()">Enter the world</button>
+        <h1 class="arrival-title">Evermark</h1>
+        <div class="arrival-subtitle">The Threshold</div>
+        <p class="arrival-lore">A place of learning. The realms beyond were built for those ready to become.</p>
+        <button class="cross-btn" onclick="showTutorial()">Enter</button>
       </div>
     </div>
 
@@ -1618,8 +1618,9 @@ function advanceDialogue(){
       var arrival = document.getElementById('arrival');
       arrival.innerHTML = ''+
         '<div class="arrival-eyebrow fade-in">Welcome back to</div>'+
-        '<h1 class="arrival-title fade-in">The Threshold</h1>'+
-        '<p class="arrival-subtitle fade-in">The realms await.</p>'+
+        '<h1 class="arrival-title fade-in">Evermark</h1>'+
+        '<div class="arrival-subtitle fade-in">The Threshold</div>'+
+        '<p class="arrival-lore fade-in">The realms await.</p>'+
         '<button class="enter-btn fade-in" onclick="showRealms()">Enter the Realms</button>'+
         '<button class="returning-reset-btn" onclick="resetThreshold()">See the Introduction Again</button>';
     }
