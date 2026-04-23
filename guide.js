@@ -109,6 +109,50 @@
       setTimeout(renderMenu, 400);
     },
 
+    // Play a one-off script — not part of the configured chamber intro.
+    // Signature: summonOneOff(scriptLines, options)
+    //   scriptLines: Array of {speaker, text} objects
+    //   options: Optional. { onDismiss: function } called after Guide closes.
+    //
+    // Used for narrative moments like the post-Interpreter ceremony, module-
+    // completion acknowledgements, and other ad-hoc Guide beats that don't
+    // belong in the chamber's default config.script.
+    //
+    // Implementation: temporarily swaps config.script for this one-off, fires
+    // summonDialogue (which reads from config.script), and restores the
+    // original on dismiss. An onDismiss callback is wired for the caller to
+    // chain further behavior after Guide closes.
+    summonOneOff: function(scriptLines, options){
+      if(!overlayEl) return;
+      if(!Array.isArray(scriptLines) || scriptLines.length === 0) return;
+      if(isOpen) return; // don't stomp an already-open Guide
+
+      options = options || {};
+
+      // Stash the original script + onDismiss so we can restore on close
+      var originalScript = (config && config.script) ? config.script : null;
+      var originalOnDismiss = (config && config.onDismiss) ? config.onDismiss : null;
+
+      // Ensure config exists (summonDialogue reads from config.script)
+      if(!config) config = {};
+      config.script = scriptLines;
+      config.onDismiss = function(){
+        // Restore original config state
+        config.script = originalScript;
+        config.onDismiss = originalOnDismiss;
+        // Fire the caller's onDismiss hook if provided
+        if(typeof options.onDismiss === 'function'){
+          try { options.onDismiss(); } catch(e){ console.error('[Guide] summonOneOff onDismiss threw:', e); }
+        }
+        // Also call the original onDismiss (in case the page had wired one)
+        if(typeof originalOnDismiss === 'function'){
+          try { originalOnDismiss(); } catch(e){}
+        }
+      };
+
+      Guide.summonDialogue();
+    },
+
     summonFarewell: function(message){
       if(!overlayEl) return;
       if(!isOpen){
