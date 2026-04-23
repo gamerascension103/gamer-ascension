@@ -864,6 +864,74 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   background:transparent;
 }
 
+/* Seal/lock icon — shown on sealed cards, rendered as SVG in-line.
+   Color pulled from the card's text color inheritance. */
+.ceremony-realm-icon-slot{
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:6px;
+}
+.ceremony-realm-seal{
+  width:28px;height:28px;
+  color:rgba(240,236,228,0.35);
+  transition:color 0.5s ease, transform 0.5s ease, opacity 0.5s ease;
+}
+
+/* Stage 1: Scriptorium card charging — seal icon glows + card brightens
+   to signal that something is about to happen. */
+.ceremony-realm-card.ceremony-realm-unseal-charging{
+  border-color:rgba(201,168,76,0.55);
+  box-shadow:0 0 24px rgba(201,168,76,0.25) inset,
+             0 0 36px rgba(201,168,76,0.2);
+}
+.ceremony-realm-card.ceremony-realm-unseal-charging .ceremony-realm-seal{
+  color:rgba(201,168,76,0.95);
+  animation:ceremony-seal-shake 0.15s ease-in-out infinite;
+  filter:drop-shadow(0 0 6px rgba(201,168,76,0.7));
+}
+@keyframes ceremony-seal-shake{
+  0%,100% {transform:translateX(0) rotate(0)}
+  25%     {transform:translateX(-1.5px) rotate(-2deg)}
+  75%     {transform:translateX(1.5px) rotate(2deg)}
+}
+
+/* Stage 2: Seal breaking — card flashes gold, seal icon fragments/fades. */
+.ceremony-realm-card.ceremony-realm-unseal-breaking{
+  animation:ceremony-unseal-flash 0.6s ease-out forwards;
+}
+.ceremony-realm-card.ceremony-realm-unseal-breaking .ceremony-realm-seal{
+  animation:ceremony-seal-shatter 0.55s ease-out forwards;
+}
+@keyframes ceremony-unseal-flash{
+  0%   {border-color:rgba(201,168,76,0.55);
+        box-shadow:0 0 24px rgba(201,168,76,0.25) inset}
+  30%  {border-color:rgba(255,246,216,1);
+        box-shadow:0 0 0 4px rgba(255,246,216,0.6),
+                   0 0 60px 10px rgba(201,168,76,0.7),
+                   0 0 100px 20px rgba(201,168,76,0.4) inset}
+  100% {border-color:rgba(201,168,76,0.35);
+        box-shadow:0 0 24px rgba(201,168,76,0.08) inset}
+}
+@keyframes ceremony-seal-shatter{
+  0%   {transform:scale(1) rotate(0);opacity:1;filter:drop-shadow(0 0 6px rgba(201,168,76,1))}
+  30%  {transform:scale(1.4) rotate(8deg);opacity:1;filter:drop-shadow(0 0 16px rgba(255,246,216,1))}
+  100% {transform:scale(2.2) rotate(-15deg);opacity:0;filter:drop-shadow(0 0 20px rgba(201,168,76,0))}
+}
+
+/* Stage 3: Newly-opened state — the card now shows as open, with a
+   sustained gentle glow so it draws the eye relative to the other cards. */
+.ceremony-realm-card.ceremony-realm-newly-opened{
+  animation:ceremony-newly-opened-pulse 2s ease-in-out infinite;
+}
+@keyframes ceremony-newly-opened-pulse{
+  0%,100% {box-shadow:0 0 24px rgba(201,168,76,0.12) inset,
+                       0 0 22px rgba(201,168,76,0.15)}
+  50%     {box-shadow:0 0 28px rgba(201,168,76,0.22) inset,
+                       0 0 38px rgba(201,168,76,0.3)}
+}
+
 /* Chambers nav button glow — fires when the genie suction arrives.
    Class applied programmatically by ceremonyBeat4_genieSuction and removed
    after the glow duration. nav.js styles the button; we only add the glow. */
@@ -3186,12 +3254,12 @@ function updateAscensionSequence(){
     return;
   }
 
-  // Phase 4 — skip straight to done, then show completion screen
+  // Phase 4 — skip straight to done. Rank-up ceremony is now fired earlier
+  // (in markComplete when all pregame nodes lock into the pentagon), not
+  // here. Previously this phase triggered the completion overlay after an
+  // 8s delay; that dual-fire caused a second rank-up to appear mid-ceremony.
   if(seq.phase === 4){
     seq.phase = 5; seq.timer = 0;
-    // Wait for slowest pulse ring to reach outer edge before showing completion
-    // Slowest ring: maxR=1600 at speed=1.4 = ~1143 frames + stagger delay ~54 = ~20s total
-    setTimeout(showAllComplete, 8000);
     return;
   }
 
@@ -8436,17 +8504,28 @@ function runPostInterpreterCeremony(){
 // about to happen. Fires via Guide.summonOneOff so the script is one-shot
 // and doesn't persist for later summons.
 function ceremonyBeat1_guide(){
+  // Diagnostic log — if this beat fires but Guide isn't available,
+  // we want to see why in the console instead of silently skipping.
+  console.log('[Ceremony] Beat 1 — Guide moment starting. Guide available:',
+    typeof Guide !== 'undefined',
+    '| summonOneOff available:',
+    typeof Guide !== 'undefined' && typeof Guide.summonOneOff === 'function');
+
   if(typeof Guide === 'undefined' || typeof Guide.summonOneOff !== 'function'){
-    // Guide unavailable — skip to next beat so the sequence doesn't hang
-    ceremonyBeat2_ascensionAndPan();
+    console.warn('[Ceremony] Guide.summonOneOff not available — skipping Guide moment. ' +
+      'This likely means guide.js is out of date. Push latest guide.js to resolve.');
+    // Still progress the ceremony — skip to next beat after a short delay
+    // so the pause isn't jarring.
+    setTimeout(ceremonyBeat2_ascensionAndPan, 1200);
     return;
   }
+
   Guide.summonOneOff([
     { speaker: 'The Guide', text: 'You have done the foundational work. Above the chambers you just entered, a world was waiting for ground to stand on. It has it now.' },
     { speaker: 'The Guide', text: 'Look at where you are. The Scriptorium is open to you now. The rest of Evermark waits.' }
   ], {
     onDismiss: function(){
-      // Small breath after Guide closes before the pan begins
+      console.log('[Ceremony] Beat 1 complete — Guide dismissed. Advancing to Beat 2.');
       setTimeout(ceremonyBeat2_ascensionAndPan, 700);
     }
   });
@@ -8538,31 +8617,53 @@ function runCeremonyCameraPan(onComplete){
   runNextWaypoint();
 }
 
-// Beat 3: Realm overlay fades in. Four chamber tiles illuminated in sequence.
-// Echoes the Threshold's realm picker visually but is its own element — this
-// is a ceremony, not a picker. Tiles are non-interactive.
+// Beat 3: Realm overlay fades in. Four chamber tiles appear, all initially
+// shown as sealed. After the cards land, the Scriptorium's seal visibly
+// breaks — chains fall away, a gold flash, status flips from "Sealed" to
+// "Open." The Atheneum is already-open (the user is standing in it). The
+// other two (Arcanium, Agora) remain sealed — they'll unseal in their own
+// ceremonies when those chambers are actually built. This gives the
+// ceremony a concrete "something just opened" moment without promising
+// rooms that don't exist yet.
 function ceremonyBeat3_realmOverlay(){
   var overlay = document.createElement('div');
   overlay.id = 'ceremonyRealmOverlay';
   overlay.className = 'ceremony-realm-overlay';
 
+  // Initial state: Atheneum open (already entered), Scriptorium sealed
+  // (about to unseal), Arcanium and Agora sealed (stay sealed).
   var realms = [
-    { name: 'The Atheneum',    func: 'Skill Mastery',     status: 'open'   },
-    { name: 'The Arcanium',    func: 'Library',           status: 'sealed' },
-    { name: 'The Scriptorium', func: 'Journal',           status: 'open'   },
-    { name: 'The Agora',       func: 'Community Forum',   status: 'sealed' }
+    { name: 'The Atheneum',    func: 'Skill Mastery',   status: 'open',       id: 'atheneum' },
+    { name: 'The Arcanium',    func: 'Library',         status: 'sealed',     id: 'arcanium' },
+    { name: 'The Scriptorium', func: 'Journal',         status: 'unsealing',  id: 'scriptorium' },
+    { name: 'The Agora',       func: 'Community',       status: 'sealed',     id: 'agora' }
   ];
 
   var grid = document.createElement('div');
   grid.className = 'ceremony-realm-grid';
   realms.forEach(function(r, i){
     var card = document.createElement('div');
-    card.className = 'ceremony-realm-card ceremony-realm-' + r.status;
-    card.style.animationDelay = (200 + i * 350) + 'ms';
+    // Cards start in their "sealed-or-open" state. The unsealing card begins
+    // as sealed visually — the unseal animation runs after the cards finish
+    // appearing.
+    var initialStatus = (r.status === 'unsealing') ? 'sealed' : r.status;
+    card.className = 'ceremony-realm-card ceremony-realm-' + initialStatus;
+    card.id = 'ceremonyRealmCard_' + r.id;
+    card.style.animationDelay = (300 + i * 500) + 'ms';
+
+    // Chain/seal icon for sealed cards (SVG — no emoji per style guide)
+    var sealIconHtml =
+      '<svg class="ceremony-realm-seal" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+        '<circle cx="16" cy="19" r="7" fill="none" stroke="currentColor" stroke-width="2"/>' +
+        '<path d="M11 14 V11 Q11 5 16 5 Q21 5 21 11 V14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
+        '<circle cx="16" cy="19" r="1.5" fill="currentColor"/>' +
+      '</svg>';
+
     card.innerHTML =
+      '<div class="ceremony-realm-icon-slot">' + (initialStatus === 'sealed' ? sealIconHtml : '') + '</div>' +
       '<div class="ceremony-realm-name">' + r.name + '</div>' +
       '<div class="ceremony-realm-func">' + r.func + '</div>' +
-      '<div class="ceremony-realm-status">' + (r.status === 'open' ? 'Open' : 'Sealed') + '</div>';
+      '<div class="ceremony-realm-status">' + (initialStatus === 'open' ? 'Open' : 'Sealed') + '</div>';
     grid.appendChild(card);
   });
 
@@ -8574,14 +8675,51 @@ function ceremonyBeat3_realmOverlay(){
   overlay.appendChild(grid);
   document.body.appendChild(overlay);
 
-  // Fade in the overlay (CSS handles the opacity transition)
   requestAnimationFrame(function(){ overlay.classList.add('visible'); });
 
-  // Hold duration: title fade-in (400ms) + 4 cards at 350ms stagger +
-  // settle time on the last card so user registers what's there.
-  // Total: 400 + 200 + 3*350 + 1200 = ~2800ms before suction starts.
-  setTimeout(ceremonyBeat4_genieSuction, 2800);
+  // Timing:
+  //   400ms — title fades in
+  //   300ms + 4 cards * 500ms stagger + 500ms last card settle = 2800ms cards visible
+  //   1000ms — user reads the cards
+  //   500ms — Scriptorium unseal animation starts (chains break, flash)
+  //   1800ms — Scriptorium unseal completes, status updates to "Open"
+  //   1500ms — hold on the now-open Scriptorium so user registers the change
+  // Total before suction: ~7200ms
+  setTimeout(triggerScriptoriumUnseal, 3800);
+  setTimeout(ceremonyBeat4_genieSuction, 7200);
 }
+
+// Animate the Scriptorium card unsealing: chains shake, shatter/fade,
+// gold flash, status flips from Sealed to Open. All via CSS classes +
+// DOM updates to the status label.
+function triggerScriptoriumUnseal(){
+  var card = document.getElementById('ceremonyRealmCard_scriptorium');
+  if(!card) return;
+
+  // Stage 1 — chains shake and begin to glow
+  card.classList.add('ceremony-realm-unseal-charging');
+
+  setTimeout(function(){
+    // Stage 2 — seal breaks (flash + chain fade out)
+    card.classList.remove('ceremony-realm-unseal-charging');
+    card.classList.add('ceremony-realm-unseal-breaking');
+
+    setTimeout(function(){
+      // Stage 3 — card transitions to open state
+      card.classList.remove('ceremony-realm-sealed');
+      card.classList.remove('ceremony-realm-unseal-breaking');
+      card.classList.add('ceremony-realm-open');
+      card.classList.add('ceremony-realm-newly-opened');
+
+      var statusEl = card.querySelector('.ceremony-realm-status');
+      if(statusEl) statusEl.textContent = 'Open';
+
+      var iconSlot = card.querySelector('.ceremony-realm-icon-slot');
+      if(iconSlot) iconSlot.innerHTML = '';
+    }, 600);
+  }, 900);
+}
+
 
 // Beat 4: Genie suction — the realm overlay contracts and warps into the
 // Chambers navigation button (top-left). The button glows briefly as the
