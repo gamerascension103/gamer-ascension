@@ -1376,7 +1376,7 @@ var PILLAR_Y = 1400;
 var completed = JSON.parse(localStorage.getItem('ga_pregame_v2_completed') || '[]');
 // Total pre-game module count. Single source of truth for the ascension /
 // tesseract powerup gates. Update this value when modules collapse.
-var TOTAL_MODULES = 4;
+var TOTAL_MODULES = 3;
 var currentLesson = null;
 var animState = {
   sphereCharge: completed.length / TOTAL_MODULES,
@@ -1389,8 +1389,7 @@ var animState = {
 var PREGAME_NODES = [
   {id:'gap',        label:'01', orbitR:200, orbitSpeed: 0.00110, orbitPhase:0.0,         glyph:'triangle'},
   {id:'engine',     label:'02', orbitR:287, orbitSpeed:-0.00082, orbitPhase:Math.PI*0.7, glyph:'cross'},
-  {id:'journaling', label:'03', orbitR:374, orbitSpeed:-0.00054, orbitPhase:Math.PI*0.3, glyph:'spiral'},
-  {id:'reading',    label:'04', orbitR:460, orbitSpeed: 0.00042, orbitPhase:Math.PI*1.8, glyph:'eye'},
+  {id:'interpreter',label:'03', orbitR:374, orbitSpeed:-0.00054, orbitPhase:Math.PI*0.3, glyph:'spiral'},
 ];
 
 var PILLAR_NODES = {
@@ -1429,8 +1428,7 @@ var PILLAR_NODES = {
 var NODE_DATA = {
   gap:       {name:'The Gap', pillar:'Pre-game · Module 01', type:'pregame', desc:'The name for what you have been feeling. Where it came from. Why the suffering it produces is older than any culture that has tried to shape it, and what humans have always done in response.'},
   engine:    {name:'The Engine', pillar:'Pre-game · Module 02', type:'pregame', desc:'Why the body is load-bearing for the capacity you have available to spend on the rest of your life. What was done over the last two centuries to make pretending otherwise both socially acceptable and privately devastating. And why every serious tradition that ever produced flourishing humans already knew what modernity forgot.'},
-  journaling:{name:'Journaling', pillar:'Pre-game · Module 03', type:'pregame', desc:'What journaling actually is, and what it isn\'t. Why venting and gratitude listing are not this practice. The two-step method that turns a hard week into something useful, and how to finish the entries that feel uncomfortable to write.'},
-  reading:   {name:'Reading', pillar:'Pre-game · Module 04', type:'pregame', desc:'Why the ceiling you keep hitting was built from what you\'ve been exposed to, and how reading breaks it. How to pick the right book for where you are right now. And how to read in a way that actually changes how you think.'},
+  interpreter:{name:'The Interpreter', pillar:'Pre-game · Module 03', type:'pregame', desc:'The faculty inside you that decides what everything means. What it is, how it was discovered, and what has been done to the environment it has to survive inside. Why the resistance you feel toward the work of reading and reflection was engineered, on purpose, by people who wrote down what they were doing.'},
   energy:    {name:'Energy Management', pillar:'Vitality', type:'vitality', desc:'What calories actually are and how your body uses them. What it means to eat in a deficit, at maintenance, or in a surplus, and how each one changes your body over time. How to think about food as fuel for both your workouts and your everyday life.'},
   recovery:  {name:'Recovery', pillar:'Vitality', type:'vitality', desc:'What your body actually needs to recover between workouts. Sleep, stress, nutrition, and movement all play a role. This lesson explains what happens when recovery is good, and what goes wrong when it isn\'t.'},
   perfstate: {name:'Performance State', pillar:'Vitality', type:'vitality', desc:'Why you show up to some workouts ready to go and others feeling like nothing is working. What controls your mental and physical state before a session, and simple ways to show up more consistently ready to train.'},
@@ -1459,7 +1457,7 @@ var NODE_DATA = {
 
 var PILLAR_COLORS = {vitality:'#ff6644', spirit:'#bb99ff', alignment:'#55ffaa'};
 var LESSONS = {
-  gap:{eyebrow:'Pre-game briefing · Module 01 of 04',title:'The Gap',isMultiStage:true,stages:['unit1','retrieve1','unit2','retrieve2','complete'],content:`<div class="module-stage-container" data-module="gap">
+  gap:{eyebrow:'Pre-game briefing · Module 01 of 03',title:'The Gap',isMultiStage:true,stages:['unit1','retrieve1','unit2','retrieve2','complete'],content:`<div class="module-stage-container" data-module="gap">
 
 <!-- Module vessel — persistent across all stages. Fills as the user
      submits retrievals. On module completion, pours into the Pool. -->
@@ -1679,11 +1677,11 @@ var LESSONS = {
     </div>
     <div class="practice-preview-item">
       <div class="practice-preview-name">Self-examination</div>
-      <div class="practice-preview-body">The brain is a narrative-generating machine. If that narrative has nowhere to go, it metastasizes inside you &mdash; replays the same loops, sharpens its own self-criticism, turns experience into rumination. Structured self-examination (what this program calls journaling) is how you give the narrator somewhere to put the narratives so they stop running you from underground. The module after the next one is about this.</div>
+      <div class="practice-preview-body">The brain is a narrative-generating machine. If that narrative has nowhere to go, it metastasizes inside you &mdash; replays the same loops, sharpens its own self-criticism, turns experience into rumination. Structured self-examination (what this program calls journaling) is how you give the narrator somewhere to put the narratives so they stop running you from underground. The third module is about this &mdash; paired with meaningful input as the two practices that tune the faculty that decides what everything means.</div>
     </div>
     <div class="practice-preview-item">
       <div class="practice-preview-name">Meaningful input</div>
-      <div class="practice-preview-body">The meaning-making engine needs to be fed. Left to its own devices, it will feed on whatever is around &mdash; the ambient noise, the algorithm, the content of the moment. Deliberately exposing it to structured wisdom from outside your own moment &mdash; which in our era mostly means reading &mdash; is how you give it inputs worth making meaning out of. The module after the next one is about this too &mdash; paired with self-examination as the two practices that tune how you make sense of everything else.</div>
+      <div class="practice-preview-body">The meaning-making engine needs to be fed. Left to its own devices, it will feed on whatever is around &mdash; the ambient noise, the algorithm, the content of the moment. Deliberately exposing it to structured wisdom from outside your own moment &mdash; which in our era mostly means reading &mdash; is how you give it inputs worth making meaning out of. The third module is about this too &mdash; paired with self-examination as the two practices that tune how you make sense of everything else.</div>
     </div>
   </div>
 
@@ -1695,7 +1693,7 @@ var LESSONS = {
 
   <p class="lc-body">This is not the universal human answer. Other practices exist. Communal ritual, meaningful work, time in nature, apprenticeship to someone who has gone further than you &mdash; humans have used all of these, and this program does not explicitly address them. The four practices here were chosen because they can be run largely on your own, because each one has a substantial evidence base behind it, and because the four reinforce each other in ways that compound over the sixteen weeks.</p>
 
-  <p class="lc-body">You are not being asked to take any of this on faith. Each of the next four modules will explain what the practice does &mdash; to your mind, to your body &mdash; and why this specific hardware responds to it. If you are skeptical, good. Stay skeptical. Read each module and judge whether the reasoning holds.</p>
+  <p class="lc-body">You are not being asked to take any of this on faith. Each of the next two modules will explain what the practice does &mdash; to your mind, to your body &mdash; and why this specific hardware responds to it. If you are skeptical, good. Stay skeptical. Read each module and judge whether the reasoning holds.</p>
 
   <p class="lc-body">And hold onto this: <strong>the body you are trying to take care of is capable of far more than most people ever ask of it.</strong> Given what it needs, consistently, over time, this hardware does remarkable things. You are about to see it for yourself.</p>
 
@@ -1748,14 +1746,14 @@ var LESSONS = {
     <div class="complete-rune">&#9830;</div>
     <div class="complete-title">Module 01 Complete</div>
     <div class="complete-subtitle">The Gap</div>
-    <div class="complete-body">You have the name, the history, and the frame. The next module is the first of four practices.</div>
+    <div class="complete-body">You have the name, the history, and the frame. The next module names the first half of what closes the gap.</div>
     <button class="complete-close-btn" onclick="completeModuleGap()">Return to the map</button>
   </div>
 </div>
 
 </div>`},
 
-  engine:{eyebrow:'Pre-game briefing · Module 02 of 04',title:'The Engine',isMultiStage:true,stages:['unit1','retrieve1','unit2','retrieve2','complete'],content:`<div class="module-stage-container" data-module="engine">
+  engine:{eyebrow:'Pre-game briefing · Module 02 of 03',title:'The Engine',isMultiStage:true,stages:['unit1','retrieve1','unit2','retrieve2','complete'],content:`<div class="module-stage-container" data-module="engine">
 
 <!-- Module vessel — persistent across all stages. Fills as the user
      submits retrievals. On module completion, pours into the Pool. -->
@@ -2061,8 +2059,373 @@ var LESSONS = {
 </div>
 
 </div>`},
-  journaling:{eyebrow:'Pre-game briefing · Module 03 of 04 · Daily practice',title:'Journaling',content:`<p class="lc-intro">Most people think they know how to journal because they have written things down before. What they have usually done is venting or gratitude listing. Neither of those is what this program is asking you to do. This is different.</p><div style="margin:24px 0;border-radius:6px;overflow:hidden;background:#000;aspect-ratio:9/16;max-width:340px;margin-left:auto;margin-right:auto"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/W6UQSjLUpsY" title="Journaling" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="display:block"></iframe></div><div class="lc-section"><div class="lc-section-num">Section 01</div><div class="lc-section-title">What this practice actually is</div><p class="lc-body">The journal is a self-study tool. Think of yourself as a scientist studying a subject. The subject is you.</p><p class="lc-body">A scientist does not judge the data. They observe it, record it honestly, and look for what it is telling them. That is exactly what you are doing here. You are not writing to feel better. You are not writing to impress anyone. <strong>You are writing to see yourself clearly.</strong></p><div class="lc-callout"><div class="lc-callout-label">The skill this builds</div><div class="lc-callout-text">Over time this practice develops your ability to observe your own inner experience without being swept away by it. You cannot change patterns you cannot see. The journal is where you learn to see. Think of it as turning on your minimap in an area you have been navigating blind.</div></div></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 02</div><div class="lc-section-title">Why observation comes first</div><p class="lc-body">Before you can extract anything useful from an experience you have to see it honestly. Most people skip straight to conclusions, "I failed because I am lazy" or "that happened because of someone else." Neither of those is observation. Both are stories.</p><div class="lc-callout"><div class="lc-callout-label">Observation sounds like this</div><div class="lc-callout-text">"I skipped the workout. I had planned to go at 6pm. At 5pm I started feeling tired and told myself I would go tomorrow instead. I did not feel guilty until the next morning." That is data. No judgment. No story. Just what happened, when it happened, and what you felt.</div></div></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 03</div><div class="lc-section-title">The extraction, turning struggle into wisdom</div><p class="lc-body">Once you have observed honestly, you move to the second part of the practice. Ask yourself one question:</p><div class="lc-red-callout"><div class="lc-red-label">The extraction question</div><div class="lc-red-text">If I were to create a point of wisdom from this struggle, what would it look like?</div></div><p class="lc-body">This reframe shifts your relationship to the struggle. The hard week becomes a lesson. The missed workout becomes data about your planning. Every difficult experience contains a drop, you just have to run the entry all the way to the end to collect it.</p><div class="lc-two-col"><div class="lc-col-card"><div class="lc-col-label">Movement 1</div><div class="lc-col-title">Observe</div><div class="lc-col-body">What happened, what you thought, what you felt. No judgment. Just what is true.</div></div><div class="lc-col-card"><div class="lc-col-label">Movement 2</div><div class="lc-col-title">Extract</div><div class="lc-col-body">What does this teach you? What would you do differently? What is the lesson this struggle contains?</div></div></div></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 04</div><div class="lc-section-title">Finish what you start</div><p class="lc-body">When an entry gets uncomfortable, the instinct is to stop. Do not stop. The discomfort is not a signal that you have gone far enough. It is a signal that you are getting close to something real.</p><div class="lc-callout"><div class="lc-callout-label">The training parallel</div><div class="lc-callout-text">Stopping in the middle of a difficult entry is the journaling equivalent of stopping a set at 4 RIR. You did the work but missed the reps that actually matter. Run the entry all the way to the wisdom extraction while the experience is still alive. That is where the XP lives.</div></div></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 05</div><div class="lc-section-title">Length and format</div><p class="lc-body">There is no required length. There is no timer. There is no format to follow. The entry is as long as the struggle requires. A good day might be three sentences. A hard week might be two pages. <strong>Both are correct.</strong></p><p class="lc-body">When you have moved through honest observation and wisdom extraction, the entry is complete. That is the only finish line.</p></div><div class="lc-divider"></div><div class="lc-section"><p class="lc-body">You now have the two movements. Observe. Extract. Every hard week from here contains something useful, if you run the entry all the way to the end. That is the practice. That is all it is.</p><div class="lc-callout"><div class="lc-callout-label">Up next</div><div class="lc-callout-text">The next module is Reading. It is the one daily habit that quietly changes everything else.</div></div></div>`},
-  reading:{eyebrow:'Pre-game briefing · Module 04 of 04 · Daily practice',title:'Reading',content:`<p class="lc-intro">Who you are right now was built from what you have been exposed to so far. To become someone different, you need different inputs. That is what this practice is for.</p><div style="margin:24px 0;border-radius:6px;overflow:hidden;background:#000;aspect-ratio:9/16;max-width:340px;margin-left:auto;margin-right:auto"><iframe width="100%" height="100%" src="https://www.youtube.com/embed/NiXVPxTwOWs" title="Reading" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="display:block"></iframe></div><div class="lc-section"><div class="lc-section-num">Section 01</div><div class="lc-section-title">Why you have to learn from other people</div><p class="lc-body">Who you are right now is a direct result of what you have been exposed to so far. Your beliefs, your habits, your reactions, your ceiling, all of it was built from the inputs you received.</p><p class="lc-body">If you want to become a different person, you need different inputs. Other people have done the work. They have lived through the struggles, extracted the lessons, and written them down. <strong>Reading is how you access decades of someone else's hard-won understanding in a few hours.</strong></p><div class="lc-callout"><div class="lc-callout-label">The RPG parallel</div><div class="lc-callout-text">Every RPG teaches you this. You cannot unlock a skill you have never been exposed to. You find the master, learn the technique, absorb the knowledge, and then you can use it. Reading is that mechanic in real life. The success library is your skill tree. The books are the unlocks.</div></div></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 02</div><div class="lc-section-title">What 10 minutes a day actually does</div><p class="lc-body">Ten minutes is the minimum. Not the goal. Not the ceiling. The floor.</p><p class="lc-body">If you sit down, open the book, and find yourself still reading at 30 minutes, keep going. Small daily sessions that seem insignificant in isolation <strong>compound into something significant.</strong> This is passive XP that runs in the background every single day.</p></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 03</div><div class="lc-section-title">How to read so it lands</div><p class="lc-body"><strong>Active reading is different. You are not reading to finish. You are reading to be changed.</strong></p><div class="lc-steps"><div class="lc-step"><div class="lc-step-num">1</div><div><div class="lc-step-title">Mark it</div><div class="lc-step-body">When something hits, underline it, star it, write in the margin.</div></div></div><div class="lc-step"><div class="lc-step-num">2</div><div><div class="lc-step-title">Keep reading</div><div class="lc-step-body">Finish the chapter. Context matters. What hit you mid-chapter often means something different once you see where it lands.</div></div></div><div class="lc-step"><div class="lc-step-num">3</div><div><div class="lc-step-title">Share it</div><div class="lc-step-body">When something really connects, share it in the Strain Coaching app. Drop it in the community chat or send it directly to your coach.</div></div></div></div></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 04</div><div class="lc-section-title">How to choose your book, the pain point selector</div><div class="lc-steps"><div class="lc-step"><div class="lc-step-num">★</div><div><div class="lc-step-title">Struggling to believe change is possible</div><div class="lc-step-body">The Courage To Be Disliked · The Magic of Thinking Big · Atomic Habits</div></div></div><div class="lc-step"><div class="lc-step-num">★</div><div><div class="lc-step-title">Struggling to control reactions or emotional state</div><div class="lc-step-body">Can't Hurt Me · Unfuck Yourself · Don't Believe Everything You Think</div></div></div><div class="lc-step"><div class="lc-step-num">★</div><div><div class="lc-step-title">Struggling to know what you want or why this matters</div><div class="lc-step-body">Resilience · Mastery · Third Circle Theory</div></div></div><div class="lc-step"><div class="lc-step-num">★</div><div><div class="lc-step-title">Overthinking, anxiety, or low mood</div><div class="lc-step-body">No Self No Problem · The Power of Now · 101 Essays That Will Change The Way You Think</div></div></div><div class="lc-step"><div class="lc-step-num">★</div><div><div class="lc-step-title">New to reading, need something that pulls you in fast</div><div class="lc-step-body">Can't Hurt Me · Atomic Habits · Unfuck Yourself</div></div></div></div><div class="lc-callout"><div class="lc-callout-label">Core identity reads, every client works through these eventually</div><div class="lc-callout-text">The Courage To Be Disliked is the philosophical backbone of this program. No Self No Problem and Resilience sit alongside it. These are not necessarily your first books. They are the ones you grow into as the program deepens. When you are ready for them, you will know.</div></div></div><div class="lc-divider"></div><div class="lc-section"><div class="lc-section-num">Section 05</div><div class="lc-section-title">The briefing is complete</div><p class="lc-body">You now have the two movements. Observe. Extract. Every hard week from here contains something useful, if you run the entry all the way to the end. That is the practice. That is all it is.</p><p class="lc-body">You have completed the pre-game briefing. You know the system, the why, and what each week asks of you. You know that friction is data. You know the hero's journey, and you are already inside it.</p><div class="lc-red-callout"><div class="lc-red-label">There is one thing left to do</div><div class="lc-red-text">The threshold is behind you. The journey starts now. Book your call and begin Phase 1.</div></div></div>`}
+  interpreter:{eyebrow:'Pre-game briefing · Module 03 of 03',title:'The Interpreter',isMultiStage:true,stages:['unit1','retrieve1','unit2','retrieve2','complete'],content:`<div class="module-stage-container" data-module="interpreter">
+
+<!-- Module vessel — persistent across all stages. Fills as the user
+     submits retrievals. On module completion, pours into the Pool. -->
+<div class="module-vessel-frame" id="moduleVesselFrame">
+  <svg class="module-vessel" id="moduleVessel" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="modVesselLiquidGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f5eecc" stop-opacity=".95"/>
+        <stop offset="40%" stop-color="#e5c574" stop-opacity=".92"/>
+        <stop offset="100%" stop-color="#b58a2f" stop-opacity=".85"/>
+      </linearGradient>
+      <linearGradient id="modVesselShimmer" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#fff4c8" stop-opacity="0"/>
+        <stop offset="50%" stop-color="#fff4c8" stop-opacity=".4"/>
+        <stop offset="100%" stop-color="#fff4c8" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="modVesselInterior">
+        <path d="M 18 20 Q 18 34, 14 44 Q 12 54, 16 64 Q 20 70, 30 70 Q 40 70, 44 64 Q 48 54, 46 44 Q 42 34, 42 20 Z"/>
+      </clipPath>
+    </defs>
+    <g class="module-vessel-body">
+      <ellipse cx="30" cy="16" rx="10" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M 18 22 Q 10 24, 10 34 Q 10 40, 14 42" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M 42 22 Q 50 24, 50 34 Q 50 40, 46 42" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M 20 16 L 20 20 Q 20 32, 16 42 Q 13 52, 16 62 Q 20 72, 30 72 Q 40 72, 44 62 Q 47 52, 44 42 Q 40 32, 40 20 L 40 16" fill="rgba(10,10,20,.4)" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="18" y1="32" x2="42" y2="32" stroke="currentColor" stroke-width=".8" opacity=".5"/>
+    </g>
+    <g clip-path="url(#modVesselInterior)">
+      <rect id="moduleVesselLiquid" x="0" y="72" width="60" height="60" fill="url(#modVesselLiquidGrad)" class="module-vessel-liquid"/>
+      <rect id="moduleVesselShimmer" x="0" y="72" width="60" height="6" fill="url(#modVesselShimmer)" class="module-vessel-shimmer"/>
+    </g>
+  </svg>
+  <div class="module-vessel-label">
+    <span class="module-vessel-eyebrow">Module 03</span>
+    <span class="module-vessel-title">The Interpreter</span>
+    <span class="module-vessel-progress" id="moduleVesselProgress">Empty &mdash; begin Unit 1</span>
+  </div>
+</div>
+
+<!-- ============ STAGE: UNIT 1 ============ -->
+<div class="module-stage" data-stage="unit1" data-stage-index="0">
+  <div class="stage-eyebrow">Unit 1 of 2</div>
+  <div class="stage-title">The Interpreter</div>
+
+  <p class="lc-body">Check in with yourself.</p>
+
+  <p class="lc-body">Is some part of you already thinking about your phone? You might have picked it up to begin reading this and set it back down. You might be reading this on the phone right now, which means some part of you is tracking the notification bar at the top of the screen. You didn't ask that part to track. It's tracking anyway.</p>
+
+  <p class="lc-body">That sensation &mdash; of a thing in you moving toward the device while another part of you reads a sentence about it moving &mdash; is the subject of this unit.</p>
+
+  <p class="lc-body">You have a faculty inside you that decides what everything means. It narrates your life as you live it. It writes the stories you tell about yourself, about other people, about what just happened and what is about to happen. You have never turned it off. You cannot turn it off. It runs right now, under the sentence you are reading, producing the voice that is saying these words back to you in your head.</p>
+
+  <p class="lc-body">It has a name. Somebody found it, on purpose, through a decade of careful research. This unit is about what it is. The next unit is about what has been done to it.</p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">The experiment</h3>
+
+  <p class="lc-body">In the early 1970s, a neuroscientist named Michael Gazzaniga was working in Roger Sperry's laboratory at Caltech, studying patients who had undergone brain surgery so drastic that most surgeons refused to perform it. Their corpus callosum had been severed &mdash; the cable connecting the two hemispheres of the brain had been cut to stop epileptic seizures from spreading. The surgery worked. The seizures stopped. The patients walked, talked, and returned to their lives, and on the surface everything seemed fine.</p>
+
+  <p class="lc-body">Gazzaniga didn't believe that. He designed experiments to find what had been missed.</p>
+
+  <p class="lc-body">Here is one that became famous.</p>
+
+  <p class="lc-body">The patient sat in front of a split screen. On the right half &mdash; visible only to his left hemisphere &mdash; Gazzaniga flashed a picture of a chicken claw. On the left half &mdash; visible only to his right hemisphere &mdash; a picture of a snow scene. Then the patient was asked to pick, with each hand, a matching image from a set of cards.</p>
+
+  <p class="lc-body">His right hand picked a chicken. His left hand picked a shovel.</p>
+
+  <p class="lc-body">Then Gazzaniga asked him why.</p>
+
+  <p class="lc-body">Speech is a left-hemisphere function. The patient's left hemisphere had seen only the chicken. It had no information about snow. It had no idea why his left hand was holding a shovel.</p>
+
+  <p class="lc-body">Without hesitation, the patient said: <em>"Oh, that's simple. The chicken claw goes with the chicken, and you need a shovel to clean out the chicken shed."</em></p>
+
+  <p class="lc-body">Gazzaniga watched this happen, in different forms, across hundreds of experiments over thirty years. The left hemisphere never said <em>I don't know</em>. It generated plausible stories faster than the question could be asked, for behaviors whose real causes it could not see, and delivered those stories with complete conviction. The patient was not lying. His brain had produced the most coherent account available, given what his left hemisphere had access to, and he experienced that account as <em>the reason</em>.</p>
+
+  <p class="lc-body">Gazzaniga called this faculty <strong>the Interpreter</strong>. He distilled thirty years of research into one sentence:</p>
+
+  <div class="lc-callout">
+    <div class="lc-callout-label">The core finding</div>
+    <div class="lc-callout-text">"The interpreter is only as good as the information it gets." &mdash; Michael Gazzaniga</div>
+  </div>
+
+  <p class="lc-body">You might read this and think: that's what happens when a brain has been cut in half. That's not how my mind works.</p>
+
+  <p class="lc-body">Later replications of the principle proved it is. In one famous follow-up, researchers had participants pick the more attractive of two faces, then covertly switched the cards and handed them the face they <em>rejected</em>. Most participants did not notice the switch. They confidently explained why the face they had just turned down was their favorite. Their Interpreters produced fluent accounts for choices they had not actually made. They were not lying. They confabulated.</p>
+
+  <p class="lc-body">The stories you have told yourself about your own behavior &mdash; why you snapped at your partner last Tuesday, why you quit the thing you said mattered, why you are not yet the person you meant to be, why you keep doing something you keep promising yourself you would stop &mdash; most of those stories were produced by the same mechanism that produced the chicken-shed answer. Confidently. Fluently. With no sense whatsoever that the accounting might be off. The shame you carry about those moments is built on explanations your Interpreter generated after the fact, with incomplete access to what was actually happening, and handed to you as the truth about yourself.</p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">The state yours is in</h3>
+
+  <p class="lc-body">The Interpreter is not a concept. It is a network of brain regions &mdash; the Default Mode Network, mapped by Marcus Raichle in 2001 &mdash; currently running in you, producing the narrative of your life in real time. It can be measured. It has functional states. The state yours is in right now is almost certainly below ceiling, and the signature is specific.</p>
+
+  <p class="lc-body">You know this one. The loop that runs when you cannot sleep. The argument you are rehearsing for the seventh time, though the conversation ended two weeks ago. The replay of the moment you wish you had handled differently, the specific sentence you wish you had not said. A 2010 Harvard study found that human minds wander from whatever they are doing about <strong>forty-seven percent of waking life</strong>, and the wandering that makes people unhappiest is exactly this &mdash; the ruminative groove, recycling material it cannot metabolize. That loop is not a personality trait. It is a brain network misfiring in a pattern that is, measurably, what chronic low-grade unhappiness <em>is</em>.</p>
+
+  <p class="lc-body">You have spent years judging yourself for it. You have called yourself scattered when you were fragmented by design. You have called yourself lazy when your executive function was running below the line every competent adult a century ago used to live above. You have called yourself a bad partner, a bad parent, a bad friend, because you could not give the attention those roles require. You have felt, privately, that there is something wrong with you that other people have figured out and you have not.</p>
+
+  <div class="lc-red-callout">
+    <div class="lc-red-label">The reframe</div>
+    <div class="lc-red-text">What you are calling a character flaw is the functional state of a system.</div>
+  </div>
+
+  <p class="lc-body">The judgment was not accurate. The judgment was part of the damage. These are not defects of willpower. They are not signs you are broken. They are the predictable output of an Interpreter running below its ceiling, in an environment designed to keep it there. Everybody alive right now is running their Interpreter in worse conditions than almost anyone alive a hundred years ago. The fact that you feel this is not evidence that something is wrong with you. It is evidence that you are paying attention.</p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">What the traditions knew</h3>
+
+  <p class="lc-body">Serious people across cultures that never spoke to each other &mdash; Stoics, monastics, Jesuits, Zen masters &mdash; arrived at the same two practices.</p>
+
+  <p class="lc-body">Something going in &mdash; slow reading. Sustained exposure to carefully chosen material. Montaigne sealed himself in a tower in 1571 with fifteen hundred books and spent twenty years reading them. Read to be changed, not to have read.</p>
+
+  <p class="lc-body">Something coming out &mdash; structured self-examination. The private notebook. Marcus Aurelius wrote the <em>Meditations</em> in his campaign tent, addressing himself by name, reminding himself of what he valued. He was commanding Roman armies on the Danube at the time. The notebook was not for publication. He wrote it because he had noticed that an emperor who did not examine his own mind daily would be ruled by it.</p>
+
+  <p class="lc-body">These were paired. Not two hobbies. Two halves of one practice. You read to feed the Interpreter good material. You examine to see what it has made of what it has been fed. Neither works alone.</p>
+
+  <p class="lc-body">The neuroscience now measures what they were doing. Structured self-examination reduces Default Mode Network hyperactivity &mdash; the same signature elevated in depression. Sustained reading strengthens the executive-control networks that regulate it. The practices still work. What has changed is the environment they have to survive inside. That change is the subject of the next unit.</p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">Where the work lives</h3>
+
+  <p class="lc-body">This module is not going to teach you how to read slowly or how to journal. Those are skills, and skills live in other parts of the program.</p>
+
+  <p class="lc-body"><strong>Two chambers. Learn them by name.</strong></p>
+
+  <p class="lc-body">The <strong>Arcanium</strong> is where the input practice lives &mdash; the library, the curated books you will work through, the place where you go to feed the Interpreter good material.</p>
+
+  <p class="lc-body">The <strong>Scriptorium</strong> is where the extraction practice lives &mdash; the journal, the written examination, the place where you go to see what the Interpreter has made of what you have given it.</p>
+
+  <p class="lc-body">Reading is the input. Writing is the extraction. Neither works alone. You will be pointed at both when you finish this module.</p>
+
+  <p class="lc-body">Before you go, there is something you need to understand about the environment you are going to try to do this work inside. When you try to read slowly, when you try to sit with a journal, you are going to feel a specific kind of resistance. Your hand moving toward the phone. Your attention sliding sideways. The subtle sense that this is a lot of effort for something abstract.</p>
+
+  <p class="lc-body"><strong>That resistance is not yours. You did not author it. Somebody built it into the environment this module is being read in, on purpose, and they wrote down what they were doing.</strong></p>
+
+  <p class="lc-body">The next unit names them.</p>
+
+  <div class="stage-footer">
+    <button class="stage-continue-btn" onclick="advanceStage()">Continue to Retrieval &rarr;</button>
+  </div>
+</div>
+
+<!-- ============ STAGE: UNIT 1 RETRIEVAL ============ -->
+<div class="module-stage retrieval-stage" data-stage="retrieve1" data-stage-index="1" style="display:none">
+  <div class="retrieval-frame">
+    <div class="retrieval-eyebrow">Before you move on &mdash; Retrieval</div>
+    <div class="retrieval-instruction">Two questions. Write, don't type one-liners. The act of putting this into your own words is where the concept actually lands.</div>
+
+    <div class="retrieval-prompt" data-prompt-id="interpreter-u1-p1" data-prompt-type="application">
+      <div class="retrieval-question-num">1</div>
+      <div class="retrieval-question-text">Unit 1 named something running inside you that produces the stories you tell about your own behavior &mdash; your Interpreter, the faculty that fills every gap with a confident account of what just happened and why. The split-brain patient told a story about a shovel and a chicken shed that was confidently, fluently, completely made up. You do this too. We all do. Think of one specific moment in the last month where you produced a confident account of your own behavior &mdash; why you snapped, why you quit, why you did something you said you would not do. Write the story your Interpreter gave you. Then sit with the question of what else might have actually been going on.</div>
+      <textarea class="retrieval-textarea" id="ret-interpreter-u1-p1" placeholder="The story you told yourself, then what else might be true." oninput="checkRetrievalLength('interpreter-u1-p1')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-interpreter-u1-p1" onclick="submitRetrieval('interpreter-u1-p1')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-interpreter-u1-p1">40 characters to submit</span>
+      </div>
+    </div>
+
+    <div class="retrieval-prompt" data-prompt-id="interpreter-u1-p2" data-prompt-type="application">
+      <div class="retrieval-question-num">2</div>
+      <div class="retrieval-question-text">Unit 1 also named signatures of an Interpreter running below its ceiling &mdash; rumination you cannot exit, confabulation you cannot examine, the sensation of being a passenger in your own head. You have spent years interpreting these as character flaws. Pick one of them. The one that runs most loudly in you. Write about what it has cost you to call it a personal failing instead of a functional state. What have you believed about yourself because of it? Who has that belief made you?</div>
+      <textarea class="retrieval-textarea" id="ret-interpreter-u1-p2" placeholder="The one that runs loudest. What calling it a flaw has cost you." oninput="checkRetrievalLength('interpreter-u1-p2')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-interpreter-u1-p2" onclick="submitRetrieval('interpreter-u1-p2')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-interpreter-u1-p2">40 characters to submit</span>
+      </div>
+    </div>
+
+    <div class="retrieval-stage-footer" id="retrieve1-footer" style="display:none">
+      <button class="stage-continue-btn" onclick="advanceStage()">Continue to Unit 2 &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STAGE: UNIT 2 ============ -->
+<div class="module-stage" data-stage="unit2" data-stage-index="2" style="display:none">
+  <div class="stage-eyebrow">Unit 2 of 2</div>
+  <div class="stage-title">What Was Done</div>
+
+  <p class="lc-body">The phone is somewhere within arm's reach of you right now.</p>
+
+  <p class="lc-body">You might be reading this on it. If you're not, you checked it recently, and you will check it again soon, and the intervals are shorter than they used to be. You have promised yourself, at some point, that you would check it less. You have felt, at least once, the specific sensation of your hand reaching for the phone while your conscious mind was in the middle of thinking about something else &mdash; the hand arrived before you did.</p>
+
+  <p class="lc-body">The previous unit named a faculty in you called the Interpreter. This unit is about what has been done to the environment that faculty has to survive inside. Who did it. And what it means to stop pretending the arrangement is normal just because it is the one you grew up inside.</p>
+
+  <p class="lc-body"><strong>The investigation starts in 1929.</strong></p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">Bernays, March 31, 1929</h3>
+
+  <p class="lc-body">Edward Bernays was Sigmund Freud's nephew. During the First World War he worked for the American government's propaganda office &mdash; the office whose job was to turn a neutral country into one that would support entering a European war it had no obvious stake in. They did it in months. Bernays watched how it was done, and after the war he invented a profession. He called it "public relations counsel" &mdash; a phrase he coined because the word <em>propaganda</em> had picked up the wrong associations. He applied what he had learned in wartime to peacetime.</p>
+
+  <p class="lc-body">Bernays claimed his method rested on Freud's theories of unconscious desire. Whether Freud's theories were actually true is a separate question; what matters for the story is that Bernays invoked the Freud name as a credential. The novelist Will Storr traces this maneuver in <em>Selfie</em> &mdash; Bernays used Freud as a brand more than as a method. What traveled through twentieth-century advertising was not Freud's actual science. It was Bernays's packaging of Freud: the pessimistic view that humans are driven by unconscious desires that need to be controlled, and that specialists who understood the machinery should do the controlling.</p>
+
+  <p class="lc-body">On March 31, 1929 &mdash; Easter Sunday, the most photographed social event on the New York calendar &mdash; ten young women walked down Fifth Avenue lighting cigarettes. They did this in public, together, which at the time was taboo. Women smoked in private. There was a market there &mdash; roughly half the adult population of the country &mdash; that the American Tobacco Company had been unable to reach.</p>
+
+  <p class="lc-body">The women on Fifth Avenue were hired. They had been recruited by Bertha Hunt, Bernays's secretary, who had been instructed to present herself as a spokeswoman for women's emancipation. Bernays was in his office. He had tipped off photographers and reporters in advance to expect <em>"torches of freedom"</em> &mdash; the phrase he had workshopped with Hunt &mdash; carried by young feminists defying an unjust social convention.</p>
+
+  <p class="lc-body">The press covered it the next morning exactly the way he had written the script. Bernays's name did not appear in the coverage. American Tobacco's name did not appear in the coverage. The women on the parade ground mostly did not know they were props. Women who had been taught their whole lives that smoking in public was unladylike now saw, in the papers, other women doing it, and calling it freedom. Over the next decade, cigarette consumption among American women roughly tripled.</p>
+
+  <p class="lc-body">Bernays had figured out that you do not change behavior by arguing with people. You stage a scene, get it covered as news, and let their Interpreters do the rest. The woman reading the paper saw ten women smoking on Fifth Avenue, read the caption underneath the photograph, and wrote the story: <em>smoking is freedom, and freedom is what I want, therefore I want cigarettes</em>. She did not experience this as manipulation. She experienced it as her own reasoning. The confabulation happened inside her. By the time she bought the pack, she believed it was her idea.</p>
+
+  <div class="lc-callout">
+    <div class="lc-callout-label">The mechanism</div>
+    <div class="lc-callout-text">The confabulation happens inside her. By the time she buys the pack, she believes it was her idea.</div>
+  </div>
+
+  <p class="lc-body">That is the template. That is what got built. You live in what Bernays built. You have never been outside it. Your mother was born inside it. Your grandmother, in her twenties, was the test market.</p>
+
+  <p class="lc-body">It propagated into the hour you lost last night scrolling when you meant to sleep. It propagated into the book on your nightstand that has been on page 34 for six weeks. It propagated into the conversation with your partner that you half-listened to because the phone was face down on the table and you could feel it there. The technique Bernays workshopped in 1928 is what took those hours from you. <strong>You were not told. Nobody asked.</strong></p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">The mechanism</h3>
+
+  <p class="lc-body">In 1953, at Harvard, B.F. Skinner mapped four reinforcement schedules to find out which one produced the most persistent behavior in a rat. One schedule beat the others. Variable ratio &mdash; reward after an unpredictable number of presses. Sometimes the third. Sometimes the ninetieth. The rat has no way to know. The rat keeps pressing, extraordinarily longer than it does on any other schedule, because the next press <em>might</em> be the winning one.</p>
+
+  <p class="lc-body">Skinner was explicit: variable ratio was <em>"fundamental to gambling's allure."</em> The slot machine was variable ratio with a coin slot attached.</p>
+
+  <p class="lc-body">The industry that ultimately built products around this principle was not Las Vegas. It was Palo Alto. The pull-to-refresh gesture on a social feed is mechanically identical to pulling a slot machine lever. The feed that loads is variable ratio output. The notification badge is a trained cue.</p>
+
+  <p class="lc-body">Every pull-to-refresh you have performed today was a lever pull. Every time your hand reached for the phone without a conscious decision preceding the motion, that was the rat pressing the bar. You were the laboratory subject. You were not told you were in an experiment. You were not paid. The experimenters had already run the experiment. They knew the outcome before they built the product.</p>
+
+  <p class="lc-body"><strong>It worked.</strong></p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">Wanting and liking are not the same system</h3>
+
+  <p class="lc-body">Dopamine is not the pleasure chemical. It is the <em>wanting</em> chemical. Wanting and liking are two separate neural systems, mapped by Kent Berridge at the University of Michigan over three decades. They can fire together. They can also come apart.</p>
+
+  <p class="lc-body">The clearest demonstration: rats whose dopamine systems are destroyed still show normal pleasure responses when sweet food is put in their mouths. Their liking system is intact. They will starve next to that food, though, because their wanting system is gone. They cannot muster the motivation to pursue what they still enjoy.</p>
+
+  <p class="lc-body">The reverse dissociation &mdash; wanting without liking &mdash; is the neural signature of classical addiction. It is also not what is happening to you.</p>
+
+  <p class="lc-body">The modern case is different, and it is worse. The algorithms have gotten too good at their job for the pure wanting-without-liking failure mode to describe your feed. If you were being served content you did not enjoy, you would leave; the platforms know this and optimize against it. What you actually get served is material that hits some pleasure receptor every time. The modern case is wanting and liking both firing &mdash; while the nervous system having them is being systematically reshaped.</p>
+
+  <h4 class="lc-subsection-heading">Laughing our way into hating our lives</h4>
+
+  <p class="lc-body">The content creators have gotten extraordinary at their craft. The best short-form video is tight, funny, emotionally resonant, sometimes genuinely artful. The hooks are tested. The timing is optimized. The creators you follow are talented people who have spent years learning to hold your attention in thirty seconds, and many of them are very, very good at it. The laugh you had at the last clip was real. The creator deserves their audience. Nothing in the individual transaction is sinister.</p>
+
+  <p class="lc-body">And still.</p>
+
+  <p class="lc-body">You look up from the phone at 11pm after forty minutes of really funny clips and feel, somehow, worse than when you started. Your own unscreened hours &mdash; the commute, the wait in line, the quiet evening, the conversation at dinner &mdash; have started feeling grey by comparison. The baseline has moved. Ordinary life is slower and duller than the feed was, because the feed is engineered to be more intense than ordinary life, and you have been soaking in it for hours a day for years. A real conversation with someone you love is objectively better than a clip. But the nervous system trained on clips has forgotten how to feel that. It registers the conversation as <em>lacking something</em>, and the something it is lacking is the dopamine cadence of the feed.</p>
+
+  <p class="lc-body">So you check the phone during dinner. Quietly. You do not mean to. You just feel, underneath the conversation, that something is missing, and the phone is where it went.</p>
+
+  <p class="lc-body"><strong>We are laughing our way into hating our lives.</strong> We are crying at night without knowing why we are so unhappy, and turning back to the screen just to escape the hell that our life outside the screen has become. The screen degrades the non-screen life. The degraded non-screen life makes the screen feel like the only place life still happens. So we return to the screen, which degrades the non-screen life further, which makes the screen more necessary. The loop closes on itself. Nobody broke in. We walked in. The door was designed to look like freedom.</p>
+
+  <h4 class="lc-subsection-heading">The self-loathing is the symptom</h4>
+
+  <p class="lc-body">The hardest part to name is that there is no bad content to blame. The content was good. You laughed. You were moved. You liked the creators. There is no moment you can point to where something obviously went wrong. There is only the cumulative grey &mdash; the feeling that your life has thinned out around the edges, that you are not quite as present as you used to be, that something about your days has gone slack.</p>
+
+  <p class="lc-body">And you hate yourself for it. Some quiet part of you has been keeping a private accounting &mdash; <em>I know this is making me worse. I know my life is thinner than it should be. I go back anyway. Why am I like this.</em></p>
+
+  <p class="lc-body">There is something wrong. The wrong thing is not you. The wrong thing is an arrangement that has been systematically installed in your nervous system, by people who knew what they were installing and shipped it anyway. The shame is accurate in one sense &mdash; your nervous system is telling you correctly that something is off. It is wildly inaccurate in another &mdash; the something that is off is not your character. It is the machinery. The loathing is how you know the machinery is there.</p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">The people who built it said so</h3>
+
+  <p class="lc-body">This is not speculation. The people who built it said so, on record, while leaving the companies that paid them.</p>
+
+  <p class="lc-body"><strong>Sean Parker</strong> was the founding president of Facebook. In November 2017, speaking at an Axios event, he was asked about the design decisions behind the early platform. He said the engineers had asked themselves <em>"how do we consume as much of your time and conscious attention as possible?"</em> The answer, he said, was to exploit <em>"a vulnerability in human psychology."</em> And then:</p>
+
+  <div class="lc-red-callout">
+    <div class="lc-red-label">Sean Parker, on record</div>
+    <div class="lc-red-text">"The inventors, creators &mdash; it's me, it's Mark, it's Kevin Systrom on Instagram, it's all of these people &mdash; understood this consciously. And we did it anyway."</div>
+  </div>
+
+  <p class="lc-body"><strong>Chamath Palihapitiya</strong> was Facebook's Vice President of User Growth. Speaking at Stanford Graduate School of Business later that year, unprompted: <em>"The short-term, dopamine-driven feedback loops that we have created are destroying how society works."</em></p>
+
+  <p class="lc-body">And then, in the same talk, he mentioned something else.</p>
+
+  <p class="lc-body"><strong>He does not let his own children use the products he helped build.</strong></p>
+
+  <p class="lc-body">Sit with that. The man who built the system that is shaping your nervous system right now keeps it away from his own kids. He has seen what it does. He has the data. He has decided, as a parent, that his children will not be inside it. Your children are inside it. You are inside it. He is not.</p>
+
+  <p class="lc-body">They knew you. Not you personally, but the nervous system you are reading this with. They had the psychological profile. They had the engagement data. They had meetings about how to exploit a specific vulnerability in a specific species, and the species was yours. They built the product to work on the brain you currently have, and they knew it would work, and they shipped it to your phone, and they took your hours, and your thoughts, and the particular version of you that would have existed if those hours and thoughts had gone somewhere else. The time cannot come back. The reading you did not do, the walks you did not take, the sleep you did not get, the presence you could not give to the people in your house &mdash; those are gone.</p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">The cost you can already feel</h3>
+
+  <p class="lc-body">Gloria Mark has spent three decades studying attention at the University of California, Irvine. In 2004, she measured how often knowledge workers switched tasks during a workday. The number was once every three minutes. In 2012, every seventy-five seconds. In 2023, every <strong>forty-seven seconds</strong>. Each interruption costs approximately twenty-three minutes before the worker fully recovers the cognitive state they were in before the switch. The math implies that most people are never in a recovered state of attention at all.</p>
+
+  <p class="lc-body">Heavy media multitaskers show reduced gray matter volume in the anterior cingulate cortex &mdash; the brain region most responsible for executive control. The hardware changes. Not metaphorically. Measurably.</p>
+
+  <p class="lc-body">Your brain changed. Yours. Specifically. The sustained-attention capacity you had at twenty-three, the ability to read for three hours without checking anything, the focus you used to take for granted &mdash; those capacities were not preserved. They were degraded. You can feel the degradation. You have felt it for years. You blamed it on your age, your work, your character. It is not any of those.</p>
+
+  <p class="lc-body">When was the last unbroken hour of reading you had? When did you last sustain a single train of thought for thirty minutes without checking anything? When was the last time you sat alone with your own mind, without reaching for input, for longer than it took to get uncomfortable?</p>
+
+  <p class="lc-body">The research is not telling you anything you do not already know. It is naming what you have been feeling.</p>
+
+  <div class="stage-divider"></div>
+
+  <h3 class="lc-section-heading">You are declining an arrangement</h3>
+
+  <p class="lc-body"><strong>Something was taken from you. Not in the abstract. Specifically.</strong></p>
+
+  <p class="lc-body">The capacity to sit with a book for an hour. The capacity to hold a long thread of thought without the sensation of needing to check something. The capacity to feel desire toward long-term goals &mdash; the slow, unglamorous desire that makes people finish the book, write the novel, start the business, learn the instrument, raise the child with full attention. Those capacities were not preserved. They were degraded by an arrangement that profits from their degradation. You did not fail at reading. You did not fail at focus. You did not fail at desire. Something was done to the conditions those things require, and you are living inside the result.</p>
+
+  <p class="lc-body">Something else was taken too. The disorientation of loving an hour of content and emerging smaller for it. The grey that crept into your unscreened hours without your permission, the way ordinary life started feeling like not quite enough. Those feelings were installed in you. You did not produce them. <strong>The self-loathing is not the verdict on your character. It is the diagnostic signal that something was done to your nervous system that should not have been done.</strong></p>
+
+  <p class="lc-body">The people who did this knew. The record is there. Most of them do not let their own children use the products they built. The fact that you still use those products, even as you resent them, is not weakness. It is a trained reflex, installed by design, and the design works.</p>
+
+  <p class="lc-body">That is what you are declining. Not phones. Not modernity. In specific small moments, you are declining to keep participating in an arrangement built against you. To read a book for thirty minutes when your hand wants the device. To sit with a journal when your mind wants input. To notice the pull &mdash; that specific sensation, which you now know is not an accident &mdash; and choose, in that single moment, differently.</p>
+
+  <p class="lc-body">The next time you pick up the phone without meaning to, you feel the pull. You notice. You decide.</p>
+
+  <p class="lc-body"><strong>That is the practice. That is all it is.</strong></p>
+
+  <div class="stage-footer">
+    <button class="stage-continue-btn" onclick="advanceStage()">Continue to Retrieval &rarr;</button>
+  </div>
+</div>
+
+<!-- ============ STAGE: UNIT 2 RETRIEVAL ============ -->
+<div class="module-stage retrieval-stage" data-stage="retrieve2" data-stage-index="3" style="display:none">
+  <div class="retrieval-frame">
+    <div class="retrieval-eyebrow">Before you move on &mdash; Retrieval</div>
+    <div class="retrieval-instruction">Two questions. Write, don't type one-liners. The act of putting this into your own words is where the concept actually lands.</div>
+
+    <div class="retrieval-prompt" data-prompt-id="interpreter-u2-p1" data-prompt-type="application">
+      <div class="retrieval-question-num">1</div>
+      <div class="retrieval-question-text">Unit 2 argued that a specific arrangement has been installed in your nervous system &mdash; not by accident, but by people who had the data, understood the mechanism, and shipped the product anyway. The laugh you had at the last clip was real. The creator was talented. Nothing in the individual transaction was sinister. And still, something has been hollowing out. Describe the hollowing. Not the apps or the hours &mdash; the actual felt sensation of it in your life. The grey. The way ordinary things have started feeling like not quite enough. The specific moment you noticed it, or the moment you have been pretending you did not notice it.</div>
+      <textarea class="retrieval-textarea" id="ret-interpreter-u2-p1" placeholder="The grey. The way ordinary life started feeling like not quite enough." oninput="checkRetrievalLength('interpreter-u2-p1')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-interpreter-u2-p1" onclick="submitRetrieval('interpreter-u2-p1')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-interpreter-u2-p1">40 characters to submit</span>
+      </div>
+    </div>
+
+    <div class="retrieval-prompt" data-prompt-id="interpreter-u2-p2" data-prompt-type="application">
+      <div class="retrieval-question-num">2</div>
+      <div class="retrieval-question-text">Unit 2 closed on a specific move: declining an arrangement built against you. Not rejecting modernity. Not performing the aesthetic of a person who has transcended their phone. A small choice, in a specific moment, to notice the pull and do something else. Pick one moment in the coming week where you are going to make that choice. Be specific. When is it? What will the pull feel like in your body? What are you going to do instead? Write it as though you are telling yourself what you are going to do &mdash; not as a resolution, as an instruction from the version of you that has read this module to the version of you that will be in the moment.</div>
+      <textarea class="retrieval-textarea" id="ret-interpreter-u2-p2" placeholder="The moment. What the pull will feel like. What you will do instead." oninput="checkRetrievalLength('interpreter-u2-p2')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-interpreter-u2-p2" onclick="submitRetrieval('interpreter-u2-p2')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-interpreter-u2-p2">40 characters to submit</span>
+      </div>
+    </div>
+
+    <div class="retrieval-stage-footer" id="retrieve2-footer" style="display:none">
+      <button class="stage-continue-btn" onclick="advanceStage()">Complete Module &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STAGE: MODULE COMPLETE ============ -->
+<div class="module-stage complete-stage" data-stage="complete" data-stage-index="4" style="display:none">
+  <div class="complete-frame">
+    <div class="complete-rune">&#9830;</div>
+    <div class="complete-title">Module 03 Complete</div>
+    <div class="complete-subtitle">The Interpreter</div>
+    <div class="complete-body">You know what the Interpreter is. You know what was done to it. The pre-game briefing is complete. The threshold is behind you.</div>
+    <button class="complete-close-btn" onclick="completeModuleInterpreter()">Return to the map</button>
+  </div>
+</div>
+
+</div>`}
+
 };
 
 // ---- TREE CANVAS ----
@@ -2086,13 +2449,12 @@ var nexusArmLen = NEXUS_ARM_BASE;
 
 // ---- PENTAGON LOCK SYSTEM ----
 // When a node completes it drifts to a fixed lock position around the nexus
-// Four-node arrangement: diamond/square, point-up. Radius 160px from nexus center
+// Three-node arrangement: equilateral triangle, point-up. Radius 160px from nexus center
 var PENTAGON_LOCK_R = 160;
 var PENTAGON_ANGLES = [
-  -Math.PI/2,                    // top    (gap/01)
-  0,                              // right  (engine/02)
-   Math.PI/2,                    // bottom (journaling/03)
-   Math.PI,                      // left   (reading/04)
+  -Math.PI/2,                    // top          (gap/01)
+   Math.PI/6,                    // lower-right  (engine/02)
+   5*Math.PI/6,                  // lower-left   (interpreter/03)
 ];
 
 // Per-node lock state: {x, y, progress 0→1, active}
@@ -2109,7 +2471,7 @@ PREGAME_NODES.forEach(function(n, i){
 });
 
 // ---- ASCENSION SEQUENCE STATE ----
-// Fires after all 5 nodes lock in — tethers grow, constellations light, flash appears
+// Fires after all 3 nodes lock in — tethers grow, constellations light, flash appears
 var ascensionSequence = {
   active: false,
   phase: 0,         // 0=idle, 1=stillness, 2=tethers, 3=crawl, 4=flash, 5=done
@@ -5848,7 +6210,7 @@ function devAutoComplete(){
     localStorage.setItem('ga_pregame_v2_completed', JSON.stringify(completed));
 
     // Award essence: each module = 4 prompts * ~10 Essence + 100 completion bonus.
-    // Roughly 140 per module * 4 modules = ~560 Essence for a full run.
+    // Roughly 140 per module * 3 modules = ~420 Essence for a full run.
     var devEssence = TOTAL_MODULES * 140;
     localStorage.setItem('ga_essence', String(devEssence));
     localStorage.setItem('ga_xp', String(devEssence)); // legacy mirror
@@ -5978,13 +6340,33 @@ var HIDDEN_NODES = [
   },
   {
     id: 'lore_seneca',
-    parentId: 'reading',
+    parentId: 'interpreter',
     orbitR: 54,
     orbitSpeed: -0.0006,
     orbitPhase: Math.PI * 1.2,
     title: 'The Seneca Fragment',
-    eyebrow: 'Fragment II \u00b7 Reading',
+    eyebrow: 'Fragment II \u00b7 The Interpreter',
     lore: 'In 65 AD, a man under house arrest and awaiting execution wrote a letter to his friend. Lucius Annaeus Seneca \u2014 philosopher, playwright, once the most powerful advisor in Rome \u2014 had been ordered to die by the emperor Nero. He spent his final days writing. One of those letters contained a line that has survived two thousand years: Nusquam est qui ubique est \u2014 he who is everywhere is nowhere. Seneca was writing about focus. But the letter also contained something else: a defence of reading that reads like it was written yesterday. He told his friend that we should read deeply rather than widely, that collecting books without absorbing them was like collecting tools without learning a trade, and that the purpose of reading was not knowledge but transformation. \u201cRetire into yourself as much as you can,\u201d he wrote. \u201cAssociate with those who will make a better man of you.\u201d He meant the authors on your shelf. The ones who did the work before you. Every book you open is a conversation across time with someone who figured something out. Seneca understood that. He died having written more letters than most people read in a lifetime.'
+  },
+  {
+    id: 'lore_montaigne',
+    parentId: 'interpreter',
+    orbitR: 52,
+    orbitSpeed: 0.00065,
+    orbitPhase: Math.PI * 0.4,
+    title: 'The Man in the Tower',
+    eyebrow: 'Fragment V \u00b7 The Interpreter',
+    lore: 'In February 1571, on his thirty-eighth birthday, a French magistrate named Michel de Montaigne retired from public life. He had served as a judge, fought in two wars, watched a close friend die of plague, and decided he had had enough of the world. He withdrew to the round tower on his family estate in the Dordogne and did something unprecedented. He installed fifteen hundred volumes in the tower library \u2014 a vast collection for a private citizen in the 16th century. He had Greek and Latin aphorisms carved into the ceiling beams so that whenever he looked up, he would see a sentence worth thinking about. And he began to write. He did not write to prove anything. He wrote to find out what he thought. He called the short pieces he produced essais \u2014 attempts \u2014 and the form did not exist before him. He invented the personal essay by the simple act of doing it. He was honest in them in ways that were almost unheard of at the time. He wrote about his bowels, his fears, his changing opinions, his doubts about his own judgment. He watched his own mind at work and wrote down what he saw. He did this for twenty years. Four and a half centuries later, the essays are still read. The tower still stands. The practice he described \u2014 sustained self-observation through writing \u2014 is now studied in neuroscience laboratories, where they measure what it does to the brain networks involved in rumination and executive control. The instruments confirm what he discovered by doing it: the mind that examines itself in writing becomes different from the mind that does not.'
+  },
+  {
+    id: 'lore_ignatius',
+    parentId: 'interpreter',
+    orbitR: 58,
+    orbitSpeed: -0.00068,
+    orbitPhase: Math.PI * 1.6,
+    title: 'Fifteen Minutes in a Cave',
+    eyebrow: 'Fragment VI \u00b7 The Interpreter',
+    lore: 'In May 1521, a Spanish soldier named \u00cd\u00f1igo L\u00f3pez de Loyola took a French cannonball to the legs at the Battle of Pamplona. His right leg was shattered. He spent a year in convalescence, unable to do much but read. Most of what was available to him was religious \u2014 the lives of the saints, a life of Christ \u2014 which he had never particularly cared for. He read them because they were what was at hand. Something shifted. When the war was over and he could walk again, he did not return to soldiering. He walked to a cave outside the town of Manresa in Catalonia, and he stayed there for most of a year. What he produced in that cave was a five-step practice for reviewing the day, which he called the examen. Become aware of yourself in the presence of something larger than yourself. Review the day with gratitude. Notice the movements of your emotional life \u2014 where consolation appeared, where desolation appeared, and what each was telling you. Choose one moment to examine closely. Look toward tomorrow. Fifteen minutes. Twice a day. The Jesuits he founded have practiced it continuously for five hundred years. They do it after lunch and before bed. They do it when the day has gone well and when it has gone badly. They do it on retreat and in combat zones and in hospital wards. The practice has outlasted empires, survived the suppression of the order, and crossed every continent. It takes no tools. It requires no subscription. It is the same practice in 2026 that it was in 1522. The soldier who wrote it down was examining his own mind in a cave because he had noticed that an unexamined mind would run him.'
   }
 ];
 
@@ -6460,7 +6842,7 @@ function resetReflections(){
 // is why the header badge text never changed after rank promotion.)
 
 // ---- LESSON SYSTEM ----
-var lessonOrder=['gap','engine','journaling','reading'];
+var lessonOrder=['gap','engine','interpreter'];
 function openLesson(id){
   var lesson=LESSONS[id];if(!lesson)return;
   currentLesson=id;
@@ -7156,6 +7538,49 @@ function completeModuleGap(){
 
 function completeModuleEngine(){
   var moduleId = 'engine';
+
+  // Guard against double-completion if user re-enters an already-completed
+  // module and clicks the completion button again.
+  var alreadyComplete = completed.includes(moduleId);
+
+  if(alreadyComplete){
+    // No new ceremony — just close.
+    closeLesson();
+    return;
+  }
+
+  // Jump the module vessel to 100% (the final step beyond the retrievals
+  // is the module-completion act itself).
+  updateModuleVessel(moduleId, 1);
+
+  // Disable the button so users don't spam it during animation.
+  var btn = document.querySelector('.complete-close-btn');
+  if(btn) btn.disabled = true;
+
+  // Delay slightly so the vessel's final fill is visible before pouring.
+  setTimeout(function(){
+    // Award the module completion bonus. 100 Essence.
+    addEssence(100);
+    refreshEssenceCounter();
+
+    // Perform the pour sequence.
+    performEssencePour();
+
+    // After the pour completes, mark complete and close.
+    setTimeout(function(){
+      if(typeof markComplete === 'function'){
+        markComplete();
+      } else {
+        if(!completed.includes(moduleId)) completed.push(moduleId);
+        localStorage.setItem('ga_pregame_v2_completed', JSON.stringify(completed));
+      }
+      closeLesson();
+    }, 2400);
+  }, 800);
+}
+
+function completeModuleInterpreter(){
+  var moduleId = 'interpreter';
 
   // Guard against double-completion if user re-enters an already-completed
   // module and clicks the completion button again.
@@ -8307,16 +8732,10 @@ window.addEventListener('resize',function(){centerTree();});
         { speaker: 'The Guide', text: 'Write your own answers. Specifics matter more than polish. The retrievals in this module are not tests of recall. They are where belief shifts.' }
       ]);
 
-      Guide.registerContextScript('module-open:journaling', [
-        { speaker: 'The Guide', text: 'What you have been calling journaling — the venting, the gratitude lists — is not the practice this program asks of you. This is something else entirely.' },
-        { speaker: 'The Guide', text: 'Two movements. Observe, then extract. When the entry gets uncomfortable, do not stop there. That discomfort is the signal you are close to something real.' },
-        { speaker: 'The Guide', text: 'Run the entry all the way to the wisdom. That is where the XP lives.' }
-      ]);
-
-      Guide.registerContextScript('module-open:reading', [
-        { speaker: 'The Guide', text: 'Who you are was built from what you have been exposed to. To become someone different, you require different inputs. That is the entire purpose of this practice.' },
-        { speaker: 'The Guide', text: 'Ten minutes is the floor, not the goal. Read actively — not to finish, but to be changed. Mark what lands. When a passage strikes you deeply, share it in the Strain Coaching app.' },
-        { speaker: 'The Guide', text: 'The success library is your skill tree. Every book is an unlock.' }
+      Guide.registerContextScript('module-open:interpreter', [
+        { speaker: 'The Guide', text: 'You have a faculty inside you that decides what everything means. It has a name. Somebody found it, on purpose, through a decade of careful research. This scroll names what it is, and what has been done to the environment it must survive inside.' },
+        { speaker: 'The Guide', text: 'Two units. The first is the model \u2014 the interpreter, its functional states, what the traditions figured out about how to tune it. The second is the history \u2014 who engineered the environment, what they admitted on record, and what it has taken from you.' },
+        { speaker: 'The Guide', text: 'Write your own answers. The retrievals in this module are not tests of recall. They are where belief shifts.' }
       ]);
 
       // If the tutorial was open, re-invoke the Guide once it closes.
