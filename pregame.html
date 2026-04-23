@@ -6610,11 +6610,17 @@ function devBackToStart(){
 // Remove this function, the button, and the accompanying CSS before shipping.
 function devAutoComplete(){
   try {
-    // If ascension already firing or done, just reload to reset
+    // If the ceremony is already running, bail — double-firing would stack
+    // rank-up overlays and confuse the sequence.
+    if(typeof ceremonyInProgress !== 'undefined' && ceremonyInProgress){
+      console.log('[Dev] Ceremony already in progress — reload first');
+      return;
+    }
     if(ascensionSequence.active){
       console.log('[Dev] Ascension already active — reload first');
       return;
     }
+
     // Populate completed array with all modules in canonical order
     completed.length = 0;
     lessonOrder.forEach(function(id){ completed.push(id); });
@@ -6650,11 +6656,16 @@ function devAutoComplete(){
     buildClickTargets();
     updateRespecBtn();
 
-    console.log('[Dev] Auto-complete — ' + TOTAL_MODULES + ' modules marked, ' + devEssence + ' essence. Firing sequence in 400ms.');
+    console.log('[Dev] Auto-complete — ' + TOTAL_MODULES + ' modules marked, ' +
+      devEssence + ' essence. Firing full ceremony in 400ms.');
 
-    // Fire the sequence after a brief beat so the visual state settles
+    // 2026-04 onboarding rebuild: fire showAllComplete (rank-up) as the
+    // ceremony entry point, matching the real post-module-3 flow. The rest
+    // of the ceremony chains from there: user closes rank-up → Guide
+    // speaks → camera pan + crawl-light → realm overlay (with Scriptorium
+    // unseal) → genie suction → Tesseract orientation.
     setTimeout(function(){
-      startAscensionSequence();
+      showAllComplete();
     }, 400);
   } catch(e){
     console.error('[Dev] Auto-complete failed:', e);
