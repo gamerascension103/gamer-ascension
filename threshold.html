@@ -1134,8 +1134,13 @@ function startIdleAnimations(){
 // ============================================================================
 
 function hookButtonReactions(){
-  if(typeof gsap === 'undefined') return;
-
+  // IMPORTANT: we used to early-return if GSAP was undefined, but that meant
+  // the button kept its inline onclick="showTutorial()" — which is the OLD
+  // path. When GSAP fails to load (slow network, ad blocker, CDN blip), the
+  // button would silently route users through the tutorial/dialogue/realms
+  // sequence instead of the dive. Now we always poll + wire. GSAP is only
+  // needed for hover visual effects, which wireButton handles gracefully
+  // when gsap is undefined.
   var tries = 0;
   var pollId = setInterval(function(){
     var btn = document.querySelector('.cross-btn');
@@ -1149,10 +1154,12 @@ function hookButtonReactions(){
 }
 
 function wireButton(btn){
+  var hasGSAP = typeof gsap !== 'undefined';
   var photonRing = document.getElementById('photonRing');
   var corona = document.getElementById('horizonCorona');
 
   btn.addEventListener('mouseenter', function(){
+    if(!hasGSAP) return;
     // Disk spins faster, photon ring brightens
     gsap.to(HORIZON_STATE, {
       rotationSpeed: 2.2,
@@ -1176,6 +1183,7 @@ function wireButton(btn){
   });
 
   btn.addEventListener('mouseleave', function(){
+    if(!hasGSAP) return;
     gsap.to(HORIZON_STATE, {
       rotationSpeed: 1,
       duration: 0.9,
