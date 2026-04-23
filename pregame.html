@@ -8556,146 +8556,76 @@ function ceremonyBeat1_guide(){
   });
 }
 
-// Beat 2: Start ascension sequence and drive a camera pan that SYNCS with
-// the sequence's actual crawl-light events rather than running on its own
-// fixed timeline. The ascension sequence sets `ascensionSequence.crawl[pillar].started`
-// to true when each pillar begins lighting up. The camera pan watches for
-// those flag flips and moves to the corresponding tree as it ignites.
-//
-// This is viewport-independent — both the crawl-light and the pan are
-// driven by the same ascensionSequence state, which advances on the frame
-// counter. Mobile and desktop stay in sync regardless of screen size.
+// Beat 2: Start ascension sequence and drive a camera pan across the trees.
+// The ascension sequence's phases 1-3 do the mechanical work (nexus ignite,
+// ley line grow to Tesseract, crawl-light constellations). The pan function
+// follows that same trajectory visually.
 function ceremonyBeat2_ascensionAndPan(){
+  // Start the ascension sequence (nexus ignite, ley line, crawl-light)
   startAscensionSequence();
+  // Run the camera pan alongside. It takes ~8s and ends at the Tesseract.
   runCeremonyCameraPan(function(){
+    // When pan completes, proceed to the realm overlay
     ceremonyBeat3_realmOverlay();
   });
 }
 
-// Camera pan that syncs to the ascension sequence's crawl-light order.
-// The actual crawl order from updateAscensionSequence is:
-//   Vitality (t=0) → Alignment (t=~0.75s) → Spirit (t=~1.5s)
-// Previously this function ran waypoints on a hardcoded ms timer, which
-// worked on desktop but drifted out of sync on mobile because screen width
-// changes how long the visual travel feels relative to the fixed frame
-// counter driving the crawl-lights.
+// Camera pan across the trees, matching the ascension sequence's reveal
+// order. Pan down from pregame nodes → follow ley line toward Tesseract
+// (phase 2 territory) → sweep to Vitality (left) → Spirit (center) →
+// Alignment (right) → settle mid-canvas looking down on the trees.
+// Final beat (Tesseract close-up + "Your path awaits") comes later.
 //
-// New approach: poll the ascensionSequence.crawl flags and advance to the
-// next waypoint when the corresponding pillar's crawl starts. The camera
-// tween duration is still configurable, but WHEN each leg begins is tied
-// to the actual game-state event.
+// Desktop waypoint timing was tuned by hand and lines up well with the
+// ascension sequence's crawl-light phases. DO NOT modify those values
+// without retesting — the sync is eyeballed across multiple runs.
+//
+// Mobile needs different pacing because:
+//   1. Narrower viewport means the same world-space sweep takes longer
+//      to traverse in screen-percentage terms, so durations are stretched
+//   2. Per-tree scale is larger so trees don't feel tiny on phone screens
+//   3. Hold time between legs is slightly longer so the user has time to
+//      register each reveal before the camera moves again
 function runCeremonyCameraPan(onComplete){
   var wrap = document.getElementById('canvasWrap');
   if(!wrap){ if(onComplete) onComplete(); return; }
   var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
 
-  // Detect mobile for scale tuning — trees look farther away on narrow
-  // viewports at the same scale, so bump up the per-tree zoom slightly
-  // so the constellation feels anchored in the frame.
   var isMobile = vw < 700;
 
-  // Each step defines { cx, cy, scale, duration, trigger }.
-  //   trigger: either a pillar name ('vitality'|'alignment'|'spirit') meaning
-  //            "start this tween when that pillar's crawl begins", or a
-  //            ms number meaning "start this tween X ms after previous ends"
-  var steps = [
-    // Opening: zoom toward the pregame pentagon as the nexus ignites.
-    // Triggered by start (no wait for pillar event).
-    {
-      cx: CX, cy: SPHERE_Y + 60,
-      scale: isMobile ? 0.6 : 0.55,
-      duration: 1100,
-      trigger: 0 // fire immediately
-    },
-    // Vitality: crawl starts at ascension t=0 (when phase 3 begins).
-    // The ascension sequence first runs ~1.1s of phase 1-2 before phase 3,
-    // so by the time the opening tween completes, phase 3 is close. We
-    // still wait for the pillar.started flag to be sure.
-    {
-      cx: VITALITY_CX, cy: VITALITY_CY,
-      scale: isMobile ? 0.85 : 0.7,
-      duration: 1100,
-      trigger: 'vitality'
-    },
-    // Alignment: crawl starts ~0.75s after Vitality.
-    {
-      cx: ALIGNMENT_CX, cy: ALIGNMENT_CY,
-      scale: isMobile ? 0.85 : 0.7,
-      duration: 1000,
-      trigger: 'alignment'
-    },
-    // Spirit: crawl starts ~0.75s after Alignment (1.5s after Vitality).
-    {
-      cx: SPIRIT_CX, cy: SPIRIT_CY,
-      scale: isMobile ? 0.85 : 0.7,
-      duration: 1000,
-      trigger: 'spirit'
-    },
-    // Pullback: hold 900ms after Spirit crawl starts (so user sees Spirit
-    // light up too before the pullback), then ease out to show all three.
-    {
-      cx: SPIRIT_CX, cy: (SPHERE_Y + SPIRIT_CY) / 2,
-      scale: isMobile ? 0.45 : 0.38,
-      duration: 1400,
-      trigger: 2000 // ms after previous leg ends — lets Spirit finish crawling
-    }
+  // DESKTOP waypoints — DO NOT TOUCH. These were tuned and approved.
+  var desktopWaypoints = [
+    {cx: CX, cy: SPHERE_Y + 60, scale: 0.55, duration: 1200, hold: 600},
+    {cx: VITALITY_CX, cy: VITALITY_CY, scale: 0.7, duration: 1400, hold: 900},
+    {cx: SPIRIT_CX, cy: SPIRIT_CY, scale: 0.7, duration: 1300, hold: 900},
+    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY, scale: 0.7, duration: 1300, hold: 900},
+    {cx: SPIRIT_CX, cy: (SPHERE_Y + SPIRIT_CY) / 2, scale: 0.38, duration: 1400, hold: 500}
   ];
 
-  // Safety timeout — if polling never resolves (e.g., ascension sequence
-  // doesn't start for some reason), force the whole pan to complete after
-  // 20s so the ceremony doesn't hang.
-  var globalStart = performance.now();
-  var SAFETY_TIMEOUT = 20000;
+  // MOBILE waypoints — same shape and world-space targets as desktop, but
+  // with longer durations and bigger per-tree zoom so the sync with
+  // crawl-light feels right on narrow viewports. If mobile timing needs
+  // further tuning, modify only this array.
+  var mobileWaypoints = [
+    {cx: CX, cy: SPHERE_Y + 60, scale: 0.65, duration: 1400, hold: 700},
+    {cx: VITALITY_CX, cy: VITALITY_CY, scale: 0.88, duration: 1700, hold: 1100},
+    {cx: SPIRIT_CX, cy: SPIRIT_CY, scale: 0.88, duration: 1600, hold: 1100},
+    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY, scale: 0.88, duration: 1600, hold: 1100},
+    {cx: SPIRIT_CX, cy: (SPHERE_Y + SPIRIT_CY) / 2, scale: 0.48, duration: 1500, hold: 600}
+  ];
 
-  var stepIdx = 0;
+  var waypoints = isMobile ? mobileWaypoints : desktopWaypoints;
 
-  function runNextStep(){
-    if(stepIdx >= steps.length){
+  var wpIdx = 0;
+
+  function runNextWaypoint(){
+    if(wpIdx >= waypoints.length){
       if(onComplete) onComplete();
       return;
     }
-
-    var step = steps[stepIdx];
-
-    // Resolve trigger — either wait for pillar event or a ms delay
-    if(typeof step.trigger === 'string'){
-      waitForPillarStart(step.trigger, function(){
-        runStepTween(step);
-      });
-    } else {
-      setTimeout(function(){
-        runStepTween(step);
-      }, step.trigger);
-    }
-  }
-
-  // Poll ascensionSequence.crawl[pillar].started. Uses requestAnimationFrame
-  // so the check runs every frame without a setInterval cost.
-  function waitForPillarStart(pillar, then){
-    function check(){
-      // Safety timeout check
-      if(performance.now() - globalStart > SAFETY_TIMEOUT){
-        console.warn('[Ceremony] Camera pan safety timeout reached — forcing step', pillar);
-        then();
-        return;
-      }
-      try {
-        if(ascensionSequence &&
-           ascensionSequence.crawl &&
-           ascensionSequence.crawl[pillar] &&
-           ascensionSequence.crawl[pillar].started){
-          then();
-          return;
-        }
-      } catch(e){ /* crawl map may not exist yet — keep polling */ }
-      requestAnimationFrame(check);
-    }
-    requestAnimationFrame(check);
-  }
-
-  function runStepTween(step){
-    var targetX = (vw / 2) - (step.cx * step.scale);
-    var targetY = (vh / 2) - (step.cy * step.scale);
+    var wp = waypoints[wpIdx];
+    var targetX = (vw / 2) - (wp.cx * wp.scale);
+    var targetY = (vh / 2) - (wp.cy * wp.scale);
 
     var startScale = transform.scale;
     var startX = transform.x;
@@ -8704,13 +8634,13 @@ function runCeremonyCameraPan(onComplete){
 
     function tick(now){
       var elapsed = now - startTime;
-      var progress = Math.min(1, elapsed / step.duration);
-      // Cubic ease-in-out
+      var progress = Math.min(1, elapsed / wp.duration);
+      // Cubic ease-in-out for smooth arrivals
       var eased = progress < 0.5
         ? 4 * progress * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-      transform.scale = startScale + (step.scale - startScale) * eased;
+      transform.scale = startScale + (wp.scale - startScale) * eased;
       transform.x = startX + (targetX - startX) * eased;
       transform.y = startY + (targetY - startY) * eased;
       applyTransform();
@@ -8718,14 +8648,17 @@ function runCeremonyCameraPan(onComplete){
       if(progress < 1){
         requestAnimationFrame(tick);
       } else {
-        stepIdx++;
-        runNextStep();
+        // Hold then advance to next waypoint
+        setTimeout(function(){
+          wpIdx++;
+          runNextWaypoint();
+        }, wp.hold);
       }
     }
     requestAnimationFrame(tick);
   }
 
-  runNextStep();
+  runNextWaypoint();
 }
 
 // Beat 3: Realm overlay fades in. Four chamber tiles appear, all initially
