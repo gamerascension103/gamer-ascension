@@ -1176,6 +1176,242 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   50%     {opacity:.85}
 }
 
+/* Codex counter — Complete state */
+.codex-counter.codex-counter-complete{
+  color:#c9a84c;
+  text-shadow:0 0 20px rgba(201,168,76,.4);
+}
+.codex-counter-complete .codex-counter-value{
+  color:#f5eecc;
+  letter-spacing:.14em;
+}
+
+/* ============================================================================
+   FRAGMENT READER — scroll-modal (Phase 2, 2026-04 redesign)
+   Narrower book-width container. Structured lore (3 sections with visual
+   dividers), pull-quote with elevated typography, category-colored accents,
+   Reflect-in-Scriptorium CTA.
+   ============================================================================ */
+.frag-reader-overlay{
+  position:fixed;inset:0;z-index:460;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(8,8,16,.88);backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;
+  transition:opacity .4s ease;
+  padding:28px 16px;
+}
+.frag-reader-overlay.open{opacity:1;pointer-events:all}
+.frag-reader-scroll{
+  position:relative;
+  background:linear-gradient(180deg,rgba(18,16,28,.98) 0%,rgba(10,10,20,.99) 100%);
+  border:1px solid rgba(201,168,76,.3);
+  border-radius:6px;
+  max-width:640px;width:100%;
+  max-height:calc(100vh - 56px);
+  display:flex;flex-direction:column;
+  box-shadow:0 0 80px rgba(80,40,0,.25),0 0 40px rgba(0,0,0,.5);
+  transform:scale(0.96) translateY(10px);opacity:0;
+  transition:transform .45s cubic-bezier(0.34,1.56,0.64,1),opacity .35s ease;
+}
+.frag-reader-overlay.open .frag-reader-scroll{
+  transform:scale(1) translateY(0);opacity:1;
+}
+/* Category-colored top accent on the scroll */
+.frag-reader-scroll::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:6px 6px 0 0;
+}
+.frag-reader-scroll.cat-wisdom::before  { background:linear-gradient(90deg,transparent,#d4a84a,transparent) }
+.frag-reader-scroll.cat-witness::before { background:linear-gradient(90deg,transparent,#9a7adf,transparent) }
+.frag-reader-scroll.cat-practice::before{ background:linear-gradient(90deg,transparent,#5ac5a0,transparent) }
+
+.frag-reader-close{
+  position:absolute;top:14px;right:14px;
+  background:none;border:none;
+  color:rgba(240,236,228,.4);font-size:18px;
+  cursor:pointer;padding:6px 10px;line-height:1;
+  transition:color .2s;
+}
+.frag-reader-close:hover{color:rgba(240,236,228,.8)}
+
+.frag-reader-header{
+  padding:32px 40px 20px;
+  border-bottom:1px solid rgba(201,168,76,.1);
+  flex-shrink:0;
+}
+.frag-reader-eyebrow{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(201,168,76,.6);margin-bottom:10px;
+}
+.frag-reader-scroll.cat-witness  .frag-reader-eyebrow{color:rgba(154,122,223,.75)}
+.frag-reader-scroll.cat-practice .frag-reader-eyebrow{color:rgba(90,197,160,.75)}
+.frag-reader-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:26px;font-weight:700;
+  color:#f5eecc;
+  letter-spacing:.02em;line-height:1.25;
+  margin:0;
+}
+
+.frag-reader-body{
+  padding:28px 40px 8px;
+  overflow-y:auto;
+  flex:1;
+  min-height:0;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(201,168,76,.3) transparent;
+}
+.frag-reader-body::-webkit-scrollbar{width:6px}
+.frag-reader-body::-webkit-scrollbar-track{background:transparent}
+.frag-reader-body::-webkit-scrollbar-thumb{background:rgba(201,168,76,.3);border-radius:3px}
+.frag-reader-body::-webkit-scrollbar-thumb:hover{background:rgba(201,168,76,.5)}
+
+.frag-reader-para{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:17px;line-height:1.75;
+  color:rgba(240,236,228,.85);
+  margin:0 0 1rem;
+}
+/* Fallback if Cormorant not available — stays readable */
+@supports not (font-family: 'Cormorant Garamond'){
+  .frag-reader-para{font-family:Georgia,'Times New Roman',serif}
+}
+
+.frag-reader-divider{
+  display:flex;align-items:center;justify-content:center;
+  margin:28px 0;
+  height:8px;
+}
+.frag-reader-divider::before{
+  content:'';
+  width:36px;height:1px;
+  background:rgba(201,168,76,.35);
+}
+.frag-reader-divider::after{
+  content:'\2022';
+  margin:0 14px;
+  color:rgba(201,168,76,.5);
+  font-size:10px;
+}
+.frag-reader-divider::before{
+  margin-right:14px;
+}
+
+.frag-reader-pullquote{
+  margin:0 0 28px;
+  padding:18px 20px 18px 24px;
+  border-left:2px solid #c9a84c;
+  background:rgba(201,168,76,.06);
+  font-family:'Cinzel',serif;
+  font-style:normal;
+  font-size:15px;
+  font-weight:500;
+  line-height:1.6;
+  color:#e5c574;
+  letter-spacing:.02em;
+}
+.frag-reader-scroll.cat-witness  .frag-reader-pullquote{border-left-color:#9a7adf;color:#bca4f0;background:rgba(154,122,223,.06)}
+.frag-reader-scroll.cat-practice .frag-reader-pullquote{border-left-color:#5ac5a0;color:#7dd6b8;background:rgba(90,197,160,.06)}
+
+.frag-reader-actions{
+  padding:18px 40px 28px;
+  border-top:1px solid rgba(255,255,255,.06);
+  display:flex;gap:12px;flex-wrap:wrap;
+  flex-shrink:0;
+}
+.frag-reader-reflect-btn{
+  flex:1;min-width:200px;
+  background:transparent;
+  border:1px solid rgba(201,168,76,.5);
+  color:#c9a84c;
+  font-family:'Cinzel',serif;font-size:12px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:13px 18px;border-radius:3px;
+  cursor:pointer;transition:all .2s;
+}
+.frag-reader-reflect-btn:hover{
+  background:rgba(201,168,76,.1);
+  border-color:rgba(201,168,76,.85);
+  color:#f5eecc;
+}
+.frag-reader-reflect-btn.cat-witness{border-color:rgba(154,122,223,.55);color:#bca4f0}
+.frag-reader-reflect-btn.cat-witness:hover{background:rgba(154,122,223,.1);border-color:rgba(154,122,223,.9);color:#ddd0ff}
+.frag-reader-reflect-btn.cat-practice{border-color:rgba(90,197,160,.55);color:#7dd6b8}
+.frag-reader-reflect-btn.cat-practice:hover{background:rgba(90,197,160,.1);border-color:rgba(90,197,160,.9);color:#a5e8cf}
+.frag-reader-reflect-btn.frag-reader-reflect-queued,
+.frag-reader-reflect-btn:disabled{
+  border-color:rgba(255,255,255,.12);
+  color:rgba(240,236,228,.35);
+  cursor:not-allowed;
+  background:rgba(255,255,255,.02);
+}
+
+.frag-reader-close-btn{
+  background:none;
+  border:1px solid rgba(255,255,255,.12);
+  color:rgba(240,236,228,.5);
+  font-family:'Cinzel',serif;font-size:11px;font-weight:400;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:13px 20px;border-radius:3px;
+  cursor:pointer;transition:all .2s;
+}
+.frag-reader-close-btn:hover{
+  border-color:rgba(255,255,255,.3);
+  color:rgba(240,236,228,.85);
+}
+
+/* ============================================================================
+   REFLECTION TOAST — confirms "added to queue"
+   ============================================================================ */
+.reflection-toast{
+  position:fixed;bottom:30px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  z-index:500;
+  background:rgba(18,16,28,.98);
+  border:1px solid rgba(201,168,76,.35);
+  border-radius:4px;
+  padding:12px 22px;
+  font-family:'Cinzel',serif;font-size:12px;
+  letter-spacing:.1em;text-transform:uppercase;
+  color:#f5eecc;
+  opacity:0;pointer-events:none;
+  transition:opacity .4s ease,transform .4s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 0 40px rgba(201,168,76,.2);
+}
+.reflection-toast.open{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+.reflection-toast-success{
+  border-color:rgba(201,168,76,.55);
+  color:#e5c574;
+}
+.reflection-toast-neutral{
+  border-color:rgba(240,236,228,.2);
+  color:rgba(240,236,228,.7);
+}
+
+/* ============================================================================
+   REFLECTION QUEUE BADGE — small count pill attached to the Codex button
+   ============================================================================ */
+.reflection-queue-badge{
+  position:absolute;
+  top:-8px;right:-8px;
+  min-width:18px;height:18px;
+  padding:0 5px;
+  border-radius:9px;
+  background:#c9a84c;
+  color:#2a1f0a;
+  font-family:'Cinzel',serif;
+  font-size:10px;font-weight:700;
+  letter-spacing:0;
+  display:flex;align-items:center;justify-content:center;
+  line-height:1;
+  box-shadow:0 0 10px rgba(201,168,76,.5);
+  pointer-events:none;
+}
+
 /* ===== QUEST ACCEPTED OVERLAY (session 9) =====
    Big centered modal shown when a quest is first accepted. Uses the Codex
    panel's visual family so accepting a quest feels like stepping into the
@@ -6570,6 +6806,46 @@ function setQuestState(id, s){
 function getLoreFound(){ return JSON.parse(localStorage.getItem(LORE_FOUND_KEY) || '[]'); }
 function setLoreFound(arr){ localStorage.setItem(LORE_FOUND_KEY, JSON.stringify(arr)); }
 
+// ---- REFLECTION QUEUE (Phase 3, 2026-04 fragments redesign) ----
+// When the user taps "Reflect in Scriptorium" on a preserved fragment, the
+// fragment's reflection prompt is appended to the queue rather than
+// immediately opening a Scriptorium session. The user chooses when to go
+// to the Scriptorium and which queued item to reflect on. Items remove
+// themselves from the queue when the user submits a reflection session.
+//
+// Storage shape (ga_reflection_queue):
+//   [ { fragmentId, title, category, preservedAt, queuedAt }, ... ]
+//
+// This queue is cross-chamber state — pregame reads/writes it to add
+// items, Scriptorium reads/writes it to consume them.
+var REFLECTION_QUEUE_KEY = 'ga_reflection_queue';
+function getReflectionQueue(){
+  try { return JSON.parse(localStorage.getItem(REFLECTION_QUEUE_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function setReflectionQueue(arr){
+  try { localStorage.setItem(REFLECTION_QUEUE_KEY, JSON.stringify(arr)); }
+  catch(e){ console.error('[Reflection queue] write failed:', e); }
+}
+function isFragmentInQueue(fragmentId){
+  return getReflectionQueue().some(function(item){ return item.fragmentId === fragmentId; });
+}
+function addFragmentToQueue(hn){
+  var q = getReflectionQueue();
+  // Don't queue if already queued — avoid duplicates if user taps Reflect
+  // multiple times on the same fragment before doing the actual reflection.
+  if(q.some(function(item){ return item.fragmentId === hn.id; })) return false;
+  q.push({
+    fragmentId: hn.id,
+    title: hn.title,
+    category: hn.category,
+    eyebrow: hn.eyebrow,
+    queuedAt: Date.now()
+  });
+  setReflectionQueue(q);
+  return true;
+}
+
 function hasBeenOffered(id){ return localStorage.getItem(QUEST_OFFERED_PREFIX + id) === '1'; }
 function markOffered(id){ localStorage.setItem(QUEST_OFFERED_PREFIX + id, '1'); }
 function clearOffered(id){ localStorage.removeItem(QUEST_OFFERED_PREFIX + id); }
@@ -7115,6 +7391,58 @@ var FRAGMENT_CLUSTERS = {
   west:  { cx:185,  cy:1520, name:'Practice', category:'practice' }
 };
 
+// Fragment reading map — per-fragment metadata for the scroll-modal reader.
+// 'pullQuote' is the takeaway line lifted from the prose and displayed
+// with elevated typography. 'sectionBreaks' is an array of substrings that
+// mark where to inject visual section breaks (the prose is split at these
+// exact phrases — the phrase stays at the start of the new section).
+//
+// No writing changes — we're adding structure, not content.
+var FRAGMENT_READING = {
+  lore_acedia: {
+    pullQuote: 'The antidote was not motivation. It was movement. Begin the work. The feeling follows.',
+    sectionBreaks: [
+      'The monk Evagrius Ponticus',
+      'The gap you feel is not a modern problem.'
+    ]
+  },
+  lore_seneca: {
+    pullQuote: 'Retire into yourself as much as you can. Associate with those who will make a better man of you.',
+    sectionBreaks: [
+      'One of those letters contained a line',
+      'He meant the authors on your shelf.'
+    ]
+  },
+  lore_plato: {
+    pullQuote: 'He took it for granted that serious thought required a serious body.',
+    sectionBreaks: [
+      'Aristocles competed in the Isthmian Games.',
+      'No one inherited this from him.'
+    ]
+  },
+  lore_hebert: {
+    pullQuote: '\u00catre fort pour \u00eatre utile. Be strong to be useful.',
+    sectionBreaks: [
+      'What he saw on that shore',
+      'H\u00e9bert spent the rest of his life'
+    ]
+  },
+  lore_montaigne: {
+    pullQuote: 'The mind that examines itself in writing becomes different from the mind that does not.',
+    sectionBreaks: [
+      'He installed fifteen hundred volumes',
+      'He did this for twenty years.'
+    ]
+  },
+  lore_ignatius: {
+    pullQuote: 'It is the same practice in 2026 that it was in 1522.',
+    sectionBreaks: [
+      'What he produced in that cave',
+      'The Jesuits he founded'
+    ]
+  }
+};
+
 var hiddenNodesActive = false;
 
 function spawnHiddenNodes(){
@@ -7380,53 +7708,212 @@ function hitTestHiddenNodes(canvasX, canvasY){
 
 function openLoreFragment(hn){
   var found = getLoreFound();
-  if(found.indexOf(hn.id) === -1){
+  var wasNew = found.indexOf(hn.id) === -1;
+  if(wasNew){
     found.push(hn.id);
     setLoreFound(found);
     updateCodexBtn();
-    // Check if quest complete. The acceptance flow already revealed the
-    // Codex button and told the user where hints live, so completion just
-    // transitions state quietly — no redundant "Codex unlocked" toast.
-    // The active quest entry vanishes naturally from the Codex panel once
-    // all hints are resolved (see renderActiveQuestLog).
     if(found.length >= HIDDEN_NODES.length && getQuestState('codex_1') === 'accepted'){
       setQuestState('codex_1', 'complete');
     }
   }
 
-  // Show lore panel (reuse quest panel structure)
-  var panel = document.getElementById('questPanel');
-  panel.innerHTML = '<div class="quest-card">' +
-    '<div class="quest-card-header">' +
-    '<div class="quest-card-dot"></div>' +
-    '<div><div class="quest-card-eyebrow">' + hn.eyebrow + '</div>' +
-    '<div class="quest-card-title">' + hn.title + '</div></div>' +
-    '</div>' +
-    '<div class="quest-card-body">' +
-    '<p class="quest-card-desc" style="font-style:italic;color:rgba(240,236,228,.75)">' + hn.lore + '</p>' +
-    '<div class="quest-card-actions">' +
-    '<button class="quest-accept-btn" onclick="closeLorePanel()">Close</button>' +
-    '</div></div></div>';
-  panel.classList.add('open');
+  // Build the structured reader — split the lore into 3 sections using the
+  // sectionBreaks markers from FRAGMENT_READING. Find each marker's position
+  // in the lore and cut. The marker itself stays at the start of its section
+  // (we don't drop any text, just insert visual breaks).
+  var reading = FRAGMENT_READING[hn.id] || { pullQuote: '', sectionBreaks: [] };
+  var sections = splitLoreIntoSections(hn.lore, reading.sectionBreaks);
+  var cat = FRAGMENT_CATEGORIES[hn.category] || FRAGMENT_CATEGORIES.wisdom;
+
+  var alreadyQueued = isFragmentInQueue(hn.id);
+  var reflectButtonHtml = alreadyQueued
+    ? '<button class="frag-reader-reflect-btn frag-reader-reflect-queued" disabled>Already in your Reflection Queue</button>'
+    : '<button class="frag-reader-reflect-btn cat-' + hn.category + '" onclick="queueReflection(\'' + hn.id + '\')">Reflect in the Scriptorium</button>';
+
+  // Build section HTML — first section has the pull-quote embedded between
+  // paragraphs so the takeaway sits mid-read. If the fragment has only 1-2
+  // sections (no break markers matched), we render plain prose without
+  // visual breaks and still show the pull-quote.
+  var sectionsHtml = '';
+  sections.forEach(function(sec, i){
+    sectionsHtml += '<p class="frag-reader-para">' + sec + '</p>';
+    if(i < sections.length - 1){
+      sectionsHtml += '<div class="frag-reader-divider"></div>';
+    }
+  });
+
+  // Reader modal overlay — built fresh each open so we don't leak state
+  // from previous reads. Category color drives the accent.
+  var overlay = document.getElementById('fragReaderOverlay');
+  if(overlay) overlay.remove(); // clean slate
+  overlay = document.createElement('div');
+  overlay.id = 'fragReaderOverlay';
+  overlay.className = 'frag-reader-overlay';
+
+  overlay.innerHTML =
+    '<div class="frag-reader-scroll cat-' + hn.category + '" role="dialog" aria-modal="true">' +
+      '<button class="frag-reader-close" onclick="closeLorePanel()" aria-label="Close">\u2715</button>' +
+      '<div class="frag-reader-header">' +
+        '<div class="frag-reader-eyebrow">' + hn.eyebrow + '</div>' +
+        '<h1 class="frag-reader-title">' + hn.title + '</h1>' +
+      '</div>' +
+      '<div class="frag-reader-body">' +
+        (reading.pullQuote ?
+          '<blockquote class="frag-reader-pullquote">' + reading.pullQuote + '</blockquote>'
+          : '') +
+        sectionsHtml +
+      '</div>' +
+      '<div class="frag-reader-actions">' +
+        reflectButtonHtml +
+        '<button class="frag-reader-close-btn" onclick="closeLorePanel()">Close</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+  // Tiny delay so CSS transition on .open fires (opacity 0 → 1)
+  requestAnimationFrame(function(){ overlay.classList.add('open'); });
+
+  // Track the fragment currently being read so closeLorePanel can check
+  // for the 6/6 completion moment on close.
+  currentReadingFragmentId = hn.id;
+}
+
+// Split the lore string into sections based on the sectionBreaks markers.
+// Each marker is a substring; we split at its exact position. The marker
+// itself stays at the start of the new section. Returns an array of
+// section strings. If no markers match, returns a single-element array
+// with the whole lore.
+function splitLoreIntoSections(lore, breakMarkers){
+  if(!breakMarkers || breakMarkers.length === 0) return [lore];
+  var sections = [];
+  var remaining = lore;
+  var cursor = 0;
+  breakMarkers.forEach(function(marker){
+    var idx = remaining.indexOf(marker, cursor);
+    if(idx === -1) return; // marker not found; skip
+    // Take everything from cursor up to (but not including) the marker
+    sections.push(remaining.substring(0, idx).trim());
+    remaining = remaining.substring(idx);
+    cursor = 0;
+  });
+  if(remaining.trim().length > 0) sections.push(remaining.trim());
+  if(sections.length === 0) return [lore]; // defensive fallback
+  return sections;
+}
+
+// Track the fragment the user is currently reading. Cleared on close.
+// Used to detect the 6/6 completion moment — when the user closes the
+// reader on the sixth fragment, Guide's payoff dialogue fires.
+var currentReadingFragmentId = null;
+
+// Called by the "Reflect in Scriptorium" button. Adds the fragment to the
+// reflection queue (shared with the Scriptorium page) and shows a toast
+// confirming the add. Doesn't navigate away — user can continue reading
+// or collecting other fragments.
+function queueReflection(fragmentId){
+  var hn = HIDDEN_NODES.find(function(n){ return n.id === fragmentId; });
+  if(!hn) return;
+  var added = addFragmentToQueue(hn);
+  if(!added){
+    showReflectionToast('Already in your Reflection Queue', 'neutral');
+    return;
+  }
+  showReflectionToast('Added to your Reflection Queue', 'success');
+  // Update the button in the currently-open reader so it reflects the
+  // new queued state (disables + changes text).
+  var btn = document.querySelector('.frag-reader-reflect-btn');
+  if(btn){
+    btn.disabled = true;
+    btn.textContent = 'Already in your Reflection Queue';
+    btn.classList.remove('cat-' + hn.category);
+    btn.classList.add('frag-reader-reflect-queued');
+    btn.onclick = null;
+  }
+  // Also update the queue indicator badge next to the Codex button
+  updateReflectionQueueBadge();
+}
+
+// Small toast that confirms a queue add. Positioned under the reader's
+// action row. Auto-dismisses after 2.5s.
+function showReflectionToast(message, tone){
+  var existing = document.getElementById('reflectionToast');
+  if(existing) existing.remove();
+  var toast = document.createElement('div');
+  toast.id = 'reflectionToast';
+  toast.className = 'reflection-toast reflection-toast-' + (tone || 'neutral');
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(function(){ toast.classList.add('open'); });
+  setTimeout(function(){
+    toast.classList.remove('open');
+    setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 400);
+  }, 2500);
 }
 
 function closeLorePanel(){
-  var panel = document.getElementById('questPanel');
-  panel.classList.remove('open');
-  // Clear the host — the quest-offer content is no longer part of this
-  // panel (Guide handles quest offers now). Leave it empty for next lore
-  // reveal to populate.
-  panel.innerHTML = '';
+  var overlay = document.getElementById('fragReaderOverlay');
+  if(overlay){
+    overlay.classList.remove('open');
+    setTimeout(function(){ if(overlay.parentNode) overlay.remove(); }, 400);
+  }
+
+  // 6/6 payoff trigger — if the user just finished reading the sixth
+  // fragment AND the ceremony flag isn't yet set, fire Guide's completion
+  // dialogue after a brief breath. The flag prevents re-firing on future
+  // reader-closes of already-preserved fragments.
+  var found = getLoreFound();
+  var allFound = found.length >= HIDDEN_NODES.length;
+  var alreadyFired = localStorage.getItem('ga_fragments_payoff_fired') === '1';
+  if(allFound && !alreadyFired && currentReadingFragmentId){
+    try { localStorage.setItem('ga_fragments_payoff_fired', '1'); } catch(e){}
+    setTimeout(fireSixOfSixPayoff, 900);
+  }
+  currentReadingFragmentId = null;
+}
+
+// Guide's 6/6 completion dialogue. Fires once, after the user closes the
+// reader on the sixth fragment. Short by design — the Codex counter going
+// gold is the visual payoff; Guide just frames what it means.
+function fireSixOfSixPayoff(){
+  if(typeof Guide === 'undefined' || typeof Guide.summonOneOff !== 'function'){
+    console.warn('[Fragments] 6/6 payoff — Guide.summonOneOff unavailable, skipping');
+    return;
+  }
+  Guide.summonOneOff([
+    { speaker: 'The Guide',
+      text: 'All six, preserved. Every fragment you pulled from the nebula was someone figuring out what you are figuring out now. The work is old. You are not alone in it.' }
+  ]);
+}
+
+// Badge on the Codex button (or wherever appropriate) showing the pending
+// reflection queue size. Small number in a pill. Refreshed on each queue
+// change and on page load.
+function updateReflectionQueueBadge(){
+  var q = getReflectionQueue();
+  var badge = document.getElementById('reflectionQueueBadge');
+  if(!badge){
+    // Attach to the Codex button — the fragment-related surface the user
+    // already knows. Creates the badge element lazily so we don't have
+    // to hard-code it in the HTML.
+    var codexBtn = document.getElementById('codexBtn');
+    if(!codexBtn) return;
+    badge = document.createElement('span');
+    badge.id = 'reflectionQueueBadge';
+    badge.className = 'reflection-queue-badge';
+    codexBtn.appendChild(badge);
+  }
+  if(q.length === 0){
+    badge.style.display = 'none';
+  } else {
+    badge.style.display = '';
+    badge.textContent = q.length;
+  }
 }
 
 // ---- CODEX ----
 function updateCodexBtn(){
   var found = getLoreFound();
-  // Show the Codex button when EITHER:
-  //   - the user has found any fragments (show what they've collected), OR
-  //   - the user has an accepted quest (show hints to guide them)
-  // This means the Codex becomes useful the moment a quest is accepted,
-  // not just after the first fragment is caught.
   var hasActiveQuest = false;
   Object.keys(QUEST_REGISTRY).forEach(function(key){
     if(getQuestState(QUEST_REGISTRY[key].id) === 'accepted') hasActiveQuest = true;
@@ -7434,6 +7921,10 @@ function updateCodexBtn(){
   if(found.length > 0 || getQuestState('codex_1') === 'complete' || hasActiveQuest){
     document.getElementById('codexBtn').classList.add('visible');
   }
+  // Keep the reflection-queue badge in sync with the Codex button state.
+  // The badge lives as a child of codexBtn, so it appears/updates whenever
+  // the button is visible.
+  updateReflectionQueueBadge();
 }
 
 // Build HTML for the "Active Quests" section at the top of the Codex panel.
@@ -7518,9 +8009,19 @@ function openCodex(){
   var foundCount = found.length;
 
   // Header — collection counter
-  var html = '<div class="codex-counter">' +
-    'Preserved <span class="codex-counter-value">' + foundCount + '</span> of <span class="codex-counter-value">' + totalFragments + '</span>' +
-  '</div>';
+  // Header — collection counter. Flips to a gold "Complete" label when
+  // all fragments are preserved.
+  var counterHtml;
+  if(foundCount >= totalFragments){
+    counterHtml = '<div class="codex-counter codex-counter-complete">' +
+      'Preserved <span class="codex-counter-value">\u2014 Complete</span>' +
+    '</div>';
+  } else {
+    counterHtml = '<div class="codex-counter">' +
+      'Preserved <span class="codex-counter-value">' + foundCount + '</span> of <span class="codex-counter-value">' + totalFragments + '</span>' +
+    '</div>';
+  }
+  var html = counterHtml;
 
   // Render one cluster per thematic group, in order: north → east → west
   var clusterOrder = ['north', 'east', 'west'];
