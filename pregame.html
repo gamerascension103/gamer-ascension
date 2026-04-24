@@ -7209,21 +7209,51 @@ function drawHiddenNodes(){
 
     } else {
       // ===== UNDISCOVERED STATE =====
-      // Very faint baseline — barely visible at distance (proximity 0).
-      // Intensifies as cursor approaches — glow expands, outline brightens,
-      // shard swells, pulse speeds up.
+      // Invisible baseline. Only two things reveal the fragment:
+      //   1. A rare TWINKLE — a brief flash every 10-15 seconds at the
+      //      fragment's position. Easy to miss. Enough to catch peripheral
+      //      attention if the user is roughly looking in that direction.
+      //      Each fragment has a unique phase so they don't synchronize.
+      //   2. Proximity — cursor within MAX_RADIUS reveals the fragment
+      //      progressively. Within MIN_RADIUS, full aggressive pulse.
+      //
+      // Fragments are genuinely hard to find on purpose. The discovery
+      // feel matches the canon — the nebula pulls fragments into
+      // near-invisibility; only attention rescues them.
 
-      // Combined visibility driver: gleam gives a very small baseline,
-      // proximity dominates. Result: when cursor is far, shard is a
-      // barely-there ghost. When cursor is near, shard is fully lit.
-      var baseVisibility = 0.08 + gleam * 0.04; // 0.08-0.12 at rest
-      var visibility = baseVisibility + proximity * 0.88;
-      visibility = Math.min(1, visibility);
+      // Twinkle phase — each fragment gets a unique cycle length and phase.
+      // 12-second base cycle + 0-3s variation per fragment, keyed off the
+      // fragment's driftPhase so they stagger across the clusters.
+      // The flash itself is only ~180ms of the ~12s cycle — brief and easy
+      // to miss if you're not watching.
+      var twinkleCycleLen = 12000 + Math.abs(Math.sin(hn.driftPhase * 7)) * 3000; // ms
+      var twinkleFlashDur = 180; // ms the flash is visible
+      var nowMs = t * 16.67; // t is frame counter, ~60fps, so t*16.67 = ms
+      var twinklePhase = (nowMs + hn.driftPhase * 4000) % twinkleCycleLen;
+      var twinkleAmt = 0;
+      if(twinklePhase < twinkleFlashDur){
+        // In flash window — ramp up (0-50ms) → peak (50-100ms) → fade (100-180ms)
+        var tp = twinklePhase / twinkleFlashDur;
+        if(tp < 0.3)      twinkleAmt = tp / 0.3;
+        else if(tp < 0.6) twinkleAmt = 1;
+        else              twinkleAmt = 1 - ((tp - 0.6) / 0.4);
+      }
 
-      // Outer aura — scales with proximity; invisible at distance
-      if(proximity > 0.05){
-        var auraR = 16 + proximity * 24;
-        var auraAlpha = proximity * 0.35;
+      // Combined reveal amount: max of twinkle and proximity. Either can
+      // fully reveal, but normally both are near zero.
+      var reveal = Math.max(twinkleAmt, proximity);
+
+      // If nothing is revealing the fragment, skip drawing entirely. Saves
+      // canvas paints and ensures genuine invisibility.
+      if(reveal < 0.02){
+        treeCtx.restore();
+        return;
+      }
+
+      // Outer aura — scales with reveal; invisible at low values.
+      if(reveal > 0.05){
+        var auraR = 16 + reveal * 24;
+        var auraAlpha = reveal * 0.35;
         var auraGrad = treeCtx.createRadialGradient(0, 0, 0, 0, 0, auraR);
         auraGrad.addColorStop(0, cat.glow + auraAlpha + ')');
         auraGrad.addColorStop(1, cat.glow + '0)');
@@ -7231,46 +7261,47 @@ function drawHiddenNodes(){
         treeCtx.fillRect(-auraR, -auraR, auraR * 2, auraR * 2);
       }
 
-      // Outer shard outline — category-colored, brightens with proximity
-      treeCtx.shadowBlur = 6 + proximity * 14;
-      treeCtx.shadowColor = cat.glow + (0.3 + proximity * 0.6) + ')';
-      treeCtx.strokeStyle = cat.glow + (visibility * 0.8) + ')';
-      treeCtx.lineWidth = 1 + proximity * 0.5;
+      // Outer shard outline — category-colored, brightens with reveal
+      treeCtx.shadowBlur = 6 + reveal * 14;
+      treeCtx.shadowColor = cat.glow + (0.3 + reveal * 0.6) + ')';
+      treeCtx.strokeStyle = cat.glow + (reveal * 0.9) + ')';
+      treeCtx.lineWidth = 1 + reveal * 0.5;
       treeCtx.beginPath();
       treeCtx.moveTo(0, -h); treeCtx.lineTo(w, 0);
       treeCtx.lineTo(0, h);  treeCtx.lineTo(-w, 0);
       treeCtx.closePath();
       treeCtx.stroke();
 
-      // Inner fill — dark core, slight category tint at proximity
-      treeCtx.shadowBlur = 0;
-      var undFill = treeCtx.createLinearGradient(-w, -h, w, h);
-      var fillBase = 0.35 + proximity * 0.5;
-      undFill.addColorStop(0,   'rgba(30,28,50,' + fillBase + ')');
-      undFill.addColorStop(0.5, cat.glow + (0.25 + proximity * 0.55) + ')');
-      undFill.addColorStop(1,   'rgba(30,28,50,' + fillBase + ')');
-      treeCtx.fillStyle = undFill;
-      treeCtx.beginPath();
-      treeCtx.moveTo(0, -h); treeCtx.lineTo(w, 0);
-      treeCtx.lineTo(0, h);  treeCtx.lineTo(-w, 0);
-      treeCtx.closePath();
-      treeCtx.fill();
-
-      // The glint — grows with proximity. At full proximity, a bright
-      // aggressive pulse that signals "you're here."
-      if(proximity > 0.05){
-        // Aggressive pulse — fast heartbeat when close
-        var pulseFreq = 0.008 + proximity * 0.018;
-        var heartbeat = 0.5 + Math.sin(t * pulseFreq) * 0.5;
-        var glintAlpha = 0.4 + proximity * 0.55 + heartbeat * proximity * 0.2;
-        var glintR = 1.4 + proximity * 2.2;
-        treeCtx.shadowBlur = 4 + proximity * 10;
-        treeCtx.shadowColor = cat.glow + (0.5 + proximity * 0.4) + ')';
-        treeCtx.fillStyle = 'rgba(255,235,190,' + Math.min(1, glintAlpha) + ')';
+      // Inner fill — only painted at meaningful reveal values. Keeps the
+      // twinkle clean (the twinkle is mostly glint + outline).
+      if(reveal > 0.15){
+        treeCtx.shadowBlur = 0;
+        var undFill = treeCtx.createLinearGradient(-w, -h, w, h);
+        var fillBase = 0.15 + reveal * 0.5;
+        undFill.addColorStop(0,   'rgba(30,28,50,' + fillBase + ')');
+        undFill.addColorStop(0.5, cat.glow + (0.2 + reveal * 0.6) + ')');
+        undFill.addColorStop(1,   'rgba(30,28,50,' + fillBase + ')');
+        treeCtx.fillStyle = undFill;
         treeCtx.beginPath();
-        treeCtx.arc(0, 0, glintR, 0, Math.PI * 2);
+        treeCtx.moveTo(0, -h); treeCtx.lineTo(w, 0);
+        treeCtx.lineTo(0, h);  treeCtx.lineTo(-w, 0);
+        treeCtx.closePath();
         treeCtx.fill();
       }
+
+      // The glint — the heart of the fragment. This is what the twinkle
+      // IS (a bright dot flashing at position), and what the proximity
+      // pulse intensifies.
+      var pulseFreq = 0.008 + proximity * 0.018;
+      var heartbeat = 0.5 + Math.sin(t * pulseFreq) * 0.5;
+      var glintAlpha = reveal * 0.8 + heartbeat * proximity * 0.2;
+      var glintR = 1.4 + reveal * 2.4;
+      treeCtx.shadowBlur = 4 + reveal * 12;
+      treeCtx.shadowColor = cat.glow + (0.5 + reveal * 0.4) + ')';
+      treeCtx.fillStyle = 'rgba(255,235,190,' + Math.min(1, glintAlpha) + ')';
+      treeCtx.beginPath();
+      treeCtx.arc(0, 0, glintR, 0, Math.PI * 2);
+      treeCtx.fill();
     }
 
     treeCtx.restore();
