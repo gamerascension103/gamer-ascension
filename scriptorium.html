@@ -167,6 +167,211 @@ body{
 .archive-item-frag-tag.cat-witness  .archive-item-frag-tag-dot{background:#9a7adf}
 .archive-item-frag-tag.cat-practice .archive-item-frag-tag-dot{background:#5ac5a0}
 
+/* ============================================================================
+   ASTRAL DUST — user-captured quotes (2026-04 dust pass)
+   Visual language: misty violet, subtle, "airborne" — distinct from the
+   solid category colors used for canonical Fragments. Dust carries weight
+   but less weight than canonical fragments; its visuals signal that.
+   ============================================================================ */
+
+/* ----- Queue card (dust variant) ----- */
+.reflection-queue-card.kind-dust{
+  border-left:3px solid rgba(180,170,210,.45);
+  background:rgba(18,18,28,.85);
+}
+.reflection-queue-card.kind-dust:hover{
+  border-color:rgba(180,170,210,.7);
+  background:rgba(22,20,32,.95);
+}
+.reflection-queue-card.kind-dust .reflection-queue-card-eyebrow{
+  color:rgba(180,170,210,.7);
+}
+.reflection-queue-card.kind-dust .reflection-queue-card-title{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-style:italic;
+  font-size:14px;
+  font-weight:500;
+  color:rgba(240,236,228,.9);
+}
+.reflection-queue-card-source{
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(240,236,228,.4);
+  margin-top:4px;
+}
+
+/* ----- Capture modal ----- */
+.dust-modal-overlay{
+  position:fixed;inset:0;z-index:460;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(8,8,16,.88);backdrop-filter:blur(12px);
+  opacity:0;pointer-events:none;
+  transition:opacity .35s ease;
+  padding:20px;
+}
+.dust-modal-overlay.open{opacity:1;pointer-events:all}
+.dust-modal{
+  position:relative;
+  background:linear-gradient(180deg,rgba(18,16,28,.98) 0%,rgba(10,10,20,.99) 100%);
+  border:1px solid rgba(180,170,210,.25);
+  border-radius:6px;
+  max-width:560px;width:100%;
+  max-height:calc(100vh - 40px);
+  overflow-y:auto;
+  padding:28px 32px 26px;
+  box-shadow:0 0 80px rgba(70,50,100,.25);
+  transform:scale(0.96) translateY(10px);opacity:0;
+  transition:transform .4s cubic-bezier(0.34,1.56,0.64,1),opacity .3s ease;
+}
+.dust-modal-overlay.open .dust-modal{
+  transform:scale(1) translateY(0);opacity:1;
+}
+.dust-modal::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:6px 6px 0 0;
+  background:linear-gradient(90deg,transparent,rgba(180,170,210,.65),transparent);
+}
+.dust-modal-close{
+  position:absolute;top:14px;right:14px;
+  background:none;border:none;
+  color:rgba(240,236,228,.4);font-size:18px;
+  cursor:pointer;padding:6px 10px;line-height:1;
+  transition:color .2s;
+}
+.dust-modal-close:hover{color:rgba(240,236,228,.8)}
+.dust-modal-eyebrow{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(180,170,210,.7);
+  margin-bottom:8px;
+}
+.dust-modal-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:22px;font-weight:700;
+  color:#f0ece4;
+  margin:0 0 12px;
+  letter-spacing:.02em;
+}
+.dust-modal-desc{
+  font-size:13px;line-height:1.6;
+  color:rgba(240,236,228,.6);
+  margin:0 0 22px;
+}
+.dust-field-label{
+  display:block;
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(201,168,76,.7);
+  margin-bottom:8px;
+}
+.dust-field-optional{
+  color:rgba(240,236,228,.35);
+  text-transform:none;
+  letter-spacing:.05em;
+  font-size:10px;
+  margin-left:4px;
+}
+.dust-field-textarea{
+  width:100%;
+  background:rgba(10,10,20,.8);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:4px;
+  padding:12px 14px;
+  color:#f0ece4;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:16px;line-height:1.55;
+  resize:vertical;
+  min-height:100px;
+  box-sizing:border-box;
+  transition:border-color .2s;
+}
+.dust-field-textarea:focus{
+  outline:none;
+  border-color:rgba(180,170,210,.55);
+  background:rgba(14,14,24,.9);
+}
+.dust-field-counter{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.1em;
+  color:rgba(240,236,228,.4);
+  text-align:right;
+  margin-top:4px;
+  margin-bottom:18px;
+}
+.dust-field-input{
+  width:100%;
+  background:rgba(10,10,20,.8);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:4px;
+  padding:10px 14px;
+  color:#f0ece4;
+  font-family:inherit;
+  font-size:14px;
+  box-sizing:border-box;
+  transition:border-color .2s;
+  margin-bottom:24px;
+}
+.dust-field-input:focus{
+  outline:none;
+  border-color:rgba(180,170,210,.55);
+  background:rgba(14,14,24,.9);
+}
+.dust-modal-actions{
+  display:flex;gap:12px;flex-wrap:wrap;
+}
+.dust-cancel-btn{
+  flex:0 0 auto;
+  background:none;
+  border:1px solid rgba(255,255,255,.12);
+  color:rgba(240,236,228,.5);
+  font-family:'Cinzel',serif;font-size:11px;font-weight:400;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:12px 22px;border-radius:3px;
+  cursor:pointer;transition:all .2s;
+}
+.dust-cancel-btn:hover{
+  border-color:rgba(255,255,255,.3);
+  color:rgba(240,236,228,.85);
+}
+.dust-submit-btn{
+  flex:1;min-width:180px;
+  background:transparent;
+  border:1px solid rgba(180,170,210,.55);
+  color:rgba(200,190,230,.95);
+  font-family:'Cinzel',serif;font-size:12px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:13px 18px;border-radius:3px;
+  cursor:pointer;transition:all .2s;
+}
+.dust-submit-btn:hover:not(:disabled){
+  background:rgba(180,170,210,.1);
+  border-color:rgba(180,170,210,.85);
+  color:#ddd0ff;
+}
+.dust-submit-btn:disabled{
+  border-color:rgba(255,255,255,.1);
+  color:rgba(240,236,228,.25);
+  cursor:not-allowed;
+}
+.dust-modal-hint{
+  margin-top:14px;
+  font-size:11px;
+  color:rgba(180,170,210,.55);
+  font-style:italic;
+  min-height:16px;
+}
+.dust-modal-hint.error{color:rgba(240,180,180,.75)}
+
+/* ----- Archive tag (dust variant) ----- */
+.archive-item-frag-tag.kind-dust{
+  background:rgba(180,170,210,.08);
+  border-color:rgba(180,170,210,.22);
+  color:rgba(200,190,230,.8);
+}
+.archive-item-frag-tag.kind-dust .archive-item-frag-tag-dot{
+  background:rgba(180,170,210,.7);
+}
+
 .home-action{display:flex;align-items:center;justify-content:space-between;padding:22px 24px;background:rgba(13,13,26,0.6);border:1px solid var(--border-warm);border-radius:4px;text-decoration:none;color:var(--text);cursor:pointer;transition:all .3s;text-align:left;font-family:inherit;font-size:inherit;width:100%;backdrop-filter:blur(6px)}
 .home-action:hover{border-color:rgba(201,168,76,.5);background:rgba(20,20,35,.75);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3),0 0 20px rgba(201,168,76,.08)}
 .home-action:disabled{opacity:.4;cursor:not-allowed}
@@ -376,6 +581,14 @@ body{
         </div>
         <span class="home-action-arrow">→</span>
       </button>
+
+      <button class="home-action" id="actCaptureDust" onclick="openDustCapture()">
+        <div class="home-action-text">
+          <div class="home-action-name">Capture a quote</div>
+          <div class="home-action-desc">Something from your reading. Add it to the Reflection Queue as Astral Dust.</div>
+        </div>
+        <span class="home-action-arrow">\u2192</span>
+      </button>
     </div>
 
     <div class="home-stats" id="homeStats">
@@ -391,6 +604,32 @@ body{
         <div class="home-stat-value" id="statEssence">0</div>
         <div class="home-stat-label">Essence</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ============ ASTRAL DUST CAPTURE MODAL ============ -->
+  <!-- Paste a quote, optional source, submit to add as 'dust' queue item.
+       10-1000 char bounds enforced. -->
+  <div class="dust-modal-overlay" id="dustCaptureOverlay">
+    <div class="dust-modal" role="dialog" aria-modal="true" aria-labelledby="dustModalTitle">
+      <button class="dust-modal-close" onclick="closeDustCapture()" aria-label="Close">\u2715</button>
+      <div class="dust-modal-eyebrow">Astral Dust</div>
+      <h2 class="dust-modal-title" id="dustModalTitle">Capture a quote</h2>
+      <p class="dust-modal-desc">Paste something that resonated \u2014 from a book, an article, a conversation. It will enter your Reflection Queue so you can return to it when you are ready.</p>
+
+      <label class="dust-field-label" for="dustQuoteInput">The quote</label>
+      <textarea id="dustQuoteInput" class="dust-field-textarea" rows="6" maxlength="1000" placeholder="Paste here\u2026"></textarea>
+      <div class="dust-field-counter"><span id="dustCharCount">0</span> / 1000</div>
+
+      <label class="dust-field-label" for="dustSourceInput">Where is it from? <span class="dust-field-optional">(optional)</span></label>
+      <input id="dustSourceInput" class="dust-field-input" type="text" maxlength="200" placeholder="Book title, article, a friend, etc.">
+
+      <div class="dust-modal-actions">
+        <button class="dust-cancel-btn" onclick="closeDustCapture()">Cancel</button>
+        <button class="dust-submit-btn" id="dustSubmitBtn" onclick="submitDustCapture()" disabled>Add to Reflection Queue</button>
+      </div>
+
+      <div class="dust-modal-hint" id="dustModalHint"></div>
     </div>
   </div>
 
@@ -787,30 +1026,68 @@ var Storage = {
   }
 };
 
-// ---- REFLECTION QUEUE (Phase 3, 2026-04) ----
-// The reflection queue is cross-chamber state — populated by the Atheneum
-// when the user taps "Reflect in Scriptorium" on a preserved fragment,
-// consumed here when the user completes a reflection session.
+// ---- REFLECTION QUEUE (Phase 3, 2026-04; extended 2026-04 dust pass) ----
+// The reflection queue is cross-chamber state. Two kinds of queue items:
 //
-// Storage key: ga_reflection_queue (NOT prefixed with ga_scriptorium_
-// because it's shared state, not Scriptorium-owned).
+//   kind: 'fragment' — canonical fragment reflection, populated by the
+//     Atheneum when user taps "Reflect in Scriptorium" on a preserved
+//     fragment. Item shape:
+//       { kind:'fragment', fragmentId, title, category, eyebrow, queuedAt }
 //
-// Item shape:
-//   { fragmentId, title, category, eyebrow, queuedAt }
+//   kind: 'dust' — user-captured Astral Dust, populated inside the
+//     Scriptorium itself via the "Capture a quote" form. Item shape:
+//       { kind:'dust', dustId, quote, source, capturedAt }
+//     where dustId is a generated unique id so the queue can target
+//     specific items for removal even if the same quote is captured twice.
+//
+// Items without an explicit 'kind' field default to 'fragment' for
+// back-compat with earlier Phase 3 queued items.
 var REFLECTION_QUEUE_KEY = 'ga_reflection_queue';
 function getReflectionQueue(){
-  try { return JSON.parse(localStorage.getItem(REFLECTION_QUEUE_KEY) || '[]'); }
+  try {
+    var q = JSON.parse(localStorage.getItem(REFLECTION_QUEUE_KEY) || '[]');
+    // Back-compat: tag older items that lack a 'kind' field.
+    return q.map(function(item){
+      if(!item.kind) item.kind = 'fragment';
+      return item;
+    });
+  }
   catch(e){ return []; }
 }
 function setReflectionQueue(arr){
   try { localStorage.setItem(REFLECTION_QUEUE_KEY, JSON.stringify(arr)); }
   catch(e){ console.error('[Scriptorium queue] write failed:', e); }
 }
-function removeFromReflectionQueue(fragmentId){
+function removeFromReflectionQueue(idOrPredicate){
+  // Accepts either a string id or a predicate function. For fragments,
+  // id is fragmentId. For dust, id is dustId. Predicate handles edge
+  // cases where a caller wants custom removal logic.
   var q = getReflectionQueue();
-  var next = q.filter(function(item){ return item.fragmentId !== fragmentId; });
+  var next;
+  if(typeof idOrPredicate === 'function'){
+    next = q.filter(function(item){ return !idOrPredicate(item); });
+  } else {
+    next = q.filter(function(item){
+      if(item.kind === 'fragment') return item.fragmentId !== idOrPredicate;
+      if(item.kind === 'dust')     return item.dustId !== idOrPredicate;
+      return true;
+    });
+  }
   setReflectionQueue(next);
   return next;
+}
+function addDustToQueue(quote, source){
+  var q = getReflectionQueue();
+  var dustId = 'dust_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+  q.push({
+    kind: 'dust',
+    dustId: dustId,
+    quote: quote,
+    source: source || '',
+    capturedAt: Date.now()
+  });
+  setReflectionQueue(q);
+  return dustId;
 }
 
 // Category visual map — mirror of the Atheneum side. Kept duplicated
@@ -991,23 +1268,46 @@ function refreshReflectionQueueSection(){
 
   var html = '';
   queue.forEach(function(item){
-    var catClass = 'cat-' + (item.category || 'wisdom');
-    // Escape the title defensively (localStorage is trusted but good hygiene)
-    var safeTitle = String(item.title || 'Fragment').replace(/[<>&"']/g, function(c){
-      return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
-    });
-    var safeEyebrow = String(item.eyebrow || 'Fragment').replace(/[<>&"']/g, function(c){
-      return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
-    });
-    html += '<button class="reflection-queue-card ' + catClass + '" onclick="beginFragmentReflection(\'' + item.fragmentId + '\')">' +
-      '<div class="reflection-queue-card-body">' +
-        '<div class="reflection-queue-card-eyebrow">' + safeEyebrow + '</div>' +
-        '<div class="reflection-queue-card-title">' + safeTitle + '</div>' +
-      '</div>' +
-      '<span class="reflection-queue-card-arrow">\u2192</span>' +
-    '</button>';
+    if(item.kind === 'dust'){
+      html += renderDustQueueCard(item);
+    } else {
+      html += renderFragmentQueueCard(item);
+    }
   });
   list.innerHTML = html;
+}
+
+function renderFragmentQueueCard(item){
+  var catClass = 'cat-' + (item.category || 'wisdom');
+  var safeTitle = escapeHtml(item.title || 'Fragment');
+  var safeEyebrow = escapeHtml(item.eyebrow || 'Fragment');
+  return '<button class="reflection-queue-card ' + catClass + '" onclick="beginFragmentReflection(\'' + item.fragmentId + '\')">' +
+    '<div class="reflection-queue-card-body">' +
+      '<div class="reflection-queue-card-eyebrow">' + safeEyebrow + '</div>' +
+      '<div class="reflection-queue-card-title">' + safeTitle + '</div>' +
+    '</div>' +
+    '<span class="reflection-queue-card-arrow">\u2192</span>' +
+  '</button>';
+}
+
+function renderDustQueueCard(item){
+  // Preview is the quote, truncated. Italic + serif to distinguish from
+  // fragment titles which use Cinzel Decorative.
+  var preview = (item.quote || '').slice(0, 120);
+  if((item.quote || '').length > 120) preview += '\u2026';
+  var safePreview = escapeHtml(preview);
+  var safeSource = item.source ? escapeHtml(item.source) : '';
+  var sourceHtml = safeSource
+    ? '<div class="reflection-queue-card-source">From \u2014 ' + safeSource + '</div>'
+    : '';
+  return '<button class="reflection-queue-card kind-dust" onclick="beginDustReflection(\'' + item.dustId + '\')">' +
+    '<div class="reflection-queue-card-body">' +
+      '<div class="reflection-queue-card-eyebrow">Astral Dust</div>' +
+      '<div class="reflection-queue-card-title">\u201C' + safePreview + '\u201D</div>' +
+      sourceHtml +
+    '</div>' +
+    '<span class="reflection-queue-card-arrow">\u2192</span>' +
+  '</button>';
 }
 
 // Start a reflection session on a specific queued fragment. Creates a
@@ -1016,15 +1316,12 @@ function refreshReflectionQueueSection(){
 // the item on finish.
 function beginFragmentReflection(fragmentId){
   var queue = getReflectionQueue();
-  var item = queue.find(function(x){ return x.fragmentId === fragmentId; });
+  var item = queue.find(function(x){ return x.kind === 'fragment' && x.fragmentId === fragmentId; });
   if(!item){
-    // Item already removed somehow — refresh and bail
     refreshReflectionQueueSection();
     return;
   }
 
-  // If a draft is in progress, warn before overwriting (same guard as
-  // beginNewSession — feels consistent).
   var existingDraft = Storage.get('draft');
   if(existingDraft && existingDraft.body && existingDraft.body.trim().length > 0){
     var ok = confirm('You have an unfinished session. Starting a reflection will discard it. Continue?');
@@ -1044,8 +1341,8 @@ function beginFragmentReflection(fragmentId){
     body: '',
     wordCount: 0,
     unguided: false,
-    // Fragment reflection metadata — retained through finishSession so
-    // the archive can display the tag and the queue knows what to remove.
+    // Fragment reflection metadata
+    reflectionKind: 'fragment',
     fragmentId: item.fragmentId,
     fragmentTitle: item.title,
     fragmentCategory: item.category,
@@ -1053,6 +1350,113 @@ function beginFragmentReflection(fragmentId){
   };
   Storage.set('draft', currentSession);
   openWritingView();
+}
+
+// Start a reflection session on a specific queued dust item. The prompt
+// includes the captured quote so the user sees it as they write. The
+// session is tagged with the dustId and full quote so the archive can
+// display the original capture alongside the user's reflection.
+function beginDustReflection(dustId){
+  var queue = getReflectionQueue();
+  var item = queue.find(function(x){ return x.kind === 'dust' && x.dustId === dustId; });
+  if(!item){
+    refreshReflectionQueueSection();
+    return;
+  }
+
+  var existingDraft = Storage.get('draft');
+  if(existingDraft && existingDraft.body && existingDraft.body.trim().length > 0){
+    var ok = confirm('You have an unfinished session. Starting a reflection will discard it. Continue?');
+    if(!ok) return;
+  }
+  Storage.remove('draft');
+
+  // Prompt displays the quote directly so the user has it in view as
+  // they reflect. Source (if provided) appears below the quote.
+  var promptText = '\u201C' + item.quote + '\u201D';
+  var promptGuidance = item.source ? 'From \u2014 ' + item.source : 'Write what it asks of you.';
+
+  currentSession = {
+    id: genSessionId(),
+    createdAt: Date.now(),
+    finishedAt: null,
+    state: null,
+    promptId: null,
+    promptText: promptText,
+    promptGuidance: promptGuidance,
+    body: '',
+    wordCount: 0,
+    unguided: false,
+    // Dust reflection metadata
+    reflectionKind: 'dust',
+    dustId: item.dustId,
+    dustQuote: item.quote,
+    dustSource: item.source || ''
+  };
+  Storage.set('draft', currentSession);
+  openWritingView();
+}
+
+// ---- ASTRAL DUST CAPTURE MODAL ----
+// Opens the capture form, resets fields, wires up the live character
+// counter + submit-enable logic. Called from the "Capture a quote"
+// home action.
+function openDustCapture(){
+  var overlay = document.getElementById('dustCaptureOverlay');
+  if(!overlay) return;
+  var textarea = document.getElementById('dustQuoteInput');
+  var source   = document.getElementById('dustSourceInput');
+  var counter  = document.getElementById('dustCharCount');
+  var submit   = document.getElementById('dustSubmitBtn');
+  var hint     = document.getElementById('dustModalHint');
+  textarea.value = '';
+  source.value = '';
+  counter.textContent = '0';
+  submit.disabled = true;
+  hint.textContent = '';
+  hint.classList.remove('error');
+
+  // Wire up the live input handler. Guard against double-binding so
+  // reopening the modal doesn't attach multiple listeners.
+  if(!textarea.dataset.dustWired){
+    textarea.addEventListener('input', function(){
+      var len = textarea.value.trim().length;
+      counter.textContent = textarea.value.length;
+      // Enforce 10-character minimum — anything shorter is unlikely to
+      // be a meaningful quote. Maxlength attr already caps at 1000.
+      submit.disabled = len < 10;
+    });
+    textarea.dataset.dustWired = '1';
+  }
+
+  overlay.classList.add('open');
+  setTimeout(function(){ textarea.focus(); }, 320);
+}
+
+function closeDustCapture(){
+  var overlay = document.getElementById('dustCaptureOverlay');
+  if(overlay) overlay.classList.remove('open');
+}
+
+function submitDustCapture(){
+  var textarea = document.getElementById('dustQuoteInput');
+  var source   = document.getElementById('dustSourceInput');
+  var hint     = document.getElementById('dustModalHint');
+  var quote = textarea.value.trim();
+  var src = source.value.trim();
+  if(quote.length < 10){
+    hint.textContent = 'Give it at least a few words \u2014 a full quote, not a fragment.';
+    hint.classList.add('error');
+    return;
+  }
+  if(quote.length > 1000){
+    hint.textContent = 'Keep it to 1000 characters. This is for quotes, not articles.';
+    hint.classList.add('error');
+    return;
+  }
+  addDustToQueue(quote, src);
+  closeDustCapture();
+  refreshReflectionQueueSection();
 }
 
 
@@ -1342,11 +1746,16 @@ function finishSession() {
   index.unshift(currentSession.id);
   Storage.set('index', index);
 
-  // If this was a fragment reflection, remove it from the queue so the
-  // Atheneum/home view no longer show it as pending. The session itself
-  // is permanently archived with its fragmentId tag for retrospective
-  // browsing.
-  if(currentSession.fragmentId){
+  // If this was a queued reflection (fragment or dust), remove it from
+  // the queue. The session itself is permanently archived with its
+  // reflection-kind metadata for retrospective browsing.
+  if(currentSession.reflectionKind === 'fragment' && currentSession.fragmentId){
+    removeFromReflectionQueue(currentSession.fragmentId);
+  } else if(currentSession.reflectionKind === 'dust' && currentSession.dustId){
+    removeFromReflectionQueue(currentSession.dustId);
+  } else if(currentSession.fragmentId){
+    // Legacy back-compat — earlier Phase 3 sessions had fragmentId but
+    // no reflectionKind. Treat them as fragments.
     removeFromReflectionQueue(currentSession.fragmentId);
   }
 
@@ -1451,10 +1860,17 @@ function renderArchive() {
       ? '<div class="archive-item-prompt unguided">Unguided session</div>'
       : '<div class="archive-item-prompt">' + escapeHtml(s.promptText) + '</div>';
     var preview = escapeHtml((s.body || '').replace(/\n+/g, ' ').slice(0, 200));
-    // Fragment tag — if this session was a fragment reflection, show a
-    // category-colored pill identifying which fragment it reflects on.
+    // Reflection tag — if this session was a fragment or dust reflection,
+    // show a category-colored/dust-styled pill identifying its source.
     var fragTagHtml = '';
-    if(s.fragmentId && s.fragmentTitle){
+    if(s.reflectionKind === 'dust' && s.dustQuote){
+      // Dust tag — preview of the quote or the source if present
+      var dustLabel = s.dustSource ? s.dustSource : (s.dustQuote.slice(0, 40) + (s.dustQuote.length > 40 ? '\u2026' : ''));
+      fragTagHtml = '<div class="archive-item-frag-tag kind-dust">' +
+        '<span class="archive-item-frag-tag-dot"></span>' +
+        'Dust \u2014 ' + escapeHtml(dustLabel) +
+      '</div>';
+    } else if(s.fragmentId && s.fragmentTitle){
       var catClass = 'cat-' + (s.fragmentCategory || 'wisdom');
       fragTagHtml = '<div class="archive-item-frag-tag ' + catClass + '">' +
         '<span class="archive-item-frag-tag-dot"></span>' +
