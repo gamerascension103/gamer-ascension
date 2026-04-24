@@ -3955,6 +3955,12 @@ function drawFrame(){
   treeCtx.clearRect(0,0,W,H);
   t++;
 
+  // On mobile, the invisible reticle (screen-center-offset in world coords)
+  // drives fragment proximity. This runs every frame so the reticle tracks
+  // panning automatically without a separate event listener. On desktop,
+  // this is a no-op.
+  updateMobileReticle();
+
   // Page title
   treeCtx.save();
   treeCtx.textAlign = 'center';
@@ -5442,18 +5448,62 @@ function hitTestPregameNode(screenX, screenY){
 // Track which node the cursor is currently hovering
 var hoveredNodeId = null;
 
-// Cursor position in WORLD coordinates. Updated every mousemove/touchmove.
-// Used by the fragment proximity pulse — fragments visually intensify as
-// the cursor approaches them in world space.
-// Starts at a position far from any fragment so nothing pulses on load.
+// Cursor position in WORLD coordinates. Used by the fragment proximity
+// pulse — fragments visually intensify as the cursor/finger approaches.
+//
+// DESKTOP behavior: driven by mousemove events. Cursor is a real thing the
+// user has direct control of, so proximity tracks it.
+//
+// MOBILE behavior: there is no persistent cursor — only taps. The user
+// explores by panning the canvas, not dragging a finger across fragments.
+// So on mobile, an INVISIBLE RETICLE anchored at screen center (slightly
+// offset upward so the thumb doesn't block it) tracks world coords as the
+// user pans. The reticle's world position is recalculated on every frame
+// via updateMobileReticle() — whatever's under the center of the viewport
+// drives proximity.
+//
+// Touch events on mobile temporarily override with the actual touch
+// position (so tapping a fragment still works for collection), then fall
+// back to reticle mode after a brief window.
 var cursorWorld = { x: -99999, y: -99999, active: false };
-// 'active' flag tells the pulse system whether the cursor is currently
-// engaged (recent move). Idle cursors don't produce pulses.
 var cursorIdleTimer = null;
+var MOBILE_RETICLE_Y_RATIO = 0.40; // 40% down from top — above thumb zone
+var touchOverrideExpiresAt = 0;    // timestamp (perf.now) until touch takes priority
+
+// Detect mobile / touch device once at load. Used to pick the proximity
+// source. We check both touch capability AND narrow viewport so desktops
+// with touchscreens (rare edge case) still use cursor-driven behavior.
+function isMobileInputDevice(){
+  var hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  var narrowViewport = window.innerWidth < 900;
+  return hasTouch && narrowViewport;
+}
+
+// Desktop cursor path: sets position and marks active with idle fallback.
 function markCursorActive(){
   cursorWorld.active = true;
   if(cursorIdleTimer) clearTimeout(cursorIdleTimer);
   cursorIdleTimer = setTimeout(function(){ cursorWorld.active = false; }, 2500);
+}
+
+// Mobile reticle path: runs every frame inside the main animation loop.
+// Projects the screen-center-offset point into world coordinates using
+// the current pan/zoom transform.
+function updateMobileReticle(){
+  if(!isMobileInputDevice()) return;
+  // If a recent touch is overriding, skip the reticle update this frame.
+  if(performance.now() < touchOverrideExpiresAt) return;
+  var wrap = document.getElementById('canvasWrap');
+  if(!wrap) return;
+  var rect = wrap.getBoundingClientRect();
+  // Reticle in screen space — horizontal center, ~40% height.
+  var screenX = rect.left + rect.width / 2;
+  var screenY = rect.top + rect.height * MOBILE_RETICLE_Y_RATIO;
+  // Convert to world coords using screenToCanvas.
+  var cw = screenToCanvas(screenX, screenY);
+  cursorWorld.x = cw.x;
+  cursorWorld.y = cw.y;
+  cursorWorld.active = true; // mobile never "goes idle" — reticle always on
 }
 
 document.getElementById('canvasWrap').addEventListener('mousemove', function(e){
@@ -5842,13 +5892,6 @@ document.getElementById('canvasWrap').addEventListener('touchstart',function(e){
 },{passive:true});
 document.getElementById('canvasWrap').addEventListener('touchmove',function(e){
   e.preventDefault();
-  // Update world-space cursor (touch point) for fragment proximity pulse.
-  // On mobile the user's finger drives the pulse intensity.
-  if(e.touches && e.touches[0]){
-    var cw = screenToCanvas(e.touches[0].clientX, e.touches[0].clientY);
-    cursorWorld.x = cw.x; cursorWorld.y = cw.y;
-    markCursorActive();
-  }
   if(drag.pending&&e.touches.length===1){
     var dx=e.touches[0].clientX-drag.startX,dy=e.touches[0].clientY-drag.startY;
     if(!drag.active&&(Math.abs(dx)>6||Math.abs(dy)>6)){drag.active=true;drag.moved=true;}
@@ -5861,6 +5904,17 @@ document.getElementById('canvasWrap').addEventListener('touchmove',function(e){
     transform.x=mx-(mx-pinch.startTX)*(ns/pinch.startScale);
     transform.y=my-(my-pinch.startTY)*(ns/pinch.startScale);
     transform.scale=ns;applyTransform();
+  }
+  // Touch-position override for fragment proximity — ONLY when not
+  // panning. If the user is panning, their finger is steering the camera,
+  // not hunting fragments — reticle mode is what matters then. A still or
+  // slow touch without a pan (e.g. a deliberate hover just above a
+  // fragment they're about to tap) gets to drive proximity directly.
+  if(!drag.active && e.touches && e.touches[0]){
+    var cw2 = screenToCanvas(e.touches[0].clientX, e.touches[0].clientY);
+    cursorWorld.x = cw2.x; cursorWorld.y = cw2.y;
+    cursorWorld.active = true;
+    touchOverrideExpiresAt = performance.now() + 400;
   }
 },{passive:false});
 document.getElementById('canvasWrap').addEventListener('touchend',function(){
