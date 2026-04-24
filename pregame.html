@@ -1025,6 +1025,157 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
 .codex-entry-title{font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:#f0ece4;margin-bottom:12px}
 .codex-entry-text{font-size:13px;font-weight:300;color:rgba(240,236,228,.6);line-height:1.85;font-style:italic}
 
+/* ============================================================================
+   CODEX INVENTORY GRID (2026-04 redesign)
+   Replaces the scrolling panel with a game-style inventory. Slots organized
+   by thematic category (Wisdom / Witness / Practice). Empty slots show their
+   category and are visibly "undiscovered." Filled slots show fragment info
+   and are tappable to open the reader. Connection lines drawn between
+   paired fragments when both are preserved.
+   ============================================================================ */
+.codex-counter{
+  text-align:center;
+  font-family:'Cinzel',serif;
+  font-size:11px;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:rgba(201,168,76,.65);
+  padding:8px 0 18px;
+  border-bottom:1px solid rgba(201,168,76,.12);
+  margin-bottom:20px;
+}
+.codex-counter-value{color:#f5eecc;font-weight:600;margin:0 4px}
+
+.codex-cluster{margin-bottom:24px}
+.codex-cluster:last-child{margin-bottom:0}
+.codex-cluster-header{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:10px;padding:0 4px;
+}
+.codex-cluster-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.codex-cluster-name{
+  font-family:'Cinzel',serif;font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(240,236,228,.55);
+}
+.codex-cluster-direction{
+  margin-left:auto;
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(240,236,228,.3);
+}
+
+.codex-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+}
+.codex-slot{
+  position:relative;
+  background:rgba(14,14,24,.85);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:4px;
+  padding:14px 14px;
+  min-height:92px;
+  cursor:default;
+  transition:border-color .2s, background .2s, transform .2s;
+}
+.codex-slot.preserved{
+  cursor:pointer;
+  background:rgba(22,18,14,.92);
+}
+.codex-slot.preserved:hover{
+  transform:translateY(-1px);
+  background:rgba(28,22,16,.96);
+}
+.codex-slot.empty{
+  background:rgba(10,10,20,.6);
+  border-style:dashed;
+  border-color:rgba(255,255,255,.05);
+}
+
+/* Category-colored border + inner glow for preserved slots */
+.codex-slot.preserved.cat-wisdom  { border-color:rgba(212,168,74,.55);  box-shadow:inset 0 0 18px rgba(212,168,74,.08) }
+.codex-slot.preserved.cat-witness { border-color:rgba(154,122,223,.55); box-shadow:inset 0 0 18px rgba(154,122,223,.08) }
+.codex-slot.preserved.cat-practice{ border-color:rgba(90,197,160,.55);  box-shadow:inset 0 0 18px rgba(90,197,160,.08) }
+.codex-slot.preserved:hover.cat-wisdom  { box-shadow:inset 0 0 24px rgba(212,168,74,.14),  0 0 24px rgba(212,168,74,.12) }
+.codex-slot.preserved:hover.cat-witness { box-shadow:inset 0 0 24px rgba(154,122,223,.14), 0 0 24px rgba(154,122,223,.12) }
+.codex-slot.preserved:hover.cat-practice{ box-shadow:inset 0 0 24px rgba(90,197,160,.14),  0 0 24px rgba(90,197,160,.12) }
+
+.codex-slot-eyebrow{
+  font-family:'Cinzel',serif;font-size:8.5px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(201,168,76,.55);
+  margin-bottom:5px;
+}
+.codex-slot.cat-witness  .codex-slot-eyebrow{color:rgba(154,122,223,.7)}
+.codex-slot.cat-practice .codex-slot-eyebrow{color:rgba(90,197,160,.7)}
+.codex-slot-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:13px;font-weight:600;
+  color:#f0ece4;line-height:1.3;
+}
+.codex-slot-empty-label{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(240,236,228,.22);
+  text-align:center;margin-top:22px;
+  font-style:italic;
+}
+.codex-slot-empty-sublabel{
+  font-family:'Cinzel',serif;font-size:8.5px;
+  letter-spacing:.2em;text-transform:uppercase;
+  color:rgba(240,236,228,.18);
+  text-align:center;margin-top:4px;
+}
+
+/* Connection indicator — shown on each slot when both halves of a
+   connection pair are preserved. A small colored dot in the corner. */
+.codex-slot-connection{
+  position:absolute;top:8px;right:8px;
+  width:7px;height:7px;border-radius:50%;
+  background:#f5eecc;
+  box-shadow:0 0 6px rgba(245,238,204,.8);
+  animation:codex-conn-pulse 2.4s ease-in-out infinite;
+}
+@keyframes codex-conn-pulse{
+  0%,100%{opacity:.65;transform:scale(1)}
+  50%    {opacity:1;transform:scale(1.25)}
+}
+
+/* Connection banner — shown beneath the grid, summarizing which pairs
+   have been preserved. Each banner line subtly pulses. */
+.codex-connections-banner{
+  margin-top:22px;padding:14px 16px;
+  border-top:1px solid rgba(201,168,76,.12);
+  border-bottom:1px solid rgba(201,168,76,.06);
+}
+.codex-connections-title{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(201,168,76,.6);
+  text-align:center;margin-bottom:10px;
+}
+.codex-connection-line{
+  display:flex;align-items:center;gap:10px;
+  padding:6px 0;font-size:11px;
+  color:rgba(240,236,228,.5);
+  font-family:'Cinzel',serif;
+  letter-spacing:.05em;
+}
+.codex-connection-dash{
+  flex:1;height:1px;
+  background:linear-gradient(90deg,
+    rgba(245,238,204,0) 0%,
+    rgba(245,238,204,.4) 50%,
+    rgba(245,238,204,0) 100%);
+  animation:codex-conn-flow 3s ease-in-out infinite;
+}
+@keyframes codex-conn-flow{
+  0%,100% {opacity:.35}
+  50%     {opacity:.85}
+}
+
 /* ===== QUEST ACCEPTED OVERLAY (session 9) =====
    Big centered modal shown when a quest is first accepted. Uses the Codex
    panel's visual family so accepting a quest feels like stepping into the
@@ -5291,7 +5442,26 @@ function hitTestPregameNode(screenX, screenY){
 // Track which node the cursor is currently hovering
 var hoveredNodeId = null;
 
+// Cursor position in WORLD coordinates. Updated every mousemove/touchmove.
+// Used by the fragment proximity pulse — fragments visually intensify as
+// the cursor approaches them in world space.
+// Starts at a position far from any fragment so nothing pulses on load.
+var cursorWorld = { x: -99999, y: -99999, active: false };
+// 'active' flag tells the pulse system whether the cursor is currently
+// engaged (recent move). Idle cursors don't produce pulses.
+var cursorIdleTimer = null;
+function markCursorActive(){
+  cursorWorld.active = true;
+  if(cursorIdleTimer) clearTimeout(cursorIdleTimer);
+  cursorIdleTimer = setTimeout(function(){ cursorWorld.active = false; }, 2500);
+}
+
 document.getElementById('canvasWrap').addEventListener('mousemove', function(e){
+  // Update world-space cursor for fragment proximity calculations.
+  // Done first so even when dragging, proximity keeps tracking.
+  var cw = screenToCanvas(e.clientX, e.clientY);
+  cursorWorld.x = cw.x; cursorWorld.y = cw.y;
+  markCursorActive();
   if(drag.active) return;
   var hit = hitTestPregameNode(e.clientX, e.clientY);
   if(hit){
@@ -5672,6 +5842,13 @@ document.getElementById('canvasWrap').addEventListener('touchstart',function(e){
 },{passive:true});
 document.getElementById('canvasWrap').addEventListener('touchmove',function(e){
   e.preventDefault();
+  // Update world-space cursor (touch point) for fragment proximity pulse.
+  // On mobile the user's finger drives the pulse intensity.
+  if(e.touches && e.touches[0]){
+    var cw = screenToCanvas(e.touches[0].clientX, e.touches[0].clientY);
+    cursorWorld.x = cw.x; cursorWorld.y = cw.y;
+    markCursorActive();
+  }
   if(drag.pending&&e.touches.length===1){
     var dx=e.touches[0].clientX-drag.startX,dy=e.touches[0].clientY-drag.startY;
     if(!drag.active&&(Math.abs(dx)>6||Math.abs(dy)>6)){drag.active=true;drag.moved=true;}
@@ -6383,27 +6560,18 @@ var QUEST_REGISTRY = {
       { speaker: 'The Guide',
         text: "You see\u2026 Evermark was not always as you have seen it. The wondrous nodes that teach you were once whole — burning bright with the complete knowledge that the Makers imbued into them. But the nebula is a patient thing. Unending in its desire to break, and pull. Pieces break away from these wondrous treasures, and most are lost to us before they can be saved." },
       { speaker: 'The Guide',
-        text: "But sometimes — we are lucky — and a fragment falls into orbit around its parent skill node before it can drift away. Within that small window of time, it can be found. Preserved. Held against the loss we all fight. Will you find them for me, ascendant?" }
+        text: "Some fragments survived. They drift in the dark beyond the Tesseract. The ones that carry ancient wisdom rest to the north. The ones that witness history lie to the east. The ones that teach practice linger to the west. They are small, ascendant. Easy to miss. They will only reveal themselves when you come near. Will you find them for me?" }
     ],
     acceptLabel:    'I will find them',
     declineLabel:   'Not now',
-    acceptFarewell: 'Very good. Look closely, ascendant. They are easy to miss. Remember — the fragments orbit their parent skill nodes before they fall to the great pull of the nebula. Good luck.',
+    acceptFarewell: 'Very good. Move your gaze across the nebula. When you near one, it will brighten. When you are upon it, it will shine. Three regions, six fragments. Good luck, ascendant.',
     declineFarewell:'As you wish. Evermark has waited longer than this. It will wait again.',
-    // Quest title + hints shown in the Codex "Active Quests" panel after
-    // acceptance. Each hint is tied to a specific fragment id; when that
-    // fragment is collected (appears in getLoreFound()), the hint is
-    // marked as resolved. See renderActiveQuestLog() for rendering.
+    // Quest title shown in the Codex "Active Quests" panel. Hints removed
+    // in the 2026-04 redesign — the spatial compass (north/east/west) +
+    // proximity pulse are the discovery mechanic now, not per-fragment
+    // poetic hints.
     title: 'Hidden Knowledge',
-    hints: [
-      {
-        fragmentId: 'lore_acedia',
-        text: 'One stirs near the place where the gap was first named. The desert will whisper it to you.'
-      },
-      {
-        fragmentId: 'lore_seneca',
-        text: 'Another circles the practice the Stoics never abandoned. Look where the old words still wait to be read.'
-      }
-    ],
+    hints: [],
     onAccept: function(){
       setQuestState('codex_1', 'accepted');
       spawnHiddenNodes();
@@ -6782,68 +6950,116 @@ function positionQuestNotif(){ /* no-op — retired in session 9 rebuild */ }
 
 
 // ---- HIDDEN META NODES ----
+// ============================================================================
+// FRAGMENTS — LORE COLLECTION (2026-04 redesign)
+// ============================================================================
+// Fragments float free in the nebula in thematic clusters at cardinal
+// directions from the Tesseract. Replaces the earlier orbit-around-parent-
+// node model. Discovery is via proximity pulse — fragments pulse brighter
+// as cursor approaches, with a faint ambient cluster glow signaling
+// "something lives here" from medium distance.
+//
+// Clusters:
+//   NORTH (Wisdom)    — ancient tradition naming conditions
+//   EAST  (Witness)   — historical observation, embodied history
+//   WEST  (Practice)  — sustained disciplines, rituals
+//
+// Connection pairs (drawn in Codex when both halves are preserved):
+//   Acedia  <-> Hebert    — movement as antidote
+//   Montaigne <-> Ignatius — sustained self-examination
+//   Seneca  <-> Plato     — the ancients on reading / body
+var FRAGMENT_CATEGORIES = {
+  wisdom:   { name:'Wisdom',   color:'#d4a84a', glow:'rgba(212,168,74,'  }, // warm gold
+  witness:  { name:'Witness',  color:'#9a7adf', glow:'rgba(154,122,223,' }, // violet
+  practice: { name:'Practice', color:'#5ac5a0', glow:'rgba(90,197,160,'  }  // teal-green
+};
+
 var HIDDEN_NODES = [
+  // ===== NORTH CLUSTER — Wisdom =====
   {
     id: 'lore_acedia',
-    parentId: 'gap',
-    orbitR: 52,
-    orbitSpeed: 0.0007,
-    orbitPhase: Math.PI * 0.4,
+    cluster: 'north',
+    category: 'wisdom',
+    worldX: 1120, worldY: 260,
+    // Small drift gives the fragment life without moving it off its spot.
+    // drift_amp is pixels of wobble, drift_speed is radians per frame.
+    driftAmp: 8,   driftSpeed: 0.0015, driftPhase: Math.PI * 0.2,
     title: 'The Acedia Codex',
-    eyebrow: 'Fragment I \u00b7 The Gap',
+    eyebrow: 'Fragment \u00b7 Wisdom',
     lore: 'In the 4th century, desert monks of Egypt named a condition they feared more than any sin. They called it acedia \u2014 a word that has no clean translation. Not laziness. Not sadness. Something closer to a spiritual numbness, a failure to care about the distance between who you are and who you could be. The monk Evagrius Ponticus described it as \u201cthe noonday demon\u201d \u2014 the feeling that comes when the sun is highest and the work is hardest and nothing seems worth the effort. He considered it the most dangerous of all afflictions, not because it destroyed people suddenly, but because it made them comfortable with a smaller life. The gap you feel is not a modern problem. It is ancient. And the people who named it earliest understood something important: the antidote was not motivation. It was movement. Begin the work. The feeling follows.'
   },
   {
+    id: 'lore_seneca',
+    cluster: 'north',
+    category: 'wisdom',
+    worldX: 1290, worldY: 340,
+    driftAmp: 7,   driftSpeed: -0.0014, driftPhase: Math.PI * 1.1,
+    title: 'The Seneca Fragment',
+    eyebrow: 'Fragment \u00b7 Wisdom',
+    lore: 'In 65 AD, a man under house arrest and awaiting execution wrote a letter to his friend. Lucius Annaeus Seneca \u2014 philosopher, playwright, once the most powerful advisor in Rome \u2014 had been ordered to die by the emperor Nero. He spent his final days writing. One of those letters contained a line that has survived two thousand years: Nusquam est qui ubique est \u2014 he who is everywhere is nowhere. Seneca was writing about focus. But the letter also contained something else: a defence of reading that reads like it was written yesterday. He told his friend that we should read deeply rather than widely, that collecting books without absorbing them was like collecting tools without learning a trade, and that the purpose of reading was not knowledge but transformation. \u201cRetire into yourself as much as you can,\u201d he wrote. \u201cAssociate with those who will make a better man of you.\u201d He meant the authors on your shelf. The ones who did the work before you. Every book you open is a conversation across time with someone who figured something out. Seneca understood that. He died having written more letters than most people read in a lifetime.'
+  },
+
+  // ===== EAST CLUSTER — Witness =====
+  {
     id: 'lore_plato',
-    parentId: 'engine',
-    orbitR: 50,
-    orbitSpeed: 0.0006,
-    orbitPhase: Math.PI * 0.3,
+    cluster: 'east',
+    category: 'witness',
+    worldX: 2280, worldY: 1420,
+    driftAmp: 8,   driftSpeed: 0.0013,  driftPhase: Math.PI * 0.5,
     title: 'The Broad-Shouldered Philosopher',
-    eyebrow: 'Fragment III \u00b7 The Engine',
+    eyebrow: 'Fragment \u00b7 Witness',
     lore: 'In the 5th century BCE, a young Athenian named Aristocles trained in wrestling under a coach named Ariston of Argos. The story preserved by the later biographer Diogenes Laertius is that Ariston gave the young man a nickname \u2014 Plato, meaning broad \u2014 either for the width of his shoulders, the breadth of his forehead, or the breadth of his style. The scholars still argue about which. The nickname stuck. Two and a half thousand years later, we still use it. Aristocles competed in the Isthmian Games. He wrestled well enough to be remembered for it. The man who wrote the Republic, who laid the foundations of Western philosophy, who shaped how the civilization after him would think about justice and knowledge and the good life, was known to his peers as a wrestler first. He took it for granted that serious thought required a serious body. He said so explicitly in his writings: gymnastics and music \u2014 physical training and the cultivation of the soul \u2014 were the two foundational pillars of education. Either one without the other produced distorted humans. No one inherited this from him. The education he described was abandoned. The gymnasium survived as a word but lost its meaning. Plato trained his body because his culture had observed, over generations, that a body untended produced a mind incapable of its own work. He would not have understood a philosophy separated from the flesh that carries it. His coach called him Broad. The name lasted longer than the philosophy it supported.'
   },
   {
     id: 'lore_hebert',
-    parentId: 'engine',
-    orbitR: 56,
-    orbitSpeed: -0.0007,
-    orbitPhase: Math.PI * 1.5,
+    cluster: 'east',
+    category: 'witness',
+    worldX: 2360, worldY: 1620,
+    driftAmp: 9,   driftSpeed: -0.0012, driftPhase: Math.PI * 1.6,
     title: 'The Martinique Lesson',
-    eyebrow: 'Fragment IV \u00b7 The Engine',
+    eyebrow: 'Fragment \u00b7 Witness',
     lore: 'On May 8, 1902, the volcano Mount Pel\u00e9e erupted on the Caribbean island of Martinique. Approximately thirty thousand people died in the city of Saint-Pierre within minutes. A twenty-seven-year-old French naval officer named Georges H\u00e9bert was sent ashore to coordinate rescue. He and his men pulled roughly seven hundred people out of that ruin. What he saw on that shore changed what he believed about human beings. The Europeans he had trained with, the athletes he had watched in the gymnasiums of the navy, could not do what the disaster required. They could not run well, could not climb over rubble, could not carry the wounded. Meanwhile the people who had grown up on the island \u2014 who had never heard of physical training \u2014 moved through the ruined landscape with a competence that seemed ordinary to them and remarkable to him. Their bodies could still do what bodies are built to do. H\u00e9bert spent the rest of his life trying to preserve what he had seen. He developed a training system based on the ten natural movements the human organism is designed for \u2014 walking, running, jumping, climbing, balancing, lifting, carrying, throwing, defending, swimming. He called it the M\u00e9thode Naturelle. He coined a phrase for what it was for: \u00catre fort pour \u00eatre utile. Be strong to be useful. A hundred and twenty years later, most of his writings are out of print. The method is known mostly to specialists. But the phrase has survived, and the observation that produced it has not been refuted. The bodies that can do what bodies are built to do are the ones that can help when help is needed.'
   },
-  {
-    id: 'lore_seneca',
-    parentId: 'interpreter',
-    orbitR: 54,
-    orbitSpeed: -0.0006,
-    orbitPhase: Math.PI * 1.2,
-    title: 'The Seneca Fragment',
-    eyebrow: 'Fragment II \u00b7 The Interpreter',
-    lore: 'In 65 AD, a man under house arrest and awaiting execution wrote a letter to his friend. Lucius Annaeus Seneca \u2014 philosopher, playwright, once the most powerful advisor in Rome \u2014 had been ordered to die by the emperor Nero. He spent his final days writing. One of those letters contained a line that has survived two thousand years: Nusquam est qui ubique est \u2014 he who is everywhere is nowhere. Seneca was writing about focus. But the letter also contained something else: a defence of reading that reads like it was written yesterday. He told his friend that we should read deeply rather than widely, that collecting books without absorbing them was like collecting tools without learning a trade, and that the purpose of reading was not knowledge but transformation. \u201cRetire into yourself as much as you can,\u201d he wrote. \u201cAssociate with those who will make a better man of you.\u201d He meant the authors on your shelf. The ones who did the work before you. Every book you open is a conversation across time with someone who figured something out. Seneca understood that. He died having written more letters than most people read in a lifetime.'
-  },
+
+  // ===== WEST CLUSTER — Practice =====
   {
     id: 'lore_montaigne',
-    parentId: 'interpreter',
-    orbitR: 52,
-    orbitSpeed: 0.00065,
-    orbitPhase: Math.PI * 0.4,
+    cluster: 'west',
+    category: 'practice',
+    worldX: 220, worldY: 1420,
+    driftAmp: 8,  driftSpeed: 0.00145, driftPhase: Math.PI * 0.3,
     title: 'The Man in the Tower',
-    eyebrow: 'Fragment V \u00b7 The Interpreter',
+    eyebrow: 'Fragment \u00b7 Practice',
     lore: 'In February 1571, on his thirty-eighth birthday, a French magistrate named Michel de Montaigne retired from public life. He had served as a judge, fought in two wars, watched a close friend die of plague, and decided he had had enough of the world. He withdrew to the round tower on his family estate in the Dordogne and did something unprecedented. He installed fifteen hundred volumes in the tower library \u2014 a vast collection for a private citizen in the 16th century. He had Greek and Latin aphorisms carved into the ceiling beams so that whenever he looked up, he would see a sentence worth thinking about. And he began to write. He did not write to prove anything. He wrote to find out what he thought. He called the short pieces he produced essais \u2014 attempts \u2014 and the form did not exist before him. He invented the personal essay by the simple act of doing it. He was honest in them in ways that were almost unheard of at the time. He wrote about his bowels, his fears, his changing opinions, his doubts about his own judgment. He watched his own mind at work and wrote down what he saw. He did this for twenty years. Four and a half centuries later, the essays are still read. The tower still stands. The practice he described \u2014 sustained self-observation through writing \u2014 is now studied in neuroscience laboratories, where they measure what it does to the brain networks involved in rumination and executive control. The instruments confirm what he discovered by doing it: the mind that examines itself in writing becomes different from the mind that does not.'
   },
   {
     id: 'lore_ignatius',
-    parentId: 'interpreter',
-    orbitR: 58,
-    orbitSpeed: -0.00068,
-    orbitPhase: Math.PI * 1.6,
+    cluster: 'west',
+    category: 'practice',
+    worldX: 150, worldY: 1620,
+    driftAmp: 9,  driftSpeed: -0.0013, driftPhase: Math.PI * 1.7,
     title: 'Fifteen Minutes in a Cave',
-    eyebrow: 'Fragment VI \u00b7 The Interpreter',
+    eyebrow: 'Fragment \u00b7 Practice',
     lore: 'In May 1521, a Spanish soldier named \u00cd\u00f1igo L\u00f3pez de Loyola took a French cannonball to the legs at the Battle of Pamplona. His right leg was shattered. He spent a year in convalescence, unable to do much but read. Most of what was available to him was religious \u2014 the lives of the saints, a life of Christ \u2014 which he had never particularly cared for. He read them because they were what was at hand. Something shifted. When the war was over and he could walk again, he did not return to soldiering. He walked to a cave outside the town of Manresa in Catalonia, and he stayed there for most of a year. What he produced in that cave was a five-step practice for reviewing the day, which he called the examen. Become aware of yourself in the presence of something larger than yourself. Review the day with gratitude. Notice the movements of your emotional life \u2014 where consolation appeared, where desolation appeared, and what each was telling you. Choose one moment to examine closely. Look toward tomorrow. Fifteen minutes. Twice a day. The Jesuits he founded have practiced it continuously for five hundred years. They do it after lunch and before bed. They do it when the day has gone well and when it has gone badly. They do it on retreat and in combat zones and in hospital wards. The practice has outlasted empires, survived the suppression of the order, and crossed every continent. It takes no tools. It requires no subscription. It is the same practice in 2026 that it was in 1522. The soldier who wrote it down was examining his own mind in a cave because he had noticed that an unexamined mind would run him.'
   }
 ];
+
+// Connection pairs for the Codex display. Lines drawn between these pairs
+// when both halves have been preserved. Crosses cluster boundaries on
+// purpose — themes weave across categories.
+var FRAGMENT_CONNECTIONS = [
+  { pair:['lore_acedia',    'lore_hebert'],    theme:'movement-as-antidote' },
+  { pair:['lore_montaigne', 'lore_ignatius'],  theme:'self-examination'     },
+  { pair:['lore_seneca',    'lore_plato'],     theme:'the-ancients'         }
+];
+
+// Cluster center points — where the ambient glow sits and where proximity
+// detection anchors for the "cluster has been entered" signal.
+var FRAGMENT_CLUSTERS = {
+  north: { cx:1200, cy:300,  name:'Wisdom',   category:'wisdom'   },
+  east:  { cx:2320, cy:1520, name:'Witness',  category:'witness'  },
+  west:  { cx:185,  cy:1520, name:'Practice', category:'practice' }
+};
 
 var hiddenNodesActive = false;
 
@@ -6852,22 +7068,71 @@ function spawnHiddenNodes(){
 }
 
 function getHiddenNodePos(hn){
-  // Find parent node position
-  var parent = PREGAME_NODES.find(function(n){ return n.id === hn.parentId; });
-  if(!parent) return {x:0, y:0};
-  var pPos = nodePos(parent);
-  var angle = hn.orbitPhase + t * hn.orbitSpeed;
+  // 2026-04: fragments now live at fixed world positions in the nebula,
+  // not in orbit around pregame nodes. A small drift (driftAmp, driftSpeed)
+  // gives each fragment subtle life without moving it off its spot — the
+  // user should be able to find it reliably in a cluster.
+  var drift = Math.sin(hn.driftPhase + t * hn.driftSpeed) * hn.driftAmp;
+  var driftPerp = Math.cos(hn.driftPhase + t * hn.driftSpeed * 0.8) * (hn.driftAmp * 0.6);
   return {
-    x: pPos.x + Math.cos(angle) * hn.orbitR,
-    y: pPos.y + Math.sin(angle) * hn.orbitR
+    x: hn.worldX + drift,
+    y: hn.worldY + driftPerp
   };
+}
+
+// Compute proximity pulse intensity (0 = far/invisible, 1 = cursor on top).
+// Uses a quadratic falloff so the effect is subtle at range and ramps up
+// aggressively as the cursor gets close. Distance is in world-space units.
+function getFragmentProximity(fragmentPos){
+  if(!cursorWorld.active) return 0;
+  var dx = cursorWorld.x - fragmentPos.x;
+  var dy = cursorWorld.y - fragmentPos.y;
+  var dist = Math.sqrt(dx*dx + dy*dy);
+  var MAX_RADIUS = 350; // outer detection — faint pulse starts here
+  var MIN_RADIUS = 50;  // inner radius — fully visible/aggressive here
+  if(dist > MAX_RADIUS) return 0;
+  if(dist < MIN_RADIUS) return 1;
+  // Quadratic easing from MAX→MIN so the pulse ramps fast near the end
+  var linear = 1 - (dist - MIN_RADIUS) / (MAX_RADIUS - MIN_RADIUS);
+  return linear * linear;
 }
 
 function drawHiddenNodes(){
   if(!hiddenNodesActive && getQuestState() !== 'accepted' && getQuestState() !== 'complete') return;
-  // Also draw if previously found (permanent)
   var found = getLoreFound();
   var questActive = getQuestState() === 'accepted' || getQuestState() === 'complete';
+
+  // Draw cluster ambient glows first (underneath everything), so they sit
+  // as a faint "something lives here" signal in each region of the nebula.
+  // Only drawn when the quest is active and the cluster has at least one
+  // unfound fragment.
+  if(questActive){
+    Object.keys(FRAGMENT_CLUSTERS).forEach(function(dir){
+      var cluster = FRAGMENT_CLUSTERS[dir];
+      // Count unfound fragments in this cluster
+      var unfoundInCluster = HIDDEN_NODES.filter(function(hn){
+        return hn.cluster === dir && found.indexOf(hn.id) === -1;
+      }).length;
+      if(unfoundInCluster === 0) return;
+
+      var catColor = FRAGMENT_CATEGORIES[cluster.category];
+      var pulsePhase = (t * 0.0008 + (dir === 'north' ? 0 : dir === 'east' ? 2 : 4)) % (Math.PI * 2);
+      var pulseAmt = 0.5 + Math.sin(pulsePhase) * 0.5; // 0→1
+
+      // Base ambient glow — large soft radial
+      var glowR = 240;
+      var grad = treeCtx.createRadialGradient(
+        cluster.cx, cluster.cy, 0,
+        cluster.cx, cluster.cy, glowR
+      );
+      var alpha = 0.05 + pulseAmt * 0.04; // 0.05 to 0.09 — very subtle
+      grad.addColorStop(0,   catColor.glow + alpha + ')');
+      grad.addColorStop(0.4, catColor.glow + (alpha * 0.4) + ')');
+      grad.addColorStop(1,   catColor.glow + '0)');
+      treeCtx.fillStyle = grad;
+      treeCtx.fillRect(cluster.cx - glowR, cluster.cy - glowR, glowR * 2, glowR * 2);
+    });
+  }
 
   HIDDEN_NODES.forEach(function(hn){
     var isFounded = found.indexOf(hn.id) !== -1;
@@ -6875,21 +7140,23 @@ function drawHiddenNodes(){
 
     var pos = getHiddenNodePos(hn);
     var isFound = isFounded;
+    var cat = FRAGMENT_CATEGORIES[hn.category] || FRAGMENT_CATEGORIES.wisdom;
 
-    // Slow gleam sweep — phase runs 0→1 over ~6s, triggers a brightness
-    // peak as it crosses the shard. Each fragment has its own phase via
-    // orbitPhase so they don't all pulse in sync.
-    var gleamPhase = (t * 0.003 + hn.orbitPhase) % (Math.PI * 2);
+    // Slow gleam — baseline life even without cursor proximity.
+    var gleamPhase = (t * 0.003 + hn.driftPhase) % (Math.PI * 2);
     var gleam = 0.5 + Math.sin(gleamPhase) * 0.5; // 0→1
 
-    // Slow rotation so the shard doesn't feel static. Runs at roughly
-    // 1/5th the orbital speed so movement is felt, not seen.
-    var rotation = (t * 0.0004 + hn.orbitPhase * 0.5);
+    // Proximity intensity — drives the pulse. 0 when cursor is far, 1 when on top.
+    // Found fragments don't get the proximity pulse (they're already preserved).
+    var proximity = isFound ? 0 : getFragmentProximity(pos);
 
-    // Shard dimensions — tall diamond (rhombus). Visually distinct from
-    // the round parent nodes and from anything else on the star map.
-    var w = 6;   // half-width
-    var h = 9;   // half-height
+    // Rotation — still gives the shard life
+    var rotation = (t * 0.0004 + hn.driftPhase * 0.5);
+
+    // Shard size — grows slightly with proximity so close fragments "swell"
+    var baseW = 6, baseH = 9;
+    var w = baseW * (1 + proximity * 0.3);
+    var h = baseH * (1 + proximity * 0.3);
 
     treeCtx.save();
     treeCtx.translate(pos.x, pos.y);
@@ -6897,99 +7164,113 @@ function drawHiddenNodes(){
 
     if(isFound){
       // ===== FOUND STATE =====
-      // Preserved — stable gold, brighter, with a ring of permanence.
-      // The gleam still runs for life, but the shard is clearly "caught."
+      // Preserved in the user's collection. Category-colored outline +
+      // permanent gold fill. No proximity pulse (they're done).
 
-      // Outer aura ring (permanence marker)
-      treeCtx.strokeStyle = 'rgba(201,168,76,0.28)';
+      // Outer aura ring (permanence marker, category-tinted)
+      treeCtx.strokeStyle = cat.glow + '0.28)';
       treeCtx.lineWidth = 1;
       treeCtx.beginPath();
-      treeCtx.arc(0, 0, 13, 0, Math.PI * 2);
+      treeCtx.arc(0, 0, 14, 0, Math.PI * 2);
       treeCtx.stroke();
 
-      // Outer shard outline — bright gold edge
+      // Outer shard outline — bright category color
       treeCtx.shadowBlur = 14;
-      treeCtx.shadowColor = 'rgba(245,220,140,0.85)';
-      treeCtx.strokeStyle = 'rgba(245,220,140,' + (0.85 + gleam * 0.15) + ')';
+      treeCtx.shadowColor = cat.glow + '0.85)';
+      treeCtx.strokeStyle = cat.glow + (0.85 + gleam * 0.15) + ')';
       treeCtx.lineWidth = 1.2;
       treeCtx.beginPath();
-      treeCtx.moveTo(0, -h);
-      treeCtx.lineTo(w, 0);
-      treeCtx.lineTo(0, h);
-      treeCtx.lineTo(-w, 0);
+      treeCtx.moveTo(0, -baseH); treeCtx.lineTo(baseW, 0);
+      treeCtx.lineTo(0, baseH);  treeCtx.lineTo(-baseW, 0);
       treeCtx.closePath();
       treeCtx.stroke();
 
-      // Inner fill — warm gold gradient, darker at edges, bright center
-      var fillGrad = treeCtx.createLinearGradient(-w, -h, w, h);
+      // Inner fill — warm gold gradient (all found fragments read as
+      // "preserved gold" regardless of category; category is in the outline)
+      var fillGrad = treeCtx.createLinearGradient(-baseW, -baseH, baseW, baseH);
       fillGrad.addColorStop(0,   'rgba(201,168,76,0.35)');
       fillGrad.addColorStop(0.5, 'rgba(245,220,140,' + (0.65 + gleam * 0.25) + ')');
       fillGrad.addColorStop(1,   'rgba(201,168,76,0.35)');
       treeCtx.shadowBlur = 0;
       treeCtx.fillStyle = fillGrad;
       treeCtx.beginPath();
-      treeCtx.moveTo(0, -h);
-      treeCtx.lineTo(w, 0);
-      treeCtx.lineTo(0, h);
-      treeCtx.lineTo(-w, 0);
+      treeCtx.moveTo(0, -baseH); treeCtx.lineTo(baseW, 0);
+      treeCtx.lineTo(0, baseH);  treeCtx.lineTo(-baseW, 0);
       treeCtx.closePath();
       treeCtx.fill();
 
-      // Inner highlight facet — the "catch of light" on one edge
+      // Inner highlight facet
       treeCtx.strokeStyle = 'rgba(255,245,200,' + (0.7 + gleam * 0.3) + ')';
       treeCtx.lineWidth = 0.8;
       treeCtx.beginPath();
-      treeCtx.moveTo(0, -h * 0.7);
-      treeCtx.lineTo(w * 0.5, -h * 0.1);
+      treeCtx.moveTo(0, -baseH * 0.7);
+      treeCtx.lineTo(baseW * 0.5, -baseH * 0.1);
       treeCtx.stroke();
 
     } else {
       // ===== UNDISCOVERED STATE =====
-      // Still small, still a pull for the eye — but NOW a shape, not a
-      // smear. Faceted crystal silhouette in faded violet-gold with a
-      // gold glint at the center showing the light the nebula is trying
-      // to drink.
+      // Very faint baseline — barely visible at distance (proximity 0).
+      // Intensifies as cursor approaches — glow expands, outline brightens,
+      // shard swells, pulse speeds up.
 
-      // Faint outer halo (so the shard reads against busy backgrounds)
-      treeCtx.shadowBlur = 10;
-      treeCtx.shadowColor = 'rgba(180,140,255,' + (0.35 + gleam * 0.25) + ')';
+      // Combined visibility driver: gleam gives a very small baseline,
+      // proximity dominates. Result: when cursor is far, shard is a
+      // barely-there ghost. When cursor is near, shard is fully lit.
+      var baseVisibility = 0.08 + gleam * 0.04; // 0.08-0.12 at rest
+      var visibility = baseVisibility + proximity * 0.88;
+      visibility = Math.min(1, visibility);
 
-      // Outer shard outline — violet, with gleam modulation
-      treeCtx.strokeStyle = 'rgba(200,170,255,' + (0.65 + gleam * 0.3) + ')';
-      treeCtx.lineWidth = 1;
+      // Outer aura — scales with proximity; invisible at distance
+      if(proximity > 0.05){
+        var auraR = 16 + proximity * 24;
+        var auraAlpha = proximity * 0.35;
+        var auraGrad = treeCtx.createRadialGradient(0, 0, 0, 0, 0, auraR);
+        auraGrad.addColorStop(0, cat.glow + auraAlpha + ')');
+        auraGrad.addColorStop(1, cat.glow + '0)');
+        treeCtx.fillStyle = auraGrad;
+        treeCtx.fillRect(-auraR, -auraR, auraR * 2, auraR * 2);
+      }
+
+      // Outer shard outline — category-colored, brightens with proximity
+      treeCtx.shadowBlur = 6 + proximity * 14;
+      treeCtx.shadowColor = cat.glow + (0.3 + proximity * 0.6) + ')';
+      treeCtx.strokeStyle = cat.glow + (visibility * 0.8) + ')';
+      treeCtx.lineWidth = 1 + proximity * 0.5;
       treeCtx.beginPath();
-      treeCtx.moveTo(0, -h);
-      treeCtx.lineTo(w, 0);
-      treeCtx.lineTo(0, h);
-      treeCtx.lineTo(-w, 0);
+      treeCtx.moveTo(0, -h); treeCtx.lineTo(w, 0);
+      treeCtx.lineTo(0, h);  treeCtx.lineTo(-w, 0);
       treeCtx.closePath();
       treeCtx.stroke();
 
-      // Inner fill — dark violet, slight gradient so it feels solid
-      // rather than a flat cutout
+      // Inner fill — dark core, slight category tint at proximity
       treeCtx.shadowBlur = 0;
       var undFill = treeCtx.createLinearGradient(-w, -h, w, h);
-      undFill.addColorStop(0,   'rgba(40,30,70,0.85)');
-      undFill.addColorStop(0.5, 'rgba(70,50,110,0.9)');
-      undFill.addColorStop(1,   'rgba(40,30,70,0.85)');
+      var fillBase = 0.35 + proximity * 0.5;
+      undFill.addColorStop(0,   'rgba(30,28,50,' + fillBase + ')');
+      undFill.addColorStop(0.5, cat.glow + (0.25 + proximity * 0.55) + ')');
+      undFill.addColorStop(1,   'rgba(30,28,50,' + fillBase + ')');
       treeCtx.fillStyle = undFill;
       treeCtx.beginPath();
-      treeCtx.moveTo(0, -h);
-      treeCtx.lineTo(w, 0);
-      treeCtx.lineTo(0, h);
-      treeCtx.lineTo(-w, 0);
+      treeCtx.moveTo(0, -h); treeCtx.lineTo(w, 0);
+      treeCtx.lineTo(0, h);  treeCtx.lineTo(-w, 0);
       treeCtx.closePath();
       treeCtx.fill();
 
-      // The gold glint — small bright dot at the center. This is the
-      // "caught knowledge" glowing inside the faceted shell. Modulates
-      // with gleam so it looks like light refracting through rotation.
-      treeCtx.shadowBlur = 6;
-      treeCtx.shadowColor = 'rgba(245,220,140,' + (0.5 + gleam * 0.5) + ')';
-      treeCtx.fillStyle = 'rgba(255,235,170,' + (0.6 + gleam * 0.4) + ')';
-      treeCtx.beginPath();
-      treeCtx.arc(0, 0, 1.4, 0, Math.PI * 2);
-      treeCtx.fill();
+      // The glint — grows with proximity. At full proximity, a bright
+      // aggressive pulse that signals "you're here."
+      if(proximity > 0.05){
+        // Aggressive pulse — fast heartbeat when close
+        var pulseFreq = 0.008 + proximity * 0.018;
+        var heartbeat = 0.5 + Math.sin(t * pulseFreq) * 0.5;
+        var glintAlpha = 0.4 + proximity * 0.55 + heartbeat * proximity * 0.2;
+        var glintR = 1.4 + proximity * 2.2;
+        treeCtx.shadowBlur = 4 + proximity * 10;
+        treeCtx.shadowColor = cat.glow + (0.5 + proximity * 0.4) + ')';
+        treeCtx.fillStyle = 'rgba(255,235,190,' + Math.min(1, glintAlpha) + ')';
+        treeCtx.beginPath();
+        treeCtx.arc(0, 0, glintR, 0, Math.PI * 2);
+        treeCtx.fill();
+      }
     }
 
     treeCtx.restore();
@@ -7130,38 +7411,103 @@ function openCodex(){
   var found = getLoreFound();
   var body  = document.getElementById('codexBody');
 
-  // Active quest log at the top (if any)
-  var questLog = renderActiveQuestLog();
-
-  if(found.length === 0){
-    // No fragments yet. If there's a quest log, show it. Otherwise show
-    // the empty state. The wording shifts depending on whether a quest is
-    // active — with a quest, the user has hints; without, they haven't
-    // even accepted a quest yet.
-    if(questLog){
-      body.innerHTML = questLog +
-        '<div class="codex-empty">No fragments preserved yet. Follow the hints above.</div>';
-    } else {
-      body.innerHTML = '<div class="codex-empty">No fragments discovered yet. Accept the quest and search the star map.</div>';
-    }
-  } else {
-    var html = questLog;
-    // Section heading if we have both quest log AND collected fragments
-    if(questLog){
-      html += '<div class="codex-section-heading">Preserved Fragments</div>';
-    }
-    HIDDEN_NODES.forEach(function(hn){
-      if(found.indexOf(hn.id) === -1) return;
-      html += '<div class="codex-entry">' +
-        '<div class="codex-entry-eyebrow">' + hn.eyebrow + '</div>' +
-        '<div class="codex-entry-title">' + hn.title + '</div>' +
-        '<div class="codex-entry-text">' + hn.lore + '</div>' +
-        '</div>';
-    });
-    body.innerHTML = html;
+  // Quest state banner — shown if quest isn't accepted yet
+  var questState = getQuestState('codex_1');
+  if(questState !== 'accepted' && questState !== 'complete'){
+    body.innerHTML = '<div class="codex-empty">The fragments await preservation. Accept the quest from the Guide and search the nebula.</div>';
+    document.getElementById('codexPanel').classList.add('open');
+    return;
   }
 
+  // Build an efficient lookup: which connection pairs are fully preserved?
+  var pairsByFragment = {};
+  var completedConnections = [];
+  FRAGMENT_CONNECTIONS.forEach(function(conn){
+    var bothFound = found.indexOf(conn.pair[0]) !== -1 && found.indexOf(conn.pair[1]) !== -1;
+    pairsByFragment[conn.pair[0]] = { partner: conn.pair[1], bothFound: bothFound, theme: conn.theme };
+    pairsByFragment[conn.pair[1]] = { partner: conn.pair[0], bothFound: bothFound, theme: conn.theme };
+    if(bothFound) completedConnections.push(conn);
+  });
+
+  var totalFragments = HIDDEN_NODES.length;
+  var foundCount = found.length;
+
+  // Header — collection counter
+  var html = '<div class="codex-counter">' +
+    'Preserved <span class="codex-counter-value">' + foundCount + '</span> of <span class="codex-counter-value">' + totalFragments + '</span>' +
+  '</div>';
+
+  // Render one cluster per thematic group, in order: north → east → west
+  var clusterOrder = ['north', 'east', 'west'];
+  var directionLabel = { north:'North of the Tesseract', east:'East of the Tesseract', west:'West of the Tesseract' };
+
+  clusterOrder.forEach(function(dir){
+    var cluster = FRAGMENT_CLUSTERS[dir];
+    var cat = FRAGMENT_CATEGORIES[cluster.category];
+    var fragmentsInCluster = HIDDEN_NODES.filter(function(hn){ return hn.cluster === dir; });
+
+    html += '<div class="codex-cluster">' +
+      '<div class="codex-cluster-header">' +
+        '<span class="codex-cluster-dot" style="background:' + cat.color + '"></span>' +
+        '<span class="codex-cluster-name">' + cluster.name + '</span>' +
+        '<span class="codex-cluster-direction">' + directionLabel[dir] + '</span>' +
+      '</div>' +
+      '<div class="codex-grid">';
+
+    fragmentsInCluster.forEach(function(hn){
+      var isFound = found.indexOf(hn.id) !== -1;
+      var pair = pairsByFragment[hn.id];
+      var showConnection = pair && pair.bothFound;
+
+      if(isFound){
+        html += '<div class="codex-slot preserved cat-' + hn.category + '" ' +
+                     'data-fragment-id="' + hn.id + '" ' +
+                     'onclick="openLoreFragmentById(\'' + hn.id + '\')">' +
+          (showConnection ? '<div class="codex-slot-connection" title="Connected"></div>' : '') +
+          '<div class="codex-slot-eyebrow">' + hn.eyebrow + '</div>' +
+          '<div class="codex-slot-title">' + hn.title + '</div>' +
+        '</div>';
+      } else {
+        html += '<div class="codex-slot empty cat-' + hn.category + '">' +
+          '<div class="codex-slot-empty-label">Fragment</div>' +
+          '<div class="codex-slot-empty-sublabel">' + cluster.name + '</div>' +
+        '</div>';
+      }
+    });
+
+    html += '</div></div>';
+  });
+
+  // Connections banner — only shown if at least one pair is complete
+  if(completedConnections.length > 0){
+    html += '<div class="codex-connections-banner">' +
+      '<div class="codex-connections-title">Connections Preserved</div>';
+    completedConnections.forEach(function(conn){
+      var a = HIDDEN_NODES.find(function(n){ return n.id === conn.pair[0]; });
+      var b = HIDDEN_NODES.find(function(n){ return n.id === conn.pair[1]; });
+      if(!a || !b) return;
+      html += '<div class="codex-connection-line">' +
+        '<span>' + a.title + '</span>' +
+        '<span class="codex-connection-dash"></span>' +
+        '<span>' + b.title + '</span>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
   document.getElementById('codexPanel').classList.add('open');
+}
+
+// Look up a fragment by id and open its reader. Used by the inventory
+// grid's onclick handlers.
+function openLoreFragmentById(id){
+  var hn = HIDDEN_NODES.find(function(n){ return n.id === id; });
+  if(hn){
+    closeCodex();
+    // Brief delay so the codex close transition finishes before reader opens
+    setTimeout(function(){ openLoreFragment(hn); }, 200);
+  }
 }
 
 function closeCodex(){
