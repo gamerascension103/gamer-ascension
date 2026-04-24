@@ -76,6 +76,97 @@ body{
 .home-intro{font-family:'Crimson Pro',serif;font-size:17px;line-height:1.65;color:var(--tdim);text-align:center;max-width:540px;margin:0 auto 44px;font-style:italic}
 
 .home-actions{display:flex;flex-direction:column;gap:14px;max-width:480px;margin:0 auto}
+
+/* ============================================================================
+   REFLECTION QUEUE (Phase 3, 2026-04)
+   Shown on the Scriptorium home when fragments from the Atheneum are
+   waiting for a journal reflection. Each card shows the fragment title
+   and its category color. Clicking opens the writing view with a prompt
+   prefilled for that fragment.
+   ============================================================================ */
+.reflection-queue-section{
+  max-width:480px;margin:0 auto 28px;
+  padding:18px 20px 20px;
+  background:rgba(22,20,32,.6);
+  border:1px solid rgba(201,168,76,.18);
+  border-radius:6px;
+}
+.reflection-queue-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+.reflection-queue-eyebrow{
+  font-family:'Cinzel',serif;font-size:11px;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(201,168,76,.75);
+}
+.reflection-queue-count{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.15em;text-transform:uppercase;
+  color:rgba(240,236,228,.4);
+}
+.reflection-queue-list{
+  display:flex;flex-direction:column;gap:8px;
+}
+.reflection-queue-card{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  background:rgba(14,14,24,.9);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:4px;
+  cursor:pointer;
+  transition:border-color .2s,background .2s,transform .15s;
+  text-align:left;width:100%;font:inherit;color:inherit;
+}
+.reflection-queue-card:hover{
+  background:rgba(22,22,36,.95);
+  transform:translateY(-1px);
+}
+.reflection-queue-card.cat-wisdom  { border-left:3px solid #d4a84a }
+.reflection-queue-card.cat-witness { border-left:3px solid #9a7adf }
+.reflection-queue-card.cat-practice{ border-left:3px solid #5ac5a0 }
+.reflection-queue-card.cat-wisdom:hover  { border-color:rgba(212,168,74,.5) }
+.reflection-queue-card.cat-witness:hover { border-color:rgba(154,122,223,.5) }
+.reflection-queue-card.cat-practice:hover{ border-color:rgba(90,197,160,.5) }
+.reflection-queue-card-body{flex:1;min-width:0}
+.reflection-queue-card-eyebrow{
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(201,168,76,.55);margin-bottom:4px;
+}
+.reflection-queue-card.cat-witness  .reflection-queue-card-eyebrow{color:rgba(154,122,223,.75)}
+.reflection-queue-card.cat-practice .reflection-queue-card-eyebrow{color:rgba(90,197,160,.75)}
+.reflection-queue-card-title{
+  font-family:'Cinzel Decorative',serif;font-size:14px;font-weight:600;
+  color:#f0ece4;line-height:1.3;
+}
+.reflection-queue-card-arrow{
+  color:rgba(240,236,228,.4);font-size:18px;flex-shrink:0;
+  transition:color .2s,transform .2s;
+}
+.reflection-queue-card:hover .reflection-queue-card-arrow{
+  color:#c9a84c;transform:translateX(3px);
+}
+
+/* Archive tag — fragment reflection indicator on archive items */
+.archive-item-frag-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:3px 8px;margin-top:6px;
+  border-radius:99px;
+  background:rgba(201,168,76,.1);
+  border:1px solid rgba(201,168,76,.25);
+  font-family:'Cinzel',serif;font-size:9px;
+  letter-spacing:.15em;text-transform:uppercase;
+  color:rgba(201,168,76,.8);
+}
+.archive-item-frag-tag.cat-witness { background:rgba(154,122,223,.1);border-color:rgba(154,122,223,.25);color:rgba(188,164,240,.85) }
+.archive-item-frag-tag.cat-practice{ background:rgba(90,197,160,.1); border-color:rgba(90,197,160,.25); color:rgba(125,214,184,.85) }
+.archive-item-frag-tag-dot{
+  width:6px;height:6px;border-radius:50%;background:#d4a84a;
+}
+.archive-item-frag-tag.cat-witness  .archive-item-frag-tag-dot{background:#9a7adf}
+.archive-item-frag-tag.cat-practice .archive-item-frag-tag-dot{background:#5ac5a0}
+
 .home-action{display:flex;align-items:center;justify-content:space-between;padding:22px 24px;background:rgba(13,13,26,0.6);border:1px solid var(--border-warm);border-radius:4px;text-decoration:none;color:var(--text);cursor:pointer;transition:all .3s;text-align:left;font-family:inherit;font-size:inherit;width:100%;backdrop-filter:blur(6px)}
 .home-action:hover{border-color:rgba(201,168,76,.5);background:rgba(20,20,35,.75);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3),0 0 20px rgba(201,168,76,.08)}
 .home-action:disabled{opacity:.4;cursor:not-allowed}
@@ -249,6 +340,17 @@ body{
     <div class="home-eyebrow">The Scriptorium</div>
     <h1 class="home-title">A Place to Reflect</h1>
     <p class="home-intro">Welcome to the Scriptorium. This is where you practice your journaling and learn how to observe yourself for who you really are, not what you think you should be.</p>
+
+    <!-- Reflection queue — fragments preserved in the Atheneum awaiting
+         a journal reflection. Hidden when queue is empty. Populated by
+         refreshHomeState() and refreshReflectionQueueSection(). -->
+    <div class="reflection-queue-section" id="reflectionQueueSection" style="display:none">
+      <div class="reflection-queue-header">
+        <div class="reflection-queue-eyebrow">Reflection Queue</div>
+        <div class="reflection-queue-count" id="reflectionQueueCount"></div>
+      </div>
+      <div class="reflection-queue-list" id="reflectionQueueList"></div>
+    </div>
 
     <div class="home-actions">
       <button class="home-action" id="actBegin" onclick="beginNewSession()">
@@ -685,6 +787,40 @@ var Storage = {
   }
 };
 
+// ---- REFLECTION QUEUE (Phase 3, 2026-04) ----
+// The reflection queue is cross-chamber state — populated by the Atheneum
+// when the user taps "Reflect in Scriptorium" on a preserved fragment,
+// consumed here when the user completes a reflection session.
+//
+// Storage key: ga_reflection_queue (NOT prefixed with ga_scriptorium_
+// because it's shared state, not Scriptorium-owned).
+//
+// Item shape:
+//   { fragmentId, title, category, eyebrow, queuedAt }
+var REFLECTION_QUEUE_KEY = 'ga_reflection_queue';
+function getReflectionQueue(){
+  try { return JSON.parse(localStorage.getItem(REFLECTION_QUEUE_KEY) || '[]'); }
+  catch(e){ return []; }
+}
+function setReflectionQueue(arr){
+  try { localStorage.setItem(REFLECTION_QUEUE_KEY, JSON.stringify(arr)); }
+  catch(e){ console.error('[Scriptorium queue] write failed:', e); }
+}
+function removeFromReflectionQueue(fragmentId){
+  var q = getReflectionQueue();
+  var next = q.filter(function(item){ return item.fragmentId !== fragmentId; });
+  setReflectionQueue(next);
+  return next;
+}
+
+// Category visual map — mirror of the Atheneum side. Kept duplicated
+// rather than imported so each chamber page stands alone.
+var FRAGMENT_CATEGORY_STYLES = {
+  wisdom:   { name:'Wisdom',   color:'#d4a84a', label:'Wisdom'   },
+  witness:  { name:'Witness',  color:'#9a7adf', label:'Witness'  },
+  practice: { name:'Practice', color:'#5ac5a0', label:'Practice' }
+};
+
 // ---- SESSION STATE ----
 var currentSession = null;    // live editing session object
 var autosaveTimer = null;
@@ -766,6 +902,9 @@ function refreshHomeState() {
     continueBtn.style.display = 'none';
   }
 
+  // Refresh the reflection queue section (Phase 3, 2026-04)
+  refreshReflectionQueueSection();
+
   // Stats
   var index = Storage.get('index') || [];
   var statSessions = document.getElementById('statSessions');
@@ -831,6 +970,91 @@ function renderStateGrid() {
   });
   grid.innerHTML = html;
 }
+
+// ---- REFLECTION QUEUE RENDER (Phase 3, 2026-04) ----
+// Populates the "Reflection Queue" section on the home view. Each queued
+// fragment gets a card. Clicking a card starts a reflection session
+// prefilled with the generic prompt for that fragment.
+function refreshReflectionQueueSection(){
+  var section = document.getElementById('reflectionQueueSection');
+  var list = document.getElementById('reflectionQueueList');
+  var count = document.getElementById('reflectionQueueCount');
+  if(!section || !list || !count) return;
+
+  var queue = getReflectionQueue();
+  if(queue.length === 0){
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  count.textContent = queue.length === 1 ? '1 pending' : queue.length + ' pending';
+
+  var html = '';
+  queue.forEach(function(item){
+    var catClass = 'cat-' + (item.category || 'wisdom');
+    // Escape the title defensively (localStorage is trusted but good hygiene)
+    var safeTitle = String(item.title || 'Fragment').replace(/[<>&"']/g, function(c){
+      return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
+    });
+    var safeEyebrow = String(item.eyebrow || 'Fragment').replace(/[<>&"']/g, function(c){
+      return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c];
+    });
+    html += '<button class="reflection-queue-card ' + catClass + '" onclick="beginFragmentReflection(\'' + item.fragmentId + '\')">' +
+      '<div class="reflection-queue-card-body">' +
+        '<div class="reflection-queue-card-eyebrow">' + safeEyebrow + '</div>' +
+        '<div class="reflection-queue-card-title">' + safeTitle + '</div>' +
+      '</div>' +
+      '<span class="reflection-queue-card-arrow">\u2192</span>' +
+    '</button>';
+  });
+  list.innerHTML = html;
+}
+
+// Start a reflection session on a specific queued fragment. Creates a
+// session with the generic prompt format and tags it with fragmentId so
+// the archive can show the fragment relationship and the queue can remove
+// the item on finish.
+function beginFragmentReflection(fragmentId){
+  var queue = getReflectionQueue();
+  var item = queue.find(function(x){ return x.fragmentId === fragmentId; });
+  if(!item){
+    // Item already removed somehow — refresh and bail
+    refreshReflectionQueueSection();
+    return;
+  }
+
+  // If a draft is in progress, warn before overwriting (same guard as
+  // beginNewSession — feels consistent).
+  var existingDraft = Storage.get('draft');
+  if(existingDraft && existingDraft.body && existingDraft.body.trim().length > 0){
+    var ok = confirm('You have an unfinished session. Starting a reflection will discard it. Continue?');
+    if(!ok) return;
+  }
+  Storage.remove('draft');
+
+  var promptText = 'You just preserved ' + item.title + '. Write what it asks of you.';
+  currentSession = {
+    id: genSessionId(),
+    createdAt: Date.now(),
+    finishedAt: null,
+    state: null,
+    promptId: null,
+    promptText: promptText,
+    promptGuidance: null,
+    body: '',
+    wordCount: 0,
+    unguided: false,
+    // Fragment reflection metadata — retained through finishSession so
+    // the archive can display the tag and the queue knows what to remove.
+    fragmentId: item.fragmentId,
+    fragmentTitle: item.title,
+    fragmentCategory: item.category,
+    fragmentEyebrow: item.eyebrow
+  };
+  Storage.set('draft', currentSession);
+  openWritingView();
+}
+
 
 // User picked a state. Create the session with a prompt drawn from
 // that state's pool and route to the writing view.
@@ -1118,6 +1342,14 @@ function finishSession() {
   index.unshift(currentSession.id);
   Storage.set('index', index);
 
+  // If this was a fragment reflection, remove it from the queue so the
+  // Atheneum/home view no longer show it as pending. The session itself
+  // is permanently archived with its fragmentId tag for retrospective
+  // browsing.
+  if(currentSession.fragmentId){
+    removeFromReflectionQueue(currentSession.fragmentId);
+  }
+
   // Clear the draft
   Storage.remove('draft');
 
@@ -1219,12 +1451,23 @@ function renderArchive() {
       ? '<div class="archive-item-prompt unguided">Unguided session</div>'
       : '<div class="archive-item-prompt">' + escapeHtml(s.promptText) + '</div>';
     var preview = escapeHtml((s.body || '').replace(/\n+/g, ' ').slice(0, 200));
+    // Fragment tag — if this session was a fragment reflection, show a
+    // category-colored pill identifying which fragment it reflects on.
+    var fragTagHtml = '';
+    if(s.fragmentId && s.fragmentTitle){
+      var catClass = 'cat-' + (s.fragmentCategory || 'wisdom');
+      fragTagHtml = '<div class="archive-item-frag-tag ' + catClass + '">' +
+        '<span class="archive-item-frag-tag-dot"></span>' +
+        escapeHtml(s.fragmentTitle) +
+      '</div>';
+    }
     html += '<button class="archive-item" onclick="openSession(\'' + s.id + '\')">' +
             '<div class="archive-item-top">' +
               '<div class="archive-item-date">' + dateStr + '</div>' +
               '<div class="archive-item-length">' + s.wordCount + ' words</div>' +
             '</div>' +
             promptHtml +
+            fragTagHtml +
             '<div class="archive-item-preview">' + preview + '</div>' +
             '</button>';
   });
