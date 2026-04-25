@@ -370,9 +370,159 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
   .micro-tree-label.locked{display:none}
 }
 
+/* =====================================================================
+   MICRO-TREE PIZZAZZ — animations layer
+   ===================================================================== */
+
+/* The pulse halo on the current node breathes continuously — gentle
+   ambient signal that "this one is yours to do next." Slow cycle so it
+   feels like a living thing, not a flashing button. */
+@keyframes mt-pulse-halo-anim{
+  0%,100%{opacity:.32;transform:scale(1)}
+  50%{opacity:.78;transform:scale(1.16)}
+}
+.mt-pulse-halo{
+  transform-origin:center;
+  transform-box:fill-box;
+  animation:mt-pulse-halo-anim 2.4s ease-in-out infinite;
+}
+
+/* Hover affordance — when the user mouses over a clickable hit, the
+   underlying node pulses brighter and the surrounding halo intensifies.
+   Implemented via class added to the SVG when sibling .micro-tree-hit
+   is hovered; we use a wrapper-level :has() approach via the chain
+   container so the SVG underneath responds to hits hovered above. */
+.micro-tree-hit:not(:disabled){
+  transition:transform .18s ease;
+}
+.micro-tree-hit:not(:disabled):hover{
+  transform:translate(-50%,-50%) scale(1.08);
+}
+.micro-tree-hit:not(:disabled):active{
+  transform:translate(-50%,-50%) scale(0.96);
+}
+
+/* The label scales subtly with hover for the connected hit — a small
+   visual confirmation that the labeled node is what's about to fire. */
+.micro-tree-label{transition:color .35s,letter-spacing .25s}
+/* When the chain container has any hit in hover state, slightly intensify
+   the matching node's pulse via a JS-applied class. (Pure CSS chain-of-
+   sibling-selectors gets unwieldy with absolute positioning; we use JS
+   wiring in attachMicroTreeHovers below.) */
+.mt-pulse-halo.hovered{
+  animation-duration:1.2s;
+  filter:brightness(1.4);
+}
+.mt-done-halo.hovered{
+  opacity:0.6 !important;
+  filter:brightness(1.3);
+  transition:opacity .25s,filter .25s;
+}
+.mt-shape{transition:filter .25s,stroke-width .25s}
+.mt-shape.hovered{filter:brightness(1.25) drop-shadow(0 0 6px var(--mt-pulse-shadow,#c9a84c))}
+.micro-tree-label.hovered{letter-spacing:.12em;color:var(--mt-pulse-stroke,#e9d5ff)}
+
+/* Torch animation — shockwave at just-completed node */
+@keyframes mt-torch-shockwave-anim{
+  0%{r:var(--start-r,16);opacity:.95;stroke-width:1.6}
+  60%{opacity:.5;stroke-width:.8}
+  100%{r:var(--end-r,46);opacity:0;stroke-width:.4}
+}
+.mt-torch-shockwave{
+  animation:mt-torch-shockwave-anim 700ms cubic-bezier(.22,1,.36,1) forwards;
+  pointer-events:none;
+}
+
+/* Comet — uses SMIL animateTransform inside the SVG (see buildChainSvg)
+   for reliable cross-browser numeric interpolation. The CSS just sets
+   pointer-events. */
+.mt-torch-comet{pointer-events:none}
+
+/* Ignition burst on the next node — fires after the comet arrives.
+   Delay is timed (~800ms) so it happens just as the comet finishes
+   travel. Plays once, then dies. */
+@keyframes mt-ignite-burst-anim{
+  0%{opacity:0;r:var(--ignite-r-start,0);stroke-width:1.4}
+  20%{opacity:.95}
+  100%{opacity:0;stroke-width:0.4}
+}
+.mt-ignite-burst{
+  opacity:0;
+  animation:mt-ignite-burst-anim 1200ms 800ms cubic-bezier(.22,1,.36,1) forwards;
+  pointer-events:none;
+}
+
 /* Sub-unit title shown when slicing a unit into multiple sub-unit views.
    Slightly smaller than the stage-title, signals "you're inside a slice." */
 .subunit-title{margin-top:8px;margin-bottom:24px}
+
+/* Retrieval prep card (Phase 4.5) — optional summary video shown above
+   the retrieval prompts. Collapsed by default, with an honest warning
+   about the testing-effect tradeoff so users opt in knowingly. */
+.retrieval-prep-card{
+  margin:0 0 32px 0;
+  padding:20px 22px 18px;
+  background:rgba(8,6,18,.6);
+  border:1px solid rgba(216,200,170,.18);
+  border-radius:6px;
+  position:relative;
+  transition:border-color .25s,background .25s;
+}
+.retrieval-prep-card:hover{border-color:rgba(216,200,170,.32)}
+.retrieval-prep-card.open{
+  background:rgba(8,6,18,.78);
+  border-color:rgba(201,168,76,.35);
+}
+.retrieval-prep-eyebrow{
+  font-family:'Cinzel',serif;font-size:9.5px;font-weight:400;
+  letter-spacing:.22em;color:rgba(201,168,76,.6);
+  text-transform:uppercase;margin-bottom:6px;
+}
+.retrieval-prep-title{
+  font-family:'Cinzel',serif;font-size:15px;font-weight:400;letter-spacing:.06em;
+  color:rgba(240,236,228,.92);margin-bottom:10px;
+}
+.retrieval-prep-warn{
+  font-family:'Crimson Pro','Crimson Text',serif;font-size:13.5px;line-height:1.55;
+  color:rgba(216,200,170,.62);font-style:italic;
+  margin-bottom:14px;
+}
+.retrieval-prep-toggle{
+  background:transparent;
+  border:1px solid rgba(216,200,170,.28);
+  color:rgba(216,200,170,.78);
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  padding:9px 18px;border-radius:3px;
+  cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;
+  transition:all .2s;
+}
+.retrieval-prep-toggle:hover{
+  border-color:rgba(216,200,170,.5);
+  color:#f0ece4;
+  background:rgba(216,200,170,.04);
+}
+.retrieval-prep-toggle-icon{
+  font-size:10px;line-height:1;
+  transition:transform .25s;
+}
+.retrieval-prep-card.open .retrieval-prep-toggle-icon{
+  transform:rotate(180deg);
+}
+.retrieval-prep-video{
+  display:none;
+  margin-top:18px;
+  border-radius:4px;
+  overflow:hidden;
+  background:#000;
+  aspect-ratio:9 / 16;
+  max-width:340px;
+  margin-left:auto;margin-right:auto;
+}
+.retrieval-prep-card.open .retrieval-prep-video{display:block}
+.retrieval-prep-video iframe{
+  width:100%;height:100%;display:block;border:0;
+}
 
 /* Retrieval stage — the hide-content-show-prompt pattern */
 .retrieval-stage{min-height:60vh}
@@ -8967,6 +9117,19 @@ function buildChainSvg(moduleId){
     positions.push({ x: spacing * (i + 1), y: 48 });
   }
 
+  // Torch animation — fires once when an element was just completed.
+  // The just-completed node gets a shockwave ring expanding outward;
+  // a comet travels from it along the connector to the next element;
+  // the next element gets an "igniting" overlay that flashes brighter
+  // for ~1.2s before settling into its normal state animation.
+  // lastCompletedChainIdx is consumed (cleared) here so re-renders
+  // don't replay the animation.
+  var torchIdx = -1;
+  if(typeof lastCompletedChainIdx === 'number' && lastCompletedChainIdx >= 0 && lastCompletedChainIdx < n){
+    torchIdx = lastCompletedChainIdx;
+    lastCompletedChainIdx = null; // one-shot
+  }
+
   var svg = '';
   svg += '<svg class="micro-tree-chain-svg" viewBox="0 0 640 96" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
 
@@ -8992,12 +9155,54 @@ function buildChainSvg(moduleId){
     var el = elements[i];
     var st = states[i];
     var p = positions[i];
+    var igniting = (torchIdx !== -1 && i === torchIdx + 1 && st === 'current');
     if(el.kind === 'sub'){
-      svg += renderPentagonNode(p.x, p.y, 16, st, false);
+      svg += renderPentagonNode(p.x, p.y, 16, st, false, igniting, i);
     } else if(el.kind === 'gate'){
-      svg += renderGateNode(p.x, p.y, 11, st);
+      svg += renderGateNode(p.x, p.y, 11, st, igniting, i);
     } else if(el.kind === 'mega'){
-      svg += renderPentagonNode(p.x, p.y, 22, st, true);
+      svg += renderPentagonNode(p.x, p.y, 22, st, true, igniting, i);
+    }
+  }
+
+  // Torch overlay layer — drawn last so it sits above everything.
+  // Two pieces: shockwave at the just-completed node, comet traveling
+  // from that node to the next.
+  if(torchIdx !== -1){
+    var src = positions[torchIdx];
+    var srcR = elements[torchIdx].kind === 'mega' ? 22 :
+               (elements[torchIdx].kind === 'gate' ? 11 : 16);
+    // Shockwave ring — animates radius and opacity via CSS keyframes
+    svg += '<circle class="mt-torch-shockwave" cx="' + src.x.toFixed(1) + '" cy="' + src.y.toFixed(1) + '"';
+    svg += ' r="' + srcR + '" fill="none"';
+    svg += ' stroke="var(--mt-base, #c9a84c)" stroke-width="1.6" stroke-opacity="0.9" />';
+
+    // Comet — only if there's a next element to travel to
+    if(torchIdx + 1 < n){
+      var dst = positions[torchIdx + 1];
+      var dstR = elements[torchIdx + 1].kind === 'mega' ? 22 :
+                 (elements[torchIdx + 1].kind === 'gate' ? 11 : 16);
+      var startX = src.x + srcR + 2;
+      var endX = dst.x - dstR - 2;
+      // Use SVG SMIL <animate> for the comet's travel — CSS keyframes
+      // can't interpolate between two CSS custom-property values without
+      // @property registration, but SMIL handles numeric interpolation
+      // natively and reliably across browsers.
+      svg += '<g class="mt-torch-comet" transform="translate(' + startX.toFixed(1) + ' 0)">';
+      svg += '<circle r="3" fill="var(--mt-pulse-stroke, #e9d5ff)" cy="48" />';
+      svg += '<circle r="6" fill="var(--mt-base, #c9a84c)" cy="48" opacity="0.4" />';
+      // animateTransform animates the parent <g>'s translate from
+      // start position to end position over 700ms, beginning 200ms
+      // after render. Fill="freeze" keeps it at the end position
+      // (which has opacity 0 from the parallel opacity animation).
+      svg += '<animateTransform attributeName="transform" attributeType="XML"';
+      svg += ' type="translate" from="' + startX.toFixed(1) + ' 0" to="' + endX.toFixed(1) + ' 0"';
+      svg += ' begin="0.2s" dur="0.7s" fill="freeze" />';
+      // Fade in/out over the same window
+      svg += '<animate attributeName="opacity" from="0" to="0"';
+      svg += ' values="0;1;1;0" keyTimes="0;0.15;0.85;1"';
+      svg += ' begin="0.2s" dur="0.7s" fill="freeze" />';
+      svg += '</g>';
     }
   }
 
@@ -9007,7 +9212,12 @@ function buildChainSvg(moduleId){
 
 // Render a pentagon node at (x, y) with circumradius r in the given state.
 // isMega controls extra glow/treatment for the final completion node.
-function renderPentagonNode(x, y, r, state, isMega){
+// igniting: true when this node was just lit by the torch animation (the
+// previous node was just completed); adds a brighter one-shot halo that
+// fades after ~1.2s.
+// chainIdx: this element's index in the chain — used by hover wiring to
+// associate hit buttons with their underlying halo elements.
+function renderPentagonNode(x, y, r, state, isMega, igniting, chainIdx){
   var s = '';
   // State-driven attribute strings
   var fill, stroke, strokeWidth, glow;
@@ -9029,16 +9239,23 @@ function renderPentagonNode(x, y, r, state, isMega){
   }
   // Subtle outer halo for done/current — drawn first
   if(state === 'done'){
-    s += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 8) + '"';
+    s += '<circle data-i="' + chainIdx + '" class="mt-done-halo" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 8) + '"';
     s += ' fill="var(--mt-bright-soft, rgba(201,168,76,0.18))" opacity="0.35" />';
   }
   if(state === 'current'){
     // Pulse halo — animated via CSS by class
-    s += '<circle class="mt-pulse-halo" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 6) + '"';
+    s += '<circle data-i="' + chainIdx + '" class="mt-pulse-halo" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 6) + '"';
     s += ' fill="none" stroke="var(--mt-pulse-stroke, #e9d5ff)" stroke-width="0.7" opacity="0.5" />';
   }
+  if(igniting){
+    // Ignition burst — brighter halo that fades. Sized larger than the
+    // normal pulse so the user sees it "wake up." Animation is defined
+    // in CSS keyframes mt-ignite-burst.
+    s += '<circle class="mt-ignite-burst" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 14) + '"';
+    s += ' fill="none" stroke="var(--mt-pulse-stroke, #e9d5ff)" stroke-width="1.4" />';
+  }
   // The pentagon itself
-  s += '<path d="' + pentagonPath(x, y, r, 0) + '"';
+  s += '<path data-i="' + chainIdx + '" class="mt-shape" d="' + pentagonPath(x, y, r, 0) + '"';
   s += ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '"';
   s += ' stroke-linejoin="round" />';
   // Inner glyph for done state — checkmark; for mega when done — module rune
@@ -9056,7 +9273,7 @@ function renderPentagonNode(x, y, r, state, isMega){
 // Render a retrieval gate node at (x, y) — a small diamond. Diamonds
 // rotate 45° relative to the pentagon's stable base, signaling "different
 // kind of moment" — production rather than reception.
-function renderGateNode(x, y, r, state){
+function renderGateNode(x, y, r, state, igniting, chainIdx){
   var s = '';
   var fill, stroke, strokeWidth;
   if(state === 'done'){
@@ -9074,12 +9291,16 @@ function renderGateNode(x, y, r, state){
   }
   // Halo for done/current
   if(state === 'current'){
-    s += '<circle class="mt-pulse-halo" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 5) + '"';
+    s += '<circle data-i="' + chainIdx + '" class="mt-pulse-halo" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 5) + '"';
     s += ' fill="none" stroke="var(--mt-pulse-stroke, #e9d5ff)" stroke-width="0.6" opacity="0.5" />';
+  }
+  if(igniting){
+    s += '<circle class="mt-ignite-burst" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 12) + '"';
+    s += ' fill="none" stroke="var(--mt-pulse-stroke, #e9d5ff)" stroke-width="1.3" />';
   }
   // Diamond as a square rotated 45° via SVG transform
   var d = r * 0.96;
-  s += '<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(45)">';
+  s += '<g data-i="' + chainIdx + '" class="mt-shape" transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(45)">';
   s += '<rect x="' + (-d).toFixed(1) + '" y="' + (-d).toFixed(1) + '" width="' + (2*d).toFixed(1) + '" height="' + (2*d).toFixed(1) + '"';
   s += ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '" />';
   // Quill-mark inside the diamond — a single small stroke suggesting
@@ -9192,6 +9413,7 @@ function buildMicroTreePanel(moduleId){
       ariaLabel = 'Complete module';
     }
     html += '<button class="micro-tree-hit" type="button"';
+    html += ' data-i="' + i + '"';
     html += ' style="left:' + leftPct + '%;top:' + topPct + '%"';
     html += ' aria-label="' + ariaLabel + '"';
     if(disabled) html += ' disabled';
@@ -9219,7 +9441,7 @@ function buildMicroTreePanel(moduleId){
     } else if(el.kind === 'mega'){
       labelText = 'Complete';
     }
-    html += '<span class="' + classList + '" style="position:absolute;left:' + leftPct + '%;transform:translateX(-50%);max-width:90px;top:0">';
+    html += '<span data-i="' + i + '" class="' + classList + '" style="position:absolute;left:' + leftPct + '%;transform:translateX(-50%);max-width:90px;top:0">';
     html += labelText;
     html += '</span>';
   }
@@ -9245,10 +9467,37 @@ function openMicroTreePanel(moduleId){
   overlay.classList.add('open');
   // Track active module for state inquiry on lesson close.
   activeMicroTreeModule = moduleId;
+  // Wire hover effects so hits brighten their underlying halo on mouseover.
+  attachMicroTreeHovers();
   // Tell Guide what's happening — same context signal as the v1 flow.
   if(typeof Guide !== 'undefined' && typeof Guide.setContext === 'function'){
     Guide.setContext('module-open', { moduleId: moduleId });
   }
+}
+
+// Wire hover correlation between hit buttons (above the SVG) and the
+// halo elements (inside the SVG). When the user hovers a hit, the halo
+// at the matching data-i gets a "hovered" class that intensifies its
+// pulse animation. When they leave, the class is removed.
+function attachMicroTreeHovers(){
+  var hits = document.querySelectorAll('#microTreePanel .micro-tree-hit');
+  hits.forEach(function(hit){
+    var i = hit.getAttribute('data-i');
+    if(i === null) return;
+    hit.addEventListener('mouseenter', function(){
+      var halos = document.querySelectorAll('#microTreePanel [data-i="' + i + '"]');
+      halos.forEach(function(h){ h.classList.add('hovered'); });
+      // Also subtly emphasize the corresponding label
+      var label = document.querySelector('#microTreePanel .micro-tree-label[data-i="' + i + '"]');
+      if(label) label.classList.add('hovered');
+    });
+    hit.addEventListener('mouseleave', function(){
+      var halos = document.querySelectorAll('#microTreePanel [data-i="' + i + '"]');
+      halos.forEach(function(h){ h.classList.remove('hovered'); });
+      var label = document.querySelector('#microTreePanel .micro-tree-label[data-i="' + i + '"]');
+      if(label) label.classList.remove('hovered');
+    });
+  });
 }
 
 function closeMicroTreePanel(){
@@ -9277,6 +9526,96 @@ function goToSubunit(moduleId, subunitIdx){
   // Open the lesson overlay with the module's content.
   openLessonForSubunit(moduleId, subunitIdx);
 }
+
+// =============================================================
+// RETRIEVAL PREP VIDEOS (Phase 4.5)
+// =============================================================
+// Each retrieval gate has an optional summary video the user can watch
+// to prepare. The video is OPTIONAL with an honest warning about the
+// testing effect — making the prompts easier reduces what they teach.
+// The user picks: watch first (safety net) or skip to prompts (better
+// learning). Videos are AgentOpus-produced YouTube unlistedss; URLs
+// below are placeholders to fill in once production completes.
+//
+// Map: moduleId → { 0: <unit1 video>, 1: <unit2 video> }
+// =============================================================
+
+var RETRIEVAL_PREP_VIDEOS = {
+  gap: {
+    0: '', // Gap Unit 1 summary — fill with YouTube embed URL when produced
+    1: ''  // Gap Unit 2 summary
+  },
+  engine: {
+    0: '',
+    1: ''
+  },
+  interpreter: {
+    0: '',
+    1: ''
+  }
+};
+
+// Returns the HTML for the optional video card. If no URL is configured
+// for this gate (production not yet done), returns empty string — the
+// card won't render and the retrieval flow is unchanged.
+function buildRetrievalPrepCard(moduleId, retrievalStage){
+  var gateIdx = (retrievalStage === 1) ? 0 : 1;
+  var url = RETRIEVAL_PREP_VIDEOS[moduleId] && RETRIEVAL_PREP_VIDEOS[moduleId][gateIdx];
+  if(!url) return '';
+
+  // Unique element ID so the inline expander script can target this card.
+  var cardId = 'retPrep_' + moduleId + '_g' + gateIdx;
+
+  var html = '';
+  html += '<div class="retrieval-prep-card" id="' + cardId + '">';
+  html += '<div class="retrieval-prep-eyebrow">Optional</div>';
+  html += '<div class="retrieval-prep-title">Watch a summary first</div>';
+  html += '<div class="retrieval-prep-warn">';
+  html += 'Watching may make these prompts easier, which means they will teach you less. The test that is hard is the test that works.';
+  html += '</div>';
+  html += '<button class="retrieval-prep-toggle" type="button" onclick="toggleRetrievalPrep(\'' + cardId + '\')">';
+  html += '<span class="retrieval-prep-toggle-label">Watch summary</span>';
+  html += '<span class="retrieval-prep-toggle-icon">▾</span>';
+  html += '</button>';
+  html += '<div class="retrieval-prep-video" data-src="' + url + '"></div>';
+  html += '</div>';
+  return html;
+}
+
+// Toggle the video embed open/closed. Embeds the iframe lazily on first
+// expand so an unused card doesn't load YouTube.
+function toggleRetrievalPrep(cardId){
+  var card = document.getElementById(cardId);
+  if(!card) return;
+  var videoBox = card.querySelector('.retrieval-prep-video');
+  var toggle = card.querySelector('.retrieval-prep-toggle');
+  var isOpen = card.classList.contains('open');
+  if(isOpen){
+    card.classList.remove('open');
+    if(toggle) toggle.querySelector('.retrieval-prep-toggle-label').textContent = 'Watch summary';
+    // Stop video playback by clearing the iframe src — keeps audio from
+    // continuing if the user collapses while playing.
+    var iframe = videoBox.querySelector('iframe');
+    if(iframe) iframe.remove();
+  } else {
+    card.classList.add('open');
+    if(toggle) toggle.querySelector('.retrieval-prep-toggle-label').textContent = 'Hide summary';
+    // Lazy-create the iframe on first open
+    if(!videoBox.querySelector('iframe')){
+      var src = videoBox.getAttribute('data-src');
+      if(src){
+        var iframe = document.createElement('iframe');
+        iframe.setAttribute('src', src);
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('title', 'Module summary');
+        videoBox.appendChild(iframe);
+      }
+    }
+  }
+}
+
 
 // Entering a retrieval gate: close panel, open lesson overlay at the
 // retrieval stage. The user fills out prompts, and on close (or stage
@@ -9375,6 +9714,26 @@ function openLessonAtStage(moduleId, stageIdx){
   });
   restoreRetrievalState(moduleId);
 
+  // Retrieval prep card (Phase 4.5). When landing on a retrieval stage
+  // for a sub-unit module, inject the optional summary-video card at
+  // the top of the retrieval frame. Skipped if no URL is configured for
+  // this gate (the card silently doesn't render).
+  if(SUBUNIT_CHAINS[moduleId] && (stageIdx === 1 || stageIdx === 3)){
+    var visibleStage = stages[stageIdx];
+    var frame = visibleStage ? visibleStage.querySelector('.retrieval-frame') : null;
+    if(frame){
+      // Avoid double-insertion if the user re-enters
+      var existing = frame.querySelector('.retrieval-prep-card');
+      if(existing) existing.remove();
+      var cardHtml = buildRetrievalPrepCard(moduleId, stageIdx);
+      if(cardHtml){
+        var temp = document.createElement('div');
+        temp.innerHTML = cardHtml;
+        frame.insertBefore(temp.firstElementChild, frame.firstChild);
+      }
+    }
+  }
+
   refreshEssenceCounter();
   document.getElementById('lessonOverlay').classList.add('open');
   document.body.classList.add('lesson-open');
@@ -9440,6 +9799,34 @@ function renderSubunitView(moduleId, subunitIdx){
 
 // Mark a sub-unit complete, close the lesson overlay, and reopen the
 // micro-tree panel so the user sees their progress reflected.
+// Track the index of the most-recently-completed chain element. Set by
+// completeSubunit and the retrieval-return path in advanceStage. Read
+// by buildChainSvg to fire the "torch" animation (shockwave on the
+// just-completed node, comet traveling to the next, ignition burst on
+// the next). Cleared after one render cycle so re-opens don't replay.
+var lastCompletedChainIdx = null;
+
+// Resolve a sub-unit index to the chain-element index in the chain
+// element array (which includes gates). Returns -1 if not found.
+function subunitChainIdx(moduleId, subunitIdx){
+  var elements = buildChainElements(moduleId);
+  for(var i = 0; i < elements.length; i++){
+    if(elements[i].kind === 'sub' && elements[i].idx === subunitIdx) return i;
+  }
+  return -1;
+}
+
+// Resolve a retrieval stage index to the chain-element index. Returns
+// -1 if no gate matches that stage (which would mean the retrieval is
+// for a non-sub-unit module — should not happen here).
+function gateChainIdx(moduleId, retrievalStage){
+  var elements = buildChainElements(moduleId);
+  for(var i = 0; i < elements.length; i++){
+    if(elements[i].kind === 'gate' && elements[i].retrievalStage === retrievalStage) return i;
+  }
+  return -1;
+}
+
 function completeSubunit(moduleId, subunitIdx){
   var chain = SUBUNIT_CHAINS[moduleId];
   if(!chain) return;
@@ -9447,6 +9834,9 @@ function completeSubunit(moduleId, subunitIdx){
   if(!isSubunitComplete(sub.id)){
     markSubunitComplete(sub.id);
   }
+  // Mark this element as just-completed so the panel fires the torch
+  // animation when it reopens.
+  lastCompletedChainIdx = subunitChainIdx(moduleId, subunitIdx);
   // Close the lesson overlay (without firing module completion).
   document.getElementById('lessonOverlay').classList.remove('open');
   document.body.classList.remove('lesson-open');
@@ -9533,6 +9923,15 @@ function advanceStage(){
   // stage's internal button if reached) goes back to the panel.
   if(SUBUNIT_CHAINS[currentLesson]){
     var moduleId = currentLesson;
+    // Identify which gate just completed so the panel fires the torch
+    // animation. The retrieval stage we're in maps to a specific gate
+    // in the chain — usually only fires here if the gate is now done
+    // (both prompts submitted/skipped), so condition the marker on
+    // actual completion to avoid mis-firing if user advances early.
+    var gIdx = gateChainIdx(moduleId, currentStageIndex);
+    if(gIdx !== -1 && isRetrievalGateComplete(moduleId, currentStageIndex)){
+      lastCompletedChainIdx = gIdx;
+    }
     document.getElementById('lessonOverlay').classList.remove('open');
     document.body.classList.remove('lesson-open');
     openMicroTreePanel(moduleId);
