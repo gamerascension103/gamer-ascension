@@ -232,6 +232,148 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .stage-continue-btn:hover{background:linear-gradient(180deg,rgba(201,168,76,.28),rgba(201,168,76,.14));border-color:rgba(201,168,76,.7);color:#f5eecc;box-shadow:0 0 28px rgba(201,168,76,.25)}
 .stage-continue-btn:active{transform:translateY(1px)}
 
+/* =====================================================================
+   MICRO-TREE PANEL (Phase 4 v2)
+   The micro-tree is its own UI surface — a focused panel that opens
+   when the user clicks a module on the macro-tree. Inside the panel,
+   sub-units render as pentagon nodes (echoing the macro-tree mega-
+   nodes) connected by lines, with retrieval gates as cross-mark nodes
+   between specific sub-units. Click a node → close panel, open the
+   lesson body for that sub-unit only. Finish sub-unit → return here.
+
+   CSS custom properties are set per-instance via inline <style> in
+   buildMicroTreePanel(), pulling from the module's imbuement palette.
+   ===================================================================== */
+.micro-tree-overlay{
+  position:fixed;inset:0;z-index:240;
+  background:radial-gradient(ellipse at 50% 40%,rgba(20,16,38,.92) 0%,rgba(8,6,18,.97) 60%,rgba(4,4,12,.99) 100%);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .45s cubic-bezier(.22,1,.36,1);
+}
+.micro-tree-overlay.open{opacity:1;pointer-events:auto}
+
+.micro-tree-panel{
+  position:relative;
+  width:min(720px,calc(100vw - 32px));
+  max-height:calc(100vh - 64px);
+  padding:48px 36px 56px;
+  display:flex;flex-direction:column;align-items:center;gap:28px;
+  transform:translateY(12px);
+  transition:transform .5s cubic-bezier(.22,1,.36,1);
+  overflow-y:auto;overflow-x:hidden;
+}
+.micro-tree-overlay.open .micro-tree-panel{transform:translateY(0)}
+
+.micro-tree-close{
+  position:absolute;top:14px;right:14px;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(8,6,18,.6);border:1px solid rgba(216,200,170,.16);
+  color:rgba(216,200,170,.6);font-family:'Cinzel',serif;font-size:18px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.micro-tree-close:hover{color:rgba(216,200,170,.95);border-color:rgba(216,200,170,.4)}
+
+.micro-tree-eyebrow{
+  font-family:'Cinzel',serif;font-size:11px;font-weight:400;
+  letter-spacing:.22em;color:rgba(201,168,76,.55);
+  text-transform:uppercase;text-align:center;
+}
+.micro-tree-title{
+  font-family:'Cinzel Decorative',serif;font-size:clamp(28px,4.4vw,42px);
+  font-weight:400;color:var(--mt-pulse-stroke,#e5c574);
+  margin:0;line-height:1.1;text-align:center;
+  text-shadow:0 0 32px var(--mt-bright-soft,rgba(201,168,76,.18));
+  transition:color .8s,text-shadow .8s;
+}
+.micro-tree-subtitle{
+  font-family:'Crimson Pro','Crimson Text',serif;font-size:15px;line-height:1.55;
+  color:rgba(240,236,228,.62);font-style:italic;
+  text-align:center;max-width:460px;margin:0;
+}
+
+/* The chain itself — SVG rendering for pentagon nodes + connectors */
+.micro-tree-chain{
+  position:relative;
+  width:100%;
+  margin:8px 0 4px;
+  display:flex;justify-content:center;
+}
+.micro-tree-chain-svg{
+  width:100%;
+  max-width:640px;
+  height:auto;
+  overflow:visible;
+}
+
+/* The clickable hit-targets sit on top of the SVG */
+.micro-tree-hits{
+  position:absolute;inset:0;
+  pointer-events:none;
+}
+.micro-tree-hit{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  width:64px;height:64px;border-radius:50%;
+  background:transparent;border:none;cursor:pointer;
+  pointer-events:auto;
+  padding:0;
+}
+.micro-tree-hit:disabled{cursor:not-allowed}
+.micro-tree-hit:focus-visible{outline:1px dashed var(--mt-pulse-stroke,#e9d5ff);outline-offset:4px;border-radius:50%}
+
+/* Labels under each node */
+.micro-tree-labels{
+  display:flex;justify-content:center;width:100%;
+  max-width:640px;margin:0 auto;gap:0;
+  position:relative;
+}
+.micro-tree-label{
+  flex:1;text-align:center;
+  font-family:'Cinzel',serif;font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;line-height:1.3;
+  padding:0 4px;
+  transition:color .35s;
+  color:rgba(216,200,170,.32);
+}
+.micro-tree-label.done{color:rgba(216,200,170,.62)}
+.micro-tree-label.current{
+  color:var(--mt-pulse-stroke,#e9d5ff);
+  text-shadow:0 0 12px var(--mt-bright-soft,rgba(201,168,76,.34));
+}
+.micro-tree-label.gate{font-size:8.5px;letter-spacing:.16em;color:rgba(216,200,170,.32)}
+.micro-tree-label.gate.current{color:var(--mt-pulse-stroke,#e9d5ff)}
+.micro-tree-label.gate.done{color:rgba(216,200,170,.5)}
+
+/* Status / hint text below the chain */
+.micro-tree-hint{
+  font-family:'Cinzel',serif;font-size:10.5px;letter-spacing:.16em;
+  color:rgba(216,200,170,.42);text-transform:uppercase;
+  margin-top:8px;text-align:center;
+  transition:color .35s;
+}
+.micro-tree-hint.complete{color:var(--mt-base,#c9a84c)}
+
+@media (max-width:680px){
+  .micro-tree-panel{padding:36px 18px 42px;gap:22px}
+  .micro-tree-chain-svg{max-width:none}
+  .micro-tree-hit{width:56px;height:56px}
+  .micro-tree-label{font-size:9px;padding:0 2px}
+  .micro-tree-label.gate{font-size:8px}
+  /* Hide locked labels on mobile to prevent overlap. The hint at the
+     bottom already tells the user what their next action is, and labels
+     for done/current nodes give them a sense of where they've been and
+     where they are. Locked labels add density without information they
+     can act on yet. */
+  .micro-tree-label.locked{display:none}
+}
+
+/* Sub-unit title shown when slicing a unit into multiple sub-unit views.
+   Slightly smaller than the stage-title, signals "you're inside a slice." */
+.subunit-title{margin-top:8px;margin-bottom:24px}
+
 /* Retrieval stage — the hide-content-show-prompt pattern */
 .retrieval-stage{min-height:60vh}
 .retrieval-frame{max-width:640px;margin:48px auto 0;padding:36px 32px;background:rgba(201,168,76,.025);border:1px solid rgba(201,168,76,.18);border-radius:6px;position:relative}
@@ -1885,6 +2027,17 @@ body.codex-open  .nav-trigger {
   </div>
 </div>
 
+<!-- Micro-tree panel — opens when a module is clicked on the macro-tree
+     for modules that have a sub-unit chain (Phase 4 v2). Sub-units render
+     as pentagon nodes connected by lines, with retrieval gates as cross-
+     mark nodes between specific sub-units. Click a node → close this
+     panel, open the lesson overlay with that sub-unit's content sliced.
+     Finish sub-unit → close lesson overlay, reopen this panel. The body
+     of the panel is rebuilt on every open via buildMicroTreePanel(). -->
+<div class="micro-tree-overlay" id="microTreeOverlay" role="dialog" aria-label="Module path">
+  <div class="micro-tree-panel" id="microTreePanel"></div>
+</div>
+
 <div class="lesson-overlay" id="lessonOverlay">
   <div class="lesson-header">
     <div>
@@ -2164,6 +2317,13 @@ var LESSONS = {
 
   <p class="lc-body">Those two conditions &mdash; an inherited ideal plus a measuring brain &mdash; are the human condition. Every culture that has ever existed has produced people who feel the gap. The shame most people carry about it is the one part that actually <em>is</em> optional.</p>
 
+  <!-- ====== SUBUNIT BOUNDARY: gap-su1 ends here / gap-su2 begins ======
+       Sub-unit 1 ("The gap, named") closes with the inherited-ideal-plus-
+       measuring-brain frame. Sub-unit 2 ("Why it hurts") opens with the
+       interpreter section, deepening why the gap feels personal. The
+       existing stage-divider visual transition serves as the natural
+       boundary; Phase 4 will replace this with explicit sub-unit nodes.
+  -->
   <div class="stage-divider"></div>
 
   <h3 class="lc-section-heading">Why the brain won't let it go</h3>
@@ -2284,15 +2444,20 @@ var LESSONS = {
 
   <p class="lc-body">You are not pioneering a new human experience. You are meeting the oldest one.</p>
 
+  <!-- ====== SUBUNIT BOUNDARY: gap-su3 ends here / gap-su4 begins ======
+       Sub-unit 3 ("The ache is older than you") closes with the historical-
+       continuity argument. Sub-unit 4 ("What to do") opens with the
+       interpreter extended (NOT recapped) and proceeds through the four-
+       practices preview to the module close. Phase 4 will replace this
+       boundary with explicit sub-unit nodes.
+  -->
   <div class="stage-divider"></div>
 
-  <h3 class="lc-section-heading">The brain does what it does</h3>
+  <h3 class="lc-section-heading">Why it lands as personal</h3>
 
-  <p class="lc-body">There is a specific reason the gap feels personal when it is not.</p>
+  <p class="lc-body">The interpreter does not just narrate. It assigns blame.</p>
 
-  <p class="lc-body">Your brain is a meaning-making engine. It cannot stop narrating your life to you. Unit 1 called this the interpreter &mdash; the voice in your head that takes everything you feel and do and weaves it into a story where you are the main character, and where you are supposed to be a good one. That narration is not optional. You cannot turn it off. It runs the entire time you are awake, and much of the time you are asleep.</p>
-
-  <p class="lc-body">When you fall short of the ideal, the interpreter does not neutrally report &ldquo;you fell short of a cultural standard.&rdquo; The interpreter attributes the failure to <em>you</em>, personally, morally. It has to. That is what makes you the main character of your own life. A narrator that treated you as a neutral outcome of circumstances would not be doing its job.</p>
+  <p class="lc-body">When you fall short of the ideal, the interpreter does not neutrally report &ldquo;you fell short of a cultural standard.&rdquo; It attributes the failure to <em>you</em>, personally, morally. It has to. That is what makes you the main character of your own life. A narrator that treated you as a neutral outcome of circumstances would not be doing its job.</p>
 
   <p class="lc-body">This is why the suffering feels so intimate. It is not that something unusually cruel is happening to you. It is that a normal brain, operating normally, is producing the usual story &mdash; the story in which the gap between current-you and ideal-you is your fault. This is what consciousness in a human-shaped mind feels like from the inside.</p>
 
@@ -2472,6 +2637,11 @@ var LESSONS = {
 
   <p class="lc-body">Each of these is a symptom of reduced capacity. They compound. And they all cost something to carry. The exhausting part of living below your ceiling is not that you are doing less &mdash; it is that you are spending most of your available capacity just managing the symptoms of the reduction.</p>
 
+  <!-- ====== SUBUNIT BOUNDARY: engine-su1 ends here / engine-su2 begins ======
+       Sub-unit 1 ("Capacity") closes with the four-component breakdown of
+       reduced capacity. Sub-unit 2 ("The four pillars") opens with the
+       four-peers frame and continues through the research evidence.
+  -->
   <div class="stage-divider"></div>
 
   <h3 class="lc-section-heading">The four pillars, as peers</h3>
@@ -2498,6 +2668,13 @@ var LESSONS = {
 
   <p class="lc-body">None of this is news inside the research. It is news outside the research, because most places where people encounter fitness and health information are designed to sell things rather than tell the truth about what the body needs.</p>
 
+  <!-- ====== SUBUNIT BOUNDARY: engine-su2 ends here / engine-su3 begins ======
+       Sub-unit 2 ("The four pillars") closes with the research evidence.
+       Sub-unit 3 ("Why neglect compounds") opens the harder claim about
+       compounding cost and runs to the Unit 1 close ("What this module is
+       about"). The existing retrieval gate sits BETWEEN sub-unit 3 and
+       sub-unit 4 — it is the existing Unit 1 boundary preserved.
+  -->
   <div class="stage-divider"></div>
 
   <h3 class="lc-section-heading">Why neglect compounds</h3>
@@ -2614,6 +2791,12 @@ var LESSONS = {
 
   <p class="lc-body">You have been inside this your whole life. So has everyone you know. So was the writer of this module. This is not an indictment of you as an individual. It is a description of the environment we are all trying to live inside, and of the specific ways that environment is misaligned with the organism each of us is stuck with.</p>
 
+  <!-- ====== SUBUNIT BOUNDARY: engine-su4 ends here / engine-su5 begins ======
+       Sub-unit 4 ("The chair and what was done") closes with the
+       environment-was-assembled-not-conspired argument. Sub-unit 5 ("What
+       humans knew") opens with the antidote — the historical traditions
+       that took the body seriously — and runs to the module close.
+  -->
   <div class="stage-divider"></div>
 
   <h3 class="lc-section-heading">What humans knew</h3>
@@ -2810,6 +2993,12 @@ var LESSONS = {
 
   <p class="lc-body">The judgment was not accurate. The judgment was part of the damage. These are not defects of willpower. They are not signs you are broken. They are the predictable output of an Interpreter running below its ceiling, in an environment designed to keep it there. Everybody alive right now is running their Interpreter in worse conditions than almost anyone alive a hundred years ago. The fact that you feel this is not evidence that something is wrong with you. It is evidence that you are paying attention.</p>
 
+  <!-- ====== SUBUNIT BOUNDARY: interp-su1 ends here / interp-su2 begins ======
+       Sub-unit 1 ("The Interpreter") closes with "evidence you are paying
+       attention." Sub-unit 2 ("What the traditions knew") opens with the
+       cross-cultural-practices observation and runs to the Unit 1 close
+       ("Where the work lives"), the Arcanium + Scriptorium pointer.
+  -->
   <div class="stage-divider"></div>
 
   <h3 class="lc-section-heading">What the traditions knew</h3>
@@ -2933,6 +3122,12 @@ var LESSONS = {
 
   <p class="lc-body"><strong>It worked.</strong></p>
 
+  <!-- ====== SUBUNIT BOUNDARY: interp-su3 ends here / interp-su4 begins ======
+       Sub-unit 3 ("Bernays and the mechanism") closes with "It worked."
+       Sub-unit 4 ("Wanting and liking") opens with Berridge's neuro-
+       distinction and runs through the named witnesses (Parker,
+       Palihapitiya).
+  -->
   <div class="stage-divider"></div>
 
   <h3 class="lc-section-heading">Wanting and liking are not the same system</h3>
@@ -2988,6 +3183,12 @@ var LESSONS = {
 
   <p class="lc-body">They knew you. Not you personally, but the nervous system you are reading this with. They had the psychological profile. They had the engagement data. They had meetings about how to exploit a specific vulnerability in a specific species, and the species was yours. They built the product to work on the brain you currently have, and they knew it would work, and they shipped it to your phone, and they took your hours, and your thoughts, and the particular version of you that would have existed if those hours and thoughts had gone somewhere else. The time cannot come back. The reading you did not do, the walks you did not take, the sleep you did not get, the presence you could not give to the people in your house &mdash; those are gone.</p>
 
+  <!-- ====== SUBUNIT BOUNDARY: interp-su4 ends here / interp-su5 begins ======
+       Sub-unit 4 ("Wanting and liking") closes with "those are gone" —
+       the named witnesses landing as testimony. Sub-unit 5 ("The cost,
+       and the choice") opens with Mark's attention research and runs
+       through the close ("You are declining an arrangement").
+  -->
   <div class="stage-divider"></div>
 
   <h3 class="lc-section-heading">The cost you can already feel</h3>
@@ -5105,13 +5306,179 @@ function drawGlyph(ctx, cx, cy, size, type, color, alpha){
   ctx.restore();
 }
 
+// =============================================================
+// MODULE IMBUEMENT SYSTEM
+// =============================================================
+// Each pregame module has its own canonical color (Gap = violet,
+// Engine = amber, Interpreter = crimson). The macro-tree node for a
+// module renders in a parchment-cream baseline state when the module
+// is untouched, and shifts toward its terminal color as the user
+// completes sub-units. The shift is parameterized by an imbuement
+// saturation value (0.0 to 1.0) stored per module in localStorage.
+//
+// Existing-client migration: if a module is in the `completed` array
+// and its imbuement value is unset, treat it as 1.0 (terminal color).
+// This honors completion data from before the imbuement system existed.
+// =============================================================
+
+var MODULE_IMBUEMENT_PALETTES = {
+  gap:        { hue: 262, satTarget: 48, lightTarget: 60 }, // violet/indigo
+  engine:     { hue:  36, satTarget: 64, lightTarget: 54 }, // amber/gold
+  interpreter:{ hue:   0, satTarget: 52, lightTarget: 42 }  // crimson
+};
+
+// Parchment baseline — desaturated warm cream, reads as "uncharged."
+// Slightly cooler than pure #f5eecc so it doesn't compete with the
+// essence-gold accent system. Hue 42 (warm cream), saturation low,
+// lightness high — sits as "manuscript paper" against dark backgrounds.
+// Note on values: sat at 30 keeps it visibly warm rather than grey;
+// light at 84 reads as "lit parchment" against the dark-purple sky
+// without competing with the gold UI accents.
+var IMBUEMENT_BASELINE = { hue: 42, sat: 30, light: 84 };
+
+function getImbuement(moduleId){
+  // Read from localStorage. If unset BUT the module is already in the
+  // completed array, treat as fully imbued — preserves existing clients'
+  // earned terminal color.
+  var stored = localStorage.getItem('ga_module_imbuement_' + moduleId);
+  if(stored !== null){
+    var v = parseFloat(stored);
+    if(!isNaN(v)) return Math.max(0, Math.min(1, v));
+  }
+  if(typeof completed !== 'undefined' && completed.indexOf(moduleId) !== -1){
+    // Migrate: this is an existing client. Mark imbuement complete and
+    // persist so future reads are direct.
+    localStorage.setItem('ga_module_imbuement_' + moduleId, '1');
+    return 1.0;
+  }
+  return 0.0;
+}
+
+// Persist a new imbuement value (0.0 to 1.0). Used by the sub-unit
+// completion mechanic in Phase 5.
+function setImbuement(moduleId, value){
+  var v = Math.max(0, Math.min(1, value));
+  localStorage.setItem('ga_module_imbuement_' + moduleId, v.toString());
+}
+
+// Convert HSL values to a hex color string.
+function hslToHex(h, s, l){
+  s = s / 100; l = l / 100;
+  var c = (1 - Math.abs(2 * l - 1)) * s;
+  var hp = h / 60;
+  var x = c * (1 - Math.abs((hp % 2) - 1));
+  var r1, g1, b1;
+  if(hp >= 0 && hp < 1){ r1=c; g1=x; b1=0; }
+  else if(hp < 2){ r1=x; g1=c; b1=0; }
+  else if(hp < 3){ r1=0; g1=c; b1=x; }
+  else if(hp < 4){ r1=0; g1=x; b1=c; }
+  else if(hp < 5){ r1=x; g1=0; b1=c; }
+  else { r1=c; g1=0; b1=x; }
+  var m = l - c/2;
+  var r = Math.round((r1 + m) * 255);
+  var g = Math.round((g1 + m) * 255);
+  var b = Math.round((b1 + m) * 255);
+  var toHex = function(n){ var h = n.toString(16); return h.length === 1 ? '0' + h : h; };
+  return '#' + toHex(r) + toHex(g) + toHex(b);
+}
+
+// Convert HSL values to an rgba prefix (e.g. "rgba(123,45,67,") so the
+// caller can append an alpha and closing paren. Matches the existing
+// pregame node draw function's expectation of bright/dark prefixes.
+function hslToRgbaPrefix(h, s, l){
+  s = s / 100; l = l / 100;
+  var c = (1 - Math.abs(2 * l - 1)) * s;
+  var hp = h / 60;
+  var x = c * (1 - Math.abs((hp % 2) - 1));
+  var r1, g1, b1;
+  if(hp >= 0 && hp < 1){ r1=c; g1=x; b1=0; }
+  else if(hp < 2){ r1=x; g1=c; b1=0; }
+  else if(hp < 3){ r1=0; g1=c; b1=x; }
+  else if(hp < 4){ r1=0; g1=x; b1=c; }
+  else if(hp < 5){ r1=x; g1=0; b1=c; }
+  else { r1=c; g1=0; b1=x; }
+  var m = l - c/2;
+  var r = Math.round((r1 + m) * 255);
+  var g = Math.round((g1 + m) * 255);
+  var b = Math.round((b1 + m) * 255);
+  return 'rgba(' + r + ',' + g + ',' + b + ',';
+}
+
+// Compute a module's full color palette at its current imbuement value.
+// Saturation 0.0 → parchment baseline. Saturation 1.0 → terminal color.
+// Intermediate values interpolate hue, saturation, and lightness in HSL
+// space. For hue specifically, interpolation goes via the shorter arc
+// between baseline-warm (~42°) and the module's target hue.
+function getModulePalette(moduleId){
+  var p = MODULE_IMBUEMENT_PALETTES[moduleId];
+  if(!p){
+    // Fallback for unknown module — old violet palette as default.
+    return {
+      base: '#c084fc', done: '#a855f7',
+      bright: 'rgba(192,132,252,', dark: 'rgba(168,85,247,',
+      pale: 'rgba(240,220,255,',
+      locked: 'rgba(120,80,160,0.5)',
+      pulseBloomEnd: 'rgba(192,132,252,',
+      pulseStroke: '#e9d5ff', pulseShadow: '#c084fc', orbitDot: '#f3e8ff'
+    };
+  }
+  var sat = getImbuement(moduleId);
+
+  // Hue interpolation: take the shorter arc between baseline (42°) and
+  // target. For all three modules the shorter arc gives a perceptually
+  // continuous shift (parchment → warm color) without jumping through
+  // unrelated hues.
+  var dh = p.hue - IMBUEMENT_BASELINE.hue;
+  if(dh > 180) dh -= 360;
+  if(dh < -180) dh += 360;
+  var h = (IMBUEMENT_BASELINE.hue + dh * sat + 360) % 360;
+  var s = IMBUEMENT_BASELINE.sat + (p.satTarget - IMBUEMENT_BASELINE.sat) * sat;
+  var l = IMBUEMENT_BASELINE.light + (p.lightTarget - IMBUEMENT_BASELINE.light) * sat;
+
+  // Done state — slightly darker, more saturated version of base
+  var doneL = Math.max(28, l - 8);
+  var doneS = Math.min(80, s + 12);
+
+  // Pale highlight — used for checkmark, module number text. Lighter,
+  // less saturated. At sat=0 this is essentially white-cream; at sat=1
+  // it's a pale tinted version of the module color.
+  var paleL = Math.min(94, l + 22);
+  var paleS = Math.max(20, s - 18);
+
+  // Locked state — desaturated, dimmer version of base. Used for nodes
+  // the user has not yet unlocked. Always relatively muted regardless
+  // of imbuement (a locked module shows where it is, not what it'll be).
+  var lockedH = h, lockedS = Math.max(15, s * 0.4), lockedL = Math.max(30, l * 0.55);
+
+  // Pulse layers (active "next" node breathing animation) derive from
+  // the module's TERMINAL color, not the imbuement-interpolated value.
+  // Reasoning: the pulse signals "active, click here" regardless of how
+  // far along the imbuement is. Using terminal color also foreshadows
+  // what color the node will become as the user works through it —
+  // coherent with the "your work gives the node its color" narrative.
+  var tH = p.hue, tS = p.satTarget, tL = p.lightTarget;
+
+  return {
+    base:  hslToHex(h, s, l),
+    done:  hslToHex(h, doneS, doneL),
+    bright: hslToRgbaPrefix(h, s, l),
+    dark:   hslToRgbaPrefix(h, doneS, doneL),
+    pale:   hslToRgbaPrefix(h, paleS, paleL),
+    locked: hslToRgbaPrefix(lockedH, lockedS, lockedL) + '0.5)',
+    // Pulse: always vivid, derived from terminal not from current sat
+    pulseBloomEnd: hslToRgbaPrefix(tH, tS, tL),
+    pulsePale:     hslToRgbaPrefix(tH, Math.max(30, tS - 18), Math.min(92, tL + 22)),
+    pulseStroke:   hslToHex(tH, Math.max(30, tS - 18), Math.min(92, tL + 16)),
+    pulseShadow:   hslToHex(tH, tS, tL),
+    orbitDot:      hslToHex(tH, Math.max(30, tS - 18), Math.min(95, tL + 24))
+  };
+}
+
 function drawPregameNodes(){
-  // Violet color palette — mystical, arcane
-  var VIOLET       = '#c084fc';
-  var VIOLET_DONE  = '#a855f7';
-  var VIOLET_BRIGHT= 'rgba(192,132,252,';
-  var VIOLET_DARK  = 'rgba(168,85,247,';
-  var WHITE_VIOLET = 'rgba(240,220,255,';
+  // Per-module color palettes are resolved inside the per-node loop below.
+  // The pentagon guide ring (drawn once if any module is locked) uses a
+  // neutral parchment tint since it represents the destination shape, not
+  // any specific module.
 
   // Draw faint orbital ring trails first — behind all nodes
   // Only for nodes that are still orbiting (not locked)
@@ -5123,7 +5490,9 @@ function drawPregameNodes(){
   if(anyLocked){
     var lockedCount = PREGAME_NODES.filter(function(n){ return nodeLockState[n.id] && nodeLockState[n.id].locked; }).length;
     var guideAlpha = Math.min(0.12, lockedCount * 0.03);
-    treeCtx.strokeStyle = 'rgba(216,180,254,' + guideAlpha + ')';
+    // Neutral pale tint for the guide ring — represents the shared
+    // destination shape, not any individual module's color.
+    treeCtx.strokeStyle = 'rgba(216,200,170,' + guideAlpha + ')';
     treeCtx.lineWidth = 0.5;
     // Draw pentagon guide
     treeCtx.setLineDash([2, 10]);
@@ -5143,7 +5512,9 @@ function drawPregameNodes(){
     if(ls && ls.locked) return; // no ring for locked nodes
     var isDone = completed.includes(n.id);
     var alpha = isDone ? 0.18 : 0.07;
-    treeCtx.strokeStyle = 'rgba(192,132,252,' + alpha + ')';
+    // Per-module orbital trail color reflects this module's imbuement.
+    var trailPalette = getModulePalette(n.id);
+    treeCtx.strokeStyle = trailPalette.bright + alpha + ')';
     treeCtx.lineWidth = 0.6;
     treeCtx.shadowBlur = 0;
     treeCtx.beginPath();
@@ -5159,12 +5530,23 @@ function drawPregameNodes(){
     var isNext = !isDone && (i === 0 || completed.includes(PREGAME_NODES[i-1].id));
     var isLocked = !isDone && !isNext;
 
+    // Resolve this module's palette at its current imbuement level.
+    // The palette already accounts for parchment-baseline-vs-terminal
+    // saturation interpolation; the local rendering code below just
+    // reads from the palette without knowing about saturation values.
+    var palette = getModulePalette(n.id);
+    var VIOLET       = palette.base;
+    var VIOLET_DONE  = palette.done;
+    var VIOLET_BRIGHT= palette.bright;
+    var VIOLET_DARK  = palette.dark;
+    var WHITE_VIOLET = palette.pale;
+
     var r = 38;
     // Pentagon rotates as node orbits — tied to orbital angle for living feel
     var orbitAngle = (n.orbitPhase || 0) + t * (n.orbitSpeed || 0.0005);
     var pentRot = orbitAngle * 0.4; // rotates slower than orbit, independent feel
 
-    var color     = isDone ? VIOLET_DONE : (isLocked ? 'rgba(120,80,160,0.5)' : VIOLET);
+    var color     = isDone ? VIOLET_DONE : (isLocked ? palette.locked : VIOLET);
     var brightStr = isDone ? VIOLET_DARK : VIOLET_BRIGHT;
     var glowAlpha = isDone ? 0.22 : (isNext ? 0.14 : 0.05);
     var bodyAlpha = isDone ? 0.55 : (isNext ? 0.35 : 0.15);
@@ -5245,8 +5627,8 @@ function drawPregameNodes(){
       // Layer 1 — wide outer bloom that expands and contracts
       var pulseBloomR = r + 50 + breathe * 40;
       var pulseBloom = treeCtx.createRadialGradient(pos.x, pos.y, r, pos.x, pos.y, pulseBloomR);
-      pulseBloom.addColorStop(0, 'rgba(216,180,254,' + (0.18 * breathe) + ')');
-      pulseBloom.addColorStop(1, 'rgba(192,132,252,0)');
+      pulseBloom.addColorStop(0, palette.pulsePale + (0.18 * breathe) + ')');
+      pulseBloom.addColorStop(1, palette.pulseBloomEnd + '0)');
       treeCtx.fillStyle = pulseBloom;
       treeCtx.beginPath();
       treeCtx.arc(pos.x, pos.y, pulseBloomR, 0, Math.PI * 2);
@@ -5254,11 +5636,11 @@ function drawPregameNodes(){
 
       // Layer 2 — pulsing pentagon outline (extra stroke on top of existing)
       treeCtx.save();
-      treeCtx.strokeStyle = '#e9d5ff';
+      treeCtx.strokeStyle = palette.pulseStroke;
       treeCtx.lineWidth = 2.2;
       treeCtx.globalAlpha = 0.4 + breathe * 0.55;
       treeCtx.shadowBlur = 20 + breathe * 24;
-      treeCtx.shadowColor = '#c084fc';
+      treeCtx.shadowColor = palette.pulseShadow;
       drawPentagon(treeCtx, pos.x, pos.y, r, pentRot);
       treeCtx.stroke();
       treeCtx.restore();
@@ -5268,10 +5650,10 @@ function drawPregameNodes(){
       var orbitX = pos.x + Math.cos(orbitA) * (r + 14);
       var orbitY = pos.y + Math.sin(orbitA) * (r + 14);
       treeCtx.save();
-      treeCtx.fillStyle = '#f3e8ff';
+      treeCtx.fillStyle = palette.orbitDot;
       treeCtx.globalAlpha = 0.5 + breatheFast * 0.5;
       treeCtx.shadowBlur = 10;
-      treeCtx.shadowColor = '#c084fc';
+      treeCtx.shadowColor = palette.pulseShadow;
       treeCtx.beginPath();
       treeCtx.arc(orbitX, orbitY, 2.5, 0, Math.PI * 2);
       treeCtx.fill();
@@ -5284,7 +5666,7 @@ function drawPregameNodes(){
       ? WHITE_VIOLET + '0.7)'
       : isNext
         ? VIOLET_BRIGHT + '0.6)'
-        : 'rgba(200,180,240,0.15)';
+        : palette.locked.replace('0.5)', '0.15)');
     treeCtx.font = '400 9px Cinzel, serif';
     treeCtx.textAlign = 'center';
     treeCtx.letterSpacing = '0.08em';
@@ -5301,7 +5683,8 @@ function getAllNodePositions(){
   PREGAME_NODES.forEach(function(n){
     if(!completed.includes(n.id)){
       var pos = nodePos(n);
-      positions.push({x:pos.x, y:pos.y, r:36, color:'rgba(192,132,252,', lit:0});
+      var p = getModulePalette(n.id);
+      positions.push({x:pos.x, y:pos.y, r:36, color:p.bright, lit:0});
     }
   });
   // Constellation root nodes (approximate world positions — rotated so use centers)
@@ -5321,10 +5704,11 @@ function updateParticles(){
       if(completed.includes(n.id)){
         var pos = nodePos(n);
         if(Math.random() < 0.3){
+          var pp = getModulePalette(n.id);
           energyParticles.push({
             x:pos.x, y:pos.y, tx:CX, ty:SPHERE_Y,
             progress:0, speed:0.003+Math.random()*0.002,
-            size:Math.random()*2+1, color:'rgba(192,132,252,'
+            size:Math.random()*2+1, color:pp.bright, glow:pp.pulseShadow
           });
         }
       }
@@ -5334,7 +5718,7 @@ function updateParticles(){
     p.progress+=p.speed;
     var ex=p.x+(p.tx-p.x)*p.progress, ey=p.y+(p.ty-p.y)*p.progress;
     var alpha=Math.sin(p.progress*Math.PI);
-    treeCtx.save(); treeCtx.fillStyle=p.color+alpha+')'; treeCtx.shadowBlur=6; treeCtx.shadowColor='#c084fc';
+    treeCtx.save(); treeCtx.fillStyle=p.color+alpha+')'; treeCtx.shadowBlur=6; treeCtx.shadowColor=p.glow||'#c084fc';
     treeCtx.beginPath(); treeCtx.arc(ex,ey,p.size,0,Math.PI*2); treeCtx.fill(); treeCtx.restore();
     return p.progress<1;
   });
@@ -8292,6 +8676,16 @@ function resetReflections(){
 var lessonOrder=['gap','engine','interpreter'];
 function openLesson(id){
   var lesson=LESSONS[id];if(!lesson)return;
+
+  // For modules with a sub-unit chain (Phase 4 v2): open the micro-tree
+  // panel instead of the lesson overlay. The lesson overlay opens later
+  // when the user clicks a sub-unit or gate node from inside the panel.
+  if(SUBUNIT_CHAINS[id]){
+    openMicroTreePanel(id);
+    return;
+  }
+
+  // Legacy path for lessons without sub-unit chains — unchanged.
   currentLesson=id;
   document.getElementById('lessonEyebrow').textContent=lesson.eyebrow;
   document.getElementById('lessonTitle').textContent=lesson.title;
@@ -8307,11 +8701,6 @@ function openLesson(id){
   document.getElementById('prevBtn').style.display=idx>0?'':'none';
   document.getElementById('nextBtn').style.display=idx<lessonOrder.length-1?'':'none';
 
-  // Multi-stage lesson initialization (Session 11 — Gap module).
-  // When a lesson is flagged isMultiStage, we hide the legacy footer
-  // controls (prev/next/complete) because stage navigation happens via
-  // the in-content continue buttons instead. The module completion
-  // fires through completeModuleGap() when the final stage is reached.
   var footer = document.querySelector('.lesson-footer');
   if(lesson.isMultiStage){
     if(footer) footer.style.display='none';
@@ -8320,17 +8709,750 @@ function openLesson(id){
     if(footer) footer.style.display='';
   }
 
-  // Ensure the Essence counter is visible in the header — it shows
-  // current total and animates when earning.
   refreshEssenceCounter();
 
   document.getElementById('lessonOverlay').classList.add('open');
   document.body.classList.add('lesson-open');
   document.getElementById('lessonBody').scrollTop=0;
-  // Tell Guide what's happening — enables context-aware dialogue on summon
   if(typeof Guide !== 'undefined' && typeof Guide.setContext === 'function'){
     Guide.setContext('module-open', { moduleId: id });
   }
+}
+
+// =============================================================
+// SUB-UNIT CHAIN DEFINITIONS (Phase 4 — micro-tree)
+// =============================================================
+// Each module's content is sliced into sub-units based on the boundary
+// markers placed in Phase 2. Each entry records:
+//   id     — unique sub-unit identifier (used as localStorage key)
+//   title  — short label shown on the micro-tree node and as eyebrow
+//   stage  — the index into lesson.stages where this sub-unit's content
+//            lives ('unit1' = 0, 'retrieve1' = 1, 'unit2' = 2, etc.)
+//   slice  — for sub-units inside content stages, indicates which slice
+//            of the stage's content to show. Sub-units inside the same
+//            stage share that stage but use different slice indexes.
+//
+// Retrievals stay at existing unit boundaries — they're full stages, not
+// sub-units. They appear between specific sub-units in the chain so the
+// user encounters them in the right place.
+//
+// Boundary markers in the HTML use the format:
+//   <!-- ====== SUBUNIT BOUNDARY: <id>-su<N> ends here / <id>-su<M> begins
+// These markers were placed in Phase 2 and used here as cut points.
+// =============================================================
+
+var SUBUNIT_CHAINS = {
+  gap: [
+    { id: 'gap-su1', title: 'The gap, named',           stage: 0, slice: 0 },
+    { id: 'gap-su2', title: 'Why it hurts',             stage: 0, slice: 1 },
+    // existing retrieval gate (stage 1) sits between su2 and su3
+    { id: 'gap-su3', title: 'The ache is older than you', stage: 2, slice: 0 },
+    { id: 'gap-su4', title: 'What to do',               stage: 2, slice: 1 }
+    // existing retrieval gate (stage 3) sits between su4 and complete (stage 4)
+  ],
+  engine: [
+    { id: 'engine-su1', title: 'Capacity',              stage: 0, slice: 0 },
+    { id: 'engine-su2', title: 'The four pillars',      stage: 0, slice: 1 },
+    { id: 'engine-su3', title: 'Why neglect compounds', stage: 0, slice: 2 },
+    // retrieval gate (stage 1)
+    { id: 'engine-su4', title: 'The chair, the assembly', stage: 2, slice: 0 },
+    { id: 'engine-su5', title: 'What humans knew',      stage: 2, slice: 1 }
+    // retrieval gate (stage 3)
+  ],
+  interpreter: [
+    { id: 'interp-su1', title: 'The Interpreter',         stage: 0, slice: 0 },
+    { id: 'interp-su2', title: 'What the traditions knew', stage: 0, slice: 1 },
+    // retrieval gate (stage 1)
+    { id: 'interp-su3', title: 'Bernays and the mechanism', stage: 2, slice: 0 },
+    { id: 'interp-su4', title: 'Wanting and liking',      stage: 2, slice: 1 },
+    { id: 'interp-su5', title: 'The cost, and the choice', stage: 2, slice: 2 }
+    // retrieval gate (stage 3)
+  ]
+};
+
+// Track sub-unit completion. A sub-unit is "complete" when the user
+// clicks its "Continue" button at the end of its content.
+function isSubunitComplete(subunitId){
+  return localStorage.getItem('ga_subunit_' + subunitId + '_complete') === '1';
+}
+function markSubunitComplete(subunitId){
+  localStorage.setItem('ga_subunit_' + subunitId + '_complete', '1');
+}
+
+// Find the next unfinished sub-unit in a module's chain. Returns the
+// index in the chain, or chain.length if every sub-unit is complete.
+function getNextSubunitIndex(moduleId){
+  var chain = SUBUNIT_CHAINS[moduleId];
+  if(!chain) return 0;
+  for(var i = 0; i < chain.length; i++){
+    if(!isSubunitComplete(chain[i].id)) return i;
+  }
+  return chain.length;
+}
+
+// Slice a stage's content at sub-unit boundary markers and return the
+// piece for the requested slice index. The boundary markers are HTML
+// comments containing "SUBUNIT BOUNDARY:" placed in Phase 2. They sit
+// just before a stage-divider that visually separated the sections in
+// the old single-scroll layout, so we cut on the marker comment and
+// drop the stage-divider that comes with it (it's not needed inside a
+// sub-unit view since the sub-unit IS the divider).
+//
+// Returns { html, isLast } — html is the slice's inner HTML, isLast is
+// true if this is the final slice in the stage.
+function sliceStageContent(stageElement, sliceIdx){
+  // Build a list of child nodes split by SUBUNIT BOUNDARY comments.
+  var slices = [[]];
+  var children = Array.prototype.slice.call(stageElement.childNodes);
+  for(var i = 0; i < children.length; i++){
+    var c = children[i];
+    if(c.nodeType === Node.COMMENT_NODE && c.nodeValue.indexOf('SUBUNIT BOUNDARY:') !== -1){
+      // Start a new slice. Skip the immediately-following stage-divider
+      // (its job was the visual transition that the micro-tree now
+      // replaces with explicit sub-unit nodes).
+      slices.push([]);
+      var next = children[i + 1];
+      if(next && next.nodeType === Node.ELEMENT_NODE && next.classList && next.classList.contains('stage-divider')){
+        i++; // consume it
+      }
+      continue;
+    }
+    slices[slices.length - 1].push(c);
+  }
+  if(sliceIdx < 0 || sliceIdx >= slices.length){
+    return { html: '', isLast: true };
+  }
+  // Build a fragment from the chosen slice's nodes
+  var temp = document.createElement('div');
+  slices[sliceIdx].forEach(function(node){
+    temp.appendChild(node.cloneNode(true));
+  });
+  return { html: temp.innerHTML, isLast: sliceIdx === slices.length - 1 };
+}
+
+// =============================================================
+// MICRO-TREE PANEL (Phase 4 v2)
+// =============================================================
+// The micro-tree is its own UI surface — a focused dialog/panel that
+// opens when the user clicks a module on the macro-tree. Sub-units
+// render as pentagon nodes (echoing the macro-tree mega-nodes) connected
+// by lines, with retrieval gates as small diamond nodes between specific
+// sub-units. The chain ends with a mega-node representing module
+// completion.
+//
+// Click a sub-unit/gate node → close the panel, open the lesson overlay
+// with that sub-unit's content (sliced) or the retrieval prompts.
+// Finish that work → close lesson overlay, reopen the panel. The panel
+// rebuilds on each open so node states reflect current progress.
+//
+// The chain layout uses an SVG canvas at viewBox 0 0 640 96. Nodes are
+// laid out evenly across the horizontal centerline. Pentagons are 32px
+// across, the mega-node 44px, retrieval gates 22px diamonds.
+// =============================================================
+
+// Build the array of chain elements for a module. Each element is one
+// of: { kind: 'sub', subunit: <chainEntry>, idx: <chainIndex> },
+// { kind: 'gate', gateIdx: <0|1>, afterStage: <stageIdx> }, or
+// { kind: 'mega' } for the final completion node. Returns an array.
+//
+// Gates are inferred from the sub-unit chain: whenever two consecutive
+// sub-units have different stage values, there's a retrieval gate
+// between them. The retrieval gate's afterStage is the EARLIER stage
+// (which is the stage the user just left). The chain always ends with
+// a mega-node + a final gate before it (the final retrieval).
+function buildChainElements(moduleId){
+  var chain = SUBUNIT_CHAINS[moduleId];
+  if(!chain) return [];
+  var elements = [];
+  var gateCount = 0;
+  for(var i = 0; i < chain.length; i++){
+    var sub = chain[i];
+    elements.push({ kind: 'sub', subunit: sub, idx: i });
+    var nextSub = chain[i + 1];
+    if(nextSub && nextSub.stage !== sub.stage){
+      // Gate sits between this sub-unit and the next.
+      // afterStage is sub.stage; the retrieval lives at sub.stage + 1
+      // by convention (retrievals are odd-indexed stages).
+      elements.push({
+        kind: 'gate',
+        gateIdx: gateCount++,
+        retrievalStage: sub.stage + 1
+      });
+    }
+  }
+  // After the last sub-unit, there's a final retrieval (even though no
+  // sub-unit comes after it). The last sub-unit's stage is followed by
+  // a retrieval, then the complete stage. Add the final gate.
+  var lastSub = chain[chain.length - 1];
+  elements.push({
+    kind: 'gate',
+    gateIdx: gateCount++,
+    retrievalStage: lastSub.stage + 1
+  });
+  // Then the mega-node representing module completion.
+  elements.push({ kind: 'mega' });
+  return elements;
+}
+
+// Resolve the state of each chain element: 'done', 'current', 'locked'.
+// A sub-unit is done if marked complete. A gate is done if both prompts
+// in its retrieval stage are submitted (or skipped). The mega-node is
+// done if the module is in the global `completed` array. Current is the
+// first non-done element from left to right.
+function getChainStates(moduleId){
+  var elements = buildChainElements(moduleId);
+  var states = elements.map(function(){ return 'locked'; });
+  var firstUndone = -1;
+  for(var i = 0; i < elements.length; i++){
+    var el = elements[i];
+    var done = false;
+    if(el.kind === 'sub'){
+      done = isSubunitComplete(el.subunit.id);
+    } else if(el.kind === 'gate'){
+      done = isRetrievalGateComplete(moduleId, el.retrievalStage);
+    } else if(el.kind === 'mega'){
+      done = (typeof completed !== 'undefined') && completed.indexOf(moduleId) !== -1;
+    }
+    if(done){
+      states[i] = 'done';
+    } else if(firstUndone === -1){
+      firstUndone = i;
+      states[i] = 'current';
+    }
+  }
+  return { elements: elements, states: states };
+}
+
+// A retrieval gate is complete when both of its prompts have been
+// submitted (or skipped via the soft-skip option for the first one).
+// The existing retrieval submission logic stores prompt state under
+// keys like ga_retrieval_<promptId>_submitted and ga_retrieval_<promptId>_skipped.
+// Prompt IDs follow the pattern <module>-u<unitNum>-p<promptNum>.
+function isRetrievalGateComplete(moduleId, retrievalStage){
+  // retrievalStage 1 = unit 1's retrieval (gate 0 for all modules)
+  // retrievalStage 3 = unit 2's retrieval (gate 1 for all modules)
+  var unitNum = (retrievalStage === 1) ? 1 : 2;
+  var prefix = 'ga_retrieval_' + moduleId + '-u' + unitNum + '-p';
+  var p1Done = localStorage.getItem(prefix + '1_submitted') === '1' ||
+               localStorage.getItem(prefix + '1_skipped') === '1';
+  var p2Done = localStorage.getItem(prefix + '2_submitted') === '1' ||
+               localStorage.getItem(prefix + '2_skipped') === '1';
+  return p1Done && p2Done;
+}
+
+// SVG path for a regular pentagon centered at (cx, cy) with circumradius r.
+// rotation is in radians; default 0 gives a flat-bottom pentagon (point up).
+function pentagonPath(cx, cy, r, rotation){
+  rotation = rotation || 0;
+  var pts = [];
+  for(var i = 0; i < 5; i++){
+    var a = -Math.PI / 2 + rotation + (i * 2 * Math.PI / 5);
+    pts.push((cx + r * Math.cos(a)).toFixed(2) + ',' + (cy + r * Math.sin(a)).toFixed(2));
+  }
+  return 'M' + pts.join(' L') + ' Z';
+}
+
+// Build the SVG markup for the chain.
+function buildChainSvg(moduleId){
+  var resolved = getChainStates(moduleId);
+  var elements = resolved.elements;
+  var states = resolved.states;
+  var n = elements.length;
+
+  // Layout: evenly spaced across viewBox 0..640, vertical center at 48.
+  // Spacing = 640 / (n + 1) gives margins on each side.
+  var spacing = 640 / (n + 1);
+  var positions = [];
+  for(var i = 0; i < n; i++){
+    positions.push({ x: spacing * (i + 1), y: 48 });
+  }
+
+  var svg = '';
+  svg += '<svg class="micro-tree-chain-svg" viewBox="0 0 640 96" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
+
+  // Connectors first (so they render under nodes). Each connector goes
+  // from the right edge of element i to the left edge of element i+1.
+  // A connector is "lit" if the element to its LEFT is done.
+  for(var i = 0; i < n - 1; i++){
+    var elL = elements[i];
+    var elR = elements[i + 1];
+    var rL = elL.kind === 'mega' ? 22 : (elL.kind === 'gate' ? 11 : 16);
+    var rR = elR.kind === 'mega' ? 22 : (elR.kind === 'gate' ? 11 : 16);
+    var x1 = positions[i].x + rL + 2;
+    var x2 = positions[i + 1].x - rR - 2;
+    var lit = states[i] === 'done';
+    var stroke = lit ? 'var(--mt-base, #c9a84c)' : 'rgba(216,200,170,0.18)';
+    var alpha = lit ? '0.85' : '1';
+    svg += '<line x1="' + x1.toFixed(1) + '" y1="48" x2="' + x2.toFixed(1) + '" y2="48"';
+    svg += ' stroke="' + stroke + '" stroke-width="1.2" stroke-opacity="' + alpha + '" />';
+  }
+
+  // Nodes
+  for(var i = 0; i < n; i++){
+    var el = elements[i];
+    var st = states[i];
+    var p = positions[i];
+    if(el.kind === 'sub'){
+      svg += renderPentagonNode(p.x, p.y, 16, st, false);
+    } else if(el.kind === 'gate'){
+      svg += renderGateNode(p.x, p.y, 11, st);
+    } else if(el.kind === 'mega'){
+      svg += renderPentagonNode(p.x, p.y, 22, st, true);
+    }
+  }
+
+  svg += '</svg>';
+  return { svg: svg, positions: positions, elements: elements, states: states };
+}
+
+// Render a pentagon node at (x, y) with circumradius r in the given state.
+// isMega controls extra glow/treatment for the final completion node.
+function renderPentagonNode(x, y, r, state, isMega){
+  var s = '';
+  // State-driven attribute strings
+  var fill, stroke, strokeWidth, glow;
+  if(state === 'done'){
+    fill = 'var(--mt-bright-soft, rgba(201,168,76,0.18))';
+    stroke = 'var(--mt-base, #c9a84c)';
+    strokeWidth = '1.5';
+    glow = isMega ? 'url(#mt-glow-mega)' : '';
+  } else if(state === 'current'){
+    fill = 'rgba(8,6,18,0.5)';
+    stroke = 'var(--mt-pulse-stroke, #e9d5ff)';
+    strokeWidth = '1.6';
+    glow = 'url(#mt-glow-current)';
+  } else {
+    fill = 'rgba(216,200,170,0.04)';
+    stroke = 'rgba(216,200,170,0.22)';
+    strokeWidth = '1';
+    glow = '';
+  }
+  // Subtle outer halo for done/current — drawn first
+  if(state === 'done'){
+    s += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 8) + '"';
+    s += ' fill="var(--mt-bright-soft, rgba(201,168,76,0.18))" opacity="0.35" />';
+  }
+  if(state === 'current'){
+    // Pulse halo — animated via CSS by class
+    s += '<circle class="mt-pulse-halo" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 6) + '"';
+    s += ' fill="none" stroke="var(--mt-pulse-stroke, #e9d5ff)" stroke-width="0.7" opacity="0.5" />';
+  }
+  // The pentagon itself
+  s += '<path d="' + pentagonPath(x, y, r, 0) + '"';
+  s += ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '"';
+  s += ' stroke-linejoin="round" />';
+  // Inner glyph for done state — checkmark; for mega when done — module rune
+  if(state === 'done'){
+    s += '<text x="' + x.toFixed(1) + '" y="' + (y + 4) + '" text-anchor="middle"';
+    s += ' font-family="DM Sans, sans-serif" font-size="' + (isMega ? 16 : 12) + '" font-weight="600"';
+    s += ' fill="var(--mt-base, #c9a84c)">✓</text>';
+  } else if(state === 'current' && !isMega){
+    // Inner index for current sub-unit (drawn small inside the pentagon)
+    // Skip for mega — mega doesn't show a number
+  }
+  return s;
+}
+
+// Render a retrieval gate node at (x, y) — a small diamond. Diamonds
+// rotate 45° relative to the pentagon's stable base, signaling "different
+// kind of moment" — production rather than reception.
+function renderGateNode(x, y, r, state){
+  var s = '';
+  var fill, stroke, strokeWidth;
+  if(state === 'done'){
+    fill = 'var(--mt-bright-soft, rgba(201,168,76,0.18))';
+    stroke = 'var(--mt-base, #c9a84c)';
+    strokeWidth = '1.4';
+  } else if(state === 'current'){
+    fill = 'rgba(8,6,18,0.5)';
+    stroke = 'var(--mt-pulse-stroke, #e9d5ff)';
+    strokeWidth = '1.5';
+  } else {
+    fill = 'rgba(216,200,170,0.04)';
+    stroke = 'rgba(216,200,170,0.28)';
+    strokeWidth = '0.9';
+  }
+  // Halo for done/current
+  if(state === 'current'){
+    s += '<circle class="mt-pulse-halo" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (r + 5) + '"';
+    s += ' fill="none" stroke="var(--mt-pulse-stroke, #e9d5ff)" stroke-width="0.6" opacity="0.5" />';
+  }
+  // Diamond as a square rotated 45° via SVG transform
+  var d = r * 0.96;
+  s += '<g transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(45)">';
+  s += '<rect x="' + (-d).toFixed(1) + '" y="' + (-d).toFixed(1) + '" width="' + (2*d).toFixed(1) + '" height="' + (2*d).toFixed(1) + '"';
+  s += ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '" />';
+  // Quill-mark inside the diamond — a single small stroke suggesting
+  // "writing happens here" rather than the gate being decorative.
+  if(state === 'done'){
+    s += '<text x="0" y="3" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="9" font-weight="600" fill="var(--mt-base, #c9a84c)">✓</text>';
+  } else {
+    // A small horizontal mark (the gate's "seam") — visible in locked
+    // and current states, replaced by checkmark when done.
+    s += '<line x1="' + (-d * 0.5) + '" y1="0" x2="' + (d * 0.5) + '" y2="0"';
+    s += ' stroke="' + stroke + '" stroke-width="0.8" stroke-linecap="round" />';
+  }
+  s += '</g>';
+  return s;
+}
+
+// Build the panel's complete inner HTML for the given module.
+function buildMicroTreePanel(moduleId){
+  var lesson = LESSONS[moduleId];
+  if(!lesson) return '';
+  var palette = getModulePalette(moduleId);
+  var chainBuild = buildChainSvg(moduleId);
+  var elements = chainBuild.elements;
+  var states = chainBuild.states;
+  var positions = chainBuild.positions;
+
+  // Status hint — describes the next action for the user.
+  var firstUndoneIdx = states.indexOf('current');
+  var hintText = '';
+  var hintClass = '';
+  if(firstUndoneIdx === -1){
+    // All done
+    hintText = 'Module complete';
+    hintClass = ' complete';
+  } else {
+    var firstUndone = elements[firstUndoneIdx];
+    if(firstUndone.kind === 'sub'){
+      hintText = 'Tap to begin · ' + firstUndone.subunit.title;
+    } else if(firstUndone.kind === 'gate'){
+      hintText = 'Tap the gate · Retrieval';
+    } else if(firstUndone.kind === 'mega'){
+      hintText = 'Tap to complete · ' + lesson.title;
+    }
+  }
+
+  var html = '';
+  // Inline style block — sets the per-module palette CSS vars used by
+  // the pentagon strokes and pulse halos.
+  html += '<style>';
+  html += '.micro-tree-overlay[data-module="' + moduleId + '"]{';
+  html += '--mt-base:' + palette.base + ';';
+  html += '--mt-done:' + palette.done + ';';
+  html += '--mt-bright:' + palette.bright + '0.85);';
+  html += '--mt-bright-soft:' + palette.bright + '0.18);';
+  html += '--mt-pulse-stroke:' + palette.pulseStroke + ';';
+  html += '--mt-pulse-shadow:' + palette.pulseShadow + ';';
+  html += '}';
+  // Define the SVG glow filters that the rendered nodes reference.
+  html += '</style>';
+
+  // SVG defs (filters/gradients) — embedded once at the top.
+  html += '<svg width="0" height="0" style="position:absolute" aria-hidden="true">';
+  html += '<defs>';
+  html += '<filter id="mt-glow-current" x="-50%" y="-50%" width="200%" height="200%">';
+  html += '<feGaussianBlur stdDeviation="2" />';
+  html += '</filter>';
+  html += '<filter id="mt-glow-mega" x="-60%" y="-60%" width="220%" height="220%">';
+  html += '<feGaussianBlur stdDeviation="3.5" />';
+  html += '</filter>';
+  html += '</defs>';
+  html += '</svg>';
+
+  html += '<button class="micro-tree-close" type="button" aria-label="Close" onclick="closeMicroTreePanel()">×</button>';
+  html += '<div class="micro-tree-eyebrow">' + (lesson.eyebrow || '') + '</div>';
+  html += '<h2 class="micro-tree-title">' + lesson.title + '</h2>';
+  // Subtitle — derived from the module: a one-line framing that fits
+  // the module without spoiling the content.
+  var subtitleByModule = {
+    gap: 'The distance you have been carrying. Pass through it.',
+    engine: 'Capacity is what you spend on everything else. Tend it.',
+    interpreter: 'The voice in your head, and what was done to it.'
+  };
+  html += '<p class="micro-tree-subtitle">' + (subtitleByModule[moduleId] || '') + '</p>';
+
+  // Chain container with SVG and overlay hit-targets.
+  html += '<div class="micro-tree-chain">';
+  html += chainBuild.svg;
+  // Hit targets — absolutely positioned over each node's location in
+  // viewBox space. We compute their CSS positions as a percentage of
+  // the SVG width (640 viewBox units). Wrapper has padding-bottom hack
+  // so it sizes to the SVG aspect ratio.
+  html += '<div class="micro-tree-hits">';
+  for(var i = 0; i < elements.length; i++){
+    var el = elements[i];
+    var st = states[i];
+    var p = positions[i];
+    var leftPct = (p.x / 640 * 100).toFixed(2);
+    var topPct = (p.y / 96 * 100).toFixed(2);
+    var disabled = (st === 'locked');
+    var clickHandler = '';
+    var ariaLabel = '';
+    if(el.kind === 'sub'){
+      clickHandler = "goToSubunit('" + moduleId + "', " + el.idx + ")";
+      ariaLabel = el.subunit.title + ' (sub-unit ' + (el.idx + 1) + ')';
+    } else if(el.kind === 'gate'){
+      clickHandler = "goToRetrieval('" + moduleId + "', " + el.gateIdx + ")";
+      ariaLabel = 'Retrieval ' + (el.gateIdx + 1);
+    } else if(el.kind === 'mega'){
+      clickHandler = "goToModuleComplete('" + moduleId + "')";
+      ariaLabel = 'Complete module';
+    }
+    html += '<button class="micro-tree-hit" type="button"';
+    html += ' style="left:' + leftPct + '%;top:' + topPct + '%"';
+    html += ' aria-label="' + ariaLabel + '"';
+    if(disabled) html += ' disabled';
+    html += ' onclick="' + clickHandler + '">';
+    html += '</button>';
+  }
+  html += '</div>';
+  html += '</div>';
+
+  // Labels under the chain — one per node, positioned to match.
+  html += '<div class="micro-tree-labels" style="margin-top:-6px">';
+  // Use absolutely-positioned labels at the same x-percentages
+  for(var i = 0; i < elements.length; i++){
+    var el = elements[i];
+    var st = states[i];
+    var p = positions[i];
+    var leftPct = (p.x / 640 * 100).toFixed(2);
+    var labelText = '';
+    var classList = 'micro-tree-label ' + st;
+    if(el.kind === 'sub'){
+      labelText = el.subunit.title;
+    } else if(el.kind === 'gate'){
+      labelText = 'Retrieval';
+      classList += ' gate';
+    } else if(el.kind === 'mega'){
+      labelText = 'Complete';
+    }
+    html += '<span class="' + classList + '" style="position:absolute;left:' + leftPct + '%;transform:translateX(-50%);max-width:90px;top:0">';
+    html += labelText;
+    html += '</span>';
+  }
+  html += '</div>';
+  // Spacer so the absolutely-positioned labels reserve vertical room.
+  html += '<div style="height:30px"></div>';
+
+  html += '<div class="micro-tree-hint' + hintClass + '">' + hintText + '</div>';
+
+  return html;
+}
+
+// Open the micro-tree panel for the given module. Populates the panel
+// HTML, sets the data-module attribute (which scopes the inline CSS
+// vars), and adds the .open class to fade it in.
+function openMicroTreePanel(moduleId){
+  var overlay = document.getElementById('microTreeOverlay');
+  var panel = document.getElementById('microTreePanel');
+  if(!overlay || !panel) return;
+
+  panel.innerHTML = buildMicroTreePanel(moduleId);
+  overlay.setAttribute('data-module', moduleId);
+  overlay.classList.add('open');
+  // Track active module for state inquiry on lesson close.
+  activeMicroTreeModule = moduleId;
+  // Tell Guide what's happening — same context signal as the v1 flow.
+  if(typeof Guide !== 'undefined' && typeof Guide.setContext === 'function'){
+    Guide.setContext('module-open', { moduleId: moduleId });
+  }
+}
+
+function closeMicroTreePanel(){
+  var overlay = document.getElementById('microTreeOverlay');
+  if(overlay) overlay.classList.remove('open');
+  activeMicroTreeModule = null;
+}
+
+// Tracks which module's micro-tree is currently open. Used when the
+// lesson overlay is closed so we know whether to reopen the panel.
+var activeMicroTreeModule = null;
+
+// Entering a sub-unit from the micro-tree panel: close the panel, open
+// the lesson overlay, advance the multi-stage controller to the sub-
+// unit's stage, render that sub-unit's slice.
+function goToSubunit(moduleId, subunitIdx){
+  var chain = SUBUNIT_CHAINS[moduleId];
+  if(!chain || subunitIdx < 0 || subunitIdx >= chain.length) return;
+  var sub = chain[subunitIdx];
+
+  // Hide the panel (it stays "active" — activeMicroTreeModule preserved
+  // — so closing the lesson overlay reopens it).
+  var overlay = document.getElementById('microTreeOverlay');
+  if(overlay) overlay.classList.remove('open');
+
+  // Open the lesson overlay with the module's content.
+  openLessonForSubunit(moduleId, subunitIdx);
+}
+
+// Entering a retrieval gate: close panel, open lesson overlay at the
+// retrieval stage. The user fills out prompts, and on close (or stage
+// advance), we return to the panel.
+function goToRetrieval(moduleId, gateIdx){
+  var lesson = LESSONS[moduleId];
+  if(!lesson) return;
+
+  var overlay = document.getElementById('microTreeOverlay');
+  if(overlay) overlay.classList.remove('open');
+
+  // Retrieval stage indices: gate 0 → stage 1, gate 1 → stage 3.
+  var retrievalStage = (gateIdx === 0) ? 1 : 3;
+  openLessonAtStage(moduleId, retrievalStage);
+}
+
+// Final mega-node: if all sub-units AND retrievals are done, complete
+// the module. Otherwise the node is locked and this is unreachable.
+function goToModuleComplete(moduleId){
+  // Open the lesson overlay at the complete stage (stage 4 for the
+  // 5-stage modules). The complete stage has its own close button
+  // (completeModuleGap etc.) that fires the actual completion.
+  var lesson = LESSONS[moduleId];
+  if(!lesson) return;
+
+  var overlay = document.getElementById('microTreeOverlay');
+  if(overlay) overlay.classList.remove('open');
+
+  openLessonAtStage(moduleId, 4);
+}
+
+// Open the lesson overlay for the given module and immediately render
+// the requested sub-unit's content. Sets the multi-stage controller to
+// the sub-unit's stage so the rest of the system stays in sync.
+function openLessonForSubunit(moduleId, subunitIdx){
+  var lesson = LESSONS[moduleId];
+  if(!lesson) return;
+  var chain = SUBUNIT_CHAINS[moduleId];
+  var sub = chain[subunitIdx];
+
+  currentLesson = moduleId;
+  document.getElementById('lessonEyebrow').textContent = lesson.eyebrow;
+  document.getElementById('lessonTitle').textContent = lesson.title;
+  document.getElementById('lessonBody').innerHTML = lesson.content;
+  loadReflections();
+  document.getElementById('lessonProgressFill').style.width = '0%';
+
+  // Hide legacy footer (multi-stage modules don't use it).
+  var footer = document.querySelector('.lesson-footer');
+  if(footer) footer.style.display = 'none';
+
+  // Set the controller to the sub-unit's stage and persist it.
+  currentStageIndex = sub.stage;
+  localStorage.setItem('ga_module_' + moduleId + '_stage', String(sub.stage));
+
+  // Hide all stages, show the target stage.
+  var stages = document.querySelectorAll('#lessonBody .module-stage');
+  stages.forEach(function(s, i){
+    s.style.display = (i === sub.stage) ? '' : 'none';
+  });
+
+  // Slice that stage's content to just the requested sub-unit.
+  renderSubunitView(moduleId, subunitIdx);
+
+  // Restore retrieval state (no-op if not on a retrieval stage).
+  restoreRetrievalState(moduleId);
+
+  // Open the overlay.
+  refreshEssenceCounter();
+  document.getElementById('lessonOverlay').classList.add('open');
+  document.body.classList.add('lesson-open');
+  document.getElementById('lessonBody').scrollTop = 0;
+}
+
+// Open the lesson overlay at a specific stage index without sub-unit
+// slicing. Used for retrieval and complete stages.
+function openLessonAtStage(moduleId, stageIdx){
+  var lesson = LESSONS[moduleId];
+  if(!lesson) return;
+
+  currentLesson = moduleId;
+  document.getElementById('lessonEyebrow').textContent = lesson.eyebrow;
+  document.getElementById('lessonTitle').textContent = lesson.title;
+  document.getElementById('lessonBody').innerHTML = lesson.content;
+  loadReflections();
+  document.getElementById('lessonProgressFill').style.width = '0%';
+
+  var footer = document.querySelector('.lesson-footer');
+  if(footer) footer.style.display = 'none';
+
+  currentStageIndex = stageIdx;
+  localStorage.setItem('ga_module_' + moduleId + '_stage', String(stageIdx));
+  var stages = document.querySelectorAll('#lessonBody .module-stage');
+  stages.forEach(function(s, i){
+    s.style.display = (i === stageIdx) ? '' : 'none';
+  });
+  restoreRetrievalState(moduleId);
+
+  refreshEssenceCounter();
+  document.getElementById('lessonOverlay').classList.add('open');
+  document.body.classList.add('lesson-open');
+  document.getElementById('lessonBody').scrollTop = 0;
+}
+
+// Slice the current stage's content to the requested sub-unit's view.
+// (Same logic as v1, with stage-footer stripped to prevent duplicate
+// continue buttons.) The Continue button at the end advances either to
+// the next sub-unit OR back to the micro-tree panel if the next item
+// is a retrieval gate.
+function renderSubunitView(moduleId, subunitIdx){
+  var chain = SUBUNIT_CHAINS[moduleId];
+  var sub = chain[subunitIdx];
+
+  var stages = document.querySelectorAll('#lessonBody .module-stage');
+  if(!stages.length) return;
+  var stage = stages[sub.stage];
+  if(!stage) return;
+
+  // Capture original content on first slice, restore on subsequent.
+  var key = 'subunitOriginal_' + moduleId + '_stage' + sub.stage;
+  if(!stage.dataset[key]){
+    stage.dataset[key] = stage.innerHTML;
+  }
+  stage.innerHTML = stage.dataset[key];
+
+  var sliceResult = sliceStageContent(stage, sub.slice);
+  if(!sliceResult.html) return;
+
+  var html = '';
+  html += '<div class="stage-eyebrow">Sub-unit ' + (subunitIdx + 1) + ' of ' + chain.length + '</div>';
+
+  // Strip original .stage-footer / .retrieval-stage-footer from slice.
+  var sliceWrapper = document.createElement('div');
+  sliceWrapper.innerHTML = sliceResult.html;
+  sliceWrapper.querySelectorAll('.stage-footer, .retrieval-stage-footer').forEach(function(el){
+    el.remove();
+  });
+  var cleanSliceHtml = sliceWrapper.innerHTML;
+
+  var stageTitleEl = stage.querySelector('.stage-title');
+  if(sub.slice === 0 && stageTitleEl){
+    html += cleanSliceHtml;
+  } else {
+    html += '<h3 class="lc-section-heading subunit-title">' + sub.title + '</h3>';
+    html += cleanSliceHtml;
+  }
+
+  // Continue button — completes the sub-unit and returns to the
+  // micro-tree panel (always — that's the v2 design).
+  html += '<div class="stage-footer">';
+  html += '<button class="stage-continue-btn" onclick="completeSubunit(\'' + moduleId + '\', ' + subunitIdx + ')">';
+  html += 'Mark complete &amp; return →';
+  html += '</button>';
+  html += '</div>';
+
+  stage.innerHTML = html;
+
+  var body = document.getElementById('lessonBody');
+  if(body) body.scrollTop = 0;
+}
+
+// Mark a sub-unit complete, close the lesson overlay, and reopen the
+// micro-tree panel so the user sees their progress reflected.
+function completeSubunit(moduleId, subunitIdx){
+  var chain = SUBUNIT_CHAINS[moduleId];
+  if(!chain) return;
+  var sub = chain[subunitIdx];
+  if(!isSubunitComplete(sub.id)){
+    markSubunitComplete(sub.id);
+  }
+  // Close the lesson overlay (without firing module completion).
+  document.getElementById('lessonOverlay').classList.remove('open');
+  document.body.classList.remove('lesson-open');
+  // Reopen the micro-tree panel for this module so the user sees the
+  // node now lit and the next node pulsing.
+  openMicroTreePanel(moduleId);
 }
 
 // =============================================================
@@ -8374,7 +9496,7 @@ function initMultiStageLesson(moduleId, lesson){
 
 // Show a specific stage by index, hiding all others.
 function showStage(moduleId, idx){
-  var stages = document.querySelectorAll('.module-stage');
+  var stages = document.querySelectorAll('#lessonBody .module-stage');
   stages.forEach(function(s, i){
     s.style.display = (i === idx) ? '' : 'none';
   });
@@ -8396,10 +9518,27 @@ function showStage(moduleId, idx){
 // Advance from the current stage to the next. Called from in-content
 // continue buttons. Special-cased for the completion stage: instead of
 // advancing to an undefined next stage, fires the completion flow.
+//
+// For modules with a sub-unit chain (Phase 4 v2), advanceStage is only
+// reachable from inside a retrieval stage — the unit stages have their
+// content replaced by sub-unit slices that use completeSubunit instead.
+// In that case, advanceStage closes the lesson overlay and reopens the
+// micro-tree panel so the user sees their gate as completed.
 function advanceStage(){
   if(!currentLesson) return;
   var lesson = LESSONS[currentLesson];
   if(!lesson || !lesson.isMultiStage) return;
+
+  // Sub-unit module: returning from a retrieval gate (or the complete
+  // stage's internal button if reached) goes back to the panel.
+  if(SUBUNIT_CHAINS[currentLesson]){
+    var moduleId = currentLesson;
+    document.getElementById('lessonOverlay').classList.remove('open');
+    document.body.classList.remove('lesson-open');
+    openMicroTreePanel(moduleId);
+    return;
+  }
+
   var next = currentStageIndex + 1;
   if(next >= lesson.stages.length){
     // No more stages — this was the completion stage's internal button.
