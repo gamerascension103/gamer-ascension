@@ -254,6 +254,15 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 .retrieval-submit-btn.submitted:hover{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.3);color:rgba(201,168,76,.6);box-shadow:none}
 .retrieval-char-hint{font-family:'DM Sans',sans-serif;font-size:11px;letter-spacing:.06em;color:rgba(240,236,228,.35);font-style:italic}
 .retrieval-char-hint.ready{color:rgba(201,168,76,.6)}
+/* Skip-link row appears below the submit row on first-encounter retrievals
+   only (Gap Unit 1). Soft, low-emphasis; the link is a one-time grace,
+   not a recurring escape hatch — wording reflects this. */
+.retrieval-skip-row{margin-top:14px;display:flex;justify-content:flex-end}
+.retrieval-skip-link{font-family:'DM Sans',sans-serif;font-size:12px;letter-spacing:.04em;color:rgba(240,236,228,.4);text-decoration:none;border-bottom:1px dotted rgba(240,236,228,.25);padding-bottom:1px;transition:color .25s,border-color .25s}
+.retrieval-skip-link:hover{color:rgba(240,236,228,.7);border-bottom-color:rgba(240,236,228,.5)}
+.retrieval-prompt.skipped .retrieval-skip-row{display:none}
+.retrieval-submit-btn.skipped{background:rgba(150,150,180,.06);border-color:rgba(150,150,180,.2);color:rgba(180,180,200,.5);cursor:default;letter-spacing:.08em}
+.retrieval-submit-btn.skipped:hover{background:rgba(150,150,180,.06);border-color:rgba(150,150,180,.2);color:rgba(180,180,200,.5);box-shadow:none}
 .retrieval-reveal{margin-top:20px;padding:20px 22px;background:rgba(201,168,76,.06);border-left:2px solid rgba(201,168,76,.4);border-radius:0 4px 4px 0;animation:revealFadeIn .8s ease both}
 @keyframes revealFadeIn{
   from{opacity:0;transform:translateY(-6px)}
@@ -2192,23 +2201,30 @@ var LESSONS = {
   <p class="lc-body">For now, this: <strong>the gap is not your fault, and it does not have to be permanent.</strong></p>
 
   <div class="stage-footer">
-    <button class="stage-continue-btn" onclick="advanceStage()">Continue to Retrieval &rarr;</button>
+    <button class="stage-continue-btn" onclick="advanceStage()">Continue &rarr;</button>
   </div>
 </div>
 
 <!-- ============ STAGE: UNIT 1 RETRIEVAL ============ -->
+<!-- This is the first retrieval the user ever encounters in Evermark.
+     Framing is intentionally lower-stakes than subsequent retrievals
+     (gentler instruction, lower character floor, soft skip option). The
+     trust the user grants here is what unlocks the rest of the program. -->
 <div class="module-stage retrieval-stage" data-stage="retrieve1" data-stage-index="1" style="display:none">
   <div class="retrieval-frame">
     <div class="retrieval-eyebrow">Before you move on &mdash; Retrieval</div>
-    <div class="retrieval-instruction">Two questions. Write, don't type one-liners. The act of putting this into your own words is where the concept actually lands.</div>
+    <div class="retrieval-instruction">Two short questions before you continue. Even a few sentences makes the concept stick.</div>
 
-    <div class="retrieval-prompt" data-prompt-id="gap-u1-p1" data-prompt-type="concept">
+    <div class="retrieval-prompt" data-prompt-id="gap-u1-p1" data-prompt-type="concept" data-soft-floor="1">
       <div class="retrieval-question-num">1</div>
       <div class="retrieval-question-text">In your own words: what is the gap? Where did it come from?</div>
-      <textarea class="retrieval-textarea" id="ret-gap-u1-p1" placeholder="Write from memory. This is where the concept lands." oninput="checkRetrievalLength('gap-u1-p1')"></textarea>
+      <textarea class="retrieval-textarea" id="ret-gap-u1-p1" placeholder="Write from memory. Even a sentence or two is enough." oninput="checkRetrievalLength('gap-u1-p1')"></textarea>
       <div class="retrieval-submit-row">
         <button class="retrieval-submit-btn" id="sub-gap-u1-p1" onclick="submitRetrieval('gap-u1-p1')" disabled>Submit</button>
-        <span class="retrieval-char-hint" id="hint-gap-u1-p1">40 characters to submit</span>
+        <span class="retrieval-char-hint" id="hint-gap-u1-p1">20 characters to submit</span>
+      </div>
+      <div class="retrieval-skip-row">
+        <a href="#" class="retrieval-skip-link" onclick="event.preventDefault();skipRetrieval('gap-u1-p1')">I&rsquo;d rather just see the answer this time</a>
       </div>
       <div class="retrieval-reveal" id="reveal-gap-u1-p1" style="display:none">
         <div class="retrieval-reveal-label">Here's one way to put it</div>
@@ -2216,13 +2232,16 @@ var LESSONS = {
       </div>
     </div>
 
-    <div class="retrieval-prompt" data-prompt-id="gap-u1-p2" data-prompt-type="application">
+    <div class="retrieval-prompt" data-prompt-id="gap-u1-p2" data-prompt-type="application" data-soft-floor="1">
       <div class="retrieval-question-num">2</div>
       <div class="retrieval-question-text">When in the last week did you feel the gap most clearly? Describe the moment &mdash; where you were, what set it off, and what the voice in your head was telling you about yourself in that moment.</div>
       <textarea class="retrieval-textarea" id="ret-gap-u1-p2" placeholder="Your own moment. Specifics matter more than polish." oninput="checkRetrievalLength('gap-u1-p2')"></textarea>
       <div class="retrieval-submit-row">
         <button class="retrieval-submit-btn" id="sub-gap-u1-p2" onclick="submitRetrieval('gap-u1-p2')" disabled>Submit</button>
-        <span class="retrieval-char-hint" id="hint-gap-u1-p2">40 characters to submit</span>
+        <span class="retrieval-char-hint" id="hint-gap-u1-p2">20 characters to submit</span>
+      </div>
+      <div class="retrieval-skip-row">
+        <a href="#" class="retrieval-skip-link" onclick="event.preventDefault();skipRetrieval('gap-u1-p2')">Not today &mdash; let me come back to this one</a>
       </div>
     </div>
 
@@ -8433,6 +8452,20 @@ function updateModuleProgressDots(moduleId, stageIdx, totalStages){
 // =============================================================
 
 var MIN_RETRIEVAL_CHARS = 40;
+// Lower floor for first-encounter retrievals (Gap Unit 1). Marked in
+// HTML via data-soft-floor="1" on the prompt element. Designed to lower
+// the trust-test friction on the user's very first retrieval submission
+// — they can submit a partial answer and still proceed. Subsequent
+// retrievals retain the standard 40-char floor.
+var MIN_RETRIEVAL_CHARS_SOFT = 20;
+
+function getMinCharsForPrompt(promptId){
+  var promptDiv = document.querySelector('[data-prompt-id="' + promptId + '"]');
+  if(promptDiv && promptDiv.getAttribute('data-soft-floor') === '1'){
+    return MIN_RETRIEVAL_CHARS_SOFT;
+  }
+  return MIN_RETRIEVAL_CHARS;
+}
 
 function checkRetrievalLength(promptId){
   var textarea = document.getElementById('ret-' + promptId);
@@ -8441,15 +8474,16 @@ function checkRetrievalLength(promptId){
   if(!textarea || !btn) return;
   // Don't re-enable a submitted prompt.
   if(btn.classList.contains('submitted')) return;
+  var minChars = getMinCharsForPrompt(promptId);
   var len = textarea.value.trim().length;
-  var ready = len >= MIN_RETRIEVAL_CHARS;
+  var ready = len >= minChars;
   btn.disabled = !ready;
   if(hint){
     if(ready){
       hint.textContent = 'Ready to submit';
       hint.classList.add('ready');
     } else {
-      hint.textContent = (MIN_RETRIEVAL_CHARS - len) + ' more characters';
+      hint.textContent = (minChars - len) + ' more characters';
       hint.classList.remove('ready');
     }
   }
@@ -8514,12 +8548,69 @@ function submitRetrieval(promptId){
   checkStageCompletion();
 }
 
+// Skip a retrieval. Available only on first-encounter retrievals (Gap
+// Unit 1) via the small skip link in the HTML. Marks the prompt complete
+// for stage-progression purposes — the user can move on — but does not
+// award Essence and is recorded as a skip rather than a submission. For
+// concept prompts the canonical answer is revealed (the user signalled
+// "I'd rather just see the answer"); for application prompts the prompt
+// is simply marked complete (their input is their own moment, nothing to
+// reveal). Skips do NOT trigger the first-retrieval Guide introduction —
+// that is reserved for the user's first real submission.
+function skipRetrieval(promptId){
+  var textarea = document.getElementById('ret-' + promptId);
+  var btn = document.getElementById('sub-' + promptId);
+  var hint = document.getElementById('hint-' + promptId);
+  var promptDiv = document.querySelector('[data-prompt-id="' + promptId + '"]');
+  if(!textarea || !btn || !promptDiv) return;
+  if(btn.classList.contains('submitted')) return;
+
+  // Persist the skip so reopening the stage restores the skipped state.
+  localStorage.setItem('ga_retrieval_' + promptId + '_submitted', '1');
+  localStorage.setItem('ga_retrieval_' + promptId + '_skipped', '1');
+
+  // Lock the textarea (still readable).
+  textarea.setAttribute('readonly', 'readonly');
+  textarea.classList.add('submitted');
+
+  // Lock the button with a different visual treatment than a real submit
+  // — muted, no Essence award. The label signals the state.
+  btn.classList.add('submitted');
+  btn.classList.add('skipped');
+  btn.disabled = true;
+  btn.textContent = 'Skipped';
+  if(hint) hint.textContent = '';
+
+  // Mark the prompt container so the skip-link row can hide via CSS.
+  promptDiv.classList.add('skipped');
+
+  // For concept prompts, reveal the canonical answer — the link said
+  // "I'd rather just see the answer" and we honor that. Application
+  // prompts have no answer to reveal.
+  var promptType = promptDiv.getAttribute('data-prompt-type');
+  if(promptType === 'concept'){
+    var reveal = document.getElementById('reveal-' + promptId);
+    if(reveal) reveal.style.display = '';
+  }
+
+  // Update the module vessel like a normal submit (the user is moving
+  // through the unit, that progression should be reflected) but do NOT
+  // award Essence and do NOT trigger the first-retrieval Guide.
+  if(currentLesson){
+    updateModuleVessel(currentLesson, 0);
+    rippleModuleVessel();
+  }
+
+  checkStageCompletion();
+}
+
 // Re-apply submitted state to prompts on reopen / stage switch.
 function restoreRetrievalState(moduleId){
   var prompts = document.querySelectorAll('[data-prompt-id]');
   prompts.forEach(function(p){
     var pid = p.getAttribute('data-prompt-id');
     var submitted = localStorage.getItem('ga_retrieval_' + pid + '_submitted') === '1';
+    var skipped = localStorage.getItem('ga_retrieval_' + pid + '_skipped') === '1';
     var savedText = localStorage.getItem('ga_retrieval_' + pid);
     if(savedText){
       var ta = document.getElementById('ret-' + pid);
@@ -8533,7 +8624,13 @@ function restoreRetrievalState(moduleId){
       if(btn){
         btn.classList.add('submitted');
         btn.disabled = true;
-        btn.textContent = 'Submitted ✓';
+        if(skipped){
+          btn.classList.add('skipped');
+          btn.textContent = 'Skipped';
+          p.classList.add('skipped');
+        } else {
+          btn.textContent = 'Submitted \u2713';
+        }
       }
       if(hint) hint.textContent = '';
       var promptType = p.getAttribute('data-prompt-type');
