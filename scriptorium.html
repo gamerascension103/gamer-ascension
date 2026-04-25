@@ -372,6 +372,196 @@ body{
   background:rgba(180,170,210,.7);
 }
 
+/* ============================================================================
+   FRAGMENT REFLECTION SCAFFOLD (multi-beat flow, 2026-04)
+   Three-screen structure: principle → example → write. The first two
+   screens are read-only beats that anchor the user in what the fragment
+   teaches before they begin reflecting. The third screen pins the
+   principle + question while the user writes their reflection.
+   ============================================================================ */
+.reflection-context-label{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(201,168,76,.55);
+}
+.reflection-scaffold-container{
+  max-width:680px;margin:0 auto;padding:32px 24px 48px;
+  display:flex;flex-direction:column;gap:36px;
+}
+
+.reflection-progress{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:8px;
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;
+}
+.reflection-progress-step{
+  color:rgba(240,236,228,.3);
+  transition:color .3s;
+}
+.reflection-progress-step.active{
+  color:#c9a84c;
+  text-shadow:0 0 12px rgba(201,168,76,.4);
+}
+.reflection-progress-divider{
+  color:rgba(240,236,228,.2);
+  font-size:9px;
+}
+
+.reflection-beat{
+  background:rgba(13,13,26,.55);
+  border:1px solid rgba(201,168,76,.2);
+  border-radius:6px;
+  padding:42px 48px;
+  position:relative;
+}
+.reflection-beat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:6px 6px 0 0;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.55),transparent);
+}
+
+.reflection-eyebrow{
+  font-family:'Cinzel',serif;font-size:11px;
+  letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(201,168,76,.7);
+  margin-bottom:18px;
+}
+.reflection-headline{
+  font-family:'Cinzel Decorative',serif;
+  font-size:24px;font-weight:700;line-height:1.35;
+  color:#f5eecc;
+  margin:0 0 22px;
+  letter-spacing:.01em;
+}
+.reflection-body{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:18px;line-height:1.7;
+  color:rgba(240,236,228,.85);
+  margin:0;
+}
+
+.reflection-example-body p{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:18px;line-height:1.75;
+  color:rgba(240,236,228,.85);
+  margin:0 0 18px;
+}
+.reflection-example-body p:last-child{margin-bottom:0}
+
+.reflection-actions{
+  display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end;
+}
+.btn-back{
+  background:none;
+  border:1px solid rgba(255,255,255,.12);
+  color:rgba(240,236,228,.5);
+  font-family:'Cinzel',serif;font-size:11px;font-weight:400;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:13px 20px;border-radius:3px;
+  cursor:pointer;transition:all .2s;
+}
+.btn-back:hover{
+  border-color:rgba(255,255,255,.3);
+  color:rgba(240,236,228,.85);
+}
+.btn-continue{
+  background:transparent;
+  border:1px solid rgba(201,168,76,.55);
+  color:#c9a84c;
+  font-family:'Cinzel',serif;font-size:12px;font-weight:500;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:13px 22px;border-radius:3px;
+  cursor:pointer;transition:all .2s;
+}
+.btn-continue:hover{
+  background:rgba(201,168,76,.1);
+  border-color:rgba(201,168,76,.85);
+  color:#f5eecc;
+}
+
+/* ----- Pinned principle in writing view ----- */
+.reflection-pinned{
+  margin:0 auto 28px;
+  max-width:720px;
+  padding:20px 26px 22px;
+  background:rgba(13,13,26,.6);
+  border:1px solid rgba(201,168,76,.2);
+  border-radius:6px;
+  position:relative;
+}
+.reflection-pinned::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  border-radius:6px 6px 0 0;
+  background:linear-gradient(90deg,transparent,rgba(201,168,76,.55),transparent);
+}
+.reflection-pinned-progress{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-bottom:18px;
+  font-family:'Cinzel',serif;font-size:9.5px;
+  letter-spacing:.2em;text-transform:uppercase;
+}
+.reflection-pinned-principle{
+  padding:14px 16px;
+  background:rgba(201,168,76,.06);
+  border-left:2px solid rgba(201,168,76,.55);
+  margin-bottom:18px;
+  border-radius:0 3px 3px 0;
+}
+.reflection-pinned-eyebrow{
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(201,168,76,.7);
+  margin-right:8px;
+}
+.reflection-pinned-text{
+  font-family:'Cinzel Decorative',serif;
+  font-size:14px;font-weight:600;
+  color:#e5c574;
+  letter-spacing:.01em;
+}
+.reflection-pinned-question{
+  margin-bottom:14px;
+}
+.reflection-pinned-question-headline{
+  font-family:'Cinzel Decorative',serif;
+  font-size:18px;font-weight:700;line-height:1.35;
+  color:#f0ece4;
+  margin:0 0 10px;
+}
+.reflection-pinned-question-body{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:16px;line-height:1.65;
+  color:rgba(240,236,228,.75);
+  margin:0;
+  font-style:italic;
+}
+.reflection-pinned-back-btn{
+  background:none;border:none;
+  color:rgba(201,168,76,.55);
+  font-family:'Cinzel',serif;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:4px 0;
+  cursor:pointer;
+  transition:color .2s;
+}
+.reflection-pinned-back-btn:hover{
+  color:#c9a84c;
+}
+
+@media (max-width:640px){
+  .reflection-scaffold-container{padding:24px 16px 40px;gap:28px}
+  .reflection-beat{padding:32px 24px}
+  .reflection-headline{font-size:21px}
+  .reflection-body,.reflection-example-body p{font-size:17px}
+  .reflection-actions{justify-content:stretch;flex-direction:column-reverse}
+  .reflection-actions .btn-cancel,
+  .reflection-actions .btn-back,
+  .reflection-actions .btn-continue{width:100%}
+  .reflection-pinned{padding:16px 18px 18px}
+  .reflection-pinned-question-headline{font-size:16px}
+}
+
 .home-action{display:flex;align-items:center;justify-content:space-between;padding:22px 24px;background:rgba(13,13,26,0.6);border:1px solid var(--border-warm);border-radius:4px;text-decoration:none;color:var(--text);cursor:pointer;transition:all .3s;text-align:left;font-family:inherit;font-size:inherit;width:100%;backdrop-filter:blur(6px)}
 .home-action:hover{border-color:rgba(201,168,76,.5);background:rgba(20,20,35,.75);transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,0,0,.3),0 0 20px rgba(201,168,76,.08)}
 .home-action:disabled{opacity:.4;cursor:not-allowed}
@@ -649,11 +839,97 @@ body{
     </div>
   </div>
 
+  <!-- ============ REFLECTION SCAFFOLD: PRINCIPLE VIEW ============ -->
+  <!-- First beat of the multi-beat reflection flow. Names the core principle
+       the fragment teaches. Read-only. User clicks Continue to advance to
+       the example beat. -->
+  <div class="view" id="view-reflection-principle">
+    <div class="writing-header">
+      <div class="writing-breadcrumb"><a href="#" onclick="event.preventDefault();cancelReflectionScaffold()">\u2190 Cancel</a></div>
+      <div class="reflection-context-label" id="reflectionContextLabel"></div>
+    </div>
+
+    <div class="reflection-scaffold-container">
+      <div class="reflection-progress">
+        <span class="reflection-progress-step active">Principle</span>
+        <span class="reflection-progress-divider">\u2014</span>
+        <span class="reflection-progress-step">Example</span>
+        <span class="reflection-progress-divider">\u2014</span>
+        <span class="reflection-progress-step">Reflect</span>
+      </div>
+
+      <div class="reflection-beat">
+        <div class="reflection-eyebrow" id="principleEyebrow"></div>
+        <h2 class="reflection-headline" id="principleHeadline"></h2>
+        <p class="reflection-body" id="principleBody"></p>
+      </div>
+
+      <div class="reflection-actions">
+        <button class="btn-cancel" onclick="cancelReflectionScaffold()">Cancel</button>
+        <button class="btn-continue" onclick="proceedToReflectionExample()">Continue \u2192</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ REFLECTION SCAFFOLD: EXAMPLE VIEW ============ -->
+  <!-- Second beat. Shows the principle applied in lived practice. Read-only.
+       User can go Back to re-read principle or Continue to the writing view. -->
+  <div class="view" id="view-reflection-example">
+    <div class="writing-header">
+      <div class="writing-breadcrumb"><a href="#" onclick="event.preventDefault();cancelReflectionScaffold()">\u2190 Cancel</a></div>
+      <div class="reflection-context-label" id="reflectionContextLabel2"></div>
+    </div>
+
+    <div class="reflection-scaffold-container">
+      <div class="reflection-progress">
+        <span class="reflection-progress-step">Principle</span>
+        <span class="reflection-progress-divider">\u2014</span>
+        <span class="reflection-progress-step active">Example</span>
+        <span class="reflection-progress-divider">\u2014</span>
+        <span class="reflection-progress-step">Reflect</span>
+      </div>
+
+      <div class="reflection-beat">
+        <div class="reflection-eyebrow" id="exampleEyebrow"></div>
+        <div class="reflection-example-body" id="exampleBody"></div>
+      </div>
+
+      <div class="reflection-actions">
+        <button class="btn-back" onclick="proceedToReflectionPrinciple()">\u2190 Back</button>
+        <button class="btn-cancel" onclick="cancelReflectionScaffold()">Cancel</button>
+        <button class="btn-continue" onclick="proceedToReflectionWriting()">Continue \u2192</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ WRITING VIEW ============ -->
   <div class="view" id="view-writing">
     <div class="writing-header">
       <div class="writing-breadcrumb"><a href="#" onclick="event.preventDefault();confirmLeaveWriting()">← Scriptorium</a></div>
       <div class="writing-date" id="writingDate"></div>
+    </div>
+
+    <!-- Pinned principle (shown when entering writing view from a fragment
+         reflection scaffold). Hidden by default; populated by
+         proceedToReflectionWriting() when the user has come through the
+         3-beat scaffold. -->
+    <div class="reflection-pinned" id="reflectionPinned" style="display:none">
+      <div class="reflection-pinned-progress">
+        <span class="reflection-progress-step">Principle</span>
+        <span class="reflection-progress-divider">\u2014</span>
+        <span class="reflection-progress-step">Example</span>
+        <span class="reflection-progress-divider">\u2014</span>
+        <span class="reflection-progress-step active">Reflect</span>
+      </div>
+      <div class="reflection-pinned-principle">
+        <span class="reflection-pinned-eyebrow">The principle:</span>
+        <span class="reflection-pinned-text" id="reflectionPinnedText"></span>
+      </div>
+      <div class="reflection-pinned-question">
+        <h3 class="reflection-pinned-question-headline" id="reflectionPinnedQuestionHeadline"></h3>
+        <p class="reflection-pinned-question-body" id="reflectionPinnedQuestionBody"></p>
+      </div>
+      <button class="reflection-pinned-back-btn" onclick="proceedToReflectionExample()">\u2190 Back to the example</button>
     </div>
 
     <!-- Prompt card (hidden if unguided session) -->
@@ -1098,6 +1374,44 @@ var FRAGMENT_CATEGORY_STYLES = {
   practice: { name:'Practice', color:'#5ac5a0', label:'Practice' }
 };
 
+// ---- FRAGMENT REFLECTION SCAFFOLDS (microlearning-style, 2026-04) ----
+// Each fragment that has been reflection-authored gets a 3-beat scaffold:
+//   1. principle — the core lesson, named directly
+//   2. example   — the principle illustrated in lived practice
+//   3. question  — the prompt the user writes to
+//
+// When the user clicks a queue card, the scaffold takes them through
+// principle → example → writing (with the principle pinned for context).
+//
+// Fragments without a scaffold entry fall back to the original generic
+// prompt flow. This lets us ship Acedia as a working prototype while
+// the other five fragments use the existing flow until their scaffolds
+// are written.
+var FRAGMENT_REFLECTIONS = {
+  lore_acedia: {
+    principle: {
+      eyebrow: 'The principle the desert monks named',
+      headline: 'Action precedes feeling. Not the other way around.',
+      body: 'They watched themselves carefully and noticed something most people miss \u2014 that motivation is not the cause of movement. Movement is the cause of motivation. The work begins, and the will follows.'
+    },
+    example: {
+      eyebrow: 'What this looks like in practice',
+      paragraphs: [
+        'A writer who waits to feel inspired before writing rarely writes. A writer who sits down at the desk every morning at 7am, regardless of how they feel, becomes inspired by the act of writing itself. The discipline of arrival creates the willingness.',
+        'The same is true of the gym, the conversation you\u2019ve been avoiding, the call to a parent you haven\u2019t made, the project you keep moving down the list. Acedia is the noonday demon that says \u201cnot now, not yet, not until I feel like it.\u201d The monks knew it would never come if you waited.'
+      ]
+    },
+    question: {
+      headline: 'What does this mean to you?',
+      body: 'Not in theory. In your actual life, this week. Where have you been waiting for the feeling to arrive before doing the thing? And what would it look like to begin without it?'
+    }
+  }
+  // Other fragments (lore_seneca, lore_plato, lore_hebert, lore_montaigne,
+  // lore_ignatius) intentionally not yet authored. Until their scaffolds
+  // are written, those fragments use the generic prompt flow via
+  // beginFragmentReflection's fallback path.
+};
+
 // ---- SESSION STATE ----
 var currentSession = null;    // live editing session object
 var autosaveTimer = null;
@@ -1329,6 +1643,21 @@ function beginFragmentReflection(fragmentId){
   }
   Storage.remove('draft');
 
+  // If this fragment has an authored reflection scaffold, route through
+  // the multi-beat flow (principle → example → write). Otherwise fall
+  // back to the original generic-prompt flow that drops the user
+  // directly into the writing view.
+  var scaffold = FRAGMENT_REFLECTIONS[item.fragmentId];
+  if(scaffold){
+    // Stash queue item in pending state — session is NOT created until
+    // the user reaches the writing beat. If they cancel from beat 1 or
+    // beat 2, no session is saved.
+    pendingReflectionQueueItem = item;
+    showReflectionPrinciple();
+    return;
+  }
+
+  // Fallback: generic prompt, direct-to-writing flow.
   var promptText = 'You just preserved ' + item.title + '. Write what it asks of you.';
   currentSession = {
     id: genSessionId(),
@@ -1341,7 +1670,6 @@ function beginFragmentReflection(fragmentId){
     body: '',
     wordCount: 0,
     unguided: false,
-    // Fragment reflection metadata
     reflectionKind: 'fragment',
     fragmentId: item.fragmentId,
     fragmentTitle: item.title,
@@ -1350,6 +1678,98 @@ function beginFragmentReflection(fragmentId){
   };
   Storage.set('draft', currentSession);
   openWritingView();
+}
+
+// ---- REFLECTION SCAFFOLD FLOW (multi-beat, 2026-04) ----
+// Tracks the queue item the user is currently scaffolding through. Set
+// when beginFragmentReflection routes to the scaffold flow. Cleared on
+// cancel or on session creation at the writing beat.
+var pendingReflectionQueueItem = null;
+
+function showReflectionPrinciple(){
+  if(!pendingReflectionQueueItem) return;
+  var item = pendingReflectionQueueItem;
+  var scaffold = FRAGMENT_REFLECTIONS[item.fragmentId];
+  if(!scaffold) return;
+  var p = scaffold.principle;
+  document.getElementById('reflectionContextLabel').textContent = 'Reflection on ' + item.title;
+  document.getElementById('principleEyebrow').textContent = p.eyebrow;
+  document.getElementById('principleHeadline').textContent = p.headline;
+  document.getElementById('principleBody').textContent = p.body;
+  showView('reflection-principle');
+}
+
+function proceedToReflectionExample(){
+  if(!pendingReflectionQueueItem) return;
+  var item = pendingReflectionQueueItem;
+  var scaffold = FRAGMENT_REFLECTIONS[item.fragmentId];
+  if(!scaffold) return;
+  var ex = scaffold.example;
+  document.getElementById('reflectionContextLabel2').textContent = 'Reflection on ' + item.title;
+  document.getElementById('exampleEyebrow').textContent = ex.eyebrow;
+  // Render paragraphs
+  var bodyEl = document.getElementById('exampleBody');
+  bodyEl.innerHTML = '';
+  ex.paragraphs.forEach(function(para){
+    var p = document.createElement('p');
+    p.textContent = para;
+    bodyEl.appendChild(p);
+  });
+  showView('reflection-example');
+}
+
+function proceedToReflectionPrinciple(){
+  // Back-button from example beat returns to the principle beat. Same
+  // function as showReflectionPrinciple but named for clarity at call
+  // sites.
+  showReflectionPrinciple();
+}
+
+function proceedToReflectionWriting(){
+  if(!pendingReflectionQueueItem) return;
+  var item = pendingReflectionQueueItem;
+  var scaffold = FRAGMENT_REFLECTIONS[item.fragmentId];
+  if(!scaffold) return;
+  var q = scaffold.question;
+  var p = scaffold.principle;
+
+  // Create the session NOW, when the user reaches the writing beat. The
+  // first two beats were read-only — no draft was created if they
+  // cancelled out.
+  currentSession = {
+    id: genSessionId(),
+    createdAt: Date.now(),
+    finishedAt: null,
+    state: null,
+    promptId: null,
+    promptText: q.headline,
+    promptGuidance: q.body,
+    body: '',
+    wordCount: 0,
+    unguided: false,
+    reflectionKind: 'fragment',
+    fragmentId: item.fragmentId,
+    fragmentTitle: item.title,
+    fragmentCategory: item.category,
+    fragmentEyebrow: item.eyebrow,
+    // Scaffold-specific metadata — preserved through finish so the
+    // archive can show what principle this session was reflecting on.
+    scaffoldPrinciple: p.headline,
+    scaffoldQuestion: q.headline
+  };
+  Storage.set('draft', currentSession);
+  // Keep the pendingReflectionQueueItem set so the "Back to the example"
+  // button on the writing view can re-render the example beat. Cleared
+  // on session finish or on cancel.
+  openWritingView();
+}
+
+function cancelReflectionScaffold(){
+  // User exited from beat 1 or beat 2 without writing. No session was
+  // created, no draft saved. Just clear the pending state and return
+  // home with the queue item still in place for later.
+  pendingReflectionQueueItem = null;
+  showHome();
 }
 
 // Start a reflection session on a specific queued dust item. The prompt
@@ -1514,14 +1934,31 @@ function continueSession() {
 function openWritingView() {
   showView('writing');
   document.getElementById('writingDate').textContent = formatDate(currentSession.createdAt);
-  if(currentSession.unguided) {
+
+  var pinnedEl = document.getElementById('reflectionPinned');
+
+  // If session was created via the reflection scaffold flow, show the
+  // pinned-principle block at the top instead of the regular prompt card.
+  // The pinned block carries the principle + question across the writing
+  // session so the user has both in view as they work.
+  if(currentSession.scaffoldPrinciple){
+    pinnedEl.style.display = '';
+    document.getElementById('reflectionPinnedText').textContent = currentSession.scaffoldPrinciple;
+    document.getElementById('reflectionPinnedQuestionHeadline').textContent = currentSession.promptText || '';
+    document.getElementById('reflectionPinnedQuestionBody').textContent = currentSession.promptGuidance || '';
     document.getElementById('promptCard').style.display = 'none';
-    document.getElementById('unguidedNotice').style.display = '';
-  } else {
-    document.getElementById('promptCard').style.display = '';
     document.getElementById('unguidedNotice').style.display = 'none';
-    document.getElementById('promptText').textContent = currentSession.promptText;
-    document.getElementById('promptGuidance').textContent = currentSession.promptGuidance;
+  } else {
+    pinnedEl.style.display = 'none';
+    if(currentSession.unguided) {
+      document.getElementById('promptCard').style.display = 'none';
+      document.getElementById('unguidedNotice').style.display = '';
+    } else {
+      document.getElementById('promptCard').style.display = '';
+      document.getElementById('unguidedNotice').style.display = 'none';
+      document.getElementById('promptText').textContent = currentSession.promptText;
+      document.getElementById('promptGuidance').textContent = currentSession.promptGuidance;
+    }
   }
   var ta = document.getElementById('writingTextarea');
   ta.value = currentSession.body || '';
@@ -1761,6 +2198,9 @@ function finishSession() {
 
   // Clear the draft
   Storage.remove('draft');
+  // Clear scaffold pending state (was kept set so back-button worked
+  // from the writing view; session is now done).
+  pendingReflectionQueueItem = null;
 
   // --- ESSENCE AWARD ---
   // Flat 20 per session, capped once per calendar day. Research rule:
@@ -1829,6 +2269,7 @@ function discardSession() {
   }
   Storage.remove('draft');
   currentSession = null;
+  pendingReflectionQueueItem = null;
   showHome();
 }
 
