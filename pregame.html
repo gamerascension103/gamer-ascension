@@ -359,15 +359,20 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 @media (max-width:680px){
   .micro-tree-panel{padding:36px 18px 42px;gap:22px}
   .micro-tree-chain-svg{max-width:none}
-  .micro-tree-hit{width:56px;height:56px}
-  .micro-tree-label{font-size:9px;padding:0 2px}
-  .micro-tree-label.gate{font-size:8px}
-  /* Hide locked labels on mobile to prevent overlap. The hint at the
-     bottom already tells the user what their next action is, and labels
-     for done/current nodes give them a sense of where they've been and
-     where they are. Locked labels add density without information they
-     can act on yet. */
-  .micro-tree-label.locked{display:none}
+  .micro-tree-hit{width:62px;height:62px}
+  /* On mobile, only the CURRENT node's label is shown. With 7-8 nodes
+     on a ~358px panel width, even done labels collide with each other
+     when positioned absolutely. The done state is visible on the node
+     itself (checkmark + filled stroke), so the label text is redundant.
+     The hint at the bottom always names the current next-to-tap node,
+     so removing locked + done labels eliminates collision without
+     losing information the user can act on. */
+  .micro-tree-label{font-size:10px;padding:0 2px}
+  .micro-tree-label.gate{font-size:9px}
+  .micro-tree-label.locked,
+  .micro-tree-label.done{display:none}
+  /* The current label gets a wider max-width since it's alone in its row */
+  .micro-tree-label.current{max-width:180px;font-size:10.5px}
 }
 
 /* =====================================================================
@@ -9109,12 +9114,25 @@ function buildChainSvg(moduleId){
   var states = resolved.states;
   var n = elements.length;
 
-  // Layout: evenly spaced across viewBox 0..640, vertical center at 48.
+  // Node sizes (in viewBox units). Bumped slightly larger in the
+  // post-Phase-4.5 mobile-fix pass so nodes are easier to see and tap.
+  var SUB_R = 19;     // sub-unit pentagons
+  var GATE_R = 13;    // retrieval gate diamonds
+  var MEGA_R = 26;    // final completion pentagon
+  // Centerline at y=60 inside a 0..120 viewBox — room above and below
+  // for halos/shockwaves/ignition bursts without clipping.
+  var CY = 60;
+
+  // Layout: evenly spaced across viewBox 0..640, vertical center at CY.
   // Spacing = 640 / (n + 1) gives margins on each side.
   var spacing = 640 / (n + 1);
   var positions = [];
   for(var i = 0; i < n; i++){
-    positions.push({ x: spacing * (i + 1), y: 48 });
+    positions.push({ x: spacing * (i + 1), y: CY });
+  }
+
+  function radiusFor(el){
+    return el.kind === 'mega' ? MEGA_R : (el.kind === 'gate' ? GATE_R : SUB_R);
   }
 
   // Torch animation — fires once when an element was just completed.
@@ -9131,23 +9149,21 @@ function buildChainSvg(moduleId){
   }
 
   var svg = '';
-  svg += '<svg class="micro-tree-chain-svg" viewBox="0 0 640 96" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
+  svg += '<svg class="micro-tree-chain-svg" viewBox="0 0 640 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">';
 
   // Connectors first (so they render under nodes). Each connector goes
   // from the right edge of element i to the left edge of element i+1.
   // A connector is "lit" if the element to its LEFT is done.
   for(var i = 0; i < n - 1; i++){
-    var elL = elements[i];
-    var elR = elements[i + 1];
-    var rL = elL.kind === 'mega' ? 22 : (elL.kind === 'gate' ? 11 : 16);
-    var rR = elR.kind === 'mega' ? 22 : (elR.kind === 'gate' ? 11 : 16);
+    var rL = radiusFor(elements[i]);
+    var rR = radiusFor(elements[i + 1]);
     var x1 = positions[i].x + rL + 2;
     var x2 = positions[i + 1].x - rR - 2;
     var lit = states[i] === 'done';
     var stroke = lit ? 'var(--mt-base, #c9a84c)' : 'rgba(216,200,170,0.18)';
     var alpha = lit ? '0.85' : '1';
-    svg += '<line x1="' + x1.toFixed(1) + '" y1="48" x2="' + x2.toFixed(1) + '" y2="48"';
-    svg += ' stroke="' + stroke + '" stroke-width="1.2" stroke-opacity="' + alpha + '" />';
+    svg += '<line x1="' + x1.toFixed(1) + '" y1="' + CY + '" x2="' + x2.toFixed(1) + '" y2="' + CY + '"';
+    svg += ' stroke="' + stroke + '" stroke-width="1.4" stroke-opacity="' + alpha + '" />';
   }
 
   // Nodes
@@ -9157,11 +9173,11 @@ function buildChainSvg(moduleId){
     var p = positions[i];
     var igniting = (torchIdx !== -1 && i === torchIdx + 1 && st === 'current');
     if(el.kind === 'sub'){
-      svg += renderPentagonNode(p.x, p.y, 16, st, false, igniting, i);
+      svg += renderPentagonNode(p.x, p.y, SUB_R, st, false, igniting, i);
     } else if(el.kind === 'gate'){
-      svg += renderGateNode(p.x, p.y, 11, st, igniting, i);
+      svg += renderGateNode(p.x, p.y, GATE_R, st, igniting, i);
     } else if(el.kind === 'mega'){
-      svg += renderPentagonNode(p.x, p.y, 22, st, true, igniting, i);
+      svg += renderPentagonNode(p.x, p.y, MEGA_R, st, true, igniting, i);
     }
   }
 
@@ -9170,8 +9186,7 @@ function buildChainSvg(moduleId){
   // from that node to the next.
   if(torchIdx !== -1){
     var src = positions[torchIdx];
-    var srcR = elements[torchIdx].kind === 'mega' ? 22 :
-               (elements[torchIdx].kind === 'gate' ? 11 : 16);
+    var srcR = radiusFor(elements[torchIdx]);
     // Shockwave ring — animates radius and opacity via CSS keyframes
     svg += '<circle class="mt-torch-shockwave" cx="' + src.x.toFixed(1) + '" cy="' + src.y.toFixed(1) + '"';
     svg += ' r="' + srcR + '" fill="none"';
@@ -9180,8 +9195,7 @@ function buildChainSvg(moduleId){
     // Comet — only if there's a next element to travel to
     if(torchIdx + 1 < n){
       var dst = positions[torchIdx + 1];
-      var dstR = elements[torchIdx + 1].kind === 'mega' ? 22 :
-                 (elements[torchIdx + 1].kind === 'gate' ? 11 : 16);
+      var dstR = radiusFor(elements[torchIdx + 1]);
       var startX = src.x + srcR + 2;
       var endX = dst.x - dstR - 2;
       // Use SVG SMIL <animate> for the comet's travel — CSS keyframes
@@ -9189,8 +9203,8 @@ function buildChainSvg(moduleId){
       // @property registration, but SMIL handles numeric interpolation
       // natively and reliably across browsers.
       svg += '<g class="mt-torch-comet" transform="translate(' + startX.toFixed(1) + ' 0)">';
-      svg += '<circle r="3" fill="var(--mt-pulse-stroke, #e9d5ff)" cy="48" />';
-      svg += '<circle r="6" fill="var(--mt-base, #c9a84c)" cy="48" opacity="0.4" />';
+      svg += '<circle r="3" fill="var(--mt-pulse-stroke, #e9d5ff)" cy="' + CY + '" />';
+      svg += '<circle r="6" fill="var(--mt-base, #c9a84c)" cy="' + CY + '" opacity="0.4" />';
       // animateTransform animates the parent <g>'s translate from
       // start position to end position over 700ms, beginning 200ms
       // after render. Fill="freeze" keeps it at the end position
@@ -9398,7 +9412,7 @@ function buildMicroTreePanel(moduleId){
     var st = states[i];
     var p = positions[i];
     var leftPct = (p.x / 640 * 100).toFixed(2);
-    var topPct = (p.y / 96 * 100).toFixed(2);
+    var topPct = (p.y / 120 * 100).toFixed(2);
     var disabled = (st === 'locked');
     var clickHandler = '';
     var ariaLabel = '';
