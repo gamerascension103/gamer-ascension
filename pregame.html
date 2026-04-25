@@ -1186,6 +1186,17 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   letter-spacing:.14em;
 }
 
+/* Hide Chambers nav button while reader or codex panel is open. Both
+   modal surfaces fully take over the screen, and the nav button (z-index
+   9997 in nav.js) was overlapping the reader's title and codex content.
+   Using !important to override nav.js's inline style. */
+body.reader-open .nav-trigger,
+body.codex-open  .nav-trigger {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity .25s ease;
+}
+
 /* ============================================================================
    FRAGMENT READER — scroll-modal (Phase 2, 2026-04 redesign)
    Narrower book-width container. Structured lore (3 sections with visual
@@ -6913,17 +6924,22 @@ var QUEST_REGISTRY = {
     },
     onDecline: function(){
       // Declining leaves the quest in 'none' state and clears the offered
-      // flag so it's eligible for dispatch again. We then schedule a
-      // silent re-dispatch after Guide's farewell has had time to play
-      // and be dismissed — the beacon quietly returns to the Guide
-      // button as a persistent "something is still here for you" cue.
-      // No dialogue plays again; user can click Guide whenever they're
-      // ready to accept.
+      // flag so it's eligible for dispatch again. The re-dispatch fires
+      // shortly after Guide's farewell finishes — beacon returns to the
+      // Guide button as a persistent "something is still here for you"
+      // cue. User can click Guide whenever they're ready to accept.
+      //
+      // Originally this delay was 8s, intended to let the user breathe
+      // before the re-ping. In practice users who declined the quest
+      // would click Guide immediately to change their mind and find a
+      // chamber menu instead of the re-offer, thinking the quest was
+      // gone forever. Dropping to 1.2s closes that window — by the time
+      // the farewell fade is done, the beacon is already pulsing again.
       setQuestState('codex_1', 'none');
       clearOffered('codex_1');
       setTimeout(function(){
         offerNextAvailableQuest();
-      }, 8000);
+      }, 1200);
     }
   }
 
@@ -7771,6 +7787,7 @@ function openLoreFragment(hn){
     '</div>';
 
   document.body.appendChild(overlay);
+  document.body.classList.add('reader-open');
   // Tiny delay so CSS transition on .open fires (opacity 0 → 1)
   requestAnimationFrame(function(){ overlay.classList.add('open'); });
 
@@ -7857,6 +7874,7 @@ function closeLorePanel(){
     overlay.classList.remove('open');
     setTimeout(function(){ if(overlay.parentNode) overlay.remove(); }, 400);
   }
+  document.body.classList.remove('reader-open');
 
   // 6/6 payoff trigger — if the user just finished reading the sixth
   // fragment AND the ceremony flag isn't yet set, fire Guide's completion
@@ -7992,6 +8010,7 @@ function openCodex(){
   if(questState !== 'accepted' && questState !== 'complete'){
     body.innerHTML = '<div class="codex-empty">The fragments await preservation. Accept the quest from the Guide and search the nebula.</div>';
     document.getElementById('codexPanel').classList.add('open');
+    document.body.classList.add('codex-open');
     return;
   }
 
@@ -8083,6 +8102,7 @@ function openCodex(){
 
   body.innerHTML = html;
   document.getElementById('codexPanel').classList.add('open');
+  document.body.classList.add('codex-open');
 }
 
 // Look up a fragment by id and open its reader. Used by the inventory
@@ -8098,6 +8118,7 @@ function openLoreFragmentById(id){
 
 function closeCodex(){
   document.getElementById('codexPanel').classList.remove('open');
+  document.body.classList.remove('codex-open');
 }
 
 // ---- REFLECTION SYSTEM ----
