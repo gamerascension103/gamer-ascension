@@ -12169,19 +12169,24 @@ function closeCompletionScreen(pendingRank){
     }, 180);
   }
 
-  // 2026-04 onboarding rebuild: new ceremony sequence.
-  // If this was the first-ever completion (pendingRank set = Iron → Bronze),
-  // fire the full post-Interpreter ceremony:
-  //   1. Guide speaks (acknowledges the work, names the world opening)
-  //   2. Ascension sequence runs paired with a camera pan across the trees
-  //   3. Realm overlay fades in (four chambers illuminated)
-  //   4. Genie suction — overlay warps into the Chambers button
-  //   5. Camera to Tesseract + "Your path awaits" (final beat)
+  // 2026-04 onboarding rebuild: ceremony sequence after rank-up close.
+  // Sequence (Guide beat removed in operator pushback — see
+  // runPostInterpreterCeremony comment):
+  //   1. Ascension sequence runs paired with a camera pan from nexus
+  //      down through Tesseract to curriculum path
+  //   2. Realm overlay fades in (four chambers illuminated)
+  //   3. Genie suction — overlay warps into the Chambers button
+  //   4. Camera to Tesseract + "Your path awaits" (final beat)
   //
-  // Returning users (pendingRank null) skip the ceremony entirely — Tesseract
-  // is already part of their world.
+  // Returning users (pendingRank null) skip the ceremony entirely — the
+  // Tesseract and path are already part of their world.
+  //
+  // Delay tuned to ~350ms so the rank-up overlay's exit animation has
+  // room to fade out before the world starts changing — but not so long
+  // that the powerup feels gated. Previously this was 900ms when Guide
+  // beat 1 followed; with Guide gone, that long pause read as dead air.
   if(pendingRank){
-    setTimeout(runPostInterpreterCeremony, 900);
+    setTimeout(runPostInterpreterCeremony, 350);
   }
 }
 
@@ -12198,38 +12203,30 @@ function closeCompletionScreen(pendingRank){
 // early so the ceremony can't be interrupted by a premature tap.
 function runPostInterpreterCeremony(){
   ceremonyInProgress = true;
-  ceremonyBeat1_guide();
+  // Beat 1 (Guide dialogue) was removed in 2026-04 — operator pushback was
+  // that Guide speaking between the rank-up overlay and the visual powerup
+  // (ascension sequence + camera pan + path reveal) created a dead beat.
+  // The rank-up overlay already does the narrative work ("The Path Revealed"
+  // + Calendly CTA); Guide restating it added redundancy and gated the
+  // visual reward behind two more text screens.
+  //
+  // The new sequence: rank-up close → powerup fires immediately → camera
+  // pans to path → realm overlay → Tesseract orientation. The visuals
+  // carry the meaning without narration; the user sees the path open,
+  // doesn't need to be told.
+  //
+  // Short delay (~250ms) before the powerup so the rank-up overlay has
+  // fully animated out before the world starts changing — prevents the
+  // sequence from feeling abrupt.
+  setTimeout(ceremonyBeat2_ascensionAndPan, 250);
 }
 
-// Beat 1: Guide speaks. Two lines. Acknowledges the work and names what's
-// about to happen. Fires via Guide.summonOneOff so the script is one-shot
-// and doesn't persist for later summons.
+// Beat 1 — DEPRECATED. Guide moment removed (see runPostInterpreterCeremony
+// note above). Function kept as a no-op stub so any legacy reference
+// doesn't crash; if rediscovered, it advances the ceremony to beat 2.
 function ceremonyBeat1_guide(){
-  // Diagnostic log — if this beat fires but Guide isn't available,
-  // we want to see why in the console instead of silently skipping.
-  console.log('[Ceremony] Beat 1 — Guide moment starting. Guide available:',
-    typeof Guide !== 'undefined',
-    '| summonOneOff available:',
-    typeof Guide !== 'undefined' && typeof Guide.summonOneOff === 'function');
-
-  if(typeof Guide === 'undefined' || typeof Guide.summonOneOff !== 'function'){
-    console.warn('[Ceremony] Guide.summonOneOff not available — skipping Guide moment. ' +
-      'This likely means guide.js is out of date. Push latest guide.js to resolve.');
-    // Still progress the ceremony — skip to next beat after a short delay
-    // so the pause isn't jarring.
-    setTimeout(ceremonyBeat2_ascensionAndPan, 1200);
-    return;
-  }
-
-  Guide.summonOneOff([
-    { speaker: 'The Guide', text: 'You have done the foundational work. Above the chambers you just entered, a world was waiting for ground to stand on. It has it now.' },
-    { speaker: 'The Guide', text: 'Look at where you are. The Scriptorium is open to you now. The rest of Evermark waits.' }
-  ], {
-    onDismiss: function(){
-      console.log('[Ceremony] Beat 1 complete — Guide dismissed. Advancing to Beat 2.');
-      setTimeout(ceremonyBeat2_ascensionAndPan, 700);
-    }
-  });
+  console.log('[Ceremony] Beat 1 (Guide) is deprecated — advancing directly to Beat 2.');
+  setTimeout(ceremonyBeat2_ascensionAndPan, 250);
 }
 
 // Beat 2: Start ascension sequence and drive a camera pan across the trees.
