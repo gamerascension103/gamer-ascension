@@ -6066,8 +6066,9 @@ function updateStartHereGapIndicator(){
   var indicator = document.getElementById('startHereGap');
   if(!indicator) return;
 
-  // Gating: dismissed, Gap done, or higher-priority overlay open?
-  var dismissed = localStorage.getItem('ga_macro_start_here_dismissed') === '1';
+  // Gating: indicator stays visible over Gap until Gap is completed.
+  // Hidden while any overlay obscures the macro-tree (the indicator
+  // would float over the wrong context otherwise).
   var gapDone = (typeof completed !== 'undefined') && completed.indexOf('gap') !== -1;
   var lessonOpen = document.getElementById('lessonOverlay') &&
                    document.getElementById('lessonOverlay').classList.contains('open');
@@ -6078,7 +6079,7 @@ function updateStartHereGapIndicator(){
   var nodePanelOpen = document.querySelector('.node-panel.open') !== null;
   var threshOpen = document.querySelector('.threshold-overlay.open') !== null;
 
-  if(dismissed || gapDone || lessonOpen || microOpen || tutorialOpen || nodePanelOpen || threshOpen){
+  if(gapDone || lessonOpen || microOpen || tutorialOpen || nodePanelOpen || threshOpen){
     indicator.classList.remove('visible');
     return;
   }
@@ -9248,12 +9249,17 @@ var lessonOrder=['gap','engine','interpreter'];
 function openLesson(id){
   var lesson=LESSONS[id];if(!lesson)return;
 
-  // If the user is clicking Gap, dismiss the macro-tree "START HERE"
-  // indicator — they've learned the click pattern. (Engine and Interpreter
-  // never get the indicator, so no need to gate by id here other than gap.)
-  if(id === 'gap'){
-    dismissStartHereGap();
-  }
+  // Note: we no longer dismiss the macro-tree "START HERE" indicator
+  // here. The indicator persists over Gap until Gap is fully completed
+  // (added to the `completed` array). The gating in updateStartHereGap-
+  // Indicator already hides it when any overlay is open, so it doesn't
+  // visually compete with the panel/lesson — it just reappears when the
+  // user returns to the macro-tree if Gap is still incomplete. This keeps
+  // the affordance available across multiple visits in case the user
+  // bounces in and out of the panel without finishing.
+  // (dismissStartHereGap is still defined as a function for any future
+  // manual-dismiss use case — e.g. an explicit "got it" button — but
+  // is no longer auto-fired here.)
 
   // For modules with a sub-unit chain (Phase 4 v2): open the micro-tree
   // panel instead of the lesson overlay. The lesson overlay opens later
@@ -9951,6 +9957,15 @@ function closeMicroTreePanel(){
   var overlay = document.getElementById('microTreeOverlay');
   if(overlay) overlay.classList.remove('open');
   activeMicroTreeModule = null;
+  // Hide the start-here micro indicator — it was positioned over the
+  // panel's first node and would otherwise float in space after the
+  // panel closes (the indicator is position:fixed on document body so
+  // it doesn't move with the panel). We don't dismiss the flag here;
+  // if the user closes without clicking, the indicator returns next
+  // time they open the panel. Only an actual node click dismisses for
+  // good (via dismissStartHereMicro).
+  var startHere = document.getElementById('startHereMicro');
+  if(startHere) startHere.classList.remove('visible');
 }
 
 // Tracks which module's micro-tree is currently open. Used when the
