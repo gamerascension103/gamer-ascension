@@ -2442,7 +2442,7 @@ body.codex-open  .nav-trigger {
 
 <script>
 // ---- CONFIG ----
-var W = 2400, H = 3200;
+var W = 2400, H = 3600;
 var CX = 1200; // nexus center x
 var SPHERE_Y = 680; // nexus center y
 var SPHERE_R = 130; // kept for particle compat
@@ -5432,11 +5432,14 @@ function drawPhaseAtmosphere(){
 }
 
 function drawPathConnectors(){
-  // Connectors render as thin gold lines. Each connector reads the
-  // state of its endpoints to determine brightness:
-  //   both endpoints done — bright gold
-  //   one endpoint done   — gold fading toward the locked end
+  // Connectors are the gold trail that links path nodes. Each connector
+  // reads endpoint state to determine its visual treatment:
+  //   both endpoints done — bright gold spine + faint outer glow + midpoint forge mark
+  //   one endpoint done   — medium gold (gradient toward locked end)
   //   neither done        — faint dotted indication
+  // The midpoint forge mark accumulates on completed legs as visual proof
+  // of passage. By the end of the program the trail behind the user is
+  // dotted with these marks like a smith's seal on a finished blade.
   treeCtx.save();
   PATH_CONNECTORS.forEach(function(c){
     var fromNode = PATH_NODES[PATH_NODE_INDEX[c.from]];
@@ -5446,52 +5449,95 @@ function drawPathConnectors(){
     var toState   = getPathNodeState(toNode);
     var bothDone  = fromState === 'done' && toState === 'done';
     var oneDone   = (fromState === 'done') !== (toState === 'done');
-    var color, width, dash;
+
     if(bothDone){
-      color = 'rgba(201,168,76,0.55)';
-      width = 1.6;
-      dash = [];
+      // Outer glow pass — wide, faint
+      treeCtx.strokeStyle = 'rgba(201,168,76,0.18)';
+      treeCtx.lineWidth = 4;
+      treeCtx.shadowBlur = 8;
+      treeCtx.shadowColor = 'rgba(201,168,76,0.35)';
+      treeCtx.beginPath();
+      treeCtx.moveTo(fromNode.x, fromNode.y);
+      treeCtx.lineTo(toNode.x, toNode.y);
+      treeCtx.stroke();
+      // Bright spine
+      treeCtx.strokeStyle = 'rgba(232,200,120,0.7)';
+      treeCtx.lineWidth = 1.4;
+      treeCtx.shadowBlur = 0;
+      treeCtx.beginPath();
+      treeCtx.moveTo(fromNode.x, fromNode.y);
+      treeCtx.lineTo(toNode.x, toNode.y);
+      treeCtx.stroke();
+      // Midpoint forge mark — small etched diamond signaling "this leg is walked"
+      var mx = (fromNode.x + toNode.x) / 2;
+      var my = (fromNode.y + toNode.y) / 2;
+      drawForgeMark(treeCtx, mx, my);
     } else if(oneDone){
-      color = 'rgba(201,168,76,0.32)';
-      width = 1.2;
-      dash = [];
+      // Medium stroke, no ornament
+      treeCtx.strokeStyle = 'rgba(201,168,76,0.32)';
+      treeCtx.lineWidth = 1.2;
+      treeCtx.shadowBlur = 4;
+      treeCtx.shadowColor = 'rgba(201,168,76,0.2)';
+      treeCtx.beginPath();
+      treeCtx.moveTo(fromNode.x, fromNode.y);
+      treeCtx.lineTo(toNode.x, toNode.y);
+      treeCtx.stroke();
     } else {
-      color = 'rgba(216,200,170,0.12)';
-      width = 0.8;
-      dash = [4, 6];
+      // Faint dotted
+      treeCtx.strokeStyle = 'rgba(216,200,170,0.12)';
+      treeCtx.lineWidth = 0.8;
+      treeCtx.shadowBlur = 0;
+      treeCtx.setLineDash([4, 6]);
+      treeCtx.beginPath();
+      treeCtx.moveTo(fromNode.x, fromNode.y);
+      treeCtx.lineTo(toNode.x, toNode.y);
+      treeCtx.stroke();
+      treeCtx.setLineDash([]);
     }
-    treeCtx.strokeStyle = color;
-    treeCtx.lineWidth = width;
-    treeCtx.setLineDash(dash);
-    treeCtx.beginPath();
-    treeCtx.moveTo(fromNode.x, fromNode.y);
-    treeCtx.lineTo(toNode.x, toNode.y);
-    treeCtx.stroke();
-    treeCtx.setLineDash([]);
   });
   treeCtx.restore();
 }
 
+function drawForgeMark(ctx, x, y){
+  // Small etched diamond at the midpoint of a completed connector. Acts
+  // as a smith's seal — visual proof that this leg of the path has been
+  // walked. Tiny by design (3-4px); the user notices it as accumulated
+  // ornament rather than as a thing to read.
+  var r = 3.5;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(232,200,120,0.85)';
+  ctx.fillStyle = 'rgba(232,200,120,0.25)';
+  ctx.lineWidth = 0.9;
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = 'rgba(232,200,120,0.6)';
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.lineTo(x + r, y);
+  ctx.lineTo(x, y + r);
+  ctx.lineTo(x - r, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // Small inner dot
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255,235,190,0.8)';
+  ctx.beginPath();
+  ctx.arc(x, y, 0.7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function getPathNodeState(node){
   // 'done', 'current', or 'locked'.
-  // Done: skill is in completedSkills (or via curriculum tracking)
-  // Current: next up to learn — first non-done node in week order
-  // Locked: everything else
-  // Lesson tracking will hook in here once lessons exist. For now,
-  // all skill nodes are 'locked' except the very first (week 1) which
-  // is 'current'. Integration glyphs follow their phase's last skill state.
   if(typeof completedSkills === 'undefined') {
-    // Bootstrap fallback — week 1 nodes are current, rest are locked
     if(node.week === 1 && node.kind === 'skill') return 'current';
     return 'locked';
   }
   if(completedSkills.indexOf(node.id) !== -1) return 'done';
-  // Find the first non-done skill node in week order
   for(var i = 0; i < PATH_NODES.length; i++){
     var n = PATH_NODES[i];
     if(n.kind !== 'skill') continue;
     if(completedSkills.indexOf(n.id) === -1){
-      // This is the current next-up. If it matches our node, mark current.
       if(n.id === node.id) return 'current';
       break;
     }
@@ -5499,123 +5545,370 @@ function getPathNodeState(node){
   return 'locked';
 }
 
+// =============================================================
+// PATH NODE RENDERER (Tier 1+ aesthetics)
+// =============================================================
+// Each path node is a per-pillar geometric primitive (hexagon for
+// Vitality, rhombus for Spirit, triangle for Alignment) rendered with
+// multi-pass strokes — outer halo, faint outer stroke, inner shape,
+// bright spine, fill, central glyph. Foundational nodes carry an
+// additional ornamental compass-anchored ring.
+//
+// State drives appearance: 'locked' is dim parchment with a hint of
+// pillar color, 'current' adds a pulsing pulse-stroke palette ring,
+// 'done' adds a persistent halo and full pillar saturation.
+// =============================================================
+
 function drawPathNode(node){
   var pillarColor = PILLAR_COLORS[node.pillar] || '#c9a84c';
   var pillarRgb = pillarColorRgb(node.pillar);
   var state = getPathNodeState(node);
-  var r = 18; // base node radius
+  var r = 18; // base radius
   var x = node.x, y = node.y;
 
   treeCtx.save();
 
-  // Foundational marker — outer ring drawn first (so it sits behind the node)
+  // ---- Foundational outer ornament ----
   if(node.foundational){
-    treeCtx.strokeStyle = 'rgba(216,200,170,0.55)';
-    treeCtx.lineWidth = 1;
-    treeCtx.setLineDash([3, 3]);
-    treeCtx.beginPath();
-    treeCtx.arc(x, y, r + 9, 0, Math.PI * 2);
-    treeCtx.stroke();
-    treeCtx.setLineDash([]);
+    drawFoundationalRing(treeCtx, x, y, r + 11);
   }
 
+  // ---- State-driven outer halo (drawn first, sits behind the shape) ----
   if(state === 'done'){
-    // Done: fully saturated pillar color, persistent halo
-    var grad = treeCtx.createRadialGradient(x, y, 0, x, y, r + 18);
-    grad.addColorStop(0, 'rgba(' + pillarRgb + ',0.5)');
-    grad.addColorStop(1, 'rgba(' + pillarRgb + ',0)');
-    treeCtx.fillStyle = grad;
+    var doneGrad = treeCtx.createRadialGradient(x, y, 0, x, y, r + 22);
+    doneGrad.addColorStop(0, 'rgba(' + pillarRgb + ',0.45)');
+    doneGrad.addColorStop(0.6, 'rgba(' + pillarRgb + ',0.12)');
+    doneGrad.addColorStop(1, 'rgba(' + pillarRgb + ',0)');
+    treeCtx.fillStyle = doneGrad;
     treeCtx.beginPath();
-    treeCtx.arc(x, y, r + 18, 0, Math.PI * 2);
-    treeCtx.fill();
-    // Filled core
-    treeCtx.fillStyle = pillarColor;
-    treeCtx.shadowBlur = 16;
-    treeCtx.shadowColor = pillarColor;
-    treeCtx.beginPath();
-    treeCtx.arc(x, y, r, 0, Math.PI * 2);
+    treeCtx.arc(x, y, r + 22, 0, Math.PI * 2);
     treeCtx.fill();
   } else if(state === 'current'){
-    // Current: pulsing in pulse-stroke palette
+    // Pulsing halo in pulse-stroke palette
     var pulseT = (Math.sin(t * 0.05) + 1) / 2;
-    var pulseR = r + 6 + pulseT * 6;
-    var pulseAlpha = 0.4 + pulseT * 0.4;
-    treeCtx.strokeStyle = 'rgba(233,213,255,' + pulseAlpha + ')';
-    treeCtx.lineWidth = 1.4;
-    treeCtx.shadowBlur = 18;
-    treeCtx.shadowColor = 'rgba(233,213,255,0.7)';
+    var pulseR = r + 10 + pulseT * 6;
+    var pulseAlpha = 0.25 + pulseT * 0.25;
+    var pulseGrad = treeCtx.createRadialGradient(x, y, r * 0.5, x, y, pulseR);
+    pulseGrad.addColorStop(0, 'rgba(233,213,255,0)');
+    pulseGrad.addColorStop(0.6, 'rgba(233,213,255,' + pulseAlpha + ')');
+    pulseGrad.addColorStop(1, 'rgba(233,213,255,0)');
+    treeCtx.fillStyle = pulseGrad;
     treeCtx.beginPath();
     treeCtx.arc(x, y, pulseR, 0, Math.PI * 2);
-    treeCtx.stroke();
-    // Filled core in pillar color, slightly desaturated until completion
-    treeCtx.fillStyle = pillarColor;
-    treeCtx.globalAlpha = 0.7;
-    treeCtx.shadowBlur = 12;
-    treeCtx.shadowColor = pillarColor;
-    treeCtx.beginPath();
-    treeCtx.arc(x, y, r, 0, Math.PI * 2);
     treeCtx.fill();
-    treeCtx.globalAlpha = 1;
-    // Bright pentagon stroke
-    treeCtx.strokeStyle = '#e9d5ff';
-    treeCtx.lineWidth = 1.6;
-    treeCtx.shadowBlur = 0;
-    treeCtx.beginPath();
-    treeCtx.arc(x, y, r, 0, Math.PI * 2);
-    treeCtx.stroke();
-  } else {
-    // Locked: dim parchment with hint of pillar color
-    treeCtx.strokeStyle = 'rgba(216,200,170,0.32)';
-    treeCtx.lineWidth = 0.9;
-    treeCtx.fillStyle = 'rgba(' + pillarRgb + ',0.06)';
-    treeCtx.shadowBlur = 0;
-    treeCtx.beginPath();
-    treeCtx.arc(x, y, r, 0, Math.PI * 2);
-    treeCtx.fill();
-    treeCtx.stroke();
   }
 
+  // ---- Outer faint stroke pass ----
+  var outerStrokeAlpha, outerStrokeColor;
+  if(state === 'done'){
+    outerStrokeAlpha = 0.4;
+    outerStrokeColor = 'rgba(' + pillarRgb + ',' + outerStrokeAlpha + ')';
+  } else if(state === 'current'){
+    outerStrokeAlpha = 0.5;
+    outerStrokeColor = 'rgba(' + pillarRgb + ',' + outerStrokeAlpha + ')';
+  } else {
+    outerStrokeAlpha = 0.18;
+    outerStrokeColor = 'rgba(216,200,170,' + outerStrokeAlpha + ')';
+  }
+  treeCtx.strokeStyle = outerStrokeColor;
+  treeCtx.lineWidth = 0.8;
+  treeCtx.shadowBlur = 0;
+  drawPillarSigil(treeCtx, x, y, r + 3, node.pillar);
+  treeCtx.stroke();
+
+  // ---- Center fill (state-tinted) ----
+  var fillAlpha;
+  if(state === 'done')         fillAlpha = 0.32;
+  else if(state === 'current') fillAlpha = 0.18;
+  else                         fillAlpha = 0.08;
+  treeCtx.fillStyle = 'rgba(' + pillarRgb + ',' + fillAlpha + ')';
+  drawPillarSigil(treeCtx, x, y, r, node.pillar);
+  treeCtx.fill();
+
+  // ---- Bright spine stroke (the main visible outline) ----
+  var spineAlpha, spineColor, spineGlow;
+  if(state === 'done'){
+    spineAlpha = 0.95;
+    spineColor = pillarColor;
+    spineGlow = 18;
+  } else if(state === 'current'){
+    spineAlpha = 0.85;
+    spineColor = '#e9d5ff';
+    spineGlow = 14;
+  } else {
+    spineAlpha = 0.45;
+    spineColor = 'rgba(216,200,170,' + spineAlpha + ')';
+    spineGlow = 0;
+  }
+  treeCtx.strokeStyle = spineColor;
+  treeCtx.globalAlpha = (state === 'done' || state === 'current') ? spineAlpha : 1;
+  treeCtx.lineWidth = (state === 'done' || state === 'current') ? 1.4 : 1.0;
+  treeCtx.shadowBlur = spineGlow;
+  treeCtx.shadowColor = (state === 'done' || state === 'current') ? pillarColor : 'transparent';
+  drawPillarSigil(treeCtx, x, y, r, node.pillar);
+  treeCtx.stroke();
+  treeCtx.globalAlpha = 1;
+
+  // ---- Inner smaller sigil (depth detail) ----
+  treeCtx.strokeStyle = (state === 'done' || state === 'current')
+    ? 'rgba(' + pillarRgb + ',0.4)'
+    : 'rgba(216,200,170,0.18)';
+  treeCtx.lineWidth = 0.6;
+  treeCtx.shadowBlur = 0;
+  drawPillarSigil(treeCtx, x, y, r * 0.55, node.pillar, Math.PI / 6);
+  treeCtx.stroke();
+
+  // ---- Central glyph (per-pillar icon) ----
+  var glyphAlpha;
+  if(state === 'done')         glyphAlpha = 0.95;
+  else if(state === 'current') glyphAlpha = 0.85;
+  else                         glyphAlpha = 0.32;
+  drawPillarGlyph(treeCtx, x, y, r * 0.5, node.pillar, glyphAlpha);
+
   treeCtx.restore();
+}
+
+// ---------------------------------------------------------------
+// drawPillarSigil — outer shape per pillar
+// vitality = hexagon, spirit = rhombus, alignment = triangle
+// ---------------------------------------------------------------
+function drawPillarSigil(ctx, cx, cy, r, pillar, rotation){
+  rotation = rotation || 0;
+  ctx.beginPath();
+  if(pillar === 'vitality'){
+    // Hexagon — six-fold structural form
+    for(var i = 0; i < 6; i++){
+      var a = rotation + Math.PI / 6 + i * (Math.PI / 3);
+      var px = cx + Math.cos(a) * r;
+      var py = cy + Math.sin(a) * r;
+      if(i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  } else if(pillar === 'spirit'){
+    // Rhombus (vertical diamond) — taller than wide for vertical-axis emphasis
+    var rx = r * 0.78;
+    var ry = r * 1.15;
+    ctx.moveTo(cx, cy - ry);
+    ctx.lineTo(cx + rx, cy);
+    ctx.lineTo(cx, cy + ry);
+    ctx.lineTo(cx - rx, cy);
+    ctx.closePath();
+  } else if(pillar === 'alignment'){
+    // Triangle pointing up — direction/intention
+    var ty = r * 1.05;
+    var bx = r * 0.95;
+    var by = r * 0.55;
+    ctx.moveTo(cx, cy - ty);
+    ctx.lineTo(cx + bx, cy + by);
+    ctx.lineTo(cx - bx, cy + by);
+    ctx.closePath();
+  } else {
+    // Fallback — circle (used for integration glyphs as needed)
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  }
+}
+
+// ---------------------------------------------------------------
+// drawPillarGlyph — central icon per pillar
+// vitality = ascending flame
+// spirit   = horizontal almond eye with pupil
+// alignment = upward chevron with point above
+// ---------------------------------------------------------------
+function drawPillarGlyph(ctx, cx, cy, size, pillar, alpha){
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if(pillar === 'vitality'){
+    // Flame — three-stroke wisp ascending
+    ctx.strokeStyle = 'rgba(255,235,190,0.95)';
+    ctx.fillStyle = 'rgba(255,180,120,0.35)';
+    ctx.lineWidth = 1.1;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = 'rgba(255,180,120,0.6)';
+    var s = size;
+    ctx.beginPath();
+    // Outer flame contour
+    ctx.moveTo(cx, cy + s * 0.55);
+    ctx.bezierCurveTo(cx - s * 0.55, cy + s * 0.2, cx - s * 0.35, cy - s * 0.4, cx, cy - s * 0.7);
+    ctx.bezierCurveTo(cx + s * 0.35, cy - s * 0.4, cx + s * 0.55, cy + s * 0.2, cx, cy + s * 0.55);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Inner flame core
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + s * 0.25);
+    ctx.bezierCurveTo(cx - s * 0.18, cy + s * 0.05, cx - s * 0.1, cy - s * 0.2, cx, cy - s * 0.4);
+    ctx.bezierCurveTo(cx + s * 0.1, cy - s * 0.2, cx + s * 0.18, cy + s * 0.05, cx, cy + s * 0.25);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(255,235,190,0.6)';
+    ctx.fill();
+  } else if(pillar === 'spirit'){
+    // Almond eye — same family as Guide bell sigil
+    ctx.strokeStyle = 'rgba(245,235,255,0.95)';
+    ctx.lineWidth = 1.2;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = 'rgba(187,153,255,0.6)';
+    var ew = size * 1.1;
+    var eh = size * 0.4;
+    // Upper lid
+    ctx.beginPath();
+    ctx.moveTo(cx - ew, cy);
+    ctx.quadraticCurveTo(cx, cy - eh, cx + ew, cy);
+    ctx.stroke();
+    // Lower lid
+    ctx.beginPath();
+    ctx.moveTo(cx - ew, cy);
+    ctx.quadraticCurveTo(cx, cy + eh, cx + ew, cy);
+    ctx.stroke();
+    // Pupil
+    ctx.fillStyle = 'rgba(245,235,255,0.95)';
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(cx, cy, size * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+  } else if(pillar === 'alignment'){
+    // Compass needle — chevron pointing up + small dot above
+    ctx.strokeStyle = 'rgba(220,255,235,0.95)';
+    ctx.fillStyle = 'rgba(220,255,235,0.85)';
+    ctx.lineWidth = 1.2;
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = 'rgba(85,255,170,0.6)';
+    var ah = size * 0.55;
+    var aw = size * 0.5;
+    // Chevron
+    ctx.beginPath();
+    ctx.moveTo(cx - aw, cy + ah * 0.3);
+    ctx.lineTo(cx, cy - ah * 0.6);
+    ctx.lineTo(cx + aw, cy + ah * 0.3);
+    ctx.stroke();
+    // Vertical line down from chevron point
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - ah * 0.6);
+    ctx.lineTo(cx, cy + ah * 0.4);
+    ctx.stroke();
+    // Small dot above (the polestar / direction marker)
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(cx, cy - ah * 0.85, size * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------
+// drawFoundationalRing — ornamental dashed ring with compass anchors
+// Used for the 7 foundational skills. Same visual family as the
+// Guide bell sigil's outer ring.
+// ---------------------------------------------------------------
+function drawFoundationalRing(ctx, cx, cy, r){
+  ctx.save();
+  // Dashed outer ring
+  ctx.strokeStyle = 'rgba(216,200,170,0.55)';
+  ctx.lineWidth = 0.8;
+  ctx.shadowBlur = 0;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Four compass-anchor dots (N/E/S/W)
+  ctx.fillStyle = 'rgba(232,200,120,0.85)';
+  var anchors = [
+    {x: cx,     y: cy - r},
+    {x: cx + r, y: cy},
+    {x: cx,     y: cy + r},
+    {x: cx - r, y: cy},
+  ];
+  anchors.forEach(function(p){
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
 }
 
 function drawIntegrationGlyph(node){
   // Integration glyphs sit at phase boundaries — small constellation-mark
   // sigils representing pause/integration weeks (8, 12, 16). Visually
-  // distinct from skill nodes — they're not stars, they're transitions.
-  // Summit is a special case: brighter, larger, marks The Vantage.
+  // distinct from skill nodes — they're not shapes-with-glyphs, they're
+  // outlined stars marking transitions. The Vantage (summit) gets the
+  // most ornate treatment: double-ring crown with compass anchors and
+  // brighter glow band.
   var x = node.x, y = node.y;
   var isSummit = !!node.summit;
   treeCtx.save();
   if(isSummit){
-    // The Vantage — brighter, larger, always-visible destination
-    var grad = treeCtx.createRadialGradient(x, y, 0, x, y, 80);
+    // ---- The Vantage — summit destination ----
+    // Outer glow band — wide, warm
+    var grad = treeCtx.createRadialGradient(x, y, 0, x, y, 100);
     grad.addColorStop(0, 'rgba(255,235,190,0.5)');
-    grad.addColorStop(0.5, 'rgba(201,168,76,0.18)');
-    grad.addColorStop(1, 'rgba(201,168,76,0)');
+    grad.addColorStop(0.4, 'rgba(232,200,120,0.22)');
+    grad.addColorStop(1, 'rgba(232,200,120,0)');
     treeCtx.fillStyle = grad;
     treeCtx.beginPath();
-    treeCtx.arc(x, y, 80, 0, Math.PI * 2);
+    treeCtx.arc(x, y, 100, 0, Math.PI * 2);
     treeCtx.fill();
-    // Crown-like sigil at center: 5-pointed star
-    treeCtx.strokeStyle = 'rgba(255,235,190,0.85)';
-    treeCtx.fillStyle = 'rgba(255,245,210,0.4)';
+    // Outer crown ring (faint, with anchor dots at compass points)
+    treeCtx.strokeStyle = 'rgba(232,200,120,0.45)';
+    treeCtx.lineWidth = 1.0;
+    treeCtx.shadowBlur = 0;
+    treeCtx.setLineDash([5, 5]);
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, 52, 0, Math.PI * 2);
+    treeCtx.stroke();
+    treeCtx.setLineDash([]);
+    treeCtx.fillStyle = 'rgba(255,235,190,0.85)';
+    var sumAnchors = [
+      {ax: x,      ay: y - 52},
+      {ax: x + 52, ay: y},
+      {ax: x,      ay: y + 52},
+      {ax: x - 52, ay: y},
+    ];
+    sumAnchors.forEach(function(p){
+      treeCtx.beginPath();
+      treeCtx.arc(p.ax, p.ay, 2, 0, Math.PI * 2);
+      treeCtx.fill();
+    });
+    // Inner crown ring (brighter)
+    treeCtx.strokeStyle = 'rgba(255,235,190,0.65)';
+    treeCtx.lineWidth = 0.9;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, 38, 0, Math.PI * 2);
+    treeCtx.stroke();
+    // Central 5-pointed star
+    treeCtx.strokeStyle = 'rgba(255,235,190,0.95)';
+    treeCtx.fillStyle = 'rgba(255,245,210,0.5)';
     treeCtx.lineWidth = 1.4;
-    treeCtx.shadowBlur = 24;
-    treeCtx.shadowColor = 'rgba(255,235,190,0.9)';
+    treeCtx.shadowBlur = 28;
+    treeCtx.shadowColor = 'rgba(255,235,190,0.95)';
     drawStarSigil(x, y, 26);
     // Label below
     treeCtx.shadowBlur = 0;
     treeCtx.font = '500 14px Cinzel, serif';
     treeCtx.fillStyle = 'rgba(255,235,190,0.85)';
     treeCtx.textAlign = 'center';
-    treeCtx.fillText('THE VANTAGE', x, y + 50);
+    treeCtx.fillText('THE VANTAGE', x, y + 78);
   } else {
-    // Standard integration glyph — small sigil marking phase boundary
-    treeCtx.strokeStyle = 'rgba(201,168,76,0.55)';
-    treeCtx.lineWidth = 1;
-    treeCtx.shadowBlur = 8;
-    treeCtx.shadowColor = 'rgba(201,168,76,0.4)';
-    drawStarSigil(x, y, 12);
+    // Standard integration glyph — small phase-boundary marker
+    // Faint outer halo
+    var bgrad = treeCtx.createRadialGradient(x, y, 0, x, y, 24);
+    bgrad.addColorStop(0, 'rgba(232,200,120,0.18)');
+    bgrad.addColorStop(1, 'rgba(232,200,120,0)');
+    treeCtx.fillStyle = bgrad;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, 24, 0, Math.PI * 2);
+    treeCtx.fill();
+    // Outline star
+    treeCtx.strokeStyle = 'rgba(232,200,120,0.7)';
+    treeCtx.fillStyle = 'rgba(232,200,120,0.15)';
+    treeCtx.lineWidth = 1.0;
+    treeCtx.shadowBlur = 10;
+    treeCtx.shadowColor = 'rgba(232,200,120,0.5)';
+    drawStarSigil(x, y, 13);
   }
   treeCtx.restore();
 }
@@ -5646,6 +5939,8 @@ function pillarColorRgb(pillar){
   if(pillar === 'alignment') return '85,255,170';
   return '201,168,76'; // gold fallback
 }
+
+
 
 
 function drawNexus(charge){
