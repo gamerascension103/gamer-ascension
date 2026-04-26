@@ -2472,6 +2472,24 @@ var VITALITY_X = VITALITY_CX, SPIRIT_X = SPIRIT_CX, ALIGNMENT_X = ALIGNMENT_CX;
 var PILLAR_Y = 1400;
 
 var completed = JSON.parse(localStorage.getItem('ga_pregame_v2_completed') || '[]');
+// Curriculum-path skill completion tracking (separate from pregame `completed`).
+// Holds the IDs of curriculum-path skills the user has finished. Drives state
+// rendering on the path nodes (locked / current / done). The first non-done
+// skill in path order is treated as 'current'. Until lessons exist, this stays
+// empty and only the very first skill (Energy Management) renders as 'current'.
+var completedSkills = JSON.parse(localStorage.getItem('ga_completed_skills') || '[]');
+
+function markSkillComplete(skillId){
+  // Adds a curriculum skill to the completed list and persists. Idempotent.
+  // Called by the lesson completion flow once Energy Management (and later
+  // skills) have lesson content wired up. For now, this is a no-op surface
+  // available for future use.
+  if(typeof skillId !== 'string') return;
+  if(completedSkills.indexOf(skillId) !== -1) return;
+  completedSkills.push(skillId);
+  localStorage.setItem('ga_completed_skills', JSON.stringify(completedSkills));
+}
+
 // Total pre-game module count. Single source of truth for the ascension /
 // tesseract powerup gates. Update this value when modules collapse.
 var TOTAL_MODULES = 3;
@@ -2614,6 +2632,144 @@ var NODE_DATA = {
 };
 
 var PILLAR_COLORS = {vitality:'#ff6644', spirit:'#bb99ff', alignment:'#55ffaa'};
+
+// =============================================================
+// CORE CURRICULUM PATH (post-pregame)
+// =============================================================
+// 22 skills + 3 integration glyphs across 16 weeks. Replaces the three
+// pillar constellations that previously occupied the lower world. The
+// path descends from just below the Tesseract (y~1500) to The Vantage
+// (y~3400). Centerline at x=1200, nodes meander left/right to give the
+// path character.
+//
+// Each entry in PATH_NODES describes:
+//   id          — skill key into NODE_DATA / LESSONS (when lessons exist)
+//   x, y        — world-space coordinates
+//   week        — curriculum week number (1-16)
+//   pillar      — vitality | spirit | alignment | integration
+//   pairWith    — id of the partner skill (same week, two-skill weeks only)
+//   foundational— true if this skill carries the foundational marker
+//   kind        — 'skill' | 'integration' (integration weeks 8/12/16)
+//   phase       — 1|2|3|4
+//   summit      — true only for The Vantage at the bottom
+//
+// Node layout strategy:
+//   week 1 = 3-skill cluster: Energy Management (left), Faith/Hope
+//            (center, slightly higher), Identity (right). Triangular.
+//   2-skill weeks: nodes at same y, offset ±200 from centerline.
+//                  Alternate which pillar gets left vs right per week
+//                  to keep the meander honest.
+//   solo weeks (9, 13-14): single node on centerline.
+//   integration glyphs (weeks 8, 12, 16): centerline marker, smaller.
+//   The Vantage: centerline, below week 16 glyph, larger and brighter.
+// =============================================================
+
+var PATH_CENTER_X = 1200;
+var PATH_TOP_Y    = 1500;  // just below Tesseract
+var PATH_BOTTOM_Y = 3400;  // The Vantage
+var PATH_OFFSET   = 220;   // x-offset for paired nodes
+
+// Phase atmospheric bands — y-ranges for each phase's visual region.
+// Used by the gradient overlay to tint the world background per zone.
+var PHASE_BANDS = [
+  {phase:1, name:'Foothills',    yStart:1500, yEnd:2050, color:'rgba(180,140,80,'},   // warm parchment
+  {phase:2, name:'Crossing',     yStart:2050, yEnd:2520, color:'rgba(120,130,160,'},  // transitional cool
+  {phase:3, name:'The Deeps',    yStart:2520, yEnd:3050, color:'rgba(60,70,110,'},    // cold dark
+  {phase:4, name:'The Vantage',  yStart:3050, yEnd:3500, color:'rgba(160,130,200,'},  // luminous
+];
+
+var PATH_NODES = [
+  // ---- PHASE 1 ---- Foothills
+  // Week 1 — three-skill saturation (triangular cluster)
+  {id:'energy',    week:1, phase:1, pillar:'vitality',  x:PATH_CENTER_X-220, y:1580, foundational:true,  kind:'skill', pairWith:['faith','identity']},
+  {id:'faith',     week:1, phase:1, pillar:'spirit',    x:PATH_CENTER_X,     y:1540, foundational:true,  kind:'skill', pairWith:['energy','identity']},
+  {id:'identity',  week:1, phase:1, pillar:'spirit',    x:PATH_CENTER_X+220, y:1580, foundational:false, kind:'skill', pairWith:['energy','faith']},
+  // Week 2 — Boundaries + Idealisms & Culture
+  {id:'bounds',    week:2, phase:1, pillar:'alignment', x:PATH_CENTER_X-200, y:1720, foundational:false, kind:'skill', pairWith:['idealism']},
+  {id:'idealism',  week:2, phase:1, pillar:'spirit',    x:PATH_CENTER_X+200, y:1720, foundational:false, kind:'skill', pairWith:['bounds']},
+  // Week 3 — Mindset (foundational, contains Mindfulness/Reflection) + Action Taking
+  {id:'mindset',   week:3, phase:1, pillar:'spirit',    x:PATH_CENTER_X+200, y:1860, foundational:true,  kind:'skill', pairWith:['action']},
+  {id:'action',    week:3, phase:1, pillar:'spirit',    x:PATH_CENTER_X-200, y:1860, foundational:false, kind:'skill', pairWith:['mindset']},
+  // Week 4 — Recovery (foundational) + Gratitude (foundational)
+  {id:'recovery',  week:4, phase:1, pillar:'vitality',  x:PATH_CENTER_X-200, y:2000, foundational:true,  kind:'skill', pairWith:['gratitude']},
+  {id:'gratitude', week:4, phase:1, pillar:'spirit',    x:PATH_CENTER_X+200, y:2000, foundational:true,  kind:'skill', pairWith:['recovery']},
+
+  // ---- PHASE 2 ---- Crossing
+  // Week 5 — Neuroscience & Exercise + Emotional Regulation
+  {id:'neuro',     week:5, phase:2, pillar:'vitality',  x:PATH_CENTER_X+200, y:2160, foundational:false, kind:'skill', pairWith:['emreg']},
+  {id:'emreg',     week:5, phase:2, pillar:'spirit',    x:PATH_CENTER_X-200, y:2160, foundational:false, kind:'skill', pairWith:['neuro']},
+  // Week 6 — Environment Design + Intentionality
+  {id:'envdesign', week:6, phase:2, pillar:'alignment', x:PATH_CENTER_X-200, y:2280, foundational:false, kind:'skill', pairWith:['intent']},
+  {id:'intent',    week:6, phase:2, pillar:'spirit',    x:PATH_CENTER_X+200, y:2280, foundational:false, kind:'skill', pairWith:['envdesign']},
+  // Week 7 — Biomechanics (foundational) + Fuel Systems (foundational)
+  {id:'biomech',   week:7, phase:2, pillar:'vitality',  x:PATH_CENTER_X+200, y:2400, foundational:true,  kind:'skill', pairWith:['fuelsys']},
+  {id:'fuelsys',   week:7, phase:2, pillar:'vitality',  x:PATH_CENTER_X-200, y:2400, foundational:true,  kind:'skill', pairWith:['biomech']},
+  // Week 8 — integration glyph (Silver rank earned)
+  {id:'integ_p2',  week:8, phase:2, pillar:'integration', x:PATH_CENTER_X,    y:2510, foundational:false, kind:'integration'},
+
+  // ---- PHASE 3 ---- The Deeps
+  // Week 9 — Hormones (solo)
+  {id:'hormones',  week:9,  phase:3, pillar:'vitality',  x:PATH_CENTER_X,     y:2640, foundational:false, kind:'skill'},
+  // Week 10 — Executive Systems + Motivation Systems
+  {id:'execsys',   week:10, phase:3, pillar:'alignment', x:PATH_CENTER_X-200, y:2780, foundational:false, kind:'skill', pairWith:['motivation']},
+  {id:'motivation',week:10, phase:3, pillar:'spirit',    x:PATH_CENTER_X+200, y:2780, foundational:false, kind:'skill', pairWith:['execsys']},
+  // Week 11 — Values Clarity + Goal Architecture
+  {id:'values',    week:11, phase:3, pillar:'alignment', x:PATH_CENTER_X+200, y:2920, foundational:false, kind:'skill', pairWith:['goalarch']},
+  {id:'goalarch',  week:11, phase:3, pillar:'alignment', x:PATH_CENTER_X-200, y:2920, foundational:false, kind:'skill', pairWith:['values']},
+  // Week 12 — integration glyph (Gold rank earned)
+  {id:'integ_p3',  week:12, phase:3, pillar:'integration', x:PATH_CENTER_X,    y:3040, foundational:false, kind:'integration'},
+
+  // ---- PHASE 4 ---- The Vantage approach
+  // Weeks 13-14 — Career & Legacy (extended, single node spanning two weeks)
+  {id:'career',    week:13, phase:4, pillar:'alignment', x:PATH_CENTER_X,     y:3170, foundational:false, kind:'skill'},
+  // Week 15 — Relationships
+  {id:'relations', week:15, phase:4, pillar:'alignment', x:PATH_CENTER_X,     y:3290, foundational:false, kind:'skill'},
+  // Week 16 — integration glyph + ceremony (Iron rank earned, summit reached)
+  {id:'integ_p4',  week:16, phase:4, pillar:'integration', x:PATH_CENTER_X,    y:3380, foundational:false, kind:'integration', summit:true},
+];
+
+// Skill ID → path node index, for fast lookup
+var PATH_NODE_INDEX = {};
+PATH_NODES.forEach(function(n, i){ PATH_NODE_INDEX[n.id] = i; });
+
+// Connector list — defines which path nodes are linked by trail.
+// Built by walking PATH_NODES in week order, with within-week pairs
+// also linked horizontally so two-skill weeks read as a beat.
+function buildPathConnectors(){
+  var conns = [];
+  // Group nodes by week
+  var byWeek = {};
+  PATH_NODES.forEach(function(n){
+    if(!byWeek[n.week]) byWeek[n.week] = [];
+    byWeek[n.week].push(n);
+  });
+  var weeks = Object.keys(byWeek).map(Number).sort(function(a,b){return a-b;});
+  // Within-week horizontal connectors (for 2-skill weeks)
+  weeks.forEach(function(w){
+    var ws = byWeek[w];
+    if(ws.length === 2){
+      conns.push({from: ws[0].id, to: ws[1].id, kind:'horizontal'});
+    } else if(ws.length === 3){
+      // Week 1 triangle: connect each pair
+      conns.push({from: ws[0].id, to: ws[1].id, kind:'horizontal'});
+      conns.push({from: ws[1].id, to: ws[2].id, kind:'horizontal'});
+      conns.push({from: ws[0].id, to: ws[2].id, kind:'horizontal'});
+    }
+  });
+  // Inter-week vertical connectors — link each week's representative
+  // node to the next week's representative node. For multi-node weeks,
+  // use the centermost node as the representative for vertical connection.
+  for(var i = 0; i < weeks.length - 1; i++){
+    var fromWeek = byWeek[weeks[i]];
+    var toWeek = byWeek[weeks[i + 1]];
+    var fromRep = fromWeek[Math.floor(fromWeek.length / 2)];
+    var toRep = toWeek[Math.floor(toWeek.length / 2)];
+    conns.push({from: fromRep.id, to: toRep.id, kind:'vertical'});
+  }
+  return conns;
+}
+
+var PATH_CONNECTORS = buildPathConnectors();
 var LESSONS = {
   gap:{eyebrow:'Pre-game briefing · Module 01 of 03',title:'The Gap',isMultiStage:true,stages:['unit1','retrieve1','unit2','retrieve2','complete'],content:`<div class="module-stage-container" data-module="gap">
 
@@ -3692,19 +3848,23 @@ var ascensionSequence = {
   active: false,
   phase: 0,         // 0=idle, 1=stillness, 2=tethers, 3=crawl, 4=flash, 5=done
   timer: 0,
-  // Tether growth: three lines grow from nexus to each constellation center
+  // Tether growth: one line grows from Tesseract down to the start of the
+  // curriculum path. (Previously: three tethers to three pillar constellations.
+  // The constellations have been replaced by the unified curriculum path, so
+  // the tether converges to a single destination — the first week's center.)
   tethers: [
-    {cx: VITALITY_CX,  cy: VITALITY_CY - 220, color:'rgba(255,100,68,',  progress:0, active:false, done:false},
-    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY,       color:'rgba(85,255,170,',  progress:0, active:false, done:false},
-    {cx: SPIRIT_CX,    cy: SPIRIT_CY,          color:'rgba(187,153,255,', progress:0, active:false, done:false},
+    {cx: PATH_CENTER_X, cy: PATH_TOP_Y + 40, color:'rgba(201,168,76,', progress:0, active:false, done:false},
   ],
   // Ley line from nexus to tesseract
   leyLine: {progress:0, active:false, done:false},
-  // Constellation light crawl — node indices lit per pillar (timestamps)
+  // Constellation light crawl — disabled. The curriculum path uses its own
+  // state model (PATH_NODES + getPathNodeState) to track per-node progress;
+  // the old three-pillar crawl mechanic is no longer needed. Kept here as an
+  // empty stub so legacy references that read these fields don't crash.
   crawl: {
-    vitality:  {litNodes:[], queue:[0,1,2,3,4,5,6,7,8,9],   timer:0, started:false},
-    alignment: {litNodes:[], queue:[0,1,2,3,4,5,6,7,8,9,10,11,12], timer:0, started:false},
-    spirit:    {litNodes:[], queue:[0,1,2,7,8,3,4,9,5,6,10,11],    timer:0, started:false},
+    vitality:  {litNodes:[], queue:[],   timer:0, started:false},
+    alignment: {litNodes:[], queue:[],   timer:0, started:false},
+    spirit:    {litNodes:[], queue:[],   timer:0, started:false},
   },
   flashAlpha: 0,    // 0→1→0 for the text flash
   flashPhase: 0,    // 0=in, 1=hold, 2=out
@@ -3813,11 +3973,12 @@ function buildClickTargets(){
       // unfolding. Suppress taps so the ceremony can't be interrupted.
       return;
     }
-    // Tesseract is currently inert — the quiz/assessment has been removed
-    // from the product. The Tesseract stays as a visual anchor but doesn't
-    // route anywhere. Dive-in is preserved in code (diveIntoTesseract) in
-    // case we repurpose it later. The user reaches skill trees by clicking
-    // the constellation nodes directly.
+    // Tesseract is the gateway to the curriculum path. Click → camera
+    // dives down to the path's first week. Smooth pan, no quiz ritual
+    // (the quiz was retired). The dive is light — just a guided
+    // viewport movement so the user feels they're descending into the
+    // curriculum without a heavy overlay.
+    diveToCurriculumPath();
     return;
   });
   tesseractSvg.addEventListener('mouseenter',function(e){
@@ -3830,15 +3991,14 @@ function buildClickTargets(){
     }
     var tt=document.getElementById('nodeTooltip');
     if(tesseractActive){
-      // Tesseract is active (ceremony completed) but currently inert — the
-      // quiz was removed in the 2026-04 rebuild. Tooltip just names the
-      // artifact without implying an interaction. Cursor stays default.
-      document.getElementById('ttNum').textContent='Astral Artifact';
+      // Tesseract is the gateway down to the curriculum path. Tooltip
+      // names the action: tap to descend.
+      document.getElementById('ttNum').textContent='Astral Gateway';
       document.getElementById('ttName').textContent='The Tesseract';
-      document.getElementById('ttAction').textContent='A symbol of the path you have begun';
-      tesseractSvg.style.cursor = 'default';
+      document.getElementById('ttAction').textContent='Tap to descend into the path';
+      tesseractSvg.style.cursor = 'pointer';
     } else {
-      document.getElementById('ttNum').textContent='Astral Artifact';
+      document.getElementById('ttNum').textContent='Astral Gateway';
       document.getElementById('ttName').textContent='The Tesseract';
       document.getElementById('ttAction').textContent='Complete the 3 core skills to awaken it';
       tesseractSvg.style.cursor = 'default';
@@ -3851,6 +4011,52 @@ function buildClickTargets(){
   });
   tesseractSvg.addEventListener('mouseleave',function(){document.getElementById('nodeTooltip').classList.remove('visible');});
   svg.appendChild(tesseractSvg);
+
+  // Curriculum path nodes — only visible/clickable when pregame is complete.
+  // Each node gets a generous circular hit area at its world coordinates.
+  // Click opens the node panel which decides what to show (lesson, coming
+  // soon, or pre-purchase wall) based on user state.
+  if(typeof PATH_NODES !== 'undefined' && isPregameComplete()){
+    PATH_NODES.forEach(function(pn){
+      // Integration glyphs aren't clickable — they're transition markers,
+      // not destinations the user opens. Same for The Vantage (summit).
+      if(pn.kind === 'integration') return;
+      var hitR = 32;
+      var circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', pn.x);
+      circle.setAttribute('cy', pn.y);
+      circle.setAttribute('r', hitR);
+      circle.setAttribute('fill', 'transparent');
+      circle.setAttribute('stroke', 'none');
+      circle.style.cursor = 'pointer';
+      circle.setAttribute('data-skill-id', pn.id);
+      circle.classList.add('path-node-hit');
+      circle.addEventListener('mousedown', function(e){ e.stopPropagation(); });
+      circle.addEventListener('click', function(e){
+        e.stopPropagation();
+        if(drag.moved) return;
+        openNodePanel(pn.id);
+      });
+      circle.addEventListener('mouseenter', function(e){
+        var data = NODE_DATA[pn.id];
+        if(!data) return;
+        var tt = document.getElementById('nodeTooltip');
+        document.getElementById('ttNum').textContent = 'Week ' + pn.week;
+        document.getElementById('ttName').textContent = data.name;
+        document.getElementById('ttAction').textContent = pn.foundational ? 'Foundational skill — accessible at any time' : 'Tap to open';
+        var x = e.clientX + 16, y = e.clientY - 40;
+        if(x + 260 > window.innerWidth) x = e.clientX - 270;
+        if(y < 70) y = e.clientY + 16;
+        tt.style.left = x + 'px';
+        tt.style.top = y + 'px';
+        tt.classList.add('visible');
+      });
+      circle.addEventListener('mouseleave', function(){
+        document.getElementById('nodeTooltip').classList.remove('visible');
+      });
+      svg.appendChild(circle);
+    });
+  }
 }
 
 // ========================================
@@ -4213,7 +4419,11 @@ function updateAscensionSequence(){
       return;
     }
 
-    // Ley line done — now grow three tethers from Tesseract
+    // Ley line done — now grow the path tether from Tesseract down to
+    // the curriculum path start. (Previously: three tethers branching
+    // to three pillar constellations. The constellations have been
+    // replaced by the unified path, so the tether converges to one
+    // destination — the first week's center, just below path top.)
     var allTethersDone = true;
     seq.tethers.forEach(function(te, i){
       if(!te.active && seq.timer > 60 + i * 60){ te.active = true; }
@@ -4263,30 +4473,19 @@ function updateAscensionSequence(){
     return;
   }
 
-  // Phase 3 — constellation light crawl
+  // Phase 3 — path reveal. The crawl mechanic that lit pillar constellations
+  // node-by-node is gone (constellations replaced by the unified path).
+  // Phase 3 now provides a brief reveal beat — the tether is settling, the
+  // path's first nodes become visible — before the sequence transitions to
+  // phase 4 (done, tethers permanent). Held ~300 frames (~5s) so the user
+  // has a moment to see the path appear without visual whiplash.
   if(seq.phase === 3){
-    var allCrawlsDone = true;
-    // Start each pillar crawl staggered by 20 frames
-    var pillarOrder = ['vitality','alignment','spirit'];
-    pillarOrder.forEach(function(pillar, pi){
-      var crawl = seq.crawl[pillar];
-      if(!crawl.started && seq.timer > pi * 45){ crawl.started = true; }
-      if(!crawl.started) return;
-      crawl.timer++;
-      // Light up next node every 21 frames
-      if(crawl.timer % 21 === 0 && crawl.queue.length > 0){
-        crawl.litNodes.push(crawl.queue.shift());
-      }
-      if(crawl.queue.length > 0 || crawl.litNodes.length < (
-        pillar==='vitality'?10:pillar==='spirit'?12:13)) allCrawlsDone = false;
-    });
-
     // Draw permanent tether lines (now full opacity settling to ghost)
     tetherOpacity = Math.min(0.18, tetherOpacity + 0.0005);
     drawPermanentTethers();
 
-    if(allCrawlsDone && seq.timer > 300){
-      // Fire the single dramatic pulse before transitioning
+    if(seq.timer > 300){
+      // Fire the dramatic pulse before transitioning
       spawnTesseractPulse();
       seq.phase = 4; seq.timer = 0;
     }
@@ -4327,28 +4526,21 @@ function drawPermanentTethers(){
   treeCtx.stroke();
   treeCtx.restore();
 
-  // Energy lines: tesseract → tree roots (neutral white/grey)
-  var targets = [
-    {cx: VITALITY_CX,  cy: VITALITY_CY - 220},
-    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY},
-    {cx: SPIRIT_CX,    cy: SPIRIT_CY},
-  ];
-  targets.forEach(function(con){
-    treeCtx.save();
-    treeCtx.strokeStyle = 'rgba(220,215,240,' + (tetherOpacity * 0.4) + ')';
-    treeCtx.lineWidth = 6;
-    treeCtx.beginPath();
-    treeCtx.moveTo(TESSERACT_X, TESSERACT_Y);
-    treeCtx.lineTo(con.cx, con.cy);
-    treeCtx.stroke();
-    treeCtx.strokeStyle = 'rgba(240,236,255,' + (tetherOpacity * 1.4) + ')';
-    treeCtx.lineWidth = 0.7;
-    treeCtx.beginPath();
-    treeCtx.moveTo(TESSERACT_X, TESSERACT_Y);
-    treeCtx.lineTo(con.cx, con.cy);
-    treeCtx.stroke();
-    treeCtx.restore();
-  });
+  // Path tether: tesseract → curriculum path start (single line, gold-tinted)
+  treeCtx.save();
+  treeCtx.strokeStyle = 'rgba(220,215,240,' + (tetherOpacity * 0.4) + ')';
+  treeCtx.lineWidth = 6;
+  treeCtx.beginPath();
+  treeCtx.moveTo(TESSERACT_X, TESSERACT_Y);
+  treeCtx.lineTo(PATH_CENTER_X, PATH_TOP_Y + 40);
+  treeCtx.stroke();
+  treeCtx.strokeStyle = 'rgba(240,236,255,' + (tetherOpacity * 1.4) + ')';
+  treeCtx.lineWidth = 0.7;
+  treeCtx.beginPath();
+  treeCtx.moveTo(TESSERACT_X, TESSERACT_Y);
+  treeCtx.lineTo(PATH_CENTER_X, PATH_TOP_Y + 40);
+  treeCtx.stroke();
+  treeCtx.restore();
 }
 
 function drawAscensionFlash(alpha){
@@ -4363,7 +4555,7 @@ function drawAscensionFlash(alpha){
   treeCtx.shadowBlur = 60;
   treeCtx.shadowColor = 'rgba(192,132,252,0.9)';
   treeCtx.fillStyle = '#f3e8ff';
-  treeCtx.fillText('ASCENSION PATHS', CX, SPHERE_Y - 200);
+  treeCtx.fillText('THE PATH', CX, SPHERE_Y - 200);
 
   // Subtitle
   treeCtx.font = '400 18px Cinzel, serif';
@@ -4371,7 +4563,7 @@ function drawAscensionFlash(alpha){
   treeCtx.shadowColor = 'rgba(192,132,252,0.6)';
   treeCtx.fillStyle = 'rgba(216,180,254,0.85)';
   treeCtx.letterSpacing = '0.2em';
-  treeCtx.fillText('YOUR JOURNEY CONTINUES', CX, SPHERE_Y - 140);
+  treeCtx.fillText('REVEALED', CX, SPHERE_Y - 140);
 
   treeCtx.restore();
 }
@@ -4676,17 +4868,13 @@ function drawTesseract(){
   treeCtx.arc(tx, ty, active ? 4 : 2, 0, Math.PI * 2);
   treeCtx.fill();
 
-  // Label — state-aware. Dormant = faint "TESSERACT". Active and
-  // awaiting assessment = pulsing gold "Discover your path". Quiz
-  // complete = pillar name.
+  // Label — state-aware. Dormant = faint "THE TESSERACT". Active beacon
+  // (post-pregame, gateway awakened) = pulsing gold "ENTER THE PATH"
+  // calling the user to descend into the curriculum. Active without
+  // beacon = quiet "THE TESSERACT".
   var labelText, labelAlpha, labelColor;
-  if(window.quizResult){
-    var pillarLabels = {vitality:'VITALITY', spirit:'SPIRIT', alignment:'ALIGNMENT'};
-    labelText = pillarLabels[window.quizResult] || 'TESSERACT';
-    labelAlpha = 0.7;
-    labelColor = 'rgba(' + pillarTint + ',1)';
-  } else if(beaconActive){
-    labelText = 'DISCOVER YOUR PATH';
+  if(beaconActive){
+    labelText = 'ENTER THE PATH';
     labelAlpha = 0.6 + beaconPulse * 0.4;
     labelColor = 'rgba(201,168,76,1)';
   } else if(active){
@@ -4845,14 +5033,12 @@ function drawFrame(){
   // and the nexus are visible.
   //
   // Once the user completes the three modules, the ascension sequence fires
-  // and phases 3-5 progressively crawl-light the constellations from dark
-  // to bright. That IS the world-opens moment — built previously, preserved
-  // intact here. We allow drawAstralConstellations() whenever the pregame
-  // is complete OR the ascension sequence is actively running (which handles
-  // the transitional moment where the sequence has started but completed.length
-  // hasn't yet been updated on a reload).
+  // and the curriculum path becomes visible. The path replaces the three
+  // pillar constellations that previously occupied this lower world space.
+  // We render the path whenever pregame is complete OR the ascension
+  // sequence is actively running (handles the transitional moment).
   if(isPregameComplete() || ascensionSequence.active){
-    drawAstralConstellations();
+    drawCurriculumPath();
   }
   drawNexus(charge);
   drawPregameNodes();
@@ -5203,242 +5389,278 @@ function drawConnections(){
   // This space intentionally empty; astral trees drawn in drawAstralConstellations()
 }
 
-// ---- ASTRAL CONSTELLATIONS ----
-// Each constellation rotates as a unit using ctx.translate + ctx.rotate
-// Shapes are constellation-styled: not trees, but star map forms
+// ---- CORE CURRICULUM PATH ----
+// Replaces the three pillar constellations. The path is a descending
+// line of star-nodes from just below the Tesseract (y~1500) down to
+// The Vantage (y~3380). Phase atmospheric bands tint the world's
+// background by Y-region. Each star carries its pillar color in its
+// core. Foundational skills get an additional outer ring marker.
+//
+// State per node:
+//   locked   — not yet reachable. Dim, parchment-tinted.
+//   current  — next up to learn. Pulses in module pulse-stroke palette.
+//   done     — completed. Fully saturated pillar color, persistent halo.
+//   summit   — The Vantage at the bottom. Always brighter than other nodes.
 
-function drawAstralConstellations(){
-  // Constellations only light up when the crawl sequence reaches them
-  // Before that they remain fully dormant regardless of completion state
-  var crawlStarted = ascensionSequence.crawl.vitality.started ||
-                     ascensionSequence.crawl.spirit.started ||
-                     ascensionSequence.crawl.alignment.started;
-  // For returning users (phase 5) — fully lit
-  var allDone = ascensionSequence.phase >= 5;
+function drawCurriculumPath(){
+  // Only render when pregame is complete. Before completion, the path
+  // doesn't exist visually — the user is focused on the macro-tree.
+  if(!isPregameComplete()) return;
 
-  drawVitalityConstellation(allDone);
-  drawSpiritConstellation(allDone);
-  drawAlignmentConstellation(allDone);
-  // Permanent tethers drawn on top of constellations when sequence past phase 2
-  if(ascensionSequence.phase >= 5){
-    drawPermanentTethers();
-  }
+  // Phase atmospheric bands — drawn first so they sit underneath nodes
+  drawPhaseAtmosphere();
+
+  // Connectors (trail) — drawn under nodes
+  drawPathConnectors();
+
+  // Nodes themselves
+  PATH_NODES.forEach(function(n){
+    if(n.kind === 'integration'){
+      drawIntegrationGlyph(n);
+    } else {
+      drawPathNode(n);
+    }
+  });
 }
 
-function drawVitalityConstellation(allDone){
-  var cx = VITALITY_CX, cy = VITALITY_CY;
-  var color = '#ff6644', bright = 'rgba(255,100,68,';
-  var isWinner = window.quizResult === 'vitality';
-  var crawlLit = ascensionSequence.crawl.vitality.litNodes;
-  var crawlActive = ascensionSequence.phase === 3 || ascensionSequence.phase >= 4;
-  // Sequence running (phases 1-4): force dormant, crawl drives lighting
-  var seqRunning = ascensionSequence.phase >= 1 && ascensionSequence.phase <= 4;
+function drawPhaseAtmosphere(){
+  // For each phase band, draw a soft vertical gradient overlay covering
+  // its Y-range. The bands blend into each other at boundaries so the
+  // user senses zone transitions without hard edges.
+  PHASE_BANDS.forEach(function(band){
+    var midY = (band.yStart + band.yEnd) / 2;
+    var height = band.yEnd - band.yStart;
+    // Width spans much wider than the path so the atmosphere fills the visible canvas
+    var width = 2400;
+    var leftX = PATH_CENTER_X - width / 2;
+    // Vertical gradient — soft at top and bottom edges, fuller in middle
+    var grad = treeCtx.createLinearGradient(0, band.yStart, 0, band.yEnd);
+    grad.addColorStop(0,    band.color + '0)');
+    grad.addColorStop(0.5,  band.color + '0.06)');
+    grad.addColorStop(1,    band.color + '0)');
+    treeCtx.save();
+    treeCtx.fillStyle = grad;
+    treeCtx.fillRect(leftX, band.yStart, width, height);
+    treeCtx.restore();
+  });
+}
 
-  var nodeAlpha  = allDone ? 1 : (seqRunning ? 0.08 : (isWinner ? 0.35 : 0.10));
-  var lineAlpha  = allDone ? 0.7 : (seqRunning ? 0.05 : (isWinner ? 0.25 : 0.08));
-  var labelAlpha = allDone ? 0.85 : (seqRunning ? 0 : (isWinner ? 0.9 : 0));
-  var glowNodes  = allDone;
+function drawPathConnectors(){
+  // Connectors render as thin gold lines. Each connector reads the
+  // state of its endpoints to determine brightness:
+  //   both endpoints done — bright gold
+  //   one endpoint done   — gold fading toward the locked end
+  //   neither done        — faint dotted indication
+  treeCtx.save();
+  PATH_CONNECTORS.forEach(function(c){
+    var fromNode = PATH_NODES[PATH_NODE_INDEX[c.from]];
+    var toNode   = PATH_NODES[PATH_NODE_INDEX[c.to]];
+    if(!fromNode || !toNode) return;
+    var fromState = getPathNodeState(fromNode);
+    var toState   = getPathNodeState(toNode);
+    var bothDone  = fromState === 'done' && toState === 'done';
+    var oneDone   = (fromState === 'done') !== (toState === 'done');
+    var color, width, dash;
+    if(bothDone){
+      color = 'rgba(201,168,76,0.55)';
+      width = 1.6;
+      dash = [];
+    } else if(oneDone){
+      color = 'rgba(201,168,76,0.32)';
+      width = 1.2;
+      dash = [];
+    } else {
+      color = 'rgba(216,200,170,0.12)';
+      width = 0.8;
+      dash = [4, 6];
+    }
+    treeCtx.strokeStyle = color;
+    treeCtx.lineWidth = width;
+    treeCtx.setLineDash(dash);
+    treeCtx.beginPath();
+    treeCtx.moveTo(fromNode.x, fromNode.y);
+    treeCtx.lineTo(toNode.x, toNode.y);
+    treeCtx.stroke();
+    treeCtx.setLineDash([]);
+  });
+  treeCtx.restore();
+}
 
-  var drawColor  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(180,170,200,';
-  var drawBright = (allDone || (!seqRunning && isWinner)) ? bright : 'rgba(180,170,200,';
-  var strokeCol  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(160,150,180,0.4)';
+function getPathNodeState(node){
+  // 'done', 'current', or 'locked'.
+  // Done: skill is in completedSkills (or via curriculum tracking)
+  // Current: next up to learn — first non-done node in week order
+  // Locked: everything else
+  // Lesson tracking will hook in here once lessons exist. For now,
+  // all skill nodes are 'locked' except the very first (week 1) which
+  // is 'current'. Integration glyphs follow their phase's last skill state.
+  if(typeof completedSkills === 'undefined') {
+    // Bootstrap fallback — week 1 nodes are current, rest are locked
+    if(node.week === 1 && node.kind === 'skill') return 'current';
+    return 'locked';
+  }
+  if(completedSkills.indexOf(node.id) !== -1) return 'done';
+  // Find the first non-done skill node in week order
+  for(var i = 0; i < PATH_NODES.length; i++){
+    var n = PATH_NODES[i];
+    if(n.kind !== 'skill') continue;
+    if(completedSkills.indexOf(n.id) === -1){
+      // This is the current next-up. If it matches our node, mark current.
+      if(n.id === node.id) return 'current';
+      break;
+    }
+  }
+  return 'locked';
+}
 
-  var nodes = [
-    {x:0,    y:-220, r:22, root:true},
-    {x:-80,  y:-130, r:14},
-    {x:80,   y:-130, r:14},
-    {x:-40,  y:-20,  r:14},
-    {x:40,   y:-20,  r:14},
-    {x:0,    y:60,   r:18},
-    {x:-110, y:160,  r:11},
-    {x:110,  y:160,  r:11},
-    {x:-140, y:280,  r:9},
-    {x:140,  y:280,  r:9},
-  ];
-  var lines = [[0,1],[0,2],[1,3],[2,4],[3,5],[4,5],[5,6],[5,7],[6,8],[7,9]];
+function drawPathNode(node){
+  var pillarColor = PILLAR_COLORS[node.pillar] || '#c9a84c';
+  var pillarRgb = pillarColorRgb(node.pillar);
+  var state = getPathNodeState(node);
+  var r = 18; // base node radius
+  var x = node.x, y = node.y;
 
   treeCtx.save();
-  treeCtx.translate(cx, cy);
-  treeCtx.globalAlpha = nodeAlpha;
-  treeCtx.setLineDash([]);
-  lines.forEach(function(l){
-    var a = nodes[l[0]], b = nodes[l[1]];
-    var lit = crawlActive && crawlLit.indexOf(l[0]) !== -1 && crawlLit.indexOf(l[1]) !== -1;
-    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lit ? 0.85 : lineAlpha);
-  });
-  nodes.forEach(function(n, ni){
-    var lit = crawlActive && crawlLit.indexOf(ni) !== -1;
-    if(lit){
-      // Flare effect on crawl-lit node
-      treeCtx.save();
-      var flare = treeCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r + 40);
-      flare.addColorStop(0, 'rgba(255,100,68,0.35)');
-      flare.addColorStop(1, 'rgba(255,100,68,0)');
-      treeCtx.fillStyle = flare;
-      treeCtx.beginPath();
-      treeCtx.arc(n.x, n.y, n.r + 40, 0, Math.PI*2);
-      treeCtx.fill();
-      treeCtx.restore();
-    }
-    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || lit || (isWinner && n.root));
-  });
-  if(labelAlpha > 0){
-    treeCtx.globalAlpha = labelAlpha;
-    treeCtx.fillStyle = color;
-    treeCtx.font = '600 18px Cinzel, serif';
+
+  // Foundational marker — outer ring drawn first (so it sits behind the node)
+  if(node.foundational){
+    treeCtx.strokeStyle = 'rgba(216,200,170,0.55)';
+    treeCtx.lineWidth = 1;
+    treeCtx.setLineDash([3, 3]);
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, r + 9, 0, Math.PI * 2);
+    treeCtx.stroke();
+    treeCtx.setLineDash([]);
+  }
+
+  if(state === 'done'){
+    // Done: fully saturated pillar color, persistent halo
+    var grad = treeCtx.createRadialGradient(x, y, 0, x, y, r + 18);
+    grad.addColorStop(0, 'rgba(' + pillarRgb + ',0.5)');
+    grad.addColorStop(1, 'rgba(' + pillarRgb + ',0)');
+    treeCtx.fillStyle = grad;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, r + 18, 0, Math.PI * 2);
+    treeCtx.fill();
+    // Filled core
+    treeCtx.fillStyle = pillarColor;
+    treeCtx.shadowBlur = 16;
+    treeCtx.shadowColor = pillarColor;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, r, 0, Math.PI * 2);
+    treeCtx.fill();
+  } else if(state === 'current'){
+    // Current: pulsing in pulse-stroke palette
+    var pulseT = (Math.sin(t * 0.05) + 1) / 2;
+    var pulseR = r + 6 + pulseT * 6;
+    var pulseAlpha = 0.4 + pulseT * 0.4;
+    treeCtx.strokeStyle = 'rgba(233,213,255,' + pulseAlpha + ')';
+    treeCtx.lineWidth = 1.4;
+    treeCtx.shadowBlur = 18;
+    treeCtx.shadowColor = 'rgba(233,213,255,0.7)';
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, pulseR, 0, Math.PI * 2);
+    treeCtx.stroke();
+    // Filled core in pillar color, slightly desaturated until completion
+    treeCtx.fillStyle = pillarColor;
+    treeCtx.globalAlpha = 0.7;
+    treeCtx.shadowBlur = 12;
+    treeCtx.shadowColor = pillarColor;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, r, 0, Math.PI * 2);
+    treeCtx.fill();
+    treeCtx.globalAlpha = 1;
+    // Bright pentagon stroke
+    treeCtx.strokeStyle = '#e9d5ff';
+    treeCtx.lineWidth = 1.6;
+    treeCtx.shadowBlur = 0;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, r, 0, Math.PI * 2);
+    treeCtx.stroke();
+  } else {
+    // Locked: dim parchment with hint of pillar color
+    treeCtx.strokeStyle = 'rgba(216,200,170,0.32)';
+    treeCtx.lineWidth = 0.9;
+    treeCtx.fillStyle = 'rgba(' + pillarRgb + ',0.06)';
+    treeCtx.shadowBlur = 0;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, r, 0, Math.PI * 2);
+    treeCtx.fill();
+    treeCtx.stroke();
+  }
+
+  treeCtx.restore();
+}
+
+function drawIntegrationGlyph(node){
+  // Integration glyphs sit at phase boundaries — small constellation-mark
+  // sigils representing pause/integration weeks (8, 12, 16). Visually
+  // distinct from skill nodes — they're not stars, they're transitions.
+  // Summit is a special case: brighter, larger, marks The Vantage.
+  var x = node.x, y = node.y;
+  var isSummit = !!node.summit;
+  treeCtx.save();
+  if(isSummit){
+    // The Vantage — brighter, larger, always-visible destination
+    var grad = treeCtx.createRadialGradient(x, y, 0, x, y, 80);
+    grad.addColorStop(0, 'rgba(255,235,190,0.5)');
+    grad.addColorStop(0.5, 'rgba(201,168,76,0.18)');
+    grad.addColorStop(1, 'rgba(201,168,76,0)');
+    treeCtx.fillStyle = grad;
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, 80, 0, Math.PI * 2);
+    treeCtx.fill();
+    // Crown-like sigil at center: 5-pointed star
+    treeCtx.strokeStyle = 'rgba(255,235,190,0.85)';
+    treeCtx.fillStyle = 'rgba(255,245,210,0.4)';
+    treeCtx.lineWidth = 1.4;
+    treeCtx.shadowBlur = 24;
+    treeCtx.shadowColor = 'rgba(255,235,190,0.9)';
+    drawStarSigil(x, y, 26);
+    // Label below
+    treeCtx.shadowBlur = 0;
+    treeCtx.font = '500 14px Cinzel, serif';
+    treeCtx.fillStyle = 'rgba(255,235,190,0.85)';
     treeCtx.textAlign = 'center';
-    treeCtx.shadowBlur = allDone ? 12 : 16;
-    treeCtx.shadowColor = color;
-    treeCtx.fillText('VITALITY', 0, 330);
+    treeCtx.fillText('THE VANTAGE', x, y + 50);
+  } else {
+    // Standard integration glyph — small sigil marking phase boundary
+    treeCtx.strokeStyle = 'rgba(201,168,76,0.55)';
+    treeCtx.lineWidth = 1;
+    treeCtx.shadowBlur = 8;
+    treeCtx.shadowColor = 'rgba(201,168,76,0.4)';
+    drawStarSigil(x, y, 12);
   }
   treeCtx.restore();
 }
 
-function drawSpiritConstellation(allDone){
-  var cx = SPIRIT_CX, cy = SPIRIT_CY;
-  var color = '#bb99ff', bright = 'rgba(187,153,255,';
-  var isWinner = window.quizResult === 'spirit';
-  var crawlLit = ascensionSequence.crawl.spirit.litNodes;
-  var crawlActive = ascensionSequence.phase === 3 || ascensionSequence.phase >= 4;
-  var seqRunning = ascensionSequence.phase >= 1 && ascensionSequence.phase <= 4;
-
-  var nodeAlpha  = allDone ? 1 : (seqRunning ? 0.08 : (isWinner ? 0.35 : 0.10));
-  var lineAlpha  = allDone ? 0.7 : (seqRunning ? 0.05 : (isWinner ? 0.25 : 0.08));
-  var labelAlpha = allDone ? 0.85 : (seqRunning ? 0 : (isWinner ? 0.9 : 0));
-  var glowNodes  = allDone;
-
-  var drawColor  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(180,170,200,';
-  var drawBright = (allDone || (!seqRunning && isWinner)) ? bright : 'rgba(180,170,200,';
-  var strokeCol  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(160,150,180,0.4)';
-
-  var nodes = [
-    {x:0,    y:0,    r:22, root:true},
-    {x:-160, y:-80,  r:14},
-    {x:160,  y:-80,  r:14},
-    {x:-260, y:20,   r:11},
-    {x:260,  y:20,   r:11},
-    {x:-320, y:140,  r:9},
-    {x:320,  y:140,  r:9},
-    {x:-80,  y:160,  r:14},
-    {x:80,   y:160,  r:14},
-    {x:0,    y:260,  r:18},
-    {x:-60,  y:360,  r:9},
-    {x:60,   y:360,  r:9},
-  ];
-  var lines = [
-    [0,1],[0,2],[1,3],[2,4],[3,5],[4,6],
-    [0,7],[0,8],[7,9],[8,9],[9,10],[9,11]
-  ];
-
-  treeCtx.save();
-  treeCtx.translate(cx, cy);
-  treeCtx.globalAlpha = nodeAlpha;
-  treeCtx.setLineDash([]);
-  lines.forEach(function(l){
-    var a = nodes[l[0]], b = nodes[l[1]];
-    var lit = crawlActive && crawlLit.indexOf(l[0]) !== -1 && crawlLit.indexOf(l[1]) !== -1;
-    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lit ? 0.85 : lineAlpha);
-  });
-  nodes.forEach(function(n, ni){
-    var lit = crawlActive && crawlLit.indexOf(ni) !== -1;
-    if(lit){
-      treeCtx.save();
-      var flare = treeCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r + 40);
-      flare.addColorStop(0, 'rgba(187,153,255,0.35)');
-      flare.addColorStop(1, 'rgba(187,153,255,0)');
-      treeCtx.fillStyle = flare;
-      treeCtx.beginPath();
-      treeCtx.arc(n.x, n.y, n.r + 40, 0, Math.PI*2);
-      treeCtx.fill();
-      treeCtx.restore();
-    }
-    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || lit || (isWinner && n.root));
-  });
-  if(labelAlpha > 0){
-    treeCtx.globalAlpha = labelAlpha;
-    treeCtx.fillStyle = color;
-    treeCtx.font = '600 18px Cinzel, serif';
-    treeCtx.textAlign = 'center';
-    treeCtx.shadowBlur = allDone ? 12 : 16;
-    treeCtx.shadowColor = color;
-    treeCtx.fillText('SPIRIT', 0, 420);
+function drawStarSigil(cx, cy, r){
+  // 5-pointed star path. Used for both integration glyphs and The Vantage.
+  treeCtx.beginPath();
+  for(var i = 0; i < 5; i++){
+    var angle = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+    var px = cx + Math.cos(angle) * r;
+    var py = cy + Math.sin(angle) * r;
+    if(i === 0) treeCtx.moveTo(px, py);
+    else treeCtx.lineTo(px, py);
+    var innerAngle = angle + Math.PI / 5;
+    var ipx = cx + Math.cos(innerAngle) * r * 0.4;
+    var ipy = cy + Math.sin(innerAngle) * r * 0.4;
+    treeCtx.lineTo(ipx, ipy);
   }
-  treeCtx.restore();
+  treeCtx.closePath();
+  treeCtx.fill();
+  treeCtx.stroke();
 }
 
-function drawAlignmentConstellation(allDone){
-  var cx = ALIGNMENT_CX, cy = ALIGNMENT_CY;
-  var color = '#55ffaa', bright = 'rgba(85,255,170,';
-  var isWinner = window.quizResult === 'alignment';
-  var crawlLit = ascensionSequence.crawl.alignment.litNodes;
-  var crawlActive = ascensionSequence.phase === 3 || ascensionSequence.phase >= 4;
-  var seqRunning = ascensionSequence.phase >= 1 && ascensionSequence.phase <= 4;
-
-  var nodeAlpha  = allDone ? 1 : (seqRunning ? 0.08 : (isWinner ? 0.35 : 0.10));
-  var lineAlpha  = allDone ? 0.7 : (seqRunning ? 0.05 : (isWinner ? 0.25 : 0.08));
-  var labelAlpha = allDone ? 0.85 : (seqRunning ? 0 : (isWinner ? 0.9 : 0));
-  var glowNodes  = allDone;
-
-  var drawColor  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(180,170,200,';
-  var drawBright = (allDone || (!seqRunning && isWinner)) ? bright : 'rgba(180,170,200,';
-  var strokeCol  = (allDone || (!seqRunning && isWinner)) ? color : 'rgba(160,150,180,0.4)';
-
-  var nodes = [
-    {x:0,    y:0,    r:22, root:true},
-    {x:0,    y:-200, r:14},
-    {x:200,  y:0,    r:14},
-    {x:0,    y:200,  r:14},
-    {x:-200, y:0,    r:14},
-    {x:130,  y:-130, r:11},
-    {x:130,  y:130,  r:11},
-    {x:-130, y:130,  r:11},
-    {x:-130, y:-130, r:11},
-    {x:0,    y:-320, r:9},
-    {x:320,  y:0,    r:9},
-    {x:0,    y:320,  r:9},
-    {x:-320, y:0,    r:9},
-  ];
-  var lines = [
-    [0,1],[0,2],[0,3],[0,4],
-    [0,5],[0,6],[0,7],[0,8],
-    [1,9],[2,10],[3,11],[4,12]
-  ];
-
-  treeCtx.save();
-  treeCtx.translate(cx, cy);
-  treeCtx.globalAlpha = nodeAlpha;
-  treeCtx.setLineDash([]);
-  lines.forEach(function(l){
-    var a = nodes[l[0]], b = nodes[l[1]];
-    var lit = crawlActive && crawlLit.indexOf(l[0]) !== -1 && crawlLit.indexOf(l[1]) !== -1;
-    drawConstellationLine(a.x, a.y, b.x, b.y, strokeCol, lit ? 0.85 : lineAlpha);
-  });
-  nodes.forEach(function(n, ni){
-    var lit = crawlActive && crawlLit.indexOf(ni) !== -1;
-    if(lit){
-      treeCtx.save();
-      var flare = treeCtx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r + 40);
-      flare.addColorStop(0, 'rgba(85,255,170,0.35)');
-      flare.addColorStop(1, 'rgba(85,255,170,0)');
-      treeCtx.fillStyle = flare;
-      treeCtx.beginPath();
-      treeCtx.arc(n.x, n.y, n.r + 40, 0, Math.PI*2);
-      treeCtx.fill();
-      treeCtx.restore();
-    }
-    drawConstellationNode(n.x, n.y, n.r, strokeCol, drawBright, glowNodes || lit || (isWinner && n.root));
-  });
-  if(labelAlpha > 0){
-    treeCtx.globalAlpha = labelAlpha;
-    treeCtx.fillStyle = color;
-    treeCtx.font = '600 18px Cinzel, serif';
-    treeCtx.textAlign = 'center';
-    treeCtx.shadowBlur = allDone ? 12 : 16;
-    treeCtx.shadowColor = color;
-    treeCtx.fillText('ALIGNMENT', 0, 370);
-  }
-  treeCtx.restore();
+function pillarColorRgb(pillar){
+  // Convert pillar identifier to "r,g,b" string for use in rgba constructions
+  if(pillar === 'vitality')  return '255,100,68';
+  if(pillar === 'spirit')    return '187,153,255';
+  if(pillar === 'alignment') return '85,255,170';
+  return '201,168,76'; // gold fallback
 }
+
 
 function drawNexus(charge){
   var cx = CX, cy = SPHERE_Y;
@@ -6873,6 +7095,60 @@ function centerTree(){
   applyTransform();
 }
 
+// =============================================================
+// DIVE TO CURRICULUM PATH
+// =============================================================
+// Fires when user taps the activated Tesseract after pregame is complete.
+// Smoothly pans the camera from wherever it is down to the curriculum
+// path's start (week 1's three-skill cluster at the top of the path).
+// No heavy overlay — this is a guided viewport movement, not a ritual.
+// The user feels themselves descending into the path; the Tesseract
+// becomes the gateway above.
+//
+// Duration ~1.4s with ease-out so the camera decelerates onto the
+// destination. Locks user input during the dive to prevent stutter.
+// =============================================================
+var pathDiveActive = false;
+
+function diveToCurriculumPath(){
+  if(pathDiveActive) return;          // guard against double-clicks
+  pathDiveActive = true;
+
+  var wrap = document.getElementById('canvasWrap');
+  var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
+
+  // Destination: framed on week 1's cluster (around y=1580) with a touch
+  // of headroom showing the Tesseract above so the user knows where they
+  // came from. Slightly tighter zoom than centerTree's default so the
+  // path nodes feel proximate.
+  var targetScale = Math.min(0.55, vw / W * 1.05);
+  var targetX = (vw / 2) - (PATH_CENTER_X * targetScale);
+  var targetY = (vh / 2) - (1700 * targetScale);
+
+  var startX = transform.x;
+  var startY = transform.y;
+  var startScale = transform.scale;
+  var startTime = performance.now();
+  var duration = 1400; // ms
+
+  function animate(){
+    var dt = (performance.now() - startTime) / duration;
+    if(dt >= 1) dt = 1;
+    // Ease-out cubic — fast start, gentle deceleration onto destination
+    var e = 1 - Math.pow(1 - dt, 3);
+    transform.x     = startX     + (targetX - startX) * e;
+    transform.y     = startY     + (targetY - startY) * e;
+    transform.scale = startScale + (targetScale - startScale) * e;
+    applyTransform();
+    if(dt < 1){
+      requestAnimationFrame(animate);
+    } else {
+      pathDiveActive = false;
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
 // ============================================================================
 // DIVE-IN ANIMATION (2026-04 onboarding rebuild)
 // ============================================================================
@@ -7176,6 +7452,7 @@ function openNodePanel(id){
   if(drag.moved)return;
   var data=NODE_DATA[id];if(!data)return;
   var isPregame=data.type==='pregame';
+  var isPathSkill = !isPregame && (typeof PATH_NODE_INDEX !== 'undefined') && (PATH_NODE_INDEX[id] !== undefined);
   var isDone=completed.includes(id);
   var nodeIndex=PREGAME_NODES.findIndex(function(n){return n.id===id;});
   var isLocked=isPregame&&nodeIndex>0&&!completed.includes(PREGAME_NODES[nodeIndex-1].id);
@@ -7213,6 +7490,28 @@ function openNodePanel(id){
     lActions.appendChild(prevBtn);
     lockDiv.appendChild(lbl);lockDiv.appendChild(lActions);
     actions.appendChild(lockDiv);
+  } else if(isPathSkill && isPregameComplete()){
+    // Curriculum path skill, pregame is done. Lesson content for these
+    // skills doesn't exist yet (Session A ships path architecture only;
+    // lessons begin with Energy Management in a later session). Show a
+    // dignified "in development" affordance rather than the "book a call"
+    // wall — these clients have already converted.
+    var hasLesson = (typeof LESSONS !== 'undefined') && LESSONS[id];
+    if(hasLesson){
+      var lessonBtn=document.createElement('button');
+      lessonBtn.className='node-panel-btn';
+      lessonBtn.textContent= isDone ? 'Read again →' : 'Open lesson →';
+      lessonBtn.onclick=function(){closeNodePanel();openLesson(id);};
+      actions.appendChild(lessonBtn);
+    } else {
+      var soonDiv=document.createElement('div');
+      soonDiv.className='node-panel-locked';
+      var soonLbl=document.createElement('div');
+      soonLbl.className='node-panel-locked-label';
+      soonLbl.textContent='Lesson in development. The path itself is built — content arrives skill by skill, beginning with Energy Management.';
+      soonDiv.appendChild(soonLbl);
+      actions.appendChild(soonDiv);
+    }
   } else {
     var lockDiv2=document.createElement('div');
     lockDiv2.className='node-panel-locked';
@@ -7319,9 +7618,11 @@ document.getElementById('respecConfirmYes').onclick=function(e){
   ascensionSequence.active=false; ascensionSequence.phase=0; ascensionSequence.timer=0;
   ascensionSequence.leyLine={progress:0, active:false, done:false};
   ascensionSequence.tethers.forEach(function(te){ te.progress=0; te.active=false; te.done=false; });
-  ascensionSequence.crawl.vitality.litNodes=[]; ascensionSequence.crawl.vitality.queue=[0,1,2,3,4,5,6,7,8,9]; ascensionSequence.crawl.vitality.timer=0; ascensionSequence.crawl.vitality.started=false;
-  ascensionSequence.crawl.spirit.litNodes=[]; ascensionSequence.crawl.spirit.queue=[0,1,2,7,8,3,4,9,5,6,10,11]; ascensionSequence.crawl.spirit.timer=0; ascensionSequence.crawl.spirit.started=false;
-  ascensionSequence.crawl.alignment.litNodes=[]; ascensionSequence.crawl.alignment.queue=[0,1,2,3,4,5,6,7,8,9,10,11,12]; ascensionSequence.crawl.alignment.timer=0; ascensionSequence.crawl.alignment.started=false;
+  // Crawl queues neutralized — constellations replaced by curriculum path.
+  // The crawl object is kept as an empty stub so legacy refs don't crash.
+  ascensionSequence.crawl.vitality.litNodes=[];  ascensionSequence.crawl.vitality.queue=[];  ascensionSequence.crawl.vitality.timer=0;  ascensionSequence.crawl.vitality.started=false;
+  ascensionSequence.crawl.spirit.litNodes=[];    ascensionSequence.crawl.spirit.queue=[];    ascensionSequence.crawl.spirit.timer=0;    ascensionSequence.crawl.spirit.started=false;
+  ascensionSequence.crawl.alignment.litNodes=[]; ascensionSequence.crawl.alignment.queue=[]; ascensionSequence.crawl.alignment.timer=0; ascensionSequence.crawl.alignment.started=false;
   ascensionSequence.flashAlpha=0; tetherOpacity=0;
 
   // Remove completion overlay if present
@@ -11372,8 +11673,8 @@ function showAllComplete(){
     '</div>' +
     '<div id="completionBelow" style="display:flex;flex-direction:column;align-items:center;opacity:0;transition:opacity 1.2s ease;position:relative;z-index:5">' +
       '<div style="width:60px;height:1px;background:rgba(255,255,255,.08);margin-bottom:28px"></div>' +
-      '<div style="font-family:Cinzel Decorative,serif;font-size:clamp(18px,3vw,26px);color:#f0ece4;text-align:center;line-height:1.3;margin-bottom:14px">Ascension Paths<br><span style="color:#c084fc">Unlocked</span></div>' +
-      '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:440px;line-height:1.8;margin-bottom:28px">The three astral trees are now visible.<br>Click to enter the Tesseract and discover your primary Astral Path.</div>' +
+      '<div style="font-family:Cinzel Decorative,serif;font-size:clamp(18px,3vw,26px);color:#f0ece4;text-align:center;line-height:1.3;margin-bottom:14px">The Path<br><span style="color:#c084fc">Revealed</span></div>' +
+      '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:440px;line-height:1.8;margin-bottom:28px">Your curriculum is now visible below the Tesseract.<br>Sixteen weeks of work between here and The Vantage.</div>' +
       '<a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;text-decoration:none;margin-bottom:12px">Book your PlayBook call →</a>' +
       '<button onclick="closeCompletionScreen(\'' + (pendingRank || '') + '\')" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;padding:8px">Continue exploring →</button>' +
     '</div>';
