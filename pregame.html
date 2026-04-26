@@ -457,6 +457,164 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
   pointer-events:none;
 }
 
+/* =====================================================================
+   TUTORIAL VIDEO OVERLAY (post-Phase-4.5)
+   Fires once on first arrival to the macro-tree (after portal-dive pull-
+   back). Plays an AgentOpus-produced UI tutorial. Manual play; skip from
+   frame one. Once dismissed, ga_macrotree_tutorial_seen=1 and never fires
+   again. If TUTORIAL_VIDEO_URL is empty (production not yet done), the
+   overlay never opens — fresh users go straight to the macro-tree with
+   the "Start Here" indicator doing the instructional work.
+   ===================================================================== */
+.tutorial-overlay{
+  position:fixed;inset:0;z-index:280;
+  background:radial-gradient(ellipse at 50% 40%,rgba(20,16,38,.94) 0%,rgba(8,6,18,.98) 60%,rgba(4,4,12,.99) 100%);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s cubic-bezier(.22,1,.36,1);
+}
+.tutorial-overlay.open{opacity:1;pointer-events:auto}
+
+.tutorial-panel{
+  position:relative;
+  width:min(560px,calc(100vw - 32px));
+  max-height:calc(100vh - 64px);
+  padding:36px 32px 28px;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  transform:translateY(14px);
+  transition:transform .55s cubic-bezier(.22,1,.36,1);
+  overflow-y:auto;overflow-x:hidden;
+}
+.tutorial-overlay.open .tutorial-panel{transform:translateY(0)}
+
+.tutorial-eyebrow{
+  font-family:'Cinzel',serif;font-size:10.5px;font-weight:400;
+  letter-spacing:.28em;color:rgba(201,168,76,.65);
+  text-transform:uppercase;
+}
+.tutorial-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(24px,3.5vw,34px);font-weight:400;
+  color:#e5c574;margin:0;line-height:1.15;text-align:center;
+  text-shadow:0 0 30px rgba(201,168,76,.32);
+}
+.tutorial-subtitle{
+  font-family:'Crimson Pro','Crimson Text',serif;font-size:14px;line-height:1.55;
+  color:rgba(240,236,228,.7);font-style:italic;
+  text-align:center;max-width:420px;margin:0;
+}
+.tutorial-video-frame{
+  width:100%;
+  aspect-ratio:16/9;
+  background:#000;
+  border:1px solid rgba(201,168,76,.22);
+  border-radius:5px;
+  overflow:hidden;
+  margin:8px 0 4px;
+}
+.tutorial-video-frame iframe{
+  width:100%;height:100%;display:block;border:0;
+}
+.tutorial-actions{
+  display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+  width:100%;gap:14px;margin-top:6px;
+}
+.tutorial-skip{
+  background:transparent;border:none;
+  color:rgba(216,200,170,.55);
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;
+  padding:8px 4px;cursor:pointer;
+  transition:color .2s;
+}
+.tutorial-skip:hover{color:#f0ece4}
+.tutorial-done{
+  background:transparent;
+  border:1px solid rgba(201,168,76,.45);
+  color:rgba(240,236,228,.85);
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  padding:9px 22px;border-radius:3px;cursor:pointer;
+  transition:all .2s;
+}
+.tutorial-done:hover{
+  background:rgba(201,168,76,.15);
+  border-color:rgba(201,168,76,.85);
+  color:#fff;
+}
+@media (max-width:680px){
+  .tutorial-panel{padding:28px 20px 22px;gap:14px}
+  .tutorial-title{font-size:22px}
+  .tutorial-subtitle{font-size:13px}
+}
+
+/* =====================================================================
+   "START HERE" INDICATOR (post-Phase-4.5)
+   Highly explicit affordance shown over the first-tap target so brand-
+   new users know exactly what to click. Two instances: one over Gap on
+   the macro-tree (the very first tap target in the entire flow), one
+   over the first sub-unit node inside the micro-tree panel (the first
+   tap target inside a module). Each is gated by a one-time localStorage
+   flag — once the user clicks the relevant target, the indicator never
+   shows again, anywhere.
+   ===================================================================== */
+.start-here-indicator{
+  position:fixed;
+  z-index:200;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  pointer-events:none;
+  /* Position is set in JS via left/top inline styles. */
+  transform:translate(-50%,-100%);
+  /* The indicator color: violet for Gap (matching the module). The
+     `--start-here-color` CSS var is set per-instance on the element. */
+  color:var(--start-here-color, #d8b8ff);
+  animation:start-here-bounce 1.4s ease-in-out infinite;
+  filter:drop-shadow(0 0 10px var(--start-here-glow, rgba(216,184,255,0.55)));
+}
+.start-here-indicator.visible{display:flex}
+.start-here-text{
+  font-family:'Cinzel',serif;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  text-shadow:0 0 14px var(--start-here-glow, rgba(216,184,255,0.7));
+  /* Background pill so the text is readable over any backdrop. */
+  background:rgba(8,6,18,0.78);
+  border:1px solid currentColor;
+  border-radius:14px;
+  padding:6px 14px;
+  white-space:nowrap;
+}
+.start-here-arrow{
+  width:22px;
+  height:18px;
+  display:block;
+}
+@keyframes start-here-bounce{
+  0%,100%{transform:translate(-50%,-100%)}
+  50%{transform:translate(-50%,calc(-100% - 12px))}
+}
+
+/* The micro-tree variant uses different positioning context — it sits
+   inside the micro-tree overlay (which has its own z-index of 240), so
+   bump the indicator above the overlay's panel content. */
+.start-here-micro{z-index:260}
+
+/* On mobile the text label gets slightly smaller and the arrow nudges
+   closer so the whole indicator fits above smaller nodes. */
+@media (max-width:680px){
+  .start-here-text{font-size:11px;letter-spacing:.18em;padding:5px 11px}
+  .start-here-arrow{width:18px;height:14px}
+  @keyframes start-here-bounce{
+    0%,100%{transform:translate(-50%,-100%)}
+    50%{transform:translate(-50%,calc(-100% - 9px))}
+  }
+}
+
 /* Sub-unit title shown when slicing a unit into multiple sub-unit views.
    Slightly smaller than the stage-title, signals "you're inside a slice." */
 .subunit-title{margin-top:8px;margin-bottom:24px}
@@ -1294,26 +1452,44 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
    hover. Color intentionally off the brand palette to signal "this is not
    production UI." */
 .dev-panel{
-  position:fixed;right:10px;top:50%;transform:translateY(-50%);
-  z-index:9990;display:flex;flex-direction:column;align-items:stretch;gap:6px;
-  background:rgba(8,8,20,0.8);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(192,57,43,0.35);border-radius:3px;
-  padding:8px 8px;
-  font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;
+  position:fixed;left:10px;top:10px;
+  z-index:9990;display:flex;flex-direction:row;align-items:center;gap:4px;
+  background:rgba(8,8,20,0.7);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(192,57,43,0.25);border-radius:3px;
+  padding:5px 7px;
+  font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.14em;
   color:rgba(240,236,228,0.45);text-transform:uppercase;
-  opacity:0.55;transition:opacity .2s;
+  opacity:0.35;transition:opacity .2s,max-width .25s;
+  max-width:none;
 }
 .dev-panel:hover{opacity:1}
-.dev-panel-label{color:rgba(192,57,43,0.8);font-weight:500;text-align:center;padding-bottom:2px}
+.dev-panel-label{color:rgba(192,57,43,0.7);font-weight:500;padding:0 4px 0 2px;cursor:pointer}
 .dev-reset-btn{
-  background:transparent;border:1px solid rgba(192,57,43,0.5);
+  background:transparent;border:1px solid rgba(192,57,43,0.45);
   color:rgba(240,236,228,0.7);
-  font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;
-  padding:4px 10px;border-radius:2px;cursor:pointer;text-transform:uppercase;
+  font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.12em;
+  padding:3px 7px;border-radius:2px;cursor:pointer;text-transform:uppercase;
   transition:all .2s;
+  white-space:nowrap;
 }
 .dev-reset-btn:hover{
   background:rgba(192,57,43,0.18);color:#f0ece4;border-color:rgba(192,57,43,0.85);
+}
+/* On mobile, collapse to just the DEV label until tapped — buttons hidden.
+   Tap the DEV label to toggle .dev-expanded. Keeps the dev affordance
+   accessible without blocking the micro-tree panel UI. */
+@media (max-width:680px){
+  .dev-panel{
+    left:8px;top:8px;
+    padding:4px 6px;
+    opacity:0.5;
+  }
+  .dev-panel:not(.dev-expanded) .dev-reset-btn{display:none}
+  .dev-panel.dev-expanded{
+    flex-wrap:wrap;
+    max-width:calc(100vw - 24px);
+    opacity:1;
+  }
 }
 /* ===== END DEV RESET PANEL ===== */
 .codex-panel{position:fixed;inset:0;z-index:450;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s}
@@ -2096,7 +2272,7 @@ body.codex-open  .nav-trigger {
 <!-- DEV RESET PANEL — wipes all ga_* localStorage keys and reloads.
      Temporary dev affordance; remove before shipping to production. -->
 <div class="dev-panel" title="Development tools — clears all ga_* localStorage keys">
-  <span class="dev-panel-label">DEV</span>
+  <span class="dev-panel-label" onclick="this.parentElement.classList.toggle('dev-expanded')">DEV</span>
   <button class="dev-reset-btn" onclick="devFullReset()" title="Clear all Gamer Ascension localStorage keys and reload this page">Full Reset</button>
   <button class="dev-reset-btn" onclick="devBackToStart()" title="Clear all localStorage and return to the Evermark intro video (full first-time experience)">Back to Start</button>
   <button class="dev-reset-btn" onclick="devAutoComplete()" title="Mark all modules complete and fire the ascension sequence">Auto-Complete</button>
@@ -2189,6 +2365,46 @@ body.codex-open  .nav-trigger {
      panel, open the lesson overlay with that sub-unit's content sliced.
      Finish sub-unit → close lesson overlay, reopen this panel. The body
      of the panel is rebuilt on every open via buildMicroTreePanel(). -->
+<!-- Tutorial video overlay — fires once on first arrival to the macro-tree
+     (after the portal-dive pull-back settles). Manual play (no autoplay).
+     Skip from frame one. URL configured in TUTORIAL_VIDEO_URL — when
+     empty, the overlay never fires (silent no-op until video produced). -->
+<div class="tutorial-overlay" id="tutorialOverlay" role="dialog" aria-label="Tutorial">
+  <div class="tutorial-panel" id="tutorialPanel">
+    <div class="tutorial-eyebrow">Tutorial</div>
+    <h2 class="tutorial-title">How to use this</h2>
+    <p class="tutorial-subtitle">A quick walkthrough of how the pre-game works. Skip if you want.</p>
+    <div class="tutorial-video-frame" id="tutorialVideoFrame"></div>
+    <div class="tutorial-actions">
+      <button class="tutorial-skip" type="button" onclick="dismissTutorial()">Skip →</button>
+      <button class="tutorial-done" type="button" onclick="dismissTutorial()">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- "Start here" indicator on the macro-tree's Gap pentagon. Position is
+     updated each animation frame via updateStartHereGapIndicator() to track
+     Gap's screen location. Hidden by default; .visible class added when
+     Gap is the next-up module AND the user hasn't yet dismissed it (dismiss
+     happens automatically on first click of Gap). -->
+<div id="startHereGap" class="start-here-indicator start-here-macro" aria-hidden="true">
+  <span class="start-here-text">START HERE</span>
+  <svg class="start-here-arrow" viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M9 13 L1 1 L17 1 Z" fill="currentColor"/>
+  </svg>
+</div>
+
+<!-- "Start here" indicator on the micro-tree panel's first sub-unit node.
+     Same visual pattern as the macro-tree one, but positioned over the
+     panel's first-current node. Shown only on first-ever micro-tree open
+     (gated by ga_microtree_first_seen flag, set on first node click). -->
+<div id="startHereMicro" class="start-here-indicator start-here-micro" aria-hidden="true">
+  <span class="start-here-text">START HERE</span>
+  <svg class="start-here-arrow" viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M9 13 L1 1 L17 1 Z" fill="currentColor"/>
+  </svg>
+</div>
+
 <div class="micro-tree-overlay" id="microTreeOverlay" role="dialog" aria-label="Module path">
   <div class="micro-tree-panel" id="microTreePanel"></div>
 </div>
@@ -4651,6 +4867,10 @@ function drawFrame(){
   updateEffects();
   updateCrownParticles();
 
+  // Position the "START HERE" indicator over Gap on the macro-tree.
+  // Hidden automatically when the user has dismissed it or Gap is done.
+  updateStartHereGapIndicator();
+
   requestAnimationFrame(drawFrame);
 }
 
@@ -5831,6 +6051,197 @@ function drawPregameNodes(){
 }
 
 
+// =============================================================
+// "START HERE" INDICATOR — macro-tree (Gap pentagon)
+// =============================================================
+// Positions a DOM overlay (#startHereGap) above Gap's current pentagon
+// position on the macro-tree. Called every frame from drawFrame.
+// Hidden when:
+//  - User has dismissed (clicked Gap once → ga_macro_start_here_dismissed=1)
+//  - Gap is already completed
+//  - Gap hasn't yet "locked" into its pentagon position (still drifting/orbiting)
+//  - The user is currently in another full-screen modal (lesson, micro-tree
+//    panel, ascension sequence, etc.)
+function updateStartHereGapIndicator(){
+  var indicator = document.getElementById('startHereGap');
+  if(!indicator) return;
+
+  // Gating: dismissed, Gap done, or higher-priority overlay open?
+  var dismissed = localStorage.getItem('ga_macro_start_here_dismissed') === '1';
+  var gapDone = (typeof completed !== 'undefined') && completed.indexOf('gap') !== -1;
+  var lessonOpen = document.getElementById('lessonOverlay') &&
+                   document.getElementById('lessonOverlay').classList.contains('open');
+  var microOpen = document.getElementById('microTreeOverlay') &&
+                  document.getElementById('microTreeOverlay').classList.contains('open');
+  var tutorialOpen = document.getElementById('tutorialOverlay') &&
+                     document.getElementById('tutorialOverlay').classList.contains('open');
+  var nodePanelOpen = document.querySelector('.node-panel.open') !== null;
+  var threshOpen = document.querySelector('.threshold-overlay.open') !== null;
+
+  if(dismissed || gapDone || lessonOpen || microOpen || tutorialOpen || nodePanelOpen || threshOpen){
+    indicator.classList.remove('visible');
+    return;
+  }
+
+  // Find Gap. The indicator tracks Gap's position whether it's still
+  // orbiting (pre-first-click), drifting toward its lock position, or
+  // already locked. The whole point of the indicator is to teach the
+  // user what to click — so it must be visible WHILE Gap is reachable
+  // for clicking, which is throughout the orbit phase.
+  var gapNode = (typeof PREGAME_NODES !== 'undefined') ? PREGAME_NODES[0] : null;
+  if(!gapNode) { indicator.classList.remove('visible'); return; }
+
+  // Compute Gap's screen position. The macro-tree canvas is rendered at
+  // CSS coordinates that match its internal coordinates (no scaling) for
+  // the main scene. We translate the canvas-space x,y to viewport-space
+  // by adding the canvas element's bounding rect.
+  var pos = nodePos(gapNode);
+  var canvas = (typeof treeCanvas !== 'undefined') ? treeCanvas : null;
+  if(!canvas) { indicator.classList.remove('visible'); return; }
+  var canvasRect = canvas.getBoundingClientRect();
+  // The canvas is sized via CSS to the viewport, so canvas-internal coords
+  // need to be scaled by the ratio of CSS size to internal size.
+  var scaleX = canvasRect.width / canvas.width;
+  var scaleY = canvasRect.height / canvas.height;
+  var screenX = canvasRect.left + pos.x * scaleX;
+  var screenY = canvasRect.top + pos.y * scaleY;
+
+  // Position the indicator just above the pentagon (account for pentagon
+  // height — roughly 36px in screen units after canvas scaling, plus
+  // some breathing room). The CSS `transform:translate(-50%,-100%)` then
+  // shifts the indicator so its bottom edge sits at our top coordinate.
+  var pentagonHalfHeight = 28; // approximate
+  var topOffset = screenY - pentagonHalfHeight - 6; // 6px gap above pentagon
+
+  indicator.style.left = Math.round(screenX) + 'px';
+  indicator.style.top = Math.round(topOffset) + 'px';
+
+  // Set the module color (Gap = violet). Use the imbuement palette so
+  // even at zero saturation (parchment baseline) the indicator reads
+  // as "this will become violet."
+  var palette = (typeof getModulePalette === 'function') ? getModulePalette('gap') : null;
+  if(palette){
+    indicator.style.setProperty('--start-here-color', palette.pulseStroke || '#d8b8ff');
+    indicator.style.setProperty('--start-here-glow', palette.bright + '0.55)');
+  }
+  indicator.classList.add('visible');
+}
+
+// Dismiss the macro-tree start-here indicator. Called when the user
+// clicks Gap (any module-open path that targets gap). One-shot — sets
+// the flag in localStorage so the indicator never shows again.
+function dismissStartHereGap(){
+  localStorage.setItem('ga_macro_start_here_dismissed', '1');
+  var el = document.getElementById('startHereGap');
+  if(el) el.classList.remove('visible');
+}
+
+// =============================================================
+// "START HERE" INDICATOR — micro-tree (first sub-unit node)
+// =============================================================
+// Positions a DOM overlay (#startHereMicro) above the first non-done
+// node in the active micro-tree panel. Called from buildMicroTreePanel
+// after the panel renders. Hidden when:
+//  - User has dismissed (clicked any micro-tree node once → ga_microtree_first_seen=1)
+//  - No current node exists (e.g. all done)
+function updateStartHereMicroIndicator(moduleId){
+  var indicator = document.getElementById('startHereMicro');
+  if(!indicator) return;
+
+  var dismissed = localStorage.getItem('ga_microtree_first_seen') === '1';
+  if(dismissed){
+    indicator.classList.remove('visible');
+    return;
+  }
+
+  // Find the first hit button in current state. The chain renders with
+  // hits laid out via percentage positions on the micro-tree-hits layer.
+  var firstCurrent = document.querySelector('#microTreePanel .micro-tree-hit:not(:disabled)');
+  if(!firstCurrent){
+    indicator.classList.remove('visible');
+    return;
+  }
+
+  // Position the indicator above the hit. Use the hit's bounding rect
+  // so we track exactly where the user is supposed to tap.
+  // Wait one frame for the panel to lay out before measuring.
+  requestAnimationFrame(function(){
+    var rect = firstCurrent.getBoundingClientRect();
+    if(rect.width === 0){ indicator.classList.remove('visible'); return; }
+    var centerX = rect.left + rect.width / 2;
+    var topY = rect.top - 6; // 6px above the hit
+
+    indicator.style.left = Math.round(centerX) + 'px';
+    indicator.style.top = Math.round(topY) + 'px';
+
+    var palette = (typeof getModulePalette === 'function') ? getModulePalette(moduleId) : null;
+    if(palette){
+      indicator.style.setProperty('--start-here-color', palette.pulseStroke || '#d8b8ff');
+      indicator.style.setProperty('--start-here-glow', palette.bright + '0.55)');
+    }
+    indicator.classList.add('visible');
+  });
+}
+
+// Dismiss the micro-tree start-here indicator. Called on any node click
+// from inside the panel (sub-unit, gate, or mega).
+function dismissStartHereMicro(){
+  localStorage.setItem('ga_microtree_first_seen', '1');
+  var el = document.getElementById('startHereMicro');
+  if(el) el.classList.remove('visible');
+}
+
+// =============================================================
+// TUTORIAL VIDEO OVERLAY (post-Phase-4.5)
+// =============================================================
+// Fires once on the first dive-in arrival to the macro-tree, after the
+// camera pull-back settles. Plays an AgentOpus tutorial that explains
+// what the macro-tree is and what to click. Manual play, skip from
+// frame one, gated by ga_macrotree_tutorial_seen so it never replays.
+//
+// URL: drop a YouTube unlisted embed URL (format: https://www.youtube.com/embed/<id>)
+// into TUTORIAL_VIDEO_URL once production completes. Until then the
+// overlay is a silent no-op.
+// =============================================================
+
+var TUTORIAL_VIDEO_URL = ''; // Fill in once AgentOpus tutorial is produced
+
+function openTutorialOverlay(){
+  // Don't fire if already seen, or no URL configured.
+  if(localStorage.getItem('ga_macrotree_tutorial_seen') === '1') return;
+  if(!TUTORIAL_VIDEO_URL) return;
+
+  var overlay = document.getElementById('tutorialOverlay');
+  var frame = document.getElementById('tutorialVideoFrame');
+  if(!overlay || !frame) return;
+
+  // Build the iframe lazily so unviewed tutorials don't preload YouTube.
+  if(!frame.querySelector('iframe')){
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute('src', TUTORIAL_VIDEO_URL);
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('title', 'How to use this');
+    frame.appendChild(iframe);
+  }
+
+  overlay.classList.add('open');
+}
+
+function dismissTutorial(){
+  var overlay = document.getElementById('tutorialOverlay');
+  var frame = document.getElementById('tutorialVideoFrame');
+  if(overlay) overlay.classList.remove('open');
+  // Remove the iframe to stop playback (audio won't continue after close).
+  if(frame){
+    var iframe = frame.querySelector('iframe');
+    if(iframe) iframe.remove();
+  }
+  localStorage.setItem('ga_macrotree_tutorial_seen', '1');
+}
+
+
 // Collect all node positions for sonar collision detection
 function getAllNodePositions(){
   var positions = [];
@@ -6641,6 +7052,11 @@ function runDiveIn(){
           wrap.classList.remove('dive-settle');
           diveInActive = false;
           markFirstPregameVisitComplete();
+          // After the camera settles, fire the tutorial video overlay
+          // if this user hasn't seen it yet AND a URL is configured.
+          // Small delay so the user has a beat to register the macro-tree
+          // before the overlay drops in.
+          setTimeout(function(){ openTutorialOverlay(); }, 600);
         }
       }
       requestAnimationFrame(tickB);
@@ -8832,6 +9248,13 @@ var lessonOrder=['gap','engine','interpreter'];
 function openLesson(id){
   var lesson=LESSONS[id];if(!lesson)return;
 
+  // If the user is clicking Gap, dismiss the macro-tree "START HERE"
+  // indicator — they've learned the click pattern. (Engine and Interpreter
+  // never get the indicator, so no need to gate by id here other than gap.)
+  if(id === 'gap'){
+    dismissStartHereGap();
+  }
+
   // For modules with a sub-unit chain (Phase 4 v2): open the micro-tree
   // panel instead of the lesson overlay. The lesson overlay opens later
   // when the user clicks a sub-unit or gate node from inside the panel.
@@ -9483,6 +9906,16 @@ function openMicroTreePanel(moduleId){
   activeMicroTreeModule = moduleId;
   // Wire hover effects so hits brighten their underlying halo on mouseover.
   attachMicroTreeHovers();
+  // Wire the "START HERE" indicator over the first non-done node. Only
+  // shows once ever — first micro-tree open in the user's lifetime.
+  updateStartHereMicroIndicator(moduleId);
+  // Wire dismiss-on-any-click for the micro indicator: a single delegated
+  // listener that catches any click on a hit button. This way wether the
+  // user taps the highlighted current node OR a done node (review), the
+  // indicator dismisses.
+  panel.querySelectorAll('.micro-tree-hit').forEach(function(hit){
+    hit.addEventListener('click', dismissStartHereMicro, { once: false });
+  });
   // Tell Guide what's happening — same context signal as the v1 flow.
   if(typeof Guide !== 'undefined' && typeof Guide.setContext === 'function'){
     Guide.setContext('module-open', { moduleId: moduleId });
@@ -10707,11 +11140,14 @@ function completeModuleInterpreter(){
 // =============================================================
 
 function triggerFirstRetrievalGuide(){
-  if(typeof Guide === 'undefined' || typeof Guide.summonOneOff !== 'function') return;
-  Guide.summonOneOff([
-    { speaker: 'The Guide',
-      text: "You just answered from memory instead of looking at the page. That act leaves a trace. We call the trace Essence." }
-  ]);
+  // Intentionally a no-op (post-Phase-4.5 revision). Operator note: the
+  // Guide's "Essence" explanation was distracting users who were mid-
+  // retrieval — it broke flow on the very moment we want them concentrated.
+  // The Essence concept is now introduced through other channels (the
+  // counter ticking up after submission, plus the first-unit-complete
+  // Guide moment which is a low-friction beat). This stub is preserved
+  // so the call sites in retrieval submission don't error.
+  return;
 }
 
 function triggerFirstUnitCompleteGuide(){
