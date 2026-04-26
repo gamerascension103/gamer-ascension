@@ -458,13 +458,16 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 }
 
 /* =====================================================================
-   TUTORIAL VIDEO OVERLAY (post-Phase-4.5)
-   Fires once on first arrival to the macro-tree (after portal-dive pull-
-   back). Plays an AgentOpus-produced UI tutorial. Manual play; skip from
-   frame one. Once dismissed, ga_macrotree_tutorial_seen=1 and never fires
-   again. If TUTORIAL_VIDEO_URL is empty (production not yet done), the
+   ATHENEUM INTRO VIDEO OVERLAY (post-Phase-4.5; reframed 2026-04)
+   Fires once on first arrival to the Atheneum (after portal-dive pull-
+   back). Plays a coach-voiced introduction explaining Gamer Ascension
+   as an education course, handing off to the user to tap the pulsing
+   Gap node. Manual play; skip from frame one. Once dismissed,
+   ga_atheneum_intro_seen=1 and never fires again. If
+   ATHENEUM_INTRO_VIDEO_URL is empty (production not yet done), the
    overlay never opens — fresh users go straight to the macro-tree with
-   the "Start Here" indicator doing the instructional work.
+   the "Tap to begin" affordance and "Start Here" indicators doing the
+   instructional work.
    ===================================================================== */
 .tutorial-overlay{
   position:fixed;inset:0;z-index:280;
@@ -2365,19 +2368,22 @@ body.codex-open  .nav-trigger {
      panel, open the lesson overlay with that sub-unit's content sliced.
      Finish sub-unit → close lesson overlay, reopen this panel. The body
      of the panel is rebuilt on every open via buildMicroTreePanel(). -->
-<!-- Tutorial video overlay — fires once on first arrival to the macro-tree
-     (after the portal-dive pull-back settles). Manual play (no autoplay).
-     Skip from frame one. URL configured in TUTORIAL_VIDEO_URL — when
-     empty, the overlay never fires (silent no-op until video produced). -->
-<div class="tutorial-overlay" id="tutorialOverlay" role="dialog" aria-label="Tutorial">
+<!-- Atheneum intro video overlay — fires once on first arrival to the
+     Atheneum (after portal-dive pull-back settles). Manual play (no
+     autoplay). Skip from frame one. URL configured in
+     ATHENEUM_INTRO_VIDEO_URL — when empty, overlay never fires
+     (silent no-op until video produced). The video itself is a coach-
+     voiced introduction to Gamer Ascension as an education course;
+     reframe in 2026-04 replaced the original Guide-led welcome moment. -->
+<div class="tutorial-overlay" id="tutorialOverlay" role="dialog" aria-label="Welcome to Gamer Ascension">
   <div class="tutorial-panel" id="tutorialPanel">
-    <div class="tutorial-eyebrow">Tutorial</div>
-    <h2 class="tutorial-title">How to use this</h2>
-    <p class="tutorial-subtitle">A quick walkthrough of how the pre-game works. Skip if you want.</p>
+    <div class="tutorial-eyebrow">Welcome</div>
+    <h2 class="tutorial-title">Gamer Ascension</h2>
+    <p class="tutorial-subtitle">An education course built for the way gamers think. Skip if you want.</p>
     <div class="tutorial-video-frame" id="tutorialVideoFrame"></div>
     <div class="tutorial-actions">
-      <button class="tutorial-skip" type="button" onclick="dismissTutorial()">Skip →</button>
-      <button class="tutorial-done" type="button" onclick="dismissTutorial()">Got it</button>
+      <button class="tutorial-skip" type="button" onclick="dismissAtheneumIntro()">Skip →</button>
+      <button class="tutorial-done" type="button" onclick="dismissAtheneumIntro()">Got it</button>
     </div>
   </div>
 </div>
@@ -6698,42 +6704,60 @@ function dismissStartHereMicro(){
 // =============================================================
 // TUTORIAL VIDEO OVERLAY (post-Phase-4.5)
 // =============================================================
-// Fires once on the first dive-in arrival to the macro-tree, after the
-// camera pull-back settles. Plays an AgentOpus tutorial that explains
-// what the macro-tree is and what to click. Manual play, skip from
-// frame one, gated by ga_macrotree_tutorial_seen so it never replays.
+// ATHENEUM INTRODUCTION VIDEO
+// =============================================================
+// Fires once on the first dive-in arrival to the Atheneum, after the
+// camera pull-back settles. Plays a coach-voiced introduction video
+// (operator's own voiceover paired with AgentOpus-generated visuals)
+// that frames Gamer Ascension as an education course built for gamers
+// and hands off to the user to tap the pulsing Gap node to begin.
 //
-// URL: drop a YouTube unlisted embed URL (format: https://www.youtube.com/embed/<id>)
-// into TUTORIAL_VIDEO_URL once production completes. Until then the
-// overlay is a silent no-op.
+// This video replaced the original Guide-led Atheneum welcome moment
+// in 2026-04. The reframe: this is a gamified education product, not
+// a fantasy game with educational content. The coach is the teacher.
+// Guide remains in the world for quest delivery and lore moments, but
+// brand orientation comes from the operator's voice — strengthening
+// the coach <-> student relationship that's load-bearing for the
+// Calendly conversion the path eventually drives toward.
+//
+// Manual play, skip from frame one (operator's call: don't trap the
+// user). Once dismissed, ga_atheneum_intro_seen=1 and the video never
+// fires again. If ATHENEUM_INTRO_VIDEO_URL is empty (production not
+// yet done), the overlay never opens — fresh users go straight to the
+// macro-tree with the "Tap to begin" affordance and "Start Here"
+// indicators doing the instructional work.
+//
+// URL: drop a YouTube unlisted embed URL (format:
+// https://www.youtube.com/embed/<id>) into ATHENEUM_INTRO_VIDEO_URL
+// once production completes.
 // =============================================================
 
-var TUTORIAL_VIDEO_URL = ''; // Fill in once AgentOpus tutorial is produced
+var ATHENEUM_INTRO_VIDEO_URL = ''; // Fill in once intro video is produced
 
-function openTutorialOverlay(){
+function openAtheneumIntro(){
   // Don't fire if already seen, or no URL configured.
-  if(localStorage.getItem('ga_macrotree_tutorial_seen') === '1') return;
-  if(!TUTORIAL_VIDEO_URL) return;
+  if(localStorage.getItem('ga_atheneum_intro_seen') === '1') return;
+  if(!ATHENEUM_INTRO_VIDEO_URL) return;
 
   var overlay = document.getElementById('tutorialOverlay');
   var frame = document.getElementById('tutorialVideoFrame');
   if(!overlay || !frame) return;
 
-  // Build the iframe lazily so unviewed tutorials don't preload YouTube.
+  // Build the iframe lazily so unviewed videos don't preload YouTube.
   if(!frame.querySelector('iframe')){
     var iframe = document.createElement('iframe');
-    iframe.setAttribute('src', TUTORIAL_VIDEO_URL);
+    iframe.setAttribute('src', ATHENEUM_INTRO_VIDEO_URL);
     iframe.setAttribute('frameborder', '0');
     iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
     iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('title', 'How to use this');
+    iframe.setAttribute('title', 'Welcome to Gamer Ascension');
     frame.appendChild(iframe);
   }
 
   overlay.classList.add('open');
 }
 
-function dismissTutorial(){
+function dismissAtheneumIntro(){
   var overlay = document.getElementById('tutorialOverlay');
   var frame = document.getElementById('tutorialVideoFrame');
   if(overlay) overlay.classList.remove('open');
@@ -6742,8 +6766,14 @@ function dismissTutorial(){
     var iframe = frame.querySelector('iframe');
     if(iframe) iframe.remove();
   }
-  localStorage.setItem('ga_macrotree_tutorial_seen', '1');
+  localStorage.setItem('ga_atheneum_intro_seen', '1');
 }
+
+// Legacy aliases — kept so any older call sites still work. Both
+// names point to the same functions/variables; remove these once a
+// future cleanup pass confirms nothing else references them.
+function openTutorialOverlay(){ return openAtheneumIntro(); }
+function dismissTutorial(){ return dismissAtheneumIntro(); }
 
 
 // Collect all node positions for sonar collision detection
@@ -7614,11 +7644,16 @@ function runDiveIn(){
           wrap.classList.remove('dive-settle');
           diveInActive = false;
           markFirstPregameVisitComplete();
-          // After the camera settles, fire the tutorial video overlay
-          // if this user hasn't seen it yet AND a URL is configured.
-          // Small delay so the user has a beat to register the macro-tree
-          // before the overlay drops in.
-          setTimeout(function(){ openTutorialOverlay(); }, 600);
+          // After the camera settles, fire the Atheneum intro video
+          // overlay if this user hasn't seen it yet AND a URL is
+          // configured. Small delay so the user has a beat to register
+          // the macro-tree before the overlay drops in.
+          //
+          // The video is a coach-voiced introduction to Gamer Ascension
+          // as an education course — reframed from the original
+          // Guide-led welcome moment in 2026-04. See
+          // openAtheneumIntro() comment block for the full reasoning.
+          setTimeout(function(){ openAtheneumIntro(); }, 600);
         }
       }
       requestAnimationFrame(tickB);
@@ -13041,42 +13076,43 @@ window.addEventListener('resize',function(){centerTree();});
   });
 </script>
 <script>
-  // Initialize the Guide for the Atheneum chamber
-  // The Guide auto-summons on first visit (once the tutorial has been seen/skipped),
-  // and thereafter lives as a summon icon in the bottom-right corner.
+  // Initialize the Guide for the Atheneum chamber.
+  //
+  // 2026-04 reframe: The Guide no longer AUTO-SUMMONS at the Atheneum on
+  // first visit or returning visit. Brand orientation has moved to the
+  // coach-voiced Atheneum intro video (openAtheneumIntro), which fires
+  // after dive-in completes. The reasoning: this is a gamified education
+  // course, not a fantasy game with educational content. The coach is
+  // the teacher; Guide is a subordinate NPC for quest delivery and
+  // lore moments. Letting Guide carry the welcome was leaking the
+  // brand-voice relationship (user bonds with Guide instead of with
+  // the coach), which weakened the eventual Calendly conversion.
+  //
+  // Guide is still initialized — the summon button still appears in
+  // the bottom-right corner, the user can still manually summon Guide
+  // if they want orientation, and the per-module context scripts still
+  // register so Guide responds with the right line when summoned from
+  // inside Gap/Engine/Interpreter. Only the auto-summon is suppressed.
+  //
+  // Implementation: we mark the Atheneum's "seen" flag before Guide.init
+  // runs, which short-circuits Guide.init's auto-summon path while
+  // leaving every other piece of Guide infrastructure intact.
   window.addEventListener('load', function(){
-    // Small delay so the Guide initializes after the tutorial has had a chance to open
     setTimeout(function(){
       if(typeof Guide === 'undefined') return;
 
-      // On first visit the dive-in animation runs first (see runDiveIn below).
-      // Guide must not appear until the dive completes — otherwise he pops up
-      // while the camera is still pulling in. We delay his auto-summon longer
-      // on first visit; returning users get the standard 2-second delay.
-      var isFirstVisit = isFirstPregameVisit();
+      // Skip auto-summon at the Atheneum (see comment block above).
+      try { localStorage.setItem('ga_guide_seen_atheneum', '1'); } catch(e){}
 
-      // Compressed first-visit script. Two lines. No UI-direction language
-      // that breaks the fiction, but explicit enough that a first-time user
-      // knows exactly what to tap and what to expect.
-      var firstVisitScript = [
+      // Manual-summon script — what Guide says if the user actively
+      // clicks the summon button. Reframed to read as Guide responding
+      // to a question rather than introducing the chamber unprompted.
+      // Kept short — orientation hint, then dismissed. The video and
+      // the "Tap to begin" UI carry the actual onboarding work.
+      var manualSummonScript = [
         {
           speaker: 'The Guide',
-          text: 'Welcome to the Atheneum. This is the chamber of skills.'
-        },
-        {
-          speaker: 'The Guide',
-          text: 'Tap the pulsing node at the center of the map. That is The Gap — the first of three modules. Each one unlocks the next.'
-        }
-      ];
-
-      // Returning-user script. Acknowledges the return, offers orientation.
-      // Fires when the user opens pregame.html with ga_first_pregame_arrival
-      // already set but no completed modules yet — i.e. they bounced after
-      // the dive-in and are coming back.
-      var returningScript = [
-        {
-          speaker: 'The Guide',
-          text: 'You are back in the Atheneum. The work is where you left it.'
+          text: 'You stand in the Atheneum. The pulsing node at the center is The Gap — the first of three modules. Begin there.'
         }
       ];
 
@@ -13084,16 +13120,13 @@ window.addEventListener('resize',function(){centerTree();});
         chamber: 'atheneum',
         chamberName: 'The Atheneum',
         chamberLabel: 'Skill Mastery',
-        // On first visit, delay long enough for the dive-in animation to
-        // complete (~3.5s total: 2s zoom settle + buffer). On return, snap
-        // to the normal 2s delay.
-        autoSummonDelay: isFirstVisit ? 4000 : 2000,
+        autoSummonDelay: 4000, // moot since seen flag is set above
         summonPosition: { bottom: 170, right: 24 },
         onDismiss: function(){
-          // Tutorial video removed from the product — no post-dismiss action.
-          // Users who want a refresher can summon Guide again.
+          // No post-dismiss action — the video and UI affordances
+          // carry the orientation work.
         },
-        script: isFirstVisit ? firstVisitScript : returningScript
+        script: manualSummonScript
       });
 
       // ---- CONTEXT-AWARE GUIDE SCRIPTS (session 8) ----
