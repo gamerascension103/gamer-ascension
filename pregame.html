@@ -4305,33 +4305,12 @@ function updateEffects(){
     }
 
     else if(e.type === 'treeLightup'){
-      // Constellation root bloom — pulses the center of the pillar constellation
-      var centers = {
-        vitality:  {x: VITALITY_CX,  y: VITALITY_CY,  color:'rgba(255,100,68,'},
-        spirit:    {x: SPIRIT_CX,    y: SPIRIT_CY,    color:'rgba(187,153,255,'},
-        alignment: {x: ALIGNMENT_CX, y: ALIGNMENT_CY, color:'rgba(85,255,170,'}
-      };
-      var con = centers[e.pillar];
-      if(con){
-        var alpha = e.life * 0.7;
-        var bloomR = 80 + (1 - e.life) * 200;
-        var bloom = treeCtx.createRadialGradient(con.x, con.y, 0, con.x, con.y, bloomR);
-        bloom.addColorStop(0, con.color + (alpha * 0.6) + ')');
-        bloom.addColorStop(0.4, con.color + (alpha * 0.2) + ')');
-        bloom.addColorStop(1, con.color + '0)');
-        treeCtx.fillStyle = bloom;
-        treeCtx.beginPath();
-        treeCtx.arc(con.x, con.y, bloomR, 0, Math.PI * 2);
-        treeCtx.fill();
-        // Ring pulse
-        treeCtx.strokeStyle = con.color + alpha + ')';
-        treeCtx.lineWidth = 1.5;
-        treeCtx.shadowBlur = 20;
-        treeCtx.shadowColor = con.color + '0.8)';
-        treeCtx.beginPath();
-        treeCtx.arc(con.x, con.y, 24 + (1 - e.life) * 60, 0, Math.PI * 2);
-        treeCtx.stroke();
-      }
+      // Legacy effect — previously bloomed at the three pillar constellation
+      // positions when a pregame module completed. The constellations have
+      // been replaced by the unified curriculum path; this effect is no
+      // longer spawned anywhere. Kept as a no-op stub so any legacy spawn
+      // site discovered later doesn't crash. Decrement life so the effect
+      // self-cleans from the effects array.
       e.life -= 1 / e.duration;
     }
 
@@ -4597,20 +4576,27 @@ function spawnLeyParticles(){
 
 function spawnTreeParticles(){
   if(!tesseractActive) return;
-  var targets = [
-    {tx: VITALITY_CX,  ty: VITALITY_CY - 220, color:'rgba(255,100,68,'},
-    {tx: ALIGNMENT_CX, ty: ALIGNMENT_CY,       color:'rgba(85,255,170,'},
-    {tx: SPIRIT_CX,    ty: SPIRIT_CY,          color:'rgba(187,153,255,'},
-  ];
-  // Rhythmic bursts — each tree gets a particle every ~25 frames
+  // The Tesseract is the gateway to the curriculum path. Energy from the
+  // gateway flows down to the path's first available node — the one the
+  // user is being prompted to click. That's Energy Management (week 1
+  // first entry, Vitality, foundational), which is the action-anchor of
+  // the program. Stream is single-target, single-color (Vitality red),
+  // matching the visual "blink" emphasis on Energy Management.
+  //
+  // Previously this fired three streams to three pillar constellation
+  // positions that no longer exist. Now: one stream to one destination,
+  // matching the new path architecture.
+  if(typeof PATH_NODES === 'undefined') return;
+  var energyNode = PATH_NODES[0]; // first entry is Energy Management
+  if(!energyNode) return;
+  var target = {tx: energyNode.x, ty: energyNode.y, color: 'rgba(255,100,68,'};
+  // Rhythmic bursts — particle every ~25 frames
   if(Math.floor(t % 25) === 0){
-    targets.forEach(function(tgt){
-      treeParticles.push({
-        tx: tgt.tx, ty: tgt.ty, color: tgt.color,
-        progress: 0,
-        speed: 0.0015 + Math.random() * 0.0008,
-        size: Math.random() * 2.5 + 1.0
-      });
+    treeParticles.push({
+      tx: target.tx, ty: target.ty, color: target.color,
+      progress: 0,
+      speed: 0.0015 + Math.random() * 0.0008,
+      size: Math.random() * 2.5 + 1.0
     });
   }
 }
@@ -6468,7 +6454,7 @@ function dismissTutorial(){
 // Collect all node positions for sonar collision detection
 function getAllNodePositions(){
   var positions = [];
-  // Pregame nodes
+  // Pregame nodes (orbiting / locked)
   PREGAME_NODES.forEach(function(n){
     if(!completed.includes(n.id)){
       var pos = nodePos(n);
@@ -6476,10 +6462,14 @@ function getAllNodePositions(){
       positions.push({x:pos.x, y:pos.y, r:36, color:p.bright, lit:0});
     }
   });
-  // Constellation root nodes (approximate world positions — rotated so use centers)
-  positions.push({x:VITALITY_CX,  y:VITALITY_CY,  r:22, color:'rgba(255,100,68,',  lit:0});
-  positions.push({x:SPIRIT_CX,    y:SPIRIT_CY,    r:22, color:'rgba(187,153,255,', lit:0});
-  positions.push({x:ALIGNMENT_CX, y:ALIGNMENT_CY, r:22, color:'rgba(85,255,170,',  lit:0});
+  // Curriculum path skill nodes (replaces the old constellation root positions)
+  if(typeof PATH_NODES !== 'undefined'){
+    PATH_NODES.forEach(function(pn){
+      if(pn.kind !== 'skill') return;
+      var rgb = (typeof pillarColorRgb === 'function') ? pillarColorRgb(pn.pillar) : '255,255,255';
+      positions.push({x:pn.x, y:pn.y, r:18, color:'rgba(' + rgb + ',', lit:0});
+    });
+  }
   return positions;
 }
 
@@ -7490,40 +7480,38 @@ function openNodePanel(id){
     lActions.appendChild(prevBtn);
     lockDiv.appendChild(lbl);lockDiv.appendChild(lActions);
     actions.appendChild(lockDiv);
-  } else if(isPathSkill && isPregameComplete()){
-    // Curriculum path skill, pregame is done. Lesson content for these
-    // skills doesn't exist yet (Session A ships path architecture only;
-    // lessons begin with Energy Management in a later session). Show a
-    // dignified "in development" affordance rather than the "book a call"
-    // wall — these clients have already converted.
-    var hasLesson = (typeof LESSONS !== 'undefined') && LESSONS[id];
-    if(hasLesson){
-      var lessonBtn=document.createElement('button');
-      lessonBtn.className='node-panel-btn';
-      lessonBtn.textContent= isDone ? 'Read again →' : 'Open lesson →';
-      lessonBtn.onclick=function(){closeNodePanel();openLesson(id);};
-      actions.appendChild(lessonBtn);
-    } else {
-      var soonDiv=document.createElement('div');
-      soonDiv.className='node-panel-locked';
-      var soonLbl=document.createElement('div');
-      soonLbl.className='node-panel-locked-label';
-      soonLbl.textContent='Lesson in development. The path itself is built — content arrives skill by skill, beginning with Energy Management.';
-      soonDiv.appendChild(soonLbl);
-      actions.appendChild(soonDiv);
-    }
+  } else if(isPathSkill && isPregameComplete() && (typeof LESSONS !== 'undefined') && LESSONS[id]){
+    // Curriculum path skill with a real lesson available. User has finished
+    // pregame and the lesson content for this skill exists. Open it.
+    var lessonBtn=document.createElement('button');
+    lessonBtn.className='node-panel-btn';
+    lessonBtn.textContent= isDone ? 'Read again →' : 'Open lesson →';
+    lessonBtn.onclick=function(){closeNodePanel();openLesson(id);};
+    actions.appendChild(lessonBtn);
   } else {
+    // Locked content. This branch covers two audiences:
+    //   1) Pre-paying visitors browsing the path who haven't converted
+    //   2) Visitors past pregame whose lesson hasn't been written yet
+    //
+    // Both audiences are conversion opportunities. Skills on the curriculum
+    // path are gatekept behind the coaching membership — every locked node
+    // is a chance to drive the user toward Calendly. Frame the lock as
+    // promise rather than apology: name what they get, then hand them the
+    // call to begin.
     var lockDiv2=document.createElement('div');
     lockDiv2.className='node-panel-locked';
     var lbl2=document.createElement('div');
     lbl2.className='node-panel-locked-label';
-    lbl2.textContent='This skill unlocks when you join the program';
+    lbl2.innerHTML = '<strong style="display:block;margin-bottom:8px;color:#f0ece4;font-family:Cinzel,serif;letter-spacing:.04em">This is part of the work that comes next.</strong>' +
+                     'Sixteen weeks. Twenty-two skills. A guided path from where you are to The Vantage. Every skill on this path opens once you begin.';
     var lActions2=document.createElement('div');
     lActions2.className='node-panel-locked-actions';
     var bookBtn=document.createElement('a');
     bookBtn.className='node-panel-btn';
     bookBtn.href='https://calendly.com/straincoaching/insightcall';
-    bookBtn.textContent='Book a call →';
+    bookBtn.target = '_blank';
+    bookBtn.rel = 'noopener';
+    bookBtn.textContent='Book your call →';
     lActions2.appendChild(bookBtn);
     lockDiv2.appendChild(lbl2);lockDiv2.appendChild(lActions2);
     actions.appendChild(lockDiv2);
@@ -11969,14 +11957,17 @@ function ceremonyBeat2_ascensionAndPan(){
 // Alignment (right) → settle mid-canvas looking down on the trees.
 // Final beat (Tesseract close-up + "Your path awaits") comes later.
 //
-// Desktop waypoint timing was tuned by hand and lines up well with the
-// ascension sequence's crawl-light phases. DO NOT modify those values
-// without retesting — the sync is eyeballed across multiple runs.
+// 2026-04 path rebuild: the three pillar constellations have been replaced
+// by a single descending curriculum path. The camera pan choreography is
+// updated to follow the new world's geometry — nexus → Tesseract →
+// curriculum path → settle on Phase 1's first nodes. The pan now traces
+// the user's actual journey: from the pregame above, through the gateway,
+// down into the path that's about to become their world for 16 weeks.
 //
 // Mobile needs different pacing because:
 //   1. Narrower viewport means the same world-space sweep takes longer
 //      to traverse in screen-percentage terms, so durations are stretched
-//   2. Per-tree scale is larger so trees don't feel tiny on phone screens
+//   2. Per-stop scale is larger so destinations don't feel tiny on phone
 //   3. Hold time between legs is slightly longer so the user has time to
 //      register each reveal before the camera moves again
 function runCeremonyCameraPan(onComplete){
@@ -11986,25 +11977,27 @@ function runCeremonyCameraPan(onComplete){
 
   var isMobile = vw < 700;
 
-  // DESKTOP waypoints — DO NOT TOUCH. These were tuned and approved.
+  // DESKTOP waypoints — descend from nexus through Tesseract to curriculum path.
+  //   1. Hold on nexus (the pregame work just completed)
+  //   2. Descend along ley line toward the Tesseract (gateway revealed)
+  //   3. Frame the Tesseract close (the gateway opens)
+  //   4. Continue down to Phase 1 of the path (the curriculum revealed)
+  //   5. Settle wide, showing the full upper path with Tesseract above it
   var desktopWaypoints = [
-    {cx: CX, cy: SPHERE_Y + 60, scale: 0.55, duration: 1200, hold: 600},
-    {cx: VITALITY_CX, cy: VITALITY_CY, scale: 0.7, duration: 1400, hold: 900},
-    {cx: SPIRIT_CX, cy: SPIRIT_CY, scale: 0.7, duration: 1300, hold: 900},
-    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY, scale: 0.7, duration: 1300, hold: 900},
-    {cx: SPIRIT_CX, cy: (SPHERE_Y + SPIRIT_CY) / 2, scale: 0.38, duration: 1400, hold: 500}
+    {cx: CX, cy: SPHERE_Y + 60,     scale: 0.55, duration: 1200, hold: 600},
+    {cx: CX, cy: (SPHERE_Y + TESSERACT_Y) / 2, scale: 0.55, duration: 1300, hold: 600},
+    {cx: TESSERACT_X, cy: TESSERACT_Y, scale: 0.7, duration: 1300, hold: 900},
+    {cx: PATH_CENTER_X, cy: 1700, scale: 0.55, duration: 1500, hold: 900},
+    {cx: PATH_CENTER_X, cy: (TESSERACT_Y + 1900) / 2, scale: 0.42, duration: 1400, hold: 500}
   ];
 
-  // MOBILE waypoints — same shape and world-space targets as desktop, but
-  // with longer durations and bigger per-tree zoom so the sync with
-  // crawl-light feels right on narrow viewports. If mobile timing needs
-  // further tuning, modify only this array.
+  // MOBILE waypoints — same shape, longer durations, tighter zooms.
   var mobileWaypoints = [
-    {cx: CX, cy: SPHERE_Y + 60, scale: 0.65, duration: 1400, hold: 700},
-    {cx: VITALITY_CX, cy: VITALITY_CY, scale: 0.88, duration: 1700, hold: 1100},
-    {cx: SPIRIT_CX, cy: SPIRIT_CY, scale: 0.88, duration: 1600, hold: 1100},
-    {cx: ALIGNMENT_CX, cy: ALIGNMENT_CY, scale: 0.88, duration: 1600, hold: 1100},
-    {cx: SPIRIT_CX, cy: (SPHERE_Y + SPIRIT_CY) / 2, scale: 0.48, duration: 1500, hold: 600}
+    {cx: CX, cy: SPHERE_Y + 60,     scale: 0.65, duration: 1400, hold: 700},
+    {cx: CX, cy: (SPHERE_Y + TESSERACT_Y) / 2, scale: 0.65, duration: 1500, hold: 700},
+    {cx: TESSERACT_X, cy: TESSERACT_Y, scale: 0.88, duration: 1600, hold: 1100},
+    {cx: PATH_CENTER_X, cy: 1700, scale: 0.7, duration: 1700, hold: 1100},
+    {cx: PATH_CENTER_X, cy: (TESSERACT_Y + 1900) / 2, scale: 0.55, duration: 1500, hold: 600}
   ];
 
   var waypoints = isMobile ? mobileWaypoints : desktopWaypoints;
