@@ -552,6 +552,102 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 }
 
 /* =====================================================================
+   POST-PREGAME VIDEO OVERLAY (2026-04 — coach pitch moment)
+   Fires after the post-Interpreter ceremony powerup completes and the
+   camera has settled on the curriculum path. Plays a coach-voiced video
+   making the calibrated ask: book a fifteen-minute call. Vertical aspect
+   ratio (9:16) because the video is a YouTube Short. Once dismissed,
+   ga_post_pregame_video_seen=1 and never fires again. If
+   POST_PREGAME_VIDEO_URL is empty, overlay is a silent no-op.
+   Distinct from .tutorial-overlay (Atheneum intro) so the two don't
+   share open/seen state — both can independently fire across a user's
+   journey.
+   ===================================================================== */
+.postvideo-overlay{
+  position:fixed;inset:0;z-index:285;
+  background:radial-gradient(ellipse at 50% 40%,rgba(26,15,8,.94) 0%,rgba(12,7,4,.98) 60%,rgba(6,3,2,.99) 100%);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .6s cubic-bezier(.22,1,.36,1);
+}
+.postvideo-overlay.open{opacity:1;pointer-events:auto}
+
+.postvideo-panel{
+  position:relative;
+  width:min(380px,calc(100vw - 32px));
+  max-height:calc(100vh - 64px);
+  padding:32px 28px 24px;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  transform:translateY(16px);
+  transition:transform .65s cubic-bezier(.22,1,.36,1);
+  overflow-y:auto;overflow-x:hidden;
+}
+.postvideo-overlay.open .postvideo-panel{transform:translateY(0)}
+
+.postvideo-eyebrow{
+  font-family:'Cinzel',serif;font-size:10px;font-weight:400;
+  letter-spacing:.32em;color:rgba(201,168,76,.7);
+  text-transform:uppercase;
+}
+.postvideo-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(20px,3vw,26px);font-weight:400;
+  color:#e5c574;margin:0;line-height:1.2;text-align:center;
+  text-shadow:0 0 26px rgba(201,168,76,.35);
+}
+.postvideo-frame{
+  width:100%;
+  /* Vertical 9:16 — YouTube Short aspect ratio. Capped height so the
+     panel doesn't require excessive scrolling on landscape viewports. */
+  aspect-ratio:9/16;
+  max-height:62vh;
+  background:#000;
+  border:1px solid rgba(201,168,76,.28);
+  border-radius:5px;
+  overflow:hidden;
+  margin:6px 0 4px;
+  box-shadow:0 0 36px rgba(201,168,76,.12),inset 0 0 0 1px rgba(255,235,190,.06);
+}
+.postvideo-frame iframe{
+  width:100%;height:100%;display:block;border:0;
+}
+.postvideo-actions{
+  display:flex;flex-direction:row;align-items:center;justify-content:space-between;
+  width:100%;gap:12px;margin-top:4px;
+}
+.postvideo-skip{
+  background:transparent;border:none;
+  color:rgba(216,200,170,.45);
+  font-family:'Cinzel',serif;font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;
+  padding:8px 4px;cursor:pointer;
+  transition:color .2s;
+}
+.postvideo-skip:hover{color:rgba(240,236,228,.85)}
+.postvideo-cta{
+  background:linear-gradient(180deg,rgba(201,168,76,.18) 0%,rgba(201,168,76,.08) 100%);
+  border:1px solid rgba(201,168,76,.6);
+  color:#f5e9c8;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  padding:11px 24px;border-radius:3px;cursor:pointer;
+  text-decoration:none;display:inline-block;
+  transition:all .25s;
+  box-shadow:0 0 20px rgba(201,168,76,.18);
+}
+.postvideo-cta:hover{
+  background:linear-gradient(180deg,rgba(201,168,76,.28) 0%,rgba(201,168,76,.14) 100%);
+  border-color:rgba(229,197,116,.95);
+  color:#fff;
+  box-shadow:0 0 28px rgba(229,197,116,.32);
+}
+@media (max-width:680px){
+  .postvideo-panel{padding:24px 18px 20px;gap:12px}
+  .postvideo-title{font-size:18px}
+  .postvideo-frame{max-height:58vh}
+}
+
+/* =====================================================================
    "START HERE" INDICATOR (post-Phase-4.5)
    Highly explicit affordance shown over the first-tap target so brand-
    new users know exactly what to click. Two instances: one over Gap on
@@ -2384,6 +2480,25 @@ body.codex-open  .nav-trigger {
     <div class="tutorial-actions">
       <button class="tutorial-skip" type="button" onclick="dismissAtheneumIntro()">Skip →</button>
       <button class="tutorial-done" type="button" onclick="dismissAtheneumIntro()">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- Post-pregame coach video overlay — fires after the post-Interpreter
+     ceremony powerup completes and the camera settles on the curriculum
+     path. Vertical 9:16 aspect ratio (the video is a YouTube Short).
+     Single CTA: book a call. Skip link unobtrusive in corner. URL
+     configured in POST_PREGAME_VIDEO_URL. When empty, overlay never
+     fires. Once dismissed, ga_post_pregame_video_seen=1 and never
+     re-fires for that user. -->
+<div class="postvideo-overlay" id="postvideoOverlay" role="dialog" aria-label="A message from Jake">
+  <div class="postvideo-panel" id="postvideoPanel">
+    <div class="postvideo-eyebrow">From your coach</div>
+    <h2 class="postvideo-title">A message before you go</h2>
+    <div class="postvideo-frame" id="postvideoFrame"></div>
+    <div class="postvideo-actions">
+      <button class="postvideo-skip" type="button" onclick="dismissPostPregameVideo()">Skip →</button>
+      <a class="postvideo-cta" href="https://calendly.com/straincoaching/insightcall" target="_blank" rel="noopener" onclick="dismissPostPregameVideo()">Book your call →</a>
     </div>
   </div>
 </div>
@@ -6774,6 +6889,76 @@ function dismissAtheneumIntro(){
 // future cleanup pass confirms nothing else references them.
 function openTutorialOverlay(){ return openAtheneumIntro(); }
 function dismissTutorial(){ return dismissAtheneumIntro(); }
+
+
+// =============================================================
+// POST-PREGAME COACH VIDEO
+// =============================================================
+// Fires after the post-Interpreter ceremony powerup completes and the
+// camera has settled on the curriculum path (specifically: at the end
+// of ceremonyBeat5_tesseractOrientation, when the path is visible and
+// the user has just experienced the world transformation).
+//
+// The video is a coach-voiced clip from Jake — addressing a user who
+// just finished the three pregame modules, validating what they did,
+// previewing what the path holds, and making a calibrated single ask:
+// book a fifteen-minute call.
+//
+// This is the trust peak of the entire pregame experience. The user has
+// just done real work, watched the path reveal, earned Bronze, and is
+// at maximum emotional engagement. The video meets them in that state.
+//
+// Vertical 9:16 because the video was produced as a YouTube Short.
+// The frame styling accommodates that aspect ratio gracefully.
+//
+// Once dismissed (via skip OR via Calendly CTA click), the seen flag
+// persists and the overlay won't re-fire on subsequent visits. The
+// header Calendly button continues to carry the CTA forward.
+//
+// Future revision (when membership tier launches): video gets
+// re-recorded with a forked CTA. Primary stays "book a call." Secondary
+// becomes "if you're not ready, create a free account to unlock the
+// Scriptorium and save your progress permanently." See
+// post_pregame_video_script.md for the locked script and production
+// notes.
+// =============================================================
+
+var POST_PREGAME_VIDEO_URL = 'https://www.youtube.com/embed/Q_xi5mf1gOI';
+
+function openPostPregameVideo(){
+  // Don't fire if already seen, or no URL configured.
+  if(localStorage.getItem('ga_post_pregame_video_seen') === '1') return;
+  if(!POST_PREGAME_VIDEO_URL) return;
+
+  var overlay = document.getElementById('postvideoOverlay');
+  var frame = document.getElementById('postvideoFrame');
+  if(!overlay || !frame) return;
+
+  // Build the iframe lazily so unviewed videos don't preload YouTube.
+  if(!frame.querySelector('iframe')){
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute('src', POST_PREGAME_VIDEO_URL);
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('title', 'A message from your coach');
+    frame.appendChild(iframe);
+  }
+
+  overlay.classList.add('open');
+}
+
+function dismissPostPregameVideo(){
+  var overlay = document.getElementById('postvideoOverlay');
+  var frame = document.getElementById('postvideoFrame');
+  if(overlay) overlay.classList.remove('open');
+  // Remove the iframe to stop playback (audio won't continue after close).
+  if(frame){
+    var iframe = frame.querySelector('iframe');
+    if(iframe) iframe.remove();
+  }
+  localStorage.setItem('ga_post_pregame_video_seen', '1');
+}
 
 
 // Collect all node positions for sonar collision detection
@@ -12538,20 +12723,58 @@ function ceremonyBeat5_tesseractOrientation(){
   //      though currently inert — see tesseractSvg click handler)
   //   2. Mark ceremony complete — this flag gates the fragments quest's
   //      unlock() check, replacing the old quizResult gate
-  //   3. Fire offerNextAvailableQuest after a 1.5s breath so the ceremony
-  //      has a moment of quiet before Guide beacon pulses
+  //   3. Fire the post-pregame coach video — the trust peak moment.
+  //      User has just done the work, watched the world transform, and
+  //      earned Bronze. Now Jake addresses them directly with the
+  //      calibrated ask: book a fifteen-minute call.
+  //   4. The Guide beacon for fragments quest is DEFERRED until after
+  //      the video is dismissed (or skipped if the URL is empty). We
+  //      don't want two attention asks competing at the same moment.
   setTimeout(function(){
     ceremonyInProgress = false;
     try { localStorage.setItem('ga_ceremony_completed', '1'); } catch(e){}
 
-    // Short pause, then light the Guide beacon for the fragments quest.
-    // The ceremony has earned a breath before the next thing arrives.
-    setTimeout(function(){
-      if(typeof offerNextAvailableQuest === 'function'){
-        console.log('[Ceremony] Complete — offering next quest');
-        offerNextAvailableQuest();
-      }
-    }, 1500);
+    // Decide whether to fire the post-pregame video. If yes, the quest
+    // offer waits until the video is dismissed. If no (URL empty OR
+    // already seen), fall through to the original 1500ms-then-quest path.
+    var willPlayVideo = !!POST_PREGAME_VIDEO_URL &&
+                        localStorage.getItem('ga_post_pregame_video_seen') !== '1';
+
+    if(willPlayVideo){
+      // Short breath after the ceremony settles, then video opens.
+      // 800ms is enough for the user to register that the camera has
+      // landed on the path before the overlay drops in. Longer would
+      // feel like dead air; shorter would feel abrupt.
+      setTimeout(function(){
+        openPostPregameVideo();
+
+        // Poll for video dismissal so the quest offer fires after the
+        // user is done with the video. We watch the overlay's .open
+        // class — when it drops, the video has been dismissed.
+        var overlay = document.getElementById('postvideoOverlay');
+        var pollInterval = setInterval(function(){
+          if(!overlay || !overlay.classList.contains('open')){
+            clearInterval(pollInterval);
+            // Brief pause after dismiss, then offer the next quest.
+            setTimeout(function(){
+              if(typeof offerNextAvailableQuest === 'function'){
+                console.log('[Ceremony] Post-video — offering next quest');
+                offerNextAvailableQuest();
+              }
+            }, 1200);
+          }
+        }, 250);
+      }, 800);
+    } else {
+      // No video this session — original behavior. Short pause, then
+      // light the Guide beacon for the fragments quest.
+      setTimeout(function(){
+        if(typeof offerNextAvailableQuest === 'function'){
+          console.log('[Ceremony] Complete (no video) — offering next quest');
+          offerNextAvailableQuest();
+        }
+      }, 1500);
+    }
   }, 5500);
 }
 
