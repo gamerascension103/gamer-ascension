@@ -648,6 +648,58 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 }
 
 /* =====================================================================
+   POST-VIDEO INVITATION CARD (2026-04 — quiet invitation moment)
+   Fires after the post-pregame coach video is dismissed. A single
+   gold text card fades in centered on the upper portion of the
+   viewport, holds for ~3 seconds, then fades out. Paired in time
+   with a sequenced pillar-color pulse on Phase 1 nodes drawn on the
+   canvas, and a slight camera pull-back. The whole moment runs
+   ~6-7 seconds total before the user is left in control.
+   No buttons. No interactions. Just an invitation that gets out
+   of the way.
+   ===================================================================== */
+.invitation-card{
+  position:fixed;
+  top:18%;left:50%;transform:translateX(-50%) translateY(-8px);
+  z-index:180; /* sits below modals (overlays at 280+) but above canvas */
+  pointer-events:none; /* never blocks interaction */
+  opacity:0;
+  transition:opacity .55s cubic-bezier(.22,1,.36,1),
+             transform .55s cubic-bezier(.22,1,.36,1);
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(15px,2vw,18px);font-weight:400;letter-spacing:.04em;
+  color:#e5c574;
+  text-align:center;
+  text-shadow:0 0 28px rgba(201,168,76,.55),
+              0 0 48px rgba(201,168,76,.25);
+  padding:14px 28px;
+  background:linear-gradient(180deg,
+    rgba(26,15,8,0) 0%,
+    rgba(26,15,8,.65) 30%,
+    rgba(26,15,8,.65) 70%,
+    rgba(26,15,8,0) 100%);
+  border-top:1px solid rgba(201,168,76,0);
+  border-bottom:1px solid rgba(201,168,76,0);
+  white-space:nowrap;
+  max-width:calc(100vw - 48px);
+  overflow:hidden;text-overflow:ellipsis;
+}
+.invitation-card.visible{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+  border-top-color:rgba(201,168,76,.18);
+  border-bottom-color:rgba(201,168,76,.18);
+}
+@media (max-width:680px){
+  .invitation-card{
+    top:14%;
+    font-size:13px;
+    padding:11px 18px;
+    letter-spacing:.02em;
+  }
+}
+
+/* =====================================================================
    "START HERE" INDICATOR (post-Phase-4.5)
    Highly explicit affordance shown over the first-tap target so brand-
    new users know exactly what to click. Two instances: one over Gap on
@@ -2503,6 +2555,13 @@ body.codex-open  .nav-trigger {
   </div>
 </div>
 
+<!-- Post-video invitation text card — fires after the coach video
+     dismisses, paired with a slight camera pull-back and sequenced
+     glow on Phase 1 nodes. Single line of gold text, holds ~3s, then
+     fades. No interactions. Never blocks input (pointer-events:none).
+     Gated by ga_post_video_invitation_seen so it only fires once. -->
+<div class="invitation-card" id="invitationCard" aria-hidden="true">Your path. Tap any node to explore.</div>
+
 <!-- "Start here" indicator on the macro-tree's Gap pentagon. Position is
      updated each animation frame via updateStartHereGapIndicator() to track
      Gap's screen location. Hidden by default; .visible class added when
@@ -2852,6 +2911,30 @@ var PATH_NODES = [
 // Skill ID → path node index, for fast lookup
 var PATH_NODE_INDEX = {};
 PATH_NODES.forEach(function(n, i){ PATH_NODE_INDEX[n.id] = i; });
+
+// =============================================================
+// POST-VIDEO INVITATION PULSE STATE
+// =============================================================
+// Map of nodeId -> timestamp (performance.now() when the pulse was
+// triggered). The render loop reads this in drawPathNode() and adds
+// an extra fading halo decaying over ~1200ms. Used by the
+// runPostVideoInvitation() orchestrator (fires after the post-pregame
+// coach video dismisses) to draw the user's eye to Phase 1 nodes
+// in a sequenced flash before fading back to neutral.
+//
+// This is a transient visual layer — completely separate from the
+// state-driven halos (done/current/locked). Path nodes still render
+// their normal state on top; the invitation glow sits behind as an
+// extra bright halo for the duration of the pulse window.
+// =============================================================
+var nodeInvitationGlow = {};
+var INVITATION_GLOW_DURATION = 1200; // ms
+
+function pulseNodeInvitation(nodeId){
+  nodeInvitationGlow[nodeId] = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now()
+    : Date.now();
+}
 
 // Connector list — defines which path nodes are linked by trail.
 // Built by walking PATH_NODES in week order, with within-week pairs
@@ -5694,6 +5777,34 @@ function drawPathNode(node){
     drawFoundationalRing(treeCtx, x, y, r + 11);
   }
 
+  // ---- Post-video invitation pulse (transient, sits behind state halo) ----
+  // Fades over INVITATION_GLOW_DURATION ms. Uses the node's pillar color
+  // so the pulse reads as the node lighting up rather than a generic flash.
+  // The glow expands as it fades, like a ripple, so the eye catches it.
+  if(nodeInvitationGlow[node.id]){
+    var nowT = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsed = nowT - nodeInvitationGlow[node.id];
+    if(elapsed < INVITATION_GLOW_DURATION){
+      var prog = elapsed / INVITATION_GLOW_DURATION;
+      // Ease-out curve — glow expands quickly then settles
+      var eased = 1 - Math.pow(1 - prog, 2);
+      var glowR = r + 18 + eased * 28;       // expands from r+18 to r+46
+      var glowAlpha = (1 - prog) * 0.85;     // fades from 0.85 to 0
+      var invGrad = treeCtx.createRadialGradient(x, y, r * 0.4, x, y, glowR);
+      invGrad.addColorStop(0,    'rgba(' + pillarRgb + ',' + (glowAlpha * 0.35) + ')');
+      invGrad.addColorStop(0.55, 'rgba(' + pillarRgb + ',' + (glowAlpha * 0.55) + ')');
+      invGrad.addColorStop(1,    'rgba(' + pillarRgb + ',0)');
+      treeCtx.fillStyle = invGrad;
+      treeCtx.beginPath();
+      treeCtx.arc(x, y, glowR, 0, Math.PI * 2);
+      treeCtx.fill();
+    } else {
+      // Pulse window expired — clean up the entry
+      delete nodeInvitationGlow[node.id];
+    }
+  }
+
   // ---- State-driven outer halo (drawn first, sits behind the shape) ----
   if(state === 'done'){
     var doneGrad = treeCtx.createRadialGradient(x, y, 0, x, y, r + 22);
@@ -6958,6 +7069,126 @@ function dismissPostPregameVideo(){
     if(iframe) iframe.remove();
   }
   localStorage.setItem('ga_post_pregame_video_seen', '1');
+}
+
+
+// =============================================================
+// POST-VIDEO INVITATION MOMENT
+// =============================================================
+// Fires after the post-pregame coach video dismisses. A focused
+// invitation that does three things in sequence and then gets out
+// of the way:
+//
+//   1. Slight camera pull-back (~1.4s) — reveals more of the path
+//      AND a hint of the Tesseract above. Conveys scope without a
+//      heavy cinematic tour. Skipped on mobile (already zoomed in).
+//   2. Sequenced glow pulse on Phase 1 nodes — Energy → Faith/Hope
+//      → Identity → Boundaries → Idealisms. ~250ms apart. Each
+//      node's pillar color flares brightly then settles back. Draws
+//      the eye to the actionable elements.
+//   3. Brief gold text card fades in centered: "Your path. Tap any
+//      node to explore." Holds ~3s then fades. Single instruction.
+//
+// Total duration ~6-7 seconds. Then the user is left in control with
+// a clear understanding of where they can click.
+//
+// Gated by ga_post_video_invitation_seen — fires once per user.
+//
+// Calls the provided callback when the moment finishes (used to
+// chain into offerNextAvailableQuest).
+// =============================================================
+
+function runPostVideoInvitation(onComplete){
+  // Don't fire again on subsequent visits — once is enough.
+  if(localStorage.getItem('ga_post_video_invitation_seen') === '1'){
+    if(typeof onComplete === 'function') onComplete();
+    return;
+  }
+  try { localStorage.setItem('ga_post_video_invitation_seen', '1'); } catch(e){}
+
+  var wrap = document.getElementById('canvasWrap');
+  var card = document.getElementById('invitationCard');
+  if(!wrap || !card){
+    if(typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
+  var isMobile = vw < 700;
+
+  // ---- 1. Camera pull-back (skip on mobile) ----
+  // Current ceremony pan ended at: scale 0.42, centered on
+  // (PATH_CENTER_X, (TESSERACT_Y + 1900) / 2) = (1200, 1550).
+  // Pull back to scale ~0.34 to reveal more of the path AND show
+  // the Tesseract above more clearly. Same x/y center.
+  var doPullback = !isMobile;
+  var pullbackDuration = 1400;
+  var pullbackTargetScale = 0.34;
+  var pullbackStartScale = transform.scale;
+  var pullbackStartX = transform.x;
+  var pullbackStartY = transform.y;
+  var pullbackStartTime = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+  // Compute target translate so the same world point stays centered
+  var pullbackCenterX = 1200;
+  var pullbackCenterY = 1550;
+  var pullbackTargetX = (vw / 2) - (pullbackCenterX * pullbackTargetScale);
+  var pullbackTargetY = (vh / 2) - (pullbackCenterY * pullbackTargetScale);
+
+  function pullbackTick(){
+    var nowT = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsed = nowT - pullbackStartTime;
+    var progress = Math.min(1, elapsed / pullbackDuration);
+    // Cubic ease-in-out
+    var eased = progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+    transform.scale = pullbackStartScale + (pullbackTargetScale - pullbackStartScale) * eased;
+    transform.x = pullbackStartX + (pullbackTargetX - pullbackStartX) * eased;
+    transform.y = pullbackStartY + (pullbackTargetY - pullbackStartY) * eased;
+    applyTransform();
+    if(progress < 1) requestAnimationFrame(pullbackTick);
+  }
+  if(doPullback) requestAnimationFrame(pullbackTick);
+
+  // ---- 2. Sequenced node pulse (kicks off ~600ms into the pullback) ----
+  // The pulse sequence runs simultaneously with the latter part of the
+  // pullback so the moment doesn't drag. Five Phase 1 nodes flash in
+  // order with 250ms between each.
+  var phase1Sequence = ['energy', 'faith', 'identity', 'bounds', 'idealism'];
+  var pulseStartDelay = 600;
+  var pulseInterval = 250;
+  phase1Sequence.forEach(function(nodeId, i){
+    setTimeout(function(){
+      pulseNodeInvitation(nodeId);
+    }, pulseStartDelay + i * pulseInterval);
+  });
+
+  // ---- 3. Text card (fade-in starts ~1500ms in, around when the
+  //         pullback settles and the node sequence is finishing) ----
+  var cardFadeInDelay = 1500;
+  setTimeout(function(){
+    card.classList.add('visible');
+  }, cardFadeInDelay);
+
+  // ---- Card fade-out and completion ----
+  // Hold the card for ~3000ms after fade-in starts. CSS transition
+  // handles the visual fade-in (~550ms). Total time card is fully
+  // visible: ~3000ms. Then trigger fade-out by removing the class.
+  var cardHoldDuration = 3000;
+  var cardFadeOutDelay = cardFadeInDelay + cardHoldDuration;
+  setTimeout(function(){
+    card.classList.remove('visible');
+  }, cardFadeOutDelay);
+
+  // Allow CSS fade-out to complete (~600ms) before firing the
+  // onComplete callback. Total invitation duration:
+  //   1500 (fade-in start) + 3000 (hold) + 600 (fade-out) = 5100ms
+  var totalDuration = cardFadeOutDelay + 600;
+  setTimeout(function(){
+    if(typeof onComplete === 'function') onComplete();
+  }, totalDuration);
 }
 
 
@@ -12748,20 +12979,35 @@ function ceremonyBeat5_tesseractOrientation(){
       setTimeout(function(){
         openPostPregameVideo();
 
-        // Poll for video dismissal so the quest offer fires after the
-        // user is done with the video. We watch the overlay's .open
-        // class — when it drops, the video has been dismissed.
+        // Poll for video dismissal so the post-video sequence fires
+        // after the user is done with the video. We watch the overlay's
+        // .open class — when it drops, the video has been dismissed.
+        //
+        // After dismissal: brief pause → invitation moment (camera
+        // pull-back + node pulse sequence + text card, ~5s) → quest
+        // offer. Three sequenced moments share the post-video time
+        // without competing.
         var overlay = document.getElementById('postvideoOverlay');
         var pollInterval = setInterval(function(){
           if(!overlay || !overlay.classList.contains('open')){
             clearInterval(pollInterval);
-            // Brief pause after dismiss, then offer the next quest.
+            // 700ms breath after dismiss before the invitation begins.
+            // Lets the dismiss animation complete and gives the user a
+            // beat of quiet before the world starts moving again.
             setTimeout(function(){
-              if(typeof offerNextAvailableQuest === 'function'){
-                console.log('[Ceremony] Post-video — offering next quest');
-                offerNextAvailableQuest();
-              }
-            }, 1200);
+              console.log('[Ceremony] Post-video — running invitation moment');
+              runPostVideoInvitation(function(){
+                // Invitation finished — short pause, then offer the
+                // next quest. The Guide beacon now arrives in clean
+                // air, not stacked on top of the invitation.
+                setTimeout(function(){
+                  if(typeof offerNextAvailableQuest === 'function'){
+                    console.log('[Ceremony] Post-invitation — offering next quest');
+                    offerNextAvailableQuest();
+                  }
+                }, 1200);
+              });
+            }, 700);
           }
         }, 250);
       }, 800);
