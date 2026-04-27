@@ -834,7 +834,20 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 
 .atheneum-tutorial-dim{
   position:fixed;inset:0;
-  background:rgba(7,5,8,.75); /* strong dim — typographic moment owns the screen */
+  /* Default: solid dim across the whole viewport. When the spotlight
+     reveal begins on Begin click, --spot-r is animated from 0 toward
+     the target radius, punching a transparent hole through the dim
+     centered at (--spot-x, --spot-y). The gradient stops give a soft
+     edge so the hole reads as "light bleeding through" rather than a
+     hard cutout. */
+  --spot-x: 50%;
+  --spot-y: 50%;
+  --spot-r: 0px;
+  background:radial-gradient(circle at var(--spot-x) var(--spot-y),
+    transparent 0,
+    transparent calc(var(--spot-r) - 30px),
+    rgba(7,5,8,.75) calc(var(--spot-r) + 30px),
+    rgba(7,5,8,.75) 100%);
   pointer-events:none;
   z-index:160; /* above canvas, below tutorial text and modals */
   opacity:0;
@@ -8135,29 +8148,91 @@ function runAtheneumTypographicTutorial(onComplete){
 
   setTimeout(function(){ beginBtn.classList.add('visible'); }, 4900);
 
-  // Dismiss handler
+  // Dismiss handler — staged reveal:
+  //   Stage 1 (0-500ms): words begin fading. Dim stays solid.
+  //   Stage 2a (500-1100ms): spotlight punches through the dim — a
+  //                       transparent hole grows outward from the Gap's
+  //                       screen position, reaching its target radius
+  //                       over ~600ms with ease-out cubic. Overlaps
+  //                       with the words still completing their fade
+  //                       so the user feels immediate visual response.
+  //   Stage 2b (1100-1700ms): hold beat. Spotlight at full radius.
+  //                       Words fully gone by now (1.2s CSS transition
+  //                       finishes ~1200ms after click). Dim around the
+  //                       spotlight at full opacity. Gap brilliantly
+  //                       visible in pool of clear world.
+  //   Stage 3 (1700-2700ms): dim fades out, Gap glow eases 1→0, orbit
+  //                       resumes 0→1. World returns to full brightness.
+  //   Stage 4 (2700ms+): tutorial overlay hidden, START HERE indicator
+  //                       emerges over Gap.
   function onBegin(){
     beginBtn.removeEventListener('click', onBegin);
 
-    // Fade out paragraphs and button
+    // Stage 1 — fade out paragraphs and button. Dim stays.
     p1.classList.remove('visible');
     p2.classList.remove('visible');
     close.classList.remove('visible');
     beginBtn.classList.remove('visible');
+    dim.style.pointerEvents = 'none';
 
-    // Fade out dim
-    dim.classList.remove('visible');
+    // Compute Gap's current viewport position. The Gap is paused (orbit
+    // frozen) so this position is stable. We snap once now and animate
+    // the spotlight from there. Note: the canvas-wrap is offset from the
+    // viewport origin (header bar above it), so we must add the wrap's
+    // bounding rect top/left to convert canvas-internal coords into
+    // viewport-absolute coords. The dim element is position:fixed so its
+    // CSS gradient coordinates ARE viewport-absolute.
+    var gapNode = PREGAME_NODES.find(function(n){ return n.id === 'gap'; });
+    var spotlightTargetRadius = 130; // viewport px — comfortably encompasses the gold glow
+    var gapVx = window.innerWidth / 2;  // fallback: viewport center
+    var gapVy = window.innerHeight / 2;
+    if(gapNode && typeof nodePos === 'function' && typeof transform !== 'undefined'){
+      var gapWorld = nodePos(gapNode);
+      var canvasWrap = document.getElementById('canvasWrap');
+      var wrapRect = canvasWrap ? canvasWrap.getBoundingClientRect() : { left: 0, top: 0 };
+      gapVx = gapWorld.x * transform.scale + transform.x + wrapRect.left;
+      gapVy = gapWorld.y * transform.scale + transform.y + wrapRect.top;
+    }
 
-    // Resume orbit and fade out Gap glow
-    setOrbitSpeedTarget(1, 700);
-    setGapGlowTarget(0, 900);
+    // Set initial position (spotlight at Gap, radius starts at 0)
+    dim.style.setProperty('--spot-x', gapVx + 'px');
+    dim.style.setProperty('--spot-y', gapVy + 'px');
+    dim.style.setProperty('--spot-r', '0px');
 
-    // Hide overlay after fade completes
+    // Stage 2a — spotlight expansion begins at +500ms (overlaps with
+    // the tail of the words fading). Grows from 0 to target radius over
+    // 600ms with ease-out cubic.
+    setTimeout(function(){
+      var spotStartTime = (typeof performance !== 'undefined' && performance.now)
+        ? performance.now() : Date.now();
+      var spotDuration = 600;
+      function spotTick(){
+        var nowS = (typeof performance !== 'undefined' && performance.now)
+          ? performance.now() : Date.now();
+        var elapsedS = nowS - spotStartTime;
+        var progressS = Math.min(1, elapsedS / spotDuration);
+        var easedS = 1 - Math.pow(1 - progressS, 3);
+        var rPx = easedS * spotlightTargetRadius;
+        dim.style.setProperty('--spot-r', rPx + 'px');
+        if(progressS < 1) requestAnimationFrame(spotTick);
+      }
+      requestAnimationFrame(spotTick);
+    }, 500);
+
+    // Stage 3 — at +1700ms, world reveal begins.
+    setTimeout(function(){
+      dim.classList.remove('visible');
+      setGapGlowTarget(0, 900);
+      setOrbitSpeedTarget(1, 700);
+    }, 1700);
+
+    // Stage 4 — at +2700ms, tutorial fully removed.
     setTimeout(function(){
       tutorial.style.display = 'none';
       atheneumTutorialActive = false;
+      dim.style.setProperty('--spot-r', '0px');
       if(typeof onComplete === 'function') onComplete();
-    }, 1100);
+    }, 2700);
   }
   beginBtn.addEventListener('click', onBegin);
 }
