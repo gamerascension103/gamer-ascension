@@ -700,6 +700,220 @@ body{font-family:'DM Sans',sans-serif;font-weight:300;color:var(--text)}
 }
 
 /* =====================================================================
+   ATHENEUM ENTRY SEQUENCE (2026-04)
+   Replaces the old canvas "Pillars of Ascension" title with a DOM-based
+   first-arrival moment. Sequence:
+   1) "Welcome to" eyebrow materializes from mist
+   2) "The Atheneum" hero word materializes (the eye-capture)
+   3) "Skill Mastery Chamber" subtitle materializes
+   4) Brief gold pulse on landing
+   5) ~1200ms hold beat (let the user read it)
+   6) "Welcome to" disintegrates letter-by-letter (upward drift + blur)
+   7) Title block shrinks + slides up to permanent header position
+   8) Spotlight tour begins (separate but chained, see below)
+
+   On revisits (ga_atheneum_welcome_seen flag set), no animation —
+   just the persistent room label sitting at top-center.
+
+   The persistent room label is .atheneum-room-label and it sits at
+   top:18-22px regardless of camera state. Pointer-events:none so it
+   never blocks interaction with canvas or other UI.
+   ===================================================================== */
+
+/* The hero welcome overlay during the entry animation */
+.atheneum-welcome-overlay{
+  position:fixed;
+  top:0;left:0;right:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  padding-top:28vh;
+  pointer-events:none;
+  z-index:170; /* above canvas, below modals */
+}
+.atheneum-welcome-eyebrow{
+  font-family:'Cinzel',serif;font-size:14px;font-weight:400;letter-spacing:.42em;
+  text-transform:uppercase;color:rgba(201,168,76,.85);
+  margin-bottom:14px;
+  opacity:0;filter:blur(20px);
+  transition:opacity 1s ease-out, filter 1s ease-out, transform 1s ease-out;
+  text-shadow:0 0 24px rgba(201,168,76,.4);
+  letter-spacing:.42em;
+}
+.atheneum-welcome-eyebrow.visible{
+  opacity:1;filter:blur(0);
+  transform:translateY(0);
+}
+/* Eyebrow disintegration — letters scatter upward with blur+fade.
+   Each .letter span gets staggered delay via inline style at runtime. */
+.atheneum-welcome-eyebrow .letter{
+  display:inline-block;
+  transition:opacity .8s ease-in, transform .8s ease-in, filter .8s ease-in;
+}
+.atheneum-welcome-eyebrow.dissolving .letter{
+  opacity:0;
+  transform:translateY(-14px);
+  filter:blur(8px);
+}
+.atheneum-welcome-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(38px,6.4vw,64px);font-weight:700;letter-spacing:.04em;
+  color:#e5c574;line-height:1.05;
+  text-shadow:0 0 30px rgba(229,197,116,.55),
+              0 0 60px rgba(229,197,116,.3),
+              0 0 100px rgba(201,168,76,.15);
+  margin:0 0 14px;
+  opacity:0;filter:blur(20px);transform:scale(0.94);
+  transition:opacity 1.2s ease-out, filter 1.2s ease-out, transform 1.2s ease-out;
+}
+.atheneum-welcome-title.visible{
+  opacity:1;filter:blur(0);transform:scale(1);
+}
+.atheneum-welcome-title.pulsing{
+  animation:atheneum-title-pulse 800ms ease-out 1;
+}
+@keyframes atheneum-title-pulse{
+  0%   { text-shadow:0 0 30px rgba(229,197,116,.55), 0 0 60px rgba(229,197,116,.3), 0 0 100px rgba(201,168,76,.15); }
+  40%  { text-shadow:0 0 50px rgba(245,229,184,.85), 0 0 100px rgba(229,197,116,.5), 0 0 150px rgba(201,168,76,.3); }
+  100% { text-shadow:0 0 30px rgba(229,197,116,.55), 0 0 60px rgba(229,197,116,.3), 0 0 100px rgba(201,168,76,.15); }
+}
+.atheneum-welcome-subtitle{
+  font-family:'Cinzel',serif;font-size:clamp(14px,1.8vw,18px);font-weight:400;
+  letter-spacing:.32em;text-transform:uppercase;color:rgba(240,236,228,.78);
+  opacity:0;filter:blur(20px);
+  transition:opacity 1s ease-out, filter 1s ease-out;
+}
+.atheneum-welcome-subtitle.visible{
+  opacity:1;filter:blur(0);
+}
+
+/* Permanent persistent room label — what stays at top after the welcome
+   animation completes. Same typography hierarchy but smaller. */
+.atheneum-room-label{
+  position:fixed;
+  top:20px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;
+  pointer-events:none;
+  z-index:50; /* above canvas, below modals and Guide and so on */
+  opacity:0;
+  transition:opacity 700ms ease;
+}
+.atheneum-room-label.visible{
+  opacity:1;
+}
+.atheneum-room-label-title{
+  font-family:'Cinzel Decorative',serif;
+  font-size:clamp(20px,2.4vw,26px);font-weight:700;letter-spacing:.04em;
+  color:#e5c574;line-height:1;
+  text-shadow:0 0 18px rgba(229,197,116,.4),0 0 36px rgba(201,168,76,.18);
+}
+.atheneum-room-label-subtitle{
+  font-family:'Cinzel',serif;font-size:11px;font-weight:400;
+  letter-spacing:.32em;text-transform:uppercase;color:rgba(240,236,228,.55);
+  margin-top:4px;
+}
+@media (max-width:680px){
+  .atheneum-room-label{top:14px}
+  .atheneum-room-label-title{font-size:17px}
+  .atheneum-room-label-subtitle{font-size:9.5px;letter-spacing:.28em}
+}
+
+/* =====================================================================
+   ATHENEUM TYPOGRAPHIC TUTORIAL (2026-04 — replaces spotlight tour)
+   Fires AFTER the welcome animation completes. Same materialize-from-mist
+   register as the title moment, so the tutorial reads as a continuation
+   of the same typographic experience.
+   Sequence:
+     - World canvas dims to ~25% brightness
+     - Paragraph 1 materializes (the place)
+     - Paragraph 2 materializes simultaneously with Gap volumetric glow +
+       orbit pause (the action — "click The Gap")
+     - Paragraph 3 materializes (the close — "Onward, ascendant.")
+     - "Begin" button fades in
+     - User clicks Begin → tutorial dissolves, world un-dims, orbit
+       resumes, START HERE indicator emerges over Gap
+   ===================================================================== */
+
+.atheneum-tutorial-dim{
+  position:fixed;inset:0;
+  background:rgba(7,5,8,.75); /* strong dim — typographic moment owns the screen */
+  pointer-events:none;
+  z-index:160; /* above canvas, below tutorial text and modals */
+  opacity:0;
+  transition:opacity 800ms ease;
+}
+.atheneum-tutorial-dim.visible{opacity:1;pointer-events:auto}
+
+.atheneum-tutorial{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 32px;
+  pointer-events:none;
+  z-index:175;
+}
+.atheneum-tutorial-inner{
+  max-width:680px;width:100%;
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;
+  pointer-events:auto;
+}
+
+.atheneum-tutorial-para{
+  font-family:'Crimson Pro','Crimson Text',serif;
+  font-size:clamp(16px,1.95vw,21px);font-weight:300;
+  color:rgba(240,236,228,.86);
+  line-height:1.65;letter-spacing:.005em;
+  margin:0 0 22px;
+  opacity:0;filter:blur(16px);
+  transition:opacity 1.2s ease-out, filter 1.2s ease-out, transform 1.2s ease-out;
+  text-shadow:0 0 24px rgba(0,0,0,.6); /* readability against the dimmed world */
+}
+.atheneum-tutorial-para.visible{
+  opacity:1;filter:blur(0);
+}
+/* Bolded "The Gap" inside paragraph 2 — gold accent, letterspaced slightly,
+   matches the Cinzel Decorative register from the title moment. */
+.atheneum-tutorial-para .accent{
+  font-family:'Cinzel Decorative',serif;
+  font-weight:700;
+  color:#e5c574;
+  letter-spacing:.04em;
+  text-shadow:0 0 18px rgba(229,197,116,.5),0 0 36px rgba(201,168,76,.25);
+}
+/* Final close line — italic, gold-tinted, smaller. Marks it as the close,
+   not just another body paragraph. */
+.atheneum-tutorial-close{
+  font-family:'Crimson Pro','Crimson Text',serif;
+  font-size:clamp(14px,1.6vw,17px);font-style:italic;font-weight:400;
+  color:rgba(229,197,116,.85);letter-spacing:.04em;
+  margin:6px 0 32px;
+  opacity:0;filter:blur(16px);
+  transition:opacity 1s ease-out, filter 1s ease-out;
+  text-shadow:0 0 18px rgba(229,197,116,.3),0 0 36px rgba(0,0,0,.5);
+}
+.atheneum-tutorial-close.visible{
+  opacity:1;filter:blur(0);
+}
+
+.atheneum-tutorial-begin{
+  background:transparent;
+  border:1px solid rgba(229,197,116,.5);
+  color:#e5c574;
+  font-family:'Cinzel',serif;font-size:12px;font-weight:400;
+  letter-spacing:.4em;text-transform:uppercase;
+  padding:13px 38px;border-radius:2px;cursor:pointer;
+  transition:all .35s ease;
+  box-shadow:0 0 24px rgba(229,197,116,.18);
+  opacity:0;
+}
+.atheneum-tutorial-begin.visible{opacity:1}
+.atheneum-tutorial-begin:hover{
+  background:rgba(229,197,116,.08);
+  border-color:rgba(229,197,116,.85);
+  box-shadow:0 0 32px rgba(229,197,116,.35);
+  letter-spacing:.46em;
+}
+
+/* =====================================================================
    "START HERE" INDICATOR (post-Phase-4.5)
    Highly explicit affordance shown over the first-tap target so brand-
    new users know exactly what to click. Two instances: one over Gap on
@@ -2562,6 +2776,46 @@ body.codex-open  .nav-trigger {
      Gated by ga_post_video_invitation_seen so it only fires once. -->
 <div class="invitation-card" id="invitationCard" aria-hidden="true">Your path. Tap any node to explore.</div>
 
+<!-- ATHENEUM ENTRY SEQUENCE (2026-04) — first-arrival hero welcome
+     animation + chained spotlight tutorial. Welcome overlay materializes
+     "Welcome to / The Atheneum / Skill Mastery Chamber" with a mist-fade
+     entrance and gold pulse landing, then the eyebrow disintegrates and
+     the title shrinks/slides up into the persistent room label.
+     Spotlight tour fires next: dims the world, frames the orbiting
+     pre-game modules, instructs "Begin with The Gap." Single seen-flag
+     covers both: ga_atheneum_welcome_seen. Returning users see only
+     the persistent room label. -->
+<div class="atheneum-welcome-overlay" id="atheneumWelcomeOverlay" style="display:none;" aria-hidden="true">
+  <div class="atheneum-welcome-eyebrow" id="atheneumWelcomeEyebrow">Welcome to</div>
+  <div class="atheneum-welcome-title" id="atheneumWelcomeTitle">The Atheneum</div>
+  <div class="atheneum-welcome-subtitle" id="atheneumWelcomeSubtitle">Skill Mastery Chamber</div>
+</div>
+
+<!-- Persistent room label — sits at top-center of the viewport whenever
+     the user is in the Atheneum, regardless of camera state. Becomes
+     visible after the welcome animation completes (or immediately on
+     revisits). Pointer-events:none so it never blocks. -->
+<div class="atheneum-room-label" id="atheneumRoomLabel" aria-hidden="true">
+  <div class="atheneum-room-label-title">The Atheneum</div>
+  <div class="atheneum-room-label-subtitle">Skill Mastery Chamber</div>
+</div>
+
+<!-- Atheneum tutorial — fires AFTER the welcome animation completes.
+     Three paragraphs materialize in sequence (same mist-fade-in register
+     as the title moment). Paragraph 2 fires synchronized with a
+     volumetric glow on the Gap module + a smooth orbit pause. Final
+     "Begin" button dismisses, restores world brightness, resumes orbit.
+     Driven by runAtheneumTypographicTutorial(). -->
+<div class="atheneum-tutorial-dim" id="atheneumTutorialDim" aria-hidden="true"></div>
+<div class="atheneum-tutorial" id="atheneumTutorial" style="display:none;" aria-hidden="true">
+  <div class="atheneum-tutorial-inner">
+    <p class="atheneum-tutorial-para" id="atheneumTutorialPara1">Here you will find your full education course. It was built to respect how you think and to make the learning process more enjoyable.</p>
+    <p class="atheneum-tutorial-para" id="atheneumTutorialPara2">Click the glowing module labeled <span class="accent">The Gap</span> to begin your ascension. After you complete all three modules, the next stage unlocks.</p>
+    <p class="atheneum-tutorial-close" id="atheneumTutorialClose">Onward, ascendant.</p>
+    <button class="atheneum-tutorial-begin" id="atheneumTutorialBegin" type="button">Begin</button>
+  </div>
+</div>
+
 <!-- "Start here" indicator on the macro-tree's Gap pentagon. Position is
      updated each animation frame via updateStartHereGapIndicator() to track
      Gap's screen location. Hidden by default; .visible class added when
@@ -4007,6 +4261,18 @@ var LESSONS = {
 // ---- TREE CANVAS ----
 var treeCanvas, treeCtx;
 var t = 0;
+// Orbit time + speed multiplier — separate from `t` so we can pause
+// the pregame nodes' orbit without affecting other animations driven
+// by `t`. orbitT advances by orbitSpeedMult each frame (0=paused,
+// 1=full speed). The atheneum tutorial smoothly eases orbitSpeedMult
+// from 1→0 when the Gap spotlight begins, and 0→1 when the tutorial
+// dismisses. nodePos() reads orbitT instead of t for orbit angle.
+var orbitT = 0;
+var orbitSpeedMult = 1;       // current effective multiplier
+var orbitSpeedMultTarget = 1; // value being eased toward
+var orbitSpeedMultStart = 1;  // value at start of current ease
+var orbitSpeedMultEaseStart = 0;       // performance.now() at ease start
+var orbitSpeedMultEaseDuration = 600;  // default ease duration ms
 var drag = {active:false,moved:false,pending:false,startX:0,startY:0,startTX:0,startTY:0};
 var pinch = {active:false,startDist:0,startScale:0};
 var transform = {x:0,y:0,scale:1};
@@ -4098,7 +4364,9 @@ function nodePos(n){
       y: ls.fromY + (ls.targetY - ls.fromY) * eased
     };
   }
-  var angle = (n.orbitPhase || 0) + t * (n.orbitSpeed || 0.0005);
+  // Use orbitT (gated by orbitSpeedMult) instead of `t` so pausing the
+  // tutorial's spotlight cleanly halts orbit motion.
+  var angle = (n.orbitPhase || 0) + orbitT * (n.orbitSpeed || 0.0005);
   var r = n.orbitR || PREGAME_ORBIT;
   return {
     x: CX + Math.cos(angle) * r,
@@ -5567,34 +5835,46 @@ function drawFrame(){
   treeCtx.clearRect(0,0,W,H);
   t++;
 
+  // Smoothly ease orbitSpeedMult toward its target. Drives the orbit
+  // pause/resume during the atheneum tutorial spotlight. Once eased to
+  // target, orbitT advances by orbitSpeedMult per frame — so when fully
+  // paused (mult=0), the orbit angle stays frozen; when running (mult=1),
+  // orbit advances normally.
+  if(orbitSpeedMult !== orbitSpeedMultTarget){
+    var nowOSM = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsedOSM = nowOSM - orbitSpeedMultEaseStart;
+    var progressOSM = Math.min(1, elapsedOSM / orbitSpeedMultEaseDuration);
+    // Cubic ease-in-out
+    var easedOSM = progressOSM < 0.5
+      ? 4 * progressOSM * progressOSM * progressOSM
+      : 1 - Math.pow(-2 * progressOSM + 2, 3) / 2;
+    orbitSpeedMult = orbitSpeedMultStart + (orbitSpeedMultTarget - orbitSpeedMultStart) * easedOSM;
+  }
+  orbitT += orbitSpeedMult;
+
+  // Smoothly ease the Gap volumetric glow during the atheneum tutorial.
+  if(atheneumTutorialGapGlow !== atheneumTutorialGapGlowTarget){
+    var nowGG = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsedGG = nowGG - atheneumTutorialGapGlowEaseStart;
+    var progressGG = Math.min(1, elapsedGG / atheneumTutorialGapGlowEaseDuration);
+    var easedGG = progressGG < 0.5
+      ? 4 * progressGG * progressGG * progressGG
+      : 1 - Math.pow(-2 * progressGG + 2, 3) / 2;
+    atheneumTutorialGapGlow = atheneumTutorialGapGlowStart + (atheneumTutorialGapGlowTarget - atheneumTutorialGapGlowStart) * easedGG;
+  }
+
   // On mobile, the invisible reticle (screen-center-offset in world coords)
   // drives fragment proximity. This runs every frame so the reticle tracks
   // panning automatically without a separate event listener. On desktop,
   // this is a no-op.
   updateMobileReticle();
 
-  // Page title
-  treeCtx.save();
-  treeCtx.textAlign = 'center';
-  treeCtx.font = '700 52px Cinzel Decorative, serif';
-  treeCtx.fillStyle = 'rgba(201,168,76,0.12)';
-  treeCtx.fillText('Pillars of Ascension', CX, 52);
-  treeCtx.font = '700 52px Cinzel Decorative, serif';
-  treeCtx.fillStyle = 'rgba(201,168,76,0.55)';
-  treeCtx.fillText('Pillars of Ascension', CX, 50);
-  // Subtitle
-  treeCtx.font = '400 13px Cinzel, serif';
-  treeCtx.fillStyle = 'rgba(240,236,228,0.22)';
-  treeCtx.letterSpacing = '0.12em';
-  treeCtx.fillText('Hero Identity Gap Program · Pre-Game Briefing', CX, 74);
-  // Decorative line
-  treeCtx.strokeStyle = 'rgba(201,168,76,0.2)';
-  treeCtx.lineWidth = 0.5;
-  treeCtx.beginPath();
-  treeCtx.moveTo(CX - 280, 84);
-  treeCtx.lineTo(CX + 280, 84);
-  treeCtx.stroke();
-  treeCtx.restore();
+  // Page title — removed 2026-04. Replaced by the DOM-based Atheneum
+  // entry sequence (Welcome to / The Atheneum / Skill Mastery Chamber)
+  // which fires once on first arrival, then settles to a permanent
+  // top-center room label. See atheneum-entry-sequence below.
 
   var charge = Math.min(1, completed.length / TOTAL_MODULES);
   if(completed.length >= TOTAL_MODULES && !nexusIgnited){
@@ -7038,6 +7318,17 @@ function drawPregameNodes(){
     var isNext = !isDone && (i === 0 || completed.includes(PREGAME_NODES[i-1].id));
     var isLocked = !isDone && !isNext;
 
+    // Atheneum tutorial dimming: when the tutorial is active, non-Gap
+    // modules dim to ~25% so the Gap is the unambiguous visual focus.
+    // The Gap stays at 100%+. The dimming ramps up smoothly as the Gap
+    // glow ramps up (both driven by atheneumTutorialGapGlow, which is
+    // smoothly eased between 0 and 1).
+    var tutorialDim = 1;
+    if(atheneumTutorialGapGlow > 0 && n.id !== 'gap'){
+      // Lerp from 1 → 0.25 as the glow ramps up
+      tutorialDim = 1 - (atheneumTutorialGapGlow * 0.75);
+    }
+
     // Resolve this module's palette at its current imbuement level.
     // The palette already accounts for parchment-baseline-vs-terminal
     // saturation interpolation; the local rendering code below just
@@ -7050,8 +7341,10 @@ function drawPregameNodes(){
     var WHITE_VIOLET = palette.pale;
 
     var r = 38;
-    // Pentagon rotates as node orbits — tied to orbital angle for living feel
-    var orbitAngle = (n.orbitPhase || 0) + t * (n.orbitSpeed || 0.0005);
+    // Pentagon rotates as node orbits — tied to orbital angle for living feel.
+    // Uses orbitT so the rotation also pauses with the orbit during the
+    // atheneum tutorial spotlight.
+    var orbitAngle = (n.orbitPhase || 0) + orbitT * (n.orbitSpeed || 0.0005);
     var pentRot = orbitAngle * 0.4; // rotates slower than orbit, independent feel
 
     var color     = isDone ? VIOLET_DONE : (isLocked ? palette.locked : VIOLET);
@@ -7060,8 +7353,59 @@ function drawPregameNodes(){
     var bodyAlpha = isDone ? 0.55 : (isNext ? 0.35 : 0.15);
     var strokeAlpha = isDone ? 0.95 : (isNext ? 0.75 : 0.22);
     var glyphAlpha  = isDone ? 0.9  : (isNext ? 0.65 : 0.18);
+    // Multiply tutorial dim into all alpha values for non-Gap modules
+    // during the atheneum tutorial. Effectively reduces the rendered
+    // brightness of the whole node without touching the rest of the
+    // draw machinery's globalAlpha usage.
+    glowAlpha *= tutorialDim;
+    bodyAlpha *= tutorialDim;
+    strokeAlpha *= tutorialDim;
+    glyphAlpha *= tutorialDim;
 
     treeCtx.save();
+
+    // ---- Atheneum tutorial: Gap volumetric glow ----
+    // When the tutorial spotlight is active and this is the Gap module,
+    // draw an outer volumetric glow BEFORE the regular node rendering so
+    // it sits behind the pentagon and bleeds outward. Intensity scales
+    // with atheneumTutorialGapGlow (0-1, smoothly eased).
+    if(atheneumTutorialGapGlow > 0 && n.id === 'gap'){
+      var glowI = atheneumTutorialGapGlow;
+      // Outer atmospheric halo — broad gold gradient
+      var halo1 = treeCtx.createRadialGradient(pos.x, pos.y, r * 0.6, pos.x, pos.y, r + 140);
+      halo1.addColorStop(0,    'rgba(245,229,184,' + (glowI * 0.42) + ')');
+      halo1.addColorStop(0.4,  'rgba(229,197,116,' + (glowI * 0.22) + ')');
+      halo1.addColorStop(1,    'rgba(201,168,76,0)');
+      treeCtx.fillStyle = halo1;
+      treeCtx.beginPath();
+      treeCtx.arc(pos.x, pos.y, r + 140, 0, Math.PI * 2);
+      treeCtx.fill();
+      // Tighter mid-glow — concentrates light closer to the pentagon
+      var halo2 = treeCtx.createRadialGradient(pos.x, pos.y, r * 0.3, pos.x, pos.y, r + 70);
+      halo2.addColorStop(0,    'rgba(255,245,210,' + (glowI * 0.55) + ')');
+      halo2.addColorStop(0.5,  'rgba(229,197,116,' + (glowI * 0.32) + ')');
+      halo2.addColorStop(1,    'rgba(229,197,116,0)');
+      treeCtx.fillStyle = halo2;
+      treeCtx.beginPath();
+      treeCtx.arc(pos.x, pos.y, r + 70, 0, Math.PI * 2);
+      treeCtx.fill();
+      // Slow-breathing accent ring at orbit-glow boundary
+      var breathe = 0.85 + Math.sin(t * 0.04) * 0.15;
+      treeCtx.strokeStyle = 'rgba(245,229,184,' + (glowI * 0.55 * breathe) + ')';
+      treeCtx.lineWidth = 1.5;
+      treeCtx.shadowBlur = 24;
+      treeCtx.shadowColor = 'rgba(229,197,116,0.8)';
+      treeCtx.beginPath();
+      treeCtx.arc(pos.x, pos.y, r + 28 + breathe * 4, 0, Math.PI * 2);
+      treeCtx.stroke();
+      treeCtx.shadowBlur = 0;
+    }
+
+    // Apply tutorial dim to non-Gap modules — handled via multiplying
+    // tutorialDim into the per-node alpha values above (glowAlpha,
+    // bodyAlpha, strokeAlpha, glyphAlpha). No globalAlpha modulation
+    // here because the existing per-stroke code uses globalAlpha for
+    // its own staged passes.
 
     // Outer bloom — radial gradient
     var bloom = treeCtx.createRadialGradient(pos.x, pos.y, r * 0.5, pos.x, pos.y, r + 55);
@@ -7211,8 +7555,17 @@ function updateStartHereGapIndicator(){
                      document.getElementById('tutorialOverlay').classList.contains('open');
   var nodePanelOpen = document.querySelector('.node-panel.open') !== null;
   var threshOpen = document.querySelector('.threshold-overlay.open') !== null;
+  // 2026-04 — also hide during the atheneum entry sequence (welcome
+  // animation + typographic tutorial). The welcome moment owns the
+  // visual attention completely; START HERE re-emerges when the
+  // tutorial dismisses.
+  var atheneumWelcomeOpen = document.getElementById('atheneumWelcomeOverlay') &&
+                            document.getElementById('atheneumWelcomeOverlay').style.display === 'flex';
+  var atheneumTutorialOpen = document.getElementById('atheneumTutorial') &&
+                             document.getElementById('atheneumTutorial').style.display === 'flex';
 
-  if(gapDone || lessonOpen || microOpen || tutorialOpen || nodePanelOpen || threshOpen){
+  if(gapDone || lessonOpen || microOpen || tutorialOpen || nodePanelOpen || threshOpen ||
+     atheneumWelcomeOpen || atheneumTutorialOpen){
     indicator.classList.remove('visible');
     return;
   }
@@ -7589,6 +7942,225 @@ function runPostVideoInvitation(onComplete){
   }, totalDuration);
 }
 
+
+// =============================================================
+// ATHENEUM ENTRY SEQUENCE
+// =============================================================
+// Fires on first arrival to the Atheneum (the pregame page). Two
+// chained moments:
+//
+//   PART 1 — Welcome animation (~5 seconds total)
+//     Welcome to / The Atheneum / Skill Mastery Chamber materializes
+//     from mist with sequenced timing. Brief gold pulse on landing.
+//     ~1200ms hold. Then the "Welcome to" eyebrow disintegrates
+//     letter-by-letter and the title block shrinks/slides up to its
+//     permanent header position at top:20px.
+//
+//   PART 2 — Spotlight tutorial (~12-15 seconds, two steps)
+//     World dims around a radial spotlight. Step 1 frames the orbiting
+//     pre-game modules with the label "Your pre-game education — three
+//     modules. Begin with The Gap." User taps to advance. Step 2 hint
+//     "Tap The Gap to begin." Spotlight stays on the Gap module's
+//     orbit area; world un-dims. User taps the Gap module to start.
+//
+// Single seen flag covers both parts: ga_atheneum_welcome_seen.
+// On revisits: the persistent room label appears immediately, no
+// animation, no spotlight tour.
+// =============================================================
+
+function initAtheneumEntry(){
+  var label = document.getElementById('atheneumRoomLabel');
+  if(!label) return;
+
+  var seen = false;
+  try { seen = localStorage.getItem('ga_atheneum_welcome_seen') === '1'; } catch(e){}
+
+  if(seen){
+    // Returning visitor: just show the persistent room label, no animation.
+    label.classList.add('visible');
+    return;
+  }
+
+  // First-time arrival: run the welcome animation, then the typographic
+  // tutorial (with synchronized Gap volumetric glow + orbit pause), then
+  // mark seen so neither part fires again.
+  runAtheneumWelcome(function(){
+    runAtheneumTypographicTutorial(function(){
+      try { localStorage.setItem('ga_atheneum_welcome_seen', '1'); } catch(e){}
+    });
+  });
+}
+
+function runAtheneumWelcome(onComplete){
+  var overlay = document.getElementById('atheneumWelcomeOverlay');
+  var eyebrow = document.getElementById('atheneumWelcomeEyebrow');
+  var title = document.getElementById('atheneumWelcomeTitle');
+  var subtitle = document.getElementById('atheneumWelcomeSubtitle');
+  var label = document.getElementById('atheneumRoomLabel');
+  if(!overlay || !eyebrow || !title || !subtitle || !label){
+    if(typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  // Wrap eyebrow letters in spans for the disintegration animation.
+  // Preserves spaces as non-breaking spaces so layout doesn't shift.
+  var eyebrowText = eyebrow.textContent;
+  eyebrow.innerHTML = '';
+  for(var i = 0; i < eyebrowText.length; i++){
+    var ch = eyebrowText[i];
+    var span = document.createElement('span');
+    span.className = 'letter';
+    span.textContent = ch === ' ' ? '\u00A0' : ch;
+    span.style.transitionDelay = (i * 60) + 'ms';
+    eyebrow.appendChild(span);
+  }
+
+  // Show overlay
+  overlay.style.display = 'flex';
+
+  // Sequence:
+  //   t=0ms      eyebrow fades in (1s)
+  //   t=400ms    title materializes (1.2s)
+  //   t=1100ms   subtitle fades in (1s)
+  //   t=1700ms   gold pulse on title
+  //   t=2400ms   hold beat begins
+  //   t=3600ms   eyebrow disintegration begins
+  //   t=4400ms   title block transitions to permanent header
+  //   t=5000ms   onComplete fires
+
+  setTimeout(function(){ eyebrow.classList.add('visible'); }, 0);
+  setTimeout(function(){ title.classList.add('visible'); }, 400);
+  setTimeout(function(){ subtitle.classList.add('visible'); }, 1100);
+  setTimeout(function(){ title.classList.add('pulsing'); }, 1700);
+
+  // Disintegrate eyebrow letter-by-letter
+  setTimeout(function(){ eyebrow.classList.add('dissolving'); }, 3600);
+
+  // After eyebrow has dissolved, transition title block to permanent label
+  setTimeout(function(){
+    // Fade out the welcome overlay (title + subtitle drift up and fade)
+    overlay.style.transition = 'opacity 600ms ease-out, transform 600ms ease-out';
+    overlay.style.opacity = '0';
+    overlay.style.transform = 'translateY(-30px)';
+    // Simultaneously fade in the permanent room label
+    label.classList.add('visible');
+  }, 4400);
+
+  // Hide overlay completely after fade
+  setTimeout(function(){
+    overlay.style.display = 'none';
+    if(typeof onComplete === 'function') onComplete();
+  }, 5100);
+}
+
+// =============================================================
+// TYPOGRAPHIC TUTORIAL (replaces the previous spotlight tour)
+// =============================================================
+// Fires after the welcome animation settles. Same materialize-from-mist
+// register as the title moment — three paragraphs fade in sequentially,
+// then a "Begin" button appears. The world canvas dims to ~25% during
+// the tutorial. When paragraph 2 (the action line) materializes, the
+// Gap module gets a volumetric glow and the orbit smoothly pauses,
+// freezing all three modules in place. User clicks "Begin" → tutorial
+// dissolves, world un-dims, orbit resumes, START HERE indicator emerges.
+//
+// State drivers (consumed by drawPregameNodes):
+//   atheneumTutorialActive — boolean, drives the dimming-other-modules
+//     and Gap volumetric glow rendering.
+//   atheneumTutorialGapGlow — 0-1 float, intensity of the Gap glow.
+//     Smoothly eased from 0→1 when paragraph 2 fires, 1→0 on dismiss.
+// =============================================================
+
+var atheneumTutorialActive = false;
+var atheneumTutorialGapGlow = 0;
+var atheneumTutorialGapGlowTarget = 0;
+var atheneumTutorialGapGlowStart = 0;
+var atheneumTutorialGapGlowEaseStart = 0;
+var atheneumTutorialGapGlowEaseDuration = 1200;
+
+function setGapGlowTarget(target, durationMs){
+  atheneumTutorialGapGlowStart = atheneumTutorialGapGlow;
+  atheneumTutorialGapGlowTarget = target;
+  atheneumTutorialGapGlowEaseStart = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+  atheneumTutorialGapGlowEaseDuration = durationMs || 1200;
+}
+
+function setOrbitSpeedTarget(target, durationMs){
+  orbitSpeedMultStart = orbitSpeedMult;
+  orbitSpeedMultTarget = target;
+  orbitSpeedMultEaseStart = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+  orbitSpeedMultEaseDuration = durationMs || 600;
+}
+
+function runAtheneumTypographicTutorial(onComplete){
+  var dim = document.getElementById('atheneumTutorialDim');
+  var tutorial = document.getElementById('atheneumTutorial');
+  var p1 = document.getElementById('atheneumTutorialPara1');
+  var p2 = document.getElementById('atheneumTutorialPara2');
+  var close = document.getElementById('atheneumTutorialClose');
+  var beginBtn = document.getElementById('atheneumTutorialBegin');
+  if(!dim || !tutorial || !p1 || !p2 || !close || !beginBtn){
+    if(typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  // Mark tutorial active (drawPregameNodes reads this and dims non-Gap modules)
+  atheneumTutorialActive = true;
+
+  // Show overlay + dim. The dim fades in over 800ms.
+  tutorial.style.display = 'flex';
+  setTimeout(function(){ dim.classList.add('visible'); }, 0);
+
+  // Sequence:
+  //   t=0       dim fades in (800ms)
+  //   t=200ms   paragraph 1 begins materializing (1.2s)
+  //   t=2000ms  paragraph 2 begins materializing AND
+  //             Gap glow + orbit pause begin (1.2s)
+  //   t=3800ms  paragraph 3 (close) materializes (1s)
+  //   t=4900ms  Begin button fades in
+  //   user clicks Begin → dismiss flow
+
+  setTimeout(function(){ p1.classList.add('visible'); }, 200);
+
+  setTimeout(function(){
+    p2.classList.add('visible');
+    // Synchronized with paragraph 2: Gap glow ramps up, orbit pauses.
+    setGapGlowTarget(1, 1200);
+    setOrbitSpeedTarget(0, 800);
+  }, 2000);
+
+  setTimeout(function(){ close.classList.add('visible'); }, 3800);
+
+  setTimeout(function(){ beginBtn.classList.add('visible'); }, 4900);
+
+  // Dismiss handler
+  function onBegin(){
+    beginBtn.removeEventListener('click', onBegin);
+
+    // Fade out paragraphs and button
+    p1.classList.remove('visible');
+    p2.classList.remove('visible');
+    close.classList.remove('visible');
+    beginBtn.classList.remove('visible');
+
+    // Fade out dim
+    dim.classList.remove('visible');
+
+    // Resume orbit and fade out Gap glow
+    setOrbitSpeedTarget(1, 700);
+    setGapGlowTarget(0, 900);
+
+    // Hide overlay after fade completes
+    setTimeout(function(){
+      tutorial.style.display = 'none';
+      atheneumTutorialActive = false;
+      if(typeof onComplete === 'function') onComplete();
+    }, 1100);
+  }
+  beginBtn.addEventListener('click', onBegin);
+}
 
 // Collect all node positions for sonar collision detection
 function getAllNodePositions(){
@@ -8458,16 +9030,15 @@ function runDiveIn(){
           wrap.classList.remove('dive-settle');
           diveInActive = false;
           markFirstPregameVisitComplete();
-          // After the camera settles, fire the Atheneum intro video
-          // overlay if this user hasn't seen it yet AND a URL is
-          // configured. Small delay so the user has a beat to register
-          // the macro-tree before the overlay drops in.
-          //
-          // The video is a coach-voiced introduction to Gamer Ascension
-          // as an education course — reframed from the original
-          // Guide-led welcome moment in 2026-04. See
-          // openAtheneumIntro() comment block for the full reasoning.
-          setTimeout(function(){ openAtheneumIntro(); }, 600);
+          // After the camera settles, fire the Atheneum entry sequence:
+          // typographic welcome animation + spotlight tutorial. Replaces
+          // the old Atheneum intro video — see initAtheneumEntry()
+          // comment block for the full design rationale (2026-04 shift
+          // away from a Jake-video tutorial in favor of an in-world
+          // system tutorial).
+          setTimeout(function(){
+            if(typeof initAtheneumEntry === 'function') initAtheneumEntry();
+          }, 600);
         }
       }
       requestAnimationFrame(tickB);
@@ -8743,6 +9314,15 @@ document.getElementById('respecConfirmYes').onclick=function(e){
   tesseractCameraZoomMod = 1;
   cameraZoomModTarget = 1;
   cameraZoomModStart = 1;
+  // 2026-04 — atheneum typographic tutorial state reset
+  atheneumTutorialActive = false;
+  atheneumTutorialGapGlow = 0;
+  atheneumTutorialGapGlowTarget = 0;
+  atheneumTutorialGapGlowStart = 0;
+  orbitT = 0;
+  orbitSpeedMult = 1;
+  orbitSpeedMultTarget = 1;
+  orbitSpeedMultStart = 1;
 
   // Reset node lock states
   PREGAME_NODES.forEach(function(n, ni){
@@ -13980,6 +14560,28 @@ window.addEventListener('load',function(){
   loadReflections();
   drawFrame();
   hintTimer=setTimeout(function(){document.getElementById('hint').classList.add('hidden');},7000);
+
+  // Atheneum entry sequence — first-arrival typographic welcome and
+  // spotlight tour. Gated by ga_atheneum_welcome_seen flag. On revisits,
+  // just shows the persistent room label.
+  //
+  // Two trigger paths:
+  //   1) First-time visitors who just dove in from threshold: triggered
+  //      by the dive-in completion handler in runDiveIn() (see above).
+  //   2) Returning visitors and direct arrivals (no dive): triggered
+  //      here in the load handler, AFTER a delay so canvas settles.
+  // We skip the load-handler trigger if the dive-in is in progress
+  // (the dive handler will fire it). We also defer if the rank-up
+  // overlay is about to show (returning all-done users), so the welcome
+  // doesn't fight with the rank-up moment for attention.
+  setTimeout(function(){
+    if(window.__diveInRequested) return; // dive handler will fire it
+    var rankupAboutToShow = (typeof getCurrentRank === 'function')
+      && getCurrentRank() === 'iron'
+      && completed.length >= TOTAL_MODULES;
+    if(rankupAboutToShow) return; // rank-up has priority
+    if(typeof initAtheneumEntry === 'function') initAtheneumEntry();
+  }, 600);
 });
 window.addEventListener('resize',function(){centerTree();});
 </script>
