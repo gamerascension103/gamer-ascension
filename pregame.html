@@ -4073,6 +4073,9 @@ var ascensionSequence = {
   flashAlpha: 0,    // 0→1→0 for the text flash
   flashPhase: 0,    // 0=in, 1=hold, 2=out
   flashTimer: 0,
+  // 2026-04 — guards spawning the convergence on phase 3 entry. Reset
+  // by full reset and by startAscensionSequence().
+  convergenceFired: false,
 };
 
 // Permanent tether opacity (after sequence — ghost lines always visible)
@@ -4553,6 +4556,7 @@ function startAscensionSequence(){
   ascensionSequence.active = true;
   ascensionSequence.phase = 1; // stillness
   ascensionSequence.timer = 0;
+  ascensionSequence.convergenceFired = false; // guard for new convergence-on-phase-3 trigger
   // Trigger nexus ignition
   nexusIgnited = true;
   nexusFlare = 1;
@@ -4656,20 +4660,43 @@ function updateAscensionSequence(){
     return;
   }
 
-  // Phase 3 — path reveal. The crawl mechanic that lit pillar constellations
-  // node-by-node is gone (constellations replaced by the unified path).
-  // Phase 3 now provides a brief reveal beat — the tether is settling, the
-  // path's first nodes become visible — before the sequence transitions to
-  // phase 4 (done, tethers permanent). Held ~300 frames (~5s) so the user
-  // has a moment to see the path appear without visual whiplash.
+  // Phase 3 — convergence + resonance + path reveal. Replaces the old
+  // ~5-second hold-then-pulse mechanic (which fired the now-deprecated
+  // four-color pulse-wave AFTER the camera had already panned away from
+  // the Tesseract — visually disconnected).
+  //
+  // New choreography:
+  //   - At phase 3 start (T=0 within phase): spawn convergence. Off-screen
+  //     gold motes accelerate inward toward the Tesseract. impactDelayMs
+  //     is calibrated so motes land coincident with the camera reaching
+  //     the Tesseract close-up beat (camera waypoint 2 hold).
+  //   - At impact: resonance state machine fires (compression → burst →
+  //     settling). The Tesseract slows, pulls in, then snaps free. Camera
+  //     zoom modulation (+6% in / -10% out / settle) plays alongside.
+  //   - After resonance settles, transition to phase 4.
+  //
+  // Total phase 3 duration: ~3000ms (1500ms convergence travel + 1150ms
+  // resonance + 350ms tail).
   if(seq.phase === 3){
     // Draw permanent tether lines (now full opacity settling to ghost)
     tetherOpacity = Math.min(0.18, tetherOpacity + 0.0005);
     drawPermanentTethers();
 
-    if(seq.timer > 300){
-      // Fire the dramatic pulse before transitioning
-      spawnTesseractPulse();
+    // Fire convergence ONCE on entry to phase 3
+    if(!seq.convergenceFired && seq.timer > 5){
+      seq.convergenceFired = true;
+      // 1500ms travel time for motes — balances "you can see them
+      // approaching" with "they don't drag too long". By the time they
+      // land, camera is at WP2 (Tesseract close-up) hold, so the
+      // resonance plays out while the user is looking at the Tesseract.
+      spawnTesseractConvergence(1500);
+    }
+
+    // Phase 3 ends after the full convergence + resonance sequence
+    // completes (~3000ms = 180 frames at 60fps). Held a little longer
+    // than strictly necessary so the burst flash gets to settle before
+    // the next ceremony beat begins.
+    if(seq.timer > 180){
       seq.phase = 4; seq.timer = 0;
     }
     return;
@@ -4709,6 +4736,13 @@ function drawPermanentTethers(){
   treeCtx.stroke();
   treeCtx.restore();
 
+  // Convergence-phase energy beads — when the convergence has been
+  // spawned, the ley-line itself carries pulsing energy beads racing
+  // downward toward the Tesseract. This is the "energy from above"
+  // arriving in sync with the off-screen motes. Beads spawn while the
+  // motes are travelling and stop spawning after convergence completes.
+  drawLeyLineEnergyBeads();
+
   // Path tether: tesseract → curriculum path start (single line, gold-tinted)
   treeCtx.save();
   treeCtx.strokeStyle = 'rgba(220,215,240,' + (tetherOpacity * 0.4) + ')';
@@ -4724,6 +4758,83 @@ function drawPermanentTethers(){
   treeCtx.lineTo(PATH_CENTER_X, PATH_TOP_Y + 40);
   treeCtx.stroke();
   treeCtx.restore();
+}
+
+// Energy beads racing down the ley-line during convergence. State is
+// derived from the converging motes — if motes are currently in flight,
+// beads also spawn and travel down the ley-line toward the Tesseract,
+// arriving in synchronization. This makes the existing "energy from
+// above" intensify visually during the convergence beat without adding
+// a new state variable.
+var leyLineBeads = [];
+var leyLineLastBeadSpawn = 0;
+
+function drawLeyLineEnergyBeads(){
+  // Only spawn while convergence is active (motes in flight) AND we're
+  // not yet in the burst/settling phase (energy has all landed).
+  var motesInFlight = tesseractMotes.length > 0;
+  var nowT = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+
+  if(motesInFlight && (tesseractResonancePhase === 'idle' || tesseractResonancePhase === 'compressing')){
+    // Spawn a bead every ~80ms during convergence
+    if(nowT - leyLineLastBeadSpawn > 80){
+      leyLineLastBeadSpawn = nowT;
+      leyLineBeads.push({
+        spawnTime: nowT,
+        duration: 900 + Math.random() * 200, // travel time
+        offset: (Math.random() - 0.5) * 8 // slight horizontal jitter for organic feel
+      });
+    }
+  }
+
+  // Update + draw existing beads
+  leyLineBeads = leyLineBeads.filter(function(b){
+    var elapsed = nowT - b.spawnTime;
+    var progress = elapsed / b.duration;
+    if(progress >= 1) return false; // bead reached Tesseract, despawn
+
+    // Ease-in-cubic for acceleration matching the mote behavior
+    var eased = progress * progress * progress;
+    var x = CX + (TESSERACT_X - CX) * eased + b.offset;
+    var y = SPHERE_Y + (TESSERACT_Y - SPHERE_Y) * eased;
+
+    // Alpha: fade in 0-15%, full through, fade out last 10%
+    var alpha;
+    if(progress < 0.15){
+      alpha = progress / 0.15;
+    } else if(progress > 0.9){
+      alpha = (1 - progress) / 0.1;
+    } else {
+      alpha = 1;
+    }
+
+    treeCtx.save();
+    // Bead trail (longer as bead accelerates)
+    var trailLen = progress * 50;
+    var trailX = CX + (TESSERACT_X - CX) * Math.max(0, eased - 0.04);
+    var trailY = SPHERE_Y + (TESSERACT_Y - SPHERE_Y) * Math.max(0, eased - 0.04);
+    treeCtx.strokeStyle = 'rgba(229,197,116,' + (alpha * 0.55) + ')';
+    treeCtx.lineWidth = 2;
+    treeCtx.lineCap = 'round';
+    treeCtx.shadowBlur = 10;
+    treeCtx.shadowColor = 'rgba(245,229,184,0.85)';
+    treeCtx.beginPath();
+    treeCtx.moveTo(trailX + b.offset, trailY);
+    treeCtx.lineTo(x, y);
+    treeCtx.stroke();
+
+    // Bright bead head
+    treeCtx.fillStyle = 'rgba(250,235,200,' + alpha + ')';
+    treeCtx.shadowBlur = 14;
+    treeCtx.shadowColor = 'rgba(229,197,116,1)';
+    treeCtx.beginPath();
+    treeCtx.arc(x, y, 2.5, 0, Math.PI * 2);
+    treeCtx.fill();
+    treeCtx.restore();
+
+    return true;
+  });
 }
 
 function drawAscensionFlash(alpha){
@@ -4846,9 +4957,22 @@ function drawTesseract(){
   var outerS = 88; // outer square half-size
   var innerS = 50; // inner square half-size
 
-  // Rotation — outer clockwise, inner counter-clockwise, slightly different speeds
-  var outerRot = t * 0.0012;
-  var innerRot = -t * 0.0019 + Math.PI / 4; // offset for classic tesseract look
+  // Rotation — outer clockwise, inner counter-clockwise, slightly different speeds.
+  // Modulated by getTesseractRotationMultiplier() during resonance phases:
+  //   compressing: 0.05× (near-stop)
+  //   bursting: 3× (snap acceleration)
+  //   settling: easing back to 1×
+  // During idle the multiplier is 1× so default rotation continues.
+  var rotMult = (typeof getTesseractRotationMultiplier === 'function')
+    ? getTesseractRotationMultiplier() : 1;
+  var outerRot = t * 0.0012 * rotMult;
+  var innerRot = -t * 0.0019 * rotMult + Math.PI / 4; // offset for classic tesseract look
+
+  // Resonance flare intensity — boosts stroke width and glow during compression
+  // and burst. Provided by getTesseractFlareIntensity() — 0 during idle, ramps
+  // up during compression, peaks at burst, fades during settle.
+  var flareIntensity = (typeof getTesseractFlareIntensity === 'function')
+    ? getTesseractFlareIntensity() : 0;
 
   var active = tesseractActive;
   var baseAlpha = active ? 0.85 : 0.12;
@@ -5005,18 +5129,19 @@ function drawTesseract(){
     treeCtx.stroke();
   }
 
-  // Glow pass — both squares thick soft
-  treeCtx.strokeStyle = col + (baseAlpha * 0.15) + ')';
-  drawSquare(outer, 12, 1, 0);
-  drawSquare(inner, 10, 1, 0);
+  // Glow pass — both squares thick soft. Stroke widths boost during
+  // resonance flare, peaking at burst.
+  treeCtx.strokeStyle = col + (baseAlpha * (0.15 + flareIntensity * 0.4)) + ')';
+  drawSquare(outer, 12 + flareIntensity * 8, 1, 0);
+  drawSquare(inner, 10 + flareIntensity * 6, 1, 0);
 
-  // Spine pass — outer square
-  treeCtx.strokeStyle = colB + baseAlpha + ')';
-  drawSquare(outer, 1.2, 1, active ? 16 : 0);
+  // Spine pass — outer square. Resonance thickens the spine and boosts shadow.
+  treeCtx.strokeStyle = colB + Math.min(1, baseAlpha + flareIntensity * 0.3) + ')';
+  drawSquare(outer, 1.2 + flareIntensity * 2, 1, active ? (16 + flareIntensity * 18) : 0);
 
   // Spine pass — inner square
-  treeCtx.strokeStyle = colB + (baseAlpha * 0.8) + ')';
-  drawSquare(inner, 0.9, 1, active ? 10 : 0);
+  treeCtx.strokeStyle = colB + Math.min(1, baseAlpha * 0.8 + flareIntensity * 0.3) + ')';
+  drawSquare(inner, 0.9 + flareIntensity * 1.5, 1, active ? (10 + flareIntensity * 14) : 0);
 
   // Corner connection lines (outer↔inner)
   treeCtx.globalAlpha = baseAlpha * 0.55;
@@ -5050,13 +5175,34 @@ function drawTesseract(){
     treeCtx.fill();
   });
 
-  // Center dot
-  treeCtx.fillStyle = active ? 'rgba(240,250,255,0.9)' : 'rgba(180,200,240,0.2)';
-  treeCtx.shadowBlur = active ? 16 : 0;
+  // Center dot — at peak resonance, becomes a bright flare radiating
+  // outward from the Tesseract's inner core. Dot grows up to 2.5× normal
+  // radius during burst, with substantially boosted shadow blur.
+  var centerR = active ? (4 + flareIntensity * 6) : 2;
+  var centerShadow = active ? (16 + flareIntensity * 32) : 0;
+  treeCtx.fillStyle = active ? 'rgba(240,250,255,' + (0.9 + flareIntensity * 0.1) + ')' : 'rgba(180,200,240,0.2)';
+  treeCtx.shadowBlur = centerShadow;
   treeCtx.shadowColor = 'rgba(200,230,255,1)';
   treeCtx.beginPath();
-  treeCtx.arc(tx, ty, active ? 4 : 2, 0, Math.PI * 2);
+  treeCtx.arc(tx, ty, centerR, 0, Math.PI * 2);
   treeCtx.fill();
+
+  // At peak burst, draw an additional radial flare from the center —
+  // a soft warm-to-cold gradient burst that reads as pure energy
+  // releasing from the gateway. Only active during compression and
+  // burst phases (flareIntensity > 0).
+  if(flareIntensity > 0.1){
+    var flareR = oS * 1.6 * flareIntensity;
+    var flareGrad = treeCtx.createRadialGradient(tx, ty, 0, tx, ty, flareR);
+    flareGrad.addColorStop(0,    'rgba(255,250,220,' + (flareIntensity * 0.7) + ')');
+    flareGrad.addColorStop(0.35, 'rgba(220,235,255,' + (flareIntensity * 0.35) + ')');
+    flareGrad.addColorStop(1,    'rgba(180,220,255,0)');
+    treeCtx.fillStyle = flareGrad;
+    treeCtx.shadowBlur = 0;
+    treeCtx.beginPath();
+    treeCtx.arc(tx, ty, flareR, 0, Math.PI * 2);
+    treeCtx.fill();
+  }
 
   // Label — state-aware. Dormant = faint "THE TESSERACT". Active beacon
   // (post-pregame, gateway awakened) = pulsing gold "ENTER THE PATH"
@@ -5088,82 +5234,332 @@ function drawTesseract(){
   treeCtx.restore();
 }
 
-// ---- TESSERACT PULSE WAVE ----
-// Single dramatic multi-ring pulse emitted when all three trees fully light
-var tesseractPulseWaves = [];
+// ---- TESSERACT CONVERGENCE + RESONANCE ----
+// 2026-04 rebuild — replaces the old four-color pulse-wave system that
+// fired at end of phase 3 of the ascension sequence. The old system was
+// visually busy: four staggered colored rings (red/blue/teal/purple),
+// each with three rendering passes (wide outer glow, mid glow, bright
+// spine) at line widths up to 18×, expanding to 1300-1600px radius.
+// It competed with the path reveal happening at the same moment.
+//
+// New system: dramatic three-beat structure that punctuates the
+// Tesseract's activation as a moment of GATHERING and RELEASE rather
+// than broadcasting. Beats:
+//
+//   Beat 1 — CONVERGENCE: ~40 gold motes spawn at canvas-edge
+//     coordinates relative to current viewport. Each accelerates
+//     inward toward the Tesseract center using ease-in-cubic. They
+//     arrive synchronized with the existing pregame energy crawl
+//     (ley line completion / phase 2 → 3 transition).
+//
+//   Beat 2 — COMPRESSION: the moment all energy lands, the
+//     Tesseract's rotating square slows to ~5% of normal speed.
+//     The diamond and square strokes thicken and brighten. Camera
+//     simultaneously zooms in slightly (+6%) to sell the "pulling"
+//     feeling. Held ~400ms — the moment of tension before release.
+//
+//   Beat 3 — BURST: rotation snaps to 3× speed for ~150ms then
+//     settles. The inner dot becomes a bright central flare. Strokes
+//     thicken further then settle to baseline. Camera quickly zooms
+//     out (-10%) over 200ms then settles. The release.
+//
+// Total runtime ~1.5 seconds for compression + burst. Convergence
+// duration depends on mote spawn timing (typically ~1500ms before
+// expected impact moment).
+//
+// State machine via `tesseractResonancePhase`:
+//   'idle' (default) | 'compressing' | 'bursting' | 'settling'
+// Phase transitions are scheduled by setTimeouts when
+// spawnTesseractConvergence() is called.
 
-function spawnTesseractPulse(){
-  // Three rings — one per pillar color — staggered outward
-  var rings = [
-    {color:'rgba(255,100,68,',  delay:0,   maxR:1400, speed:1.8, lineW:2.5},  // vitality red
-    {color:'rgba(200,230,255,', delay:18,  maxR:1600, speed:1.6, lineW:3.5},  // tesseract ice blue (center/largest)
-    {color:'rgba(85,255,170,',  delay:36,  maxR:1400, speed:2.0, lineW:2.0},  // alignment teal
-    {color:'rgba(187,153,255,', delay:54,  maxR:1300, speed:1.4, lineW:1.5},  // spirit purple (trailing)
-  ];
-  rings.forEach(function(ring){
-    tesseractPulseWaves.push({
-      r: 0,
-      maxR: ring.maxR,
-      speed: ring.speed,
-      color: ring.color,
-      lineW: ring.lineW,
-      delay: ring.delay,
-      age: 0,
-      active: false
+var tesseractMotes = []; // converging gold motes
+var tesseractResonancePhase = 'idle'; // 'idle' | 'compressing' | 'bursting' | 'settling'
+var tesseractResonanceStart = 0; // performance.now() at phase entry — drives the smooth interpolations
+var tesseractResonanceDurations = {
+  compressing: 400, // hold duration of the pull beat
+  bursting: 150,    // peak burst duration
+  settling: 600     // post-burst settle back to ambient
+};
+
+// Camera zoom modulation during resonance — applied in addition to
+// whatever scale the camera pan has set. Works as a multiplier, so
+// e.g. zoomMod=1.06 scales current scale by 6%. Reset to 1 outside
+// the resonance window.
+var tesseractCameraZoomMod = 1;
+var cameraZoomModTarget = 1; // value being eased toward
+var cameraZoomModStart = 1;  // value at start of current ease
+var cameraZoomModEaseStart = 0; // performance.now() at ease start
+var cameraZoomModEaseDuration = 400;
+
+function spawnTesseractConvergence(impactDelayMs){
+  // impactDelayMs = how long until the motes should ARRIVE at the
+  // Tesseract. They spawn now, accelerate inward, and impact at
+  // (now + impactDelayMs). Default ~1500ms — gives a generous
+  // travel window for the eye to catch the inrush.
+  impactDelayMs = impactDelayMs || 1500;
+
+  var wrap = document.getElementById('canvasWrap');
+  if(!wrap) return;
+  var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
+
+  // Compute where in WORLD coordinates the viewport edges currently
+  // are. Motes spawn just outside that rectangle (~150-300px beyond
+  // each edge in world space).
+  var viewportLeft   = -transform.x / transform.scale;
+  var viewportTop    = -transform.y / transform.scale;
+  var viewportRight  = viewportLeft + (vw / transform.scale);
+  var viewportBottom = viewportTop + (vh / transform.scale);
+
+  var spawnTime = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+
+  // 40 gold motes from canvas edges — distributed evenly around the
+  // viewport perimeter, each with slight randomization for organic
+  // feel.
+  var moteCount = 40;
+  for(var i = 0; i < moteCount; i++){
+    var spawnX, spawnY;
+    var edge = i % 4; // distribute across 4 edges evenly
+    var t = (i + Math.random() * 0.6) / moteCount;
+    if(edge === 0){
+      // Top edge — spawn just above viewport top
+      spawnX = viewportLeft + (viewportRight - viewportLeft) * Math.random();
+      spawnY = viewportTop - (150 + Math.random() * 200);
+    } else if(edge === 1){
+      // Right edge
+      spawnX = viewportRight + (150 + Math.random() * 200);
+      spawnY = viewportTop + (viewportBottom - viewportTop) * Math.random();
+    } else if(edge === 2){
+      // Bottom edge
+      spawnX = viewportLeft + (viewportRight - viewportLeft) * Math.random();
+      spawnY = viewportBottom + (150 + Math.random() * 200);
+    } else {
+      // Left edge
+      spawnX = viewportLeft - (150 + Math.random() * 200);
+      spawnY = viewportTop + (viewportBottom - viewportTop) * Math.random();
+    }
+
+    // Slight per-mote variance in arrival time so they don't all hit
+    // on the exact same frame — creates a brief impact window rather
+    // than a single-frame impact (more cinematic).
+    var moteImpactDelay = impactDelayMs + (Math.random() * 120 - 60);
+
+    tesseractMotes.push({
+      sx: spawnX, sy: spawnY,
+      x: spawnX, y: spawnY,
+      tx: TESSERACT_X, ty: TESSERACT_Y,
+      r: 1.5 + Math.random() * 1.2,
+      spawnTime: spawnTime,
+      duration: moteImpactDelay,
+      arrived: false
     });
-  });
+  }
+
+  // Schedule the resonance state machine. Compression starts at
+  // impact moment. Burst follows after the compression hold. Then
+  // settle. Then return to idle.
+  setTimeout(function(){ enterResonancePhase('compressing'); }, impactDelayMs);
+  setTimeout(function(){ enterResonancePhase('bursting'); },
+    impactDelayMs + tesseractResonanceDurations.compressing);
+  setTimeout(function(){ enterResonancePhase('settling'); },
+    impactDelayMs + tesseractResonanceDurations.compressing
+                   + tesseractResonanceDurations.bursting);
+  setTimeout(function(){ enterResonancePhase('idle'); },
+    impactDelayMs + tesseractResonanceDurations.compressing
+                   + tesseractResonanceDurations.bursting
+                   + tesseractResonanceDurations.settling);
 }
 
-function updateTesseractPulse(){
-  if(tesseractPulseWaves.length === 0) return;
-  tesseractPulseWaves = tesseractPulseWaves.filter(function(w){
-    w.age++;
-    if(w.age < w.delay) return true; // waiting
-    if(!w.active){ w.active = true; }
-    w.r += w.speed;
+function enterResonancePhase(phase){
+  tesseractResonancePhase = phase;
+  tesseractResonanceStart = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
 
-    var progress = w.r / w.maxR;
-    // Alpha: ease in fast, long slow fade — dramatic hold before disappearing
-    var alpha;
-    if(progress < 0.05){
-      alpha = progress / 0.05;
-    } else {
-      // Slow graceful fade using ease-in-quad so it lingers
-      var t2 = (progress - 0.05) / 0.95;
-      alpha = 1 - (t2 * t2);
+  // Trigger camera zoom modulation per phase
+  if(phase === 'compressing'){
+    setCameraZoomModTarget(1.06, 400); // ease-in to +6% over compression duration
+  } else if(phase === 'bursting'){
+    setCameraZoomModTarget(0.90, 200); // ease-out to -10% over 200ms (quick burst-out)
+  } else if(phase === 'settling'){
+    setCameraZoomModTarget(1.00, 600); // ease back to neutral over settle
+  }
+}
+
+function setCameraZoomModTarget(target, durationMs){
+  cameraZoomModStart = tesseractCameraZoomMod;
+  cameraZoomModTarget = target;
+  cameraZoomModEaseStart = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+  cameraZoomModEaseDuration = durationMs || 400;
+}
+
+function updateCameraZoomMod(){
+  if(tesseractCameraZoomMod === cameraZoomModTarget) return;
+  var nowT = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+  var elapsed = nowT - cameraZoomModEaseStart;
+  var progress = Math.min(1, elapsed / cameraZoomModEaseDuration);
+  // Cubic ease-in-out — smooth in both directions
+  var eased = progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+  tesseractCameraZoomMod = cameraZoomModStart + (cameraZoomModTarget - cameraZoomModStart) * eased;
+  // Apply: scale the visual transform (without disturbing transform.scale,
+  // which the camera pan logic owns). We re-apply the transform with the
+  // modified scale.
+  applyTransformWithZoomMod();
+}
+
+function applyTransformWithZoomMod(){
+  var wrap = document.getElementById('canvasWrap');
+  if(!wrap) return;
+  var canvas = document.getElementById('treeCanvas');
+  if(!canvas) return;
+  // Compute the modulated scale and a corresponding translation that
+  // keeps the Tesseract centered through the zoom.
+  var modScale = transform.scale * tesseractCameraZoomMod;
+  var vw = wrap.offsetWidth, vh = wrap.offsetHeight;
+  // The base translation comes from transform.x/y. To keep the
+  // Tesseract center fixed during zoom, we recenter on the same
+  // world point. Compute current world center under base transform,
+  // then derive the new translation that puts that same world center
+  // at the modulated scale.
+  var worldCenterX = (vw / 2 - transform.x) / transform.scale;
+  var worldCenterY = (vh / 2 - transform.y) / transform.scale;
+  var newX = (vw / 2) - (worldCenterX * modScale);
+  var newY = (vh / 2) - (worldCenterY * modScale);
+  canvas.style.transform = 'translate(' + newX + 'px, ' + newY + 'px) scale(' + modScale + ')';
+}
+
+function updateTesseractMotes(){
+  if(tesseractMotes.length === 0) return;
+  var nowT = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+
+  tesseractMotes = tesseractMotes.filter(function(m){
+    var elapsed = nowT - m.spawnTime;
+    var progress = elapsed / m.duration;
+
+    if(progress >= 1){
+      // Mote has arrived — remove it
+      m.arrived = true;
+      return false;
     }
-    alpha = Math.max(0, alpha);
+
+    // Ease-in-cubic: slow at edges, fast at impact. This is the
+    // acceleration mechanic — motes drift slowly at first, then
+    // rush in for the final stretch.
+    var eased = progress * progress * progress;
+    m.x = m.sx + (m.tx - m.sx) * eased;
+    m.y = m.sy + (m.ty - m.sy) * eased;
+
+    // Alpha: fade in over first 15%, full opacity through impact
+    var alpha;
+    if(progress < 0.15){
+      alpha = progress / 0.15;
+    } else {
+      alpha = 1;
+    }
+
+    // Trail length grows with speed (acceleration creates streaks)
+    var dx = (m.tx - m.sx) * 3 * progress * progress; // velocity proxy
+    var dy = (m.ty - m.sy) * 3 * progress * progress;
+    var trailLen = Math.min(0.04, progress * 0.04);
 
     treeCtx.save();
 
-    // Wide outer glow — very soft, expansive
-    treeCtx.strokeStyle = w.color + (alpha * 0.12) + ')';
-    treeCtx.lineWidth = w.lineW * 18;
-    treeCtx.shadowBlur = 0;
-    treeCtx.beginPath();
-    treeCtx.arc(TESSERACT_X, TESSERACT_Y, w.r, 0, Math.PI * 2);
-    treeCtx.stroke();
+    // Trail — a faint line behind the mote in the direction of travel.
+    // Length proportional to current velocity. Reads as motion blur.
+    if(progress > 0.2){
+      var tailX = m.x - dx * trailLen;
+      var tailY = m.y - dy * trailLen;
+      treeCtx.strokeStyle = 'rgba(229,197,116,' + (alpha * 0.4) + ')';
+      treeCtx.lineWidth = m.r * 0.8;
+      treeCtx.lineCap = 'round';
+      treeCtx.shadowBlur = 8;
+      treeCtx.shadowColor = 'rgba(201,168,76,0.6)';
+      treeCtx.beginPath();
+      treeCtx.moveTo(tailX, tailY);
+      treeCtx.lineTo(m.x, m.y);
+      treeCtx.stroke();
+    }
 
-    // Mid glow
-    treeCtx.strokeStyle = w.color + (alpha * 0.28) + ')';
-    treeCtx.lineWidth = w.lineW * 6;
+    // Bright mote head
+    treeCtx.fillStyle = 'rgba(245,229,184,' + alpha + ')';
+    treeCtx.shadowBlur = 12;
+    treeCtx.shadowColor = 'rgba(229,197,116,0.9)';
     treeCtx.beginPath();
-    treeCtx.arc(TESSERACT_X, TESSERACT_Y, w.r, 0, Math.PI * 2);
-    treeCtx.stroke();
-
-    // Bright spine
-    treeCtx.strokeStyle = w.color + (alpha * 0.9) + ')';
-    treeCtx.lineWidth = w.lineW;
-    treeCtx.shadowBlur = 20;
-    treeCtx.shadowColor = w.color + '0.7)';
-    treeCtx.beginPath();
-    treeCtx.arc(TESSERACT_X, TESSERACT_Y, w.r, 0, Math.PI * 2);
-    treeCtx.stroke();
+    treeCtx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+    treeCtx.fill();
 
     treeCtx.restore();
-
-    return w.r < w.maxR;
+    return true;
   });
+}
+
+// Helper functions for drawTesseract — provide modulation values
+// based on current resonance phase. drawTesseract reads these and
+// adjusts rotation speed, stroke widths, brightness.
+function getTesseractRotationMultiplier(){
+  if(tesseractResonancePhase === 'idle') return 1;
+  if(tesseractResonancePhase === 'compressing') return 0.05;
+  if(tesseractResonancePhase === 'bursting'){
+    // Snap to 3× during burst, easing toward 1× as burst ends
+    var nowT = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsed = nowT - tesseractResonanceStart;
+    var progress = Math.min(1, elapsed / tesseractResonanceDurations.bursting);
+    return 3 - progress * 1.5; // 3× → 1.5× over burst
+  }
+  if(tesseractResonancePhase === 'settling'){
+    // Smooth back to 1× over settle duration
+    var nowT2 = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsed2 = nowT2 - tesseractResonanceStart;
+    var progress2 = Math.min(1, elapsed2 / tesseractResonanceDurations.settling);
+    return 1.5 - progress2 * 0.5; // 1.5× → 1× over settle
+  }
+  return 1;
+}
+
+function getTesseractFlareIntensity(){
+  // Returns 0-1: how bright the central flare/strokes should be above
+  // baseline. Peaks at burst, fades during settle.
+  if(tesseractResonancePhase === 'idle') return 0;
+  if(tesseractResonancePhase === 'compressing'){
+    var nowT = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsed = nowT - tesseractResonanceStart;
+    var progress = Math.min(1, elapsed / tesseractResonanceDurations.compressing);
+    return progress * 0.5; // build up to 0.5 during compression
+  }
+  if(tesseractResonancePhase === 'bursting'){
+    return 1; // full intensity during burst
+  }
+  if(tesseractResonancePhase === 'settling'){
+    var nowT2 = (typeof performance !== 'undefined' && performance.now)
+      ? performance.now() : Date.now();
+    var elapsed2 = nowT2 - tesseractResonanceStart;
+    var progress2 = Math.min(1, elapsed2 / tesseractResonanceDurations.settling);
+    // Ease out from 1 to 0 over settle
+    return 1 - (progress2 * progress2);
+  }
+  return 0;
+}
+
+// Legacy stubs — kept so any old call sites don't error. Future
+// cleanup pass can remove these once we confirm nothing else references
+// them.
+var tesseractPulseWaves = []; // kept as empty array for any legacy iter calls
+function spawnTesseractPulse(){
+  // No-op. Replaced by spawnTesseractConvergence() — see above.
+  // This stub remains in case any other code still calls the old name;
+  // the function is intentionally empty so nothing fires.
+}
+function updateTesseractPulse(){
+  // No-op. Old per-frame ring update; replaced by updateTesseractMotes
+  // and the resonance state machine, which are wired into drawFrame
+  // separately.
 }
 
 // ---- DRAW ----
@@ -5212,7 +5608,9 @@ function drawFrame(){
   drawConnections();
   updateAscensionSequence();
   drawTesseract();
-  updateTesseractPulse();
+  updateTesseractPulse();   // legacy no-op, kept for safety
+  updateTesseractMotes();   // 2026-04: convergence motes flying inward
+  updateCameraZoomMod();    // 2026-04: per-frame zoom modulation during resonance
   spawnLeyParticles();
   spawnTreeParticles();
   updateLeyParticles();
@@ -8338,6 +8736,13 @@ document.getElementById('respecConfirmYes').onclick=function(e){
   tesseractActive=false; tesseractPulse=0;
   leyParticles.length=0; treeParticles.length=0;
   tesseractPulseWaves.length=0;
+  // 2026-04 — new tesseract activation system reset
+  tesseractMotes.length=0;
+  leyLineBeads.length=0;
+  tesseractResonancePhase = 'idle';
+  tesseractCameraZoomMod = 1;
+  cameraZoomModTarget = 1;
+  cameraZoomModStart = 1;
 
   // Reset node lock states
   PREGAME_NODES.forEach(function(n, ni){
