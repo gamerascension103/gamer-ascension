@@ -12360,7 +12360,7 @@ function showAllComplete(){
 
   var msg = document.createElement('div');
   msg.id = 'completionScreen';
-  msg.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:rgba(7,7,15,0.97);flex-direction:column;gap:0;padding:40px 24px;';
+  msg.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 45%,rgba(20,12,8,1) 0%,rgba(7,5,8,1) 70%,rgba(0,0,0,1) 100%);flex-direction:column;gap:0;padding:40px 24px;';
 
   msg.innerHTML =
     // Screen flash layer — bright-to-dark pulse at peak moment
@@ -12402,15 +12402,18 @@ function showAllComplete(){
         '</div>' +
       '</div>' +
       '<div style="position:relative;height:56px;display:flex;align-items:center;justify-content:center;width:240px">' +
-        '<div id="rankNameBronzeFinal" style="font-family:Cinzel Decorative,serif;font-size:clamp(26px,4vw,40px);color:#cd7f32;opacity:0;transform:scale(0.9);transition:opacity 1.4s ease,transform 1.4s ease;text-shadow:0 0 40px rgba(205,127,50,.4),0 0 80px rgba(205,127,50,.15)">Bronze</div>' +
+        '<div id="rankNameBronzeFinal" style="font-family:Cinzel Decorative,serif;font-size:clamp(26px,4vw,40px);color:#cd7f32;opacity:0;transform:scale(0.7);text-shadow:0 0 40px rgba(205,127,50,.4),0 0 80px rgba(205,127,50,.15)">Bronze</div>' +
       '</div>' +
+      // Meaning line — gives Bronze rank a concrete meaning. Not just
+      // a label; a description of what the user has accomplished.
+      // Fades in slightly after the Bronze name lands.
+      '<div id="rankMeaningLine" style="font-family:\'Crimson Pro\',\'Crimson Text\',serif;font-size:14px;font-style:italic;color:rgba(240,224,160,.55);letter-spacing:.05em;margin-top:6px;opacity:0;transition:opacity .8s ease">Foundation set.</div>' +
     '</div>' +
     '<div id="completionBelow" style="display:flex;flex-direction:column;align-items:center;opacity:0;transition:opacity 1.2s ease;position:relative;z-index:5">' +
       '<div style="width:60px;height:1px;background:rgba(255,255,255,.08);margin-bottom:28px"></div>' +
       '<div style="font-family:Cinzel Decorative,serif;font-size:clamp(18px,3vw,26px);color:#f0ece4;text-align:center;line-height:1.3;margin-bottom:14px">The Path<br><span style="color:#c084fc">Revealed</span></div>' +
-      '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.45);text-align:center;max-width:440px;line-height:1.8;margin-bottom:28px">Your curriculum is now visible below the Tesseract.<br>Sixteen weeks of work between here and The Vantage.</div>' +
-      '<a href="https://calendly.com/straincoaching/insightcall" style="display:inline-flex;align-items:center;gap:8px;background:#c0392b;color:#fff;font-family:DM Sans,sans-serif;font-size:14px;font-weight:500;padding:14px 28px;border-radius:3px;text-decoration:none;margin-bottom:12px">Book your PlayBook call →</a>' +
-      '<button onclick="closeCompletionScreen(\'' + (pendingRank || '') + '\')" style="background:none;border:none;color:rgba(240,236,228,.25);font-size:13px;cursor:pointer;padding:8px">Continue exploring →</button>' +
+      '<div style="font-size:14px;font-weight:300;color:rgba(240,236,228,.55);text-align:center;max-width:440px;line-height:1.7;margin-bottom:28px">Sixteen weeks. Twenty-two skills.<br>The work that takes you from here to The Vantage.</div>' +
+      '<button onclick="closeCompletionScreen(\'' + (pendingRank || '') + '\')" style="background:none;border:1px solid rgba(201,168,76,.35);color:rgba(240,224,160,.85);font-family:Cinzel,serif;font-size:11px;letter-spacing:.22em;text-transform:uppercase;padding:11px 26px;border-radius:3px;cursor:pointer;transition:all .25s">Continue →</button>' +
     '</div>';
 
   document.body.appendChild(msg);
@@ -12560,7 +12563,11 @@ function showAllComplete(){
       ctx.restore();
     }
 
-    // Badge appears at collapse completion
+    // Badge appears at collapse completion — the moment of crystallization.
+    // This is where the celebration (flash + shake + particles) fires —
+    // synced to the badge locking in, not to the name arriving later.
+    // The flash lands right as the badge becomes visible. The name then
+    // arrives in a charged atmosphere ~400ms later.
     if(!badgeBloomed && elapsed > bloomStart){
       badgeBloomed = true;
       var badge = document.getElementById('bronzeBadgeFinal');
@@ -12576,14 +12583,36 @@ function showAllComplete(){
         document.getElementById('rankAssemblyStage').appendChild(ring);
         setTimeout(function(){ ring.style.inset='-44px'; ring.style.opacity='0'; }, 40);
       }
+      // Fire the screen flash + shake + particles AT THIS MOMENT.
+      // (Previously fired at name bloom 400ms later — moved here so
+      // the impact lands on the badge crystallization, not the label.)
+      fireRankUpCelebration(pendingRank);
     }
 
-    // Bronze name rises
+    // Bronze name rises — with overshoot for impact. Replaces the
+    // earlier 1.4s gentle ease with a faster ~500ms entrance that
+    // overshoots to scale(1.08) and settles to scale(1.0). Lands.
     if(!nameBloomed && elapsed > bloomStart + 400){
       nameBloomed = true;
       var bn = document.getElementById('rankNameBronzeFinal');
-      if(bn){ bn.style.opacity = '1'; bn.style.transform = 'scale(1)'; }
-      fireRankUpCelebration(pendingRank);
+      if(bn){
+        if(typeof gsap !== 'undefined'){
+          gsap.to(bn, { opacity: 1, scale: 1.08, duration: 0.32, ease: 'power3.out' });
+          gsap.to(bn, { scale: 1, duration: 0.28, ease: 'power2.out', delay: 0.32 });
+        } else {
+          // Fallback — single-pass scale with brief overshoot via CSS
+          bn.style.transition = 'opacity .35s ease-out, transform .55s cubic-bezier(.34,1.56,.64,1)';
+          bn.style.opacity = '1';
+          bn.style.transform = 'scale(1)';
+        }
+      }
+      // Meaning line ("Foundation set.") fades in shortly after the
+      // Bronze name lands. Quiet, italic, half-opacity gold — names
+      // what Bronze rank actually represents.
+      setTimeout(function(){
+        var meaning = document.getElementById('rankMeaningLine');
+        if(meaning) meaning.style.opacity = '1';
+      }, 600);
     }
 
     var allArrived = stars.every(function(s){ return s.arrived; });
