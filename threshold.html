@@ -169,9 +169,12 @@ body.horizon-collapsing .starfield{
   margin:4px 0 2px;
 }
 .arrival-subtitle{
-  font-family:'Cinzel',serif;font-size:12px;letter-spacing:.3em;
-  color:rgba(240,236,228,0.7);text-transform:uppercase;
+  font-family:'Cinzel',serif;
+  font-size:clamp(16px,2.6vw,22px);
+  letter-spacing:.28em;
+  color:rgba(240,236,228,0.78);text-transform:uppercase;font-weight:400;
   opacity:0;animation:horizon-content-in 1.2s ease-out forwards 4.8s;
+  margin-top:2px;
 }
 .arrival-lore{
   font-family:'DM Sans',sans-serif;font-style:italic;font-size:13px;
@@ -479,10 +482,10 @@ body.horizon-collapsing .starfield{
 
       <!-- Content inside the horizon -->
       <div class="horizon-content">
-        <div class="arrival-eyebrow">You have arrived at</div>
+        <div class="arrival-eyebrow">Welcome to</div>
         <h1 class="arrival-title">Evermark</h1>
-        <div class="arrival-subtitle">The Threshold</div>
-        <p class="arrival-lore">A place of learning. The realms beyond were built for those ready to become.</p>
+        <div class="arrival-subtitle">University</div>
+        <p class="arrival-lore">One Curriculum. One Goal. Ascension.</p>
         <button class="cross-btn" onclick="showTutorial()">Enter</button>
       </div>
     </div>
@@ -1579,8 +1582,8 @@ function advanceDialogue(){
       arrival.innerHTML = ''+
         '<div class="arrival-eyebrow fade-in">Welcome back to</div>'+
         '<h1 class="arrival-title fade-in">Evermark</h1>'+
-        '<div class="arrival-subtitle fade-in">The Threshold</div>'+
-        '<p class="arrival-lore fade-in">The realms await.</p>'+
+        '<div class="arrival-subtitle fade-in">University</div>'+
+        '<p class="arrival-lore fade-in">Continue your ascension.</p>'+
         '<button class="enter-btn fade-in" onclick="showRealms()">Enter the Realms</button>'+
         '<button class="returning-reset-btn" onclick="resetThreshold()">See the Introduction Again</button>';
     }
