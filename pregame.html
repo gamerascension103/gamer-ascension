@@ -1879,13 +1879,13 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
    ====================================== */
 @media (max-width:680px){
   #completionScreen{
-    /* Switch to flex-start + scrollable so taller content (badge + Bronze
-       name + Foundation set + divider + YOU HAVE UNLOCKED + THE PATH +
-       accent + 3 description lines + Continue) doesn't get clipped at
-       the bottom on small phones. The Chambers/Guide buttons are now
-       z-indexed behind system overlays so we don't need extra top padding
-       to clear them — the rank-up sits on top regardless. */
-    align-items:flex-start !important;
+    /* Keep align-items:center (horizontal centering) so the stacked
+       elements share a centered axis. The original mobile clip was
+       caused by justify-content:center on an over-tall column pushing
+       the top off-screen. Switch the MAIN-axis alignment to flex-start
+       (top-anchored) and enable scroll, which solves the clip without
+       breaking horizontal centering. */
+    justify-content:flex-start !important;
     overflow-y:auto !important;
     -webkit-overflow-scrolling:touch;
     padding:24px 18px 40px !important;
