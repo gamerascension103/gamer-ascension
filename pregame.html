@@ -1884,12 +1884,16 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
    ====================================== */
 @media (max-width:680px){
   #completionScreen{
+    /* Switch to flex-start + scrollable so taller content (badge + Bronze
+       name + Foundation set + divider + YOU HAVE UNLOCKED + THE PATH +
+       accent + 3 description lines + Continue) doesn't get clipped at
+       the bottom on small phones. The Chambers/Guide buttons are now
+       z-indexed behind system overlays so we don't need extra top padding
+       to clear them — the rank-up sits on top regardless. */
     align-items:flex-start !important;
     overflow-y:auto !important;
     -webkit-overflow-scrolling:touch;
-    /* Top padding clears the Chambers nav button (top:8px, ~40px tall);
-       bottom padding gives breathing room below Continue. */
-    padding:60px 18px 40px !important;
+    padding:24px 18px 40px !important;
   }
   /* Tighten the badge stage so the whole card is shorter — saves
      vertical room without disturbing the badge's visual presence. */
@@ -1902,6 +1906,41 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   #rankAchievedLabel{margin-bottom:18px !important;font-size:15px !important}
 }
 /* ===== END RANK-UP MOBILE FIT ===== */
+
+/* ===== GUIDE BELL + CHAMBERS — VISIBILITY GATING (2026-04) =====
+   Two changes to declutter the screen:
+
+   1. The Guide bell (.guide-summon, created by guide.js) is hidden by
+      default. It only appears when an active quest is pending — at
+      which point pulseGuideButtonForQuest() adds the .guide-quest-beacon
+      class to the button. Outside of quest-active moments, the bell is
+      invisible. Users who need to summon Guide outside of a quest can't,
+      but per the design discussion that's fine: Guide auto-summons for
+      most key moments (post-rank-up, etc.) and the on-demand bell-tap
+      use case is rare.
+
+   2. The Chambers nav button (.nav-trigger, created by nav.js) and the
+      Guide bell both have z-index 9997 in their own modules — that puts
+      them in front of every system overlay (rank-up, lesson, tutorial,
+      atheneum welcome, etc.). We override here to lower both to z-index
+      40 so they sit ABOVE the canvas world (z-index 1) but BELOW every
+      system overlay (typically z-index 100+). Result: during normal
+      exploration the buttons are visible; during any system overlay
+      they go behind it. Users have to dismiss the overlay to navigate
+      via Chambers, which is acceptable — keeps system overlays clean.
+
+   The .guide-summon override uses display:none rather than visibility:
+   hidden so the bell takes no layout space when invisible. Only when
+   .guide-quest-beacon is added does it flip to display:flex (the value
+   used by guide.js's own .guide-summon definition).
+   ============================================================= */
+
+/* Hide Guide bell by default; show only when a quest is active */
+.guide-summon{display:none !important;z-index:40 !important}
+.guide-summon.guide-quest-beacon{display:flex !important}
+
+/* Lower Chambers nav z-index so it sits below system overlays */
+.nav-trigger{z-index:40 !important}
 
 .codex-panel{position:fixed;inset:0;z-index:450;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s}
 .codex-panel.open{opacity:1;pointer-events:all}
