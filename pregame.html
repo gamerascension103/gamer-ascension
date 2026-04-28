@@ -1890,13 +1890,11 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
     -webkit-overflow-scrolling:touch;
     padding:24px 18px 40px !important;
   }
-  /* Tighten the badge stage so the whole card is shorter — saves
-     vertical room without disturbing the badge's visual presence. */
-  #rankAssemblyStage{
-    width:200px !important;
-    height:200px !important;
-    margin-bottom:14px !important;
-  }
+  /* DO NOT shrink #rankAssemblyStage — the canvas inside has a fixed
+     260x260 bitmap with hand-tuned coordinates (cx=130, cy=130, scatter
+     radius, badge radius) and shrinking the parent causes the
+     constellation construction to render off-center relative to the
+     CSS-flex-centered final badge. Stage stays at its authored size. */
   #rankAssemblyWrap{margin-bottom:18px !important}
   #rankAchievedLabel{margin-bottom:18px !important;font-size:15px !important}
 }
