@@ -1870,6 +1870,39 @@ body.guide-over-lesson .lesson-body{overflow-y:hidden;pointer-events:none}
   }
 }
 /* ===== END DEV RESET PANEL ===== */
+
+/* ===== RANK-UP OVERLAY — MOBILE FIT =====
+   The rank-up screen (#completionScreen) is constructed inline at runtime
+   with align-items:center on a flex column. On desktop, content fits
+   comfortably. On mobile, the badge + Bronze name + Foundation set + divider
+   + YOU HAVE UNLOCKED + THE PATH + accent + 3 description lines + Continue
+   button stack taller than viewport, and align-items:center clips the
+   bottom (Continue button gets cut off).
+   Mobile fix: switch to align-items:flex-start so content starts from
+   top, enable overflow-y:auto so the user can scroll if content exceeds
+   viewport, and tighten vertical paddings/margins.
+   ====================================== */
+@media (max-width:680px){
+  #completionScreen{
+    align-items:flex-start !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch;
+    /* Top padding clears the Chambers nav button (top:8px, ~40px tall);
+       bottom padding gives breathing room below Continue. */
+    padding:60px 18px 40px !important;
+  }
+  /* Tighten the badge stage so the whole card is shorter — saves
+     vertical room without disturbing the badge's visual presence. */
+  #rankAssemblyStage{
+    width:200px !important;
+    height:200px !important;
+    margin-bottom:14px !important;
+  }
+  #rankAssemblyWrap{margin-bottom:18px !important}
+  #rankAchievedLabel{margin-bottom:18px !important;font-size:15px !important}
+}
+/* ===== END RANK-UP MOBILE FIT ===== */
+
 .codex-panel{position:fixed;inset:0;z-index:450;display:flex;align-items:center;justify-content:center;background:rgba(8,8,16,.85);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s}
 .codex-panel.open{opacity:1;pointer-events:all}
 .codex-card{background:rgba(8,8,20,.98);border:1px solid rgba(201,168,76,.25);border-radius:8px;max-width:560px;width:94%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 0 80px rgba(80,40,0,.3)}
@@ -8224,6 +8257,52 @@ function runAtheneumTypographicTutorial(onComplete){
       dim.classList.remove('visible');
       setGapGlowTarget(0, 900);
       setOrbitSpeedTarget(1, 700);
+
+      // MOBILE: zoom the camera in toward the Gap so it's not tiny on
+      // a phone screen. The user just had a clear isolating moment with
+      // the spotlight; now the world reveals AND the camera glides in
+      // toward the Gap, so by the time stage 4 fires the Gap is at
+      // comfortable tap-target size in viewport. Desktop already frames
+      // the world at a readable scale; no zoom needed.
+      //
+      // Target scale: aim for ~0.7 on a typical phone (~390px wide). At
+      // that scale the Gap pentagon renders ~53px in viewport, with its
+      // gold halo extending to ~190px — comfortable to look at and tap.
+      // Formula: Math.min(0.85, vwM/W * 4.3) yields ~0.7 on a 390px-wide
+      // viewport, ~0.85 cap on larger phones, scales down on smaller.
+      var wrapM = document.getElementById('canvasWrap');
+      if(wrapM && wrapM.offsetWidth < 700){
+        var gapNodeM = PREGAME_NODES.find(function(n){ return n.id === 'gap'; });
+        if(gapNodeM){
+          var gapWorldM = nodePos(gapNodeM);
+          var vwM = wrapM.offsetWidth, vhM = wrapM.offsetHeight;
+          var targetScale = Math.min(0.85, vwM / W * 4.3);
+          // Center the Gap in viewport at the new scale
+          var targetX = (vwM / 2) - (gapWorldM.x * targetScale);
+          var targetY = (vhM / 2) - (gapWorldM.y * targetScale);
+          // Animate transform from current to target over 1000ms ease-out cubic.
+          // We drive via requestAnimationFrame and call applyTransform each tick
+          // so the canvas re-renders at the new scale/translation each frame.
+          var fromScale = transform.scale;
+          var fromX = transform.x;
+          var fromY = transform.y;
+          var zoomStartT = (typeof performance !== 'undefined' && performance.now)
+            ? performance.now() : Date.now();
+          var zoomDur = 1000;
+          function zoomTick(){
+            var nowZ = (typeof performance !== 'undefined' && performance.now)
+              ? performance.now() : Date.now();
+            var pZ = Math.min(1, (nowZ - zoomStartT) / zoomDur);
+            var eZ = 1 - Math.pow(1 - pZ, 3); // ease-out cubic
+            transform.scale = fromScale + (targetScale - fromScale) * eZ;
+            transform.x = fromX + (targetX - fromX) * eZ;
+            transform.y = fromY + (targetY - fromY) * eZ;
+            applyTransform();
+            if(pZ < 1) requestAnimationFrame(zoomTick);
+          }
+          requestAnimationFrame(zoomTick);
+        }
+      }
     }, 1700);
 
     // Stage 4 — at +2700ms, tutorial fully removed.
