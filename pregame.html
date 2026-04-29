@@ -2994,12 +2994,82 @@ var completedSkills = JSON.parse(localStorage.getItem('ga_completed_skills') || 
 function markSkillComplete(skillId){
   // Adds a curriculum skill to the completed list and persists. Idempotent.
   // Called by the lesson completion flow once Energy Management (and later
-  // skills) have lesson content wired up. For now, this is a no-op surface
-  // available for future use.
+  // skills) have lesson content wired up.
   if(typeof skillId !== 'string') return;
   if(completedSkills.indexOf(skillId) !== -1) return;
   completedSkills.push(skillId);
   localStorage.setItem('ga_completed_skills', JSON.stringify(completedSkills));
+}
+
+// =============================================================
+// PILLAR ANCHORS — on-canvas thematic vessels that fill as
+// skills in their pillar complete. Vitality (hexagon, red) sits
+// on the left flank at mid-path. Spirit (rhombus, violet) sits
+// on the right flank, upper-mid (closer to the Vantage). Alignment
+// (triangle, green) sits on the left flank, lower-mid.
+//
+// Total segment counts are computed from PATH_NODES at runtime,
+// so the system stays correct if curriculum geometry changes.
+// =============================================================
+var PILLAR_ANCHORS = {
+  vitality:  { x: 760,  y: 1900, r: 64, label: 'VITALITY' },
+  spirit:    { x: 1640, y: 1820, r: 64, label: 'SPIRIT'   },
+  alignment: { x: 760,  y: 2780, r: 64, label: 'ALIGNMENT'}
+};
+
+// Compute total skills per pillar from PATH_NODES (single source of truth).
+// PATH_NODES is declared below — wrap in a function so we lazy-resolve.
+function getPillarTotal(pillar){
+  if(typeof PATH_NODES === 'undefined') return 0;
+  var n = 0;
+  for(var i = 0; i < PATH_NODES.length; i++){
+    if(PATH_NODES[i].kind === 'skill' && PATH_NODES[i].pillar === pillar) n++;
+  }
+  return n;
+}
+function getPillarCompleted(pillar){
+  if(typeof PATH_NODES === 'undefined') return 0;
+  var n = 0;
+  for(var i = 0; i < PATH_NODES.length; i++){
+    var node = PATH_NODES[i];
+    if(node.kind !== 'skill' || node.pillar !== pillar) continue;
+    if(completedSkills.indexOf(node.id) !== -1) n++;
+  }
+  return n;
+}
+
+// Spark ceremony queue — one-time animation that fires when a skill
+// completes. Each entry: { skillId, pillar, fromX, fromY, toX, toY,
+// startMs, phase }. Phases: 0=ignite, 1=streak, 2=receive, 3=settle, done.
+var pillarSparks = [];
+
+// Per-anchor receive pulse — set when a spark arrives. Read in the
+// anchor draw call to add a brief brighten on the receiving segment.
+var anchorReceiveTime = { vitality: 0, spirit: 0, alignment: 0 };
+
+function fireSkillCompletionSpark(skillId){
+  // Find the path node matching this skill id, get its pillar and position,
+  // queue a spark animation traveling to that pillar's anchor.
+  if(typeof PATH_NODES === 'undefined') return;
+  var node = null;
+  for(var i = 0; i < PATH_NODES.length; i++){
+    if(PATH_NODES[i].id === skillId){ node = PATH_NODES[i]; break; }
+  }
+  if(!node) return;
+  var anchor = PILLAR_ANCHORS[node.pillar];
+  if(!anchor) return;
+  var nowT = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+  pillarSparks.push({
+    skillId: skillId,
+    pillar:  node.pillar,
+    fromX:   node.x,
+    fromY:   node.y,
+    toX:     anchor.x,
+    toY:     anchor.y,
+    startMs: nowT,
+    phase:   0
+  });
 }
 
 // Total pre-game module count. Single source of truth for the ascension /
@@ -6884,6 +6954,12 @@ function drawCurriculumPath(){
   // Connectors (trail) — drawn under nodes
   drawPathConnectors();
 
+  // Pillar anchors — sit underneath nodes but above connectors so
+  // they read as part of the path's flanking architecture.
+  drawPillarAnchor(treeCtx, 'vitality');
+  drawPillarAnchor(treeCtx, 'spirit');
+  drawPillarAnchor(treeCtx, 'alignment');
+
   // Nodes themselves
   PATH_NODES.forEach(function(n){
     if(n.kind === 'integration'){
@@ -6892,6 +6968,10 @@ function drawCurriculumPath(){
       drawPathNode(n);
     }
   });
+
+  // Spark ceremony — draws on top of everything so the streak is visible
+  // crossing the canvas. Updates queue state internally.
+  updatePillarSparks();
 }
 
 function drawPhaseAtmosphere(){
@@ -7088,13 +7168,22 @@ function drawPathNode(node){
 
   // ---- State-driven outer halo (drawn first, sits behind the shape) ----
   if(state === 'done'){
-    var doneGrad = treeCtx.createRadialGradient(x, y, 0, x, y, r + 22);
-    doneGrad.addColorStop(0, 'rgba(' + pillarRgb + ',0.45)');
-    doneGrad.addColorStop(0.6, 'rgba(' + pillarRgb + ',0.12)');
-    doneGrad.addColorStop(1, 'rgba(' + pillarRgb + ',0)');
+    // Persistent slow-breathing aura — done nodes are alive, settled,
+    // holding their essence. Period ~3.6s. Modulates radius and alpha
+    // both on a long cycle so the eye reads the node as breathing
+    // rather than blinking.
+    var doneBreathPhase = (typeof performance !== 'undefined' && performance.now)
+      ? (performance.now() / 1800) : (Date.now() / 1800);
+    var doneBreath = (Math.sin(doneBreathPhase + (node.x + node.y) * 0.001) + 1) / 2;
+    var doneR = r + 22 + doneBreath * 5;
+    var doneAlpha0 = 0.40 + doneBreath * 0.12;
+    var doneGrad = treeCtx.createRadialGradient(x, y, 0, x, y, doneR);
+    doneGrad.addColorStop(0,   'rgba(' + pillarRgb + ',' + doneAlpha0 + ')');
+    doneGrad.addColorStop(0.6, 'rgba(' + pillarRgb + ',' + (doneAlpha0 * 0.27) + ')');
+    doneGrad.addColorStop(1,   'rgba(' + pillarRgb + ',0)');
     treeCtx.fillStyle = doneGrad;
     treeCtx.beginPath();
-    treeCtx.arc(x, y, r + 22, 0, Math.PI * 2);
+    treeCtx.arc(x, y, doneR, 0, Math.PI * 2);
     treeCtx.fill();
   } else if(state === 'current'){
     // Pulsing halo in pulse-stroke palette
@@ -7219,6 +7308,272 @@ function drawPillarSigil(ctx, cx, cy, r, pillar, rotation){
   } else {
     // Fallback — circle (used for integration glyphs as needed)
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  }
+}
+
+// ---------------------------------------------------------------
+// drawPillarAnchor — on-canvas vessel for pillar progress
+//
+// A larger version of the pillar sigil placed thematically on the
+// canvas flanks. The sigil is bordered by a segmented ring; one
+// segment per skill in the pillar. Lit segments mean completed
+// skills. The whole anchor breathes slowly when fully charged.
+// A receiving segment briefly brightens when a spark arrives.
+// ---------------------------------------------------------------
+function drawPillarAnchor(ctx, pillar){
+  var anchor = PILLAR_ANCHORS[pillar];
+  if(!anchor) return;
+  var total = getPillarTotal(pillar);
+  if(total === 0) return;
+  var done = getPillarCompleted(pillar);
+  var pillarColor = PILLAR_COLORS[pillar] || '#c9a84c';
+  var pillarRgb = pillarColorRgb(pillar);
+  var fullyCharged = (done >= total);
+  var x = anchor.x, y = anchor.y, r = anchor.r;
+
+  // Slow breathing modulator — drives the persistent halo and,
+  // when fully charged, the segment glow. Period ~3.6s.
+  var breathPhase = (typeof performance !== 'undefined' && performance.now)
+    ? (performance.now() / 1800) : (Date.now() / 1800);
+  var breath = (Math.sin(breathPhase) + 1) / 2;  // 0..1
+
+  ctx.save();
+
+  // ---- Outer halo (always present, modest; intensifies with progress) ----
+  var progressFrac = done / total;
+  var haloAlpha = 0.08 + progressFrac * 0.20 + breath * 0.04;
+  var haloR = r + 18;
+  var haloGrad = ctx.createRadialGradient(x, y, r * 0.6, x, y, haloR);
+  haloGrad.addColorStop(0,   'rgba(' + pillarRgb + ',' + (haloAlpha * 0.5) + ')');
+  haloGrad.addColorStop(0.6, 'rgba(' + pillarRgb + ',' + (haloAlpha * 0.85) + ')');
+  haloGrad.addColorStop(1,   'rgba(' + pillarRgb + ',0)');
+  ctx.fillStyle = haloGrad;
+  ctx.beginPath();
+  ctx.arc(x, y, haloR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ---- Segmented progress ring ----
+  // Drawn as N arcs around the sigil, with a small gap between each.
+  // Each segment is either lit (completed) or dim (not yet). When
+  // a spark recently arrived, the most-recent segment brightens for
+  // ~700ms before settling into its persistent lit state.
+  var ringR = r + 10;
+  var totalArc = Math.PI * 2;
+  var gapAngle = totalArc * 0.012;          // gap between segments, ~0.7deg
+  var segArc = (totalArc - gapAngle * total) / total;
+  var startAngle = -Math.PI / 2;            // start at top, go clockwise
+
+  var nowT = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+  var receiveElapsed = nowT - (anchorReceiveTime[pillar] || 0);
+  var receiveActive = receiveElapsed >= 0 && receiveElapsed < 700;
+  var receivePulse = receiveActive ? (1 - receiveElapsed / 700) : 0;
+  var newestLitIdx = done - 1;              // segment that was most recently lit
+
+  for(var i = 0; i < total; i++){
+    var a0 = startAngle + i * (segArc + gapAngle);
+    var a1 = a0 + segArc;
+    var isLit = (i < done);
+    var isNewest = (i === newestLitIdx);
+
+    var segAlpha, segWidth, segGlow;
+    if(isLit){
+      segAlpha = 0.85;
+      segWidth = 3;
+      segGlow = 12;
+      // Newest segment, recently received: brighten + scale up briefly
+      if(isNewest && receiveActive){
+        segAlpha = 0.95 + receivePulse * 0.05;
+        segWidth = 3 + receivePulse * 4;
+        segGlow = 12 + receivePulse * 18;
+      } else if(fullyCharged){
+        // When pillar is fully charged, every segment breathes together
+        segAlpha = 0.7 + breath * 0.25;
+        segGlow = 10 + breath * 8;
+      }
+    } else {
+      segAlpha = 0.18;
+      segWidth = 1.4;
+      segGlow = 0;
+    }
+
+    ctx.strokeStyle = isLit
+      ? 'rgba(' + pillarRgb + ',' + segAlpha + ')'
+      : 'rgba(216,200,170,' + segAlpha + ')';
+    ctx.lineWidth = segWidth;
+    ctx.shadowBlur = segGlow;
+    ctx.shadowColor = isLit ? pillarColor : 'transparent';
+    ctx.beginPath();
+    ctx.arc(x, y, ringR, a0, a1);
+    ctx.stroke();
+  }
+  ctx.shadowBlur = 0;
+
+  // ---- Inner sigil shape ----
+  // Faint outer pass + bright spine, like the path nodes.
+  ctx.strokeStyle = 'rgba(' + pillarRgb + ',' + (0.25 + progressFrac * 0.25) + ')';
+  ctx.lineWidth = 0.8;
+  drawPillarSigil(ctx, x, y, r + 2, pillar);
+  ctx.stroke();
+
+  // Center fill — modest tint that strengthens with progress
+  var fillAlpha = 0.06 + progressFrac * 0.18;
+  ctx.fillStyle = 'rgba(' + pillarRgb + ',' + fillAlpha + ')';
+  drawPillarSigil(ctx, x, y, r, pillar);
+  ctx.fill();
+
+  // Bright spine
+  var spineAlpha = 0.5 + progressFrac * 0.4 + (fullyCharged ? breath * 0.15 : 0);
+  ctx.strokeStyle = pillarColor;
+  ctx.globalAlpha = spineAlpha;
+  ctx.lineWidth = 1.4;
+  ctx.shadowBlur = 14 + progressFrac * 8;
+  ctx.shadowColor = pillarColor;
+  drawPillarSigil(ctx, x, y, r, pillar);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+
+  // ---- Central glyph (the pillar's icon at full size, dimly) ----
+  if(typeof drawPillarGlyph === 'function'){
+    drawPillarGlyph(ctx, x, y, r * 0.55, pillar, 0.35 + progressFrac * 0.4);
+  }
+
+  // ---- Label below the anchor — small Cinzel uppercase ----
+  ctx.font = '11px "Cinzel", serif';
+  ctx.fillStyle = 'rgba(216,200,170,' + (0.4 + progressFrac * 0.3) + ')';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Letter-spacing simulated by adding spaces between chars
+  var label = (anchor.label || pillar.toUpperCase()).split('').join(' ');
+  ctx.fillText(label, x, y + r + 28);
+
+  // ---- Count below label ----
+  ctx.font = '10px "Cinzel", serif';
+  ctx.fillStyle = 'rgba(216,200,170,0.5)';
+  ctx.fillText(done + ' / ' + total, x, y + r + 44);
+
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------
+// updatePillarSparks — advance and draw the per-skill completion
+// ceremony. Each spark has 4 phases:
+//   0 ignite  (0-500ms)   bright flash at the source node
+//   1 streak  (500-1700ms) particle/light streaks toward anchor
+//   2 receive (1700-2400ms) anchor pulses, segment lights
+//   3 done    cleanup
+// ---------------------------------------------------------------
+function updatePillarSparks(){
+  if(!pillarSparks.length) return;
+  var nowT = (typeof performance !== 'undefined' && performance.now)
+    ? performance.now() : Date.now();
+
+  for(var i = pillarSparks.length - 1; i >= 0; i--){
+    var s = pillarSparks[i];
+    var elapsed = nowT - s.startMs;
+    var pillarColor = PILLAR_COLORS[s.pillar] || '#c9a84c';
+    var pillarRgb   = pillarColorRgb(s.pillar);
+
+    treeCtx.save();
+
+    if(elapsed < 500){
+      // Phase 0 — IGNITE. Bright white-hot core at source, expanding
+      // pillar-colored shockwave around it.
+      var prog = elapsed / 500;
+      var coreR = 6 + prog * 22;
+      var coreAlpha = 1 - prog * 0.3;
+      // White-hot core
+      treeCtx.fillStyle = 'rgba(255,255,255,' + coreAlpha + ')';
+      treeCtx.shadowBlur = 30;
+      treeCtx.shadowColor = pillarColor;
+      treeCtx.beginPath();
+      treeCtx.arc(s.fromX, s.fromY, coreR * 0.4, 0, Math.PI * 2);
+      treeCtx.fill();
+      // Pillar-colored shockwave
+      var shockR = 18 + prog * 60;
+      var shockAlpha = (1 - prog) * 0.6;
+      treeCtx.strokeStyle = 'rgba(' + pillarRgb + ',' + shockAlpha + ')';
+      treeCtx.lineWidth = 2;
+      treeCtx.shadowBlur = 0;
+      treeCtx.beginPath();
+      treeCtx.arc(s.fromX, s.fromY, shockR, 0, Math.PI * 2);
+      treeCtx.stroke();
+    } else if(elapsed < 1700){
+      // Phase 1 — STREAK. Light travels from source to anchor along
+      // a slight arc. Trail of fading particles behind the leader.
+      var prog = (elapsed - 500) / 1200;
+      var eased = 1 - Math.pow(1 - prog, 3);   // ease-out cubic
+      // Arc — bow the path slightly so it doesn't go straight
+      var midX = (s.fromX + s.toX) / 2;
+      var midY = (s.fromY + s.toY) / 2;
+      var dx = s.toX - s.fromX, dy = s.toY - s.fromY;
+      var dist = Math.sqrt(dx*dx + dy*dy);
+      // Perpendicular offset for arc apex
+      var perpX = -dy / dist, perpY = dx / dist;
+      var arcLift = Math.min(dist * 0.18, 80);
+      midX += perpX * arcLift;
+      midY += perpY * arcLift;
+      // Quadratic Bezier interpolation
+      function bezier(t){
+        var u = 1 - t;
+        return {
+          x: u*u*s.fromX + 2*u*t*midX + t*t*s.toX,
+          y: u*u*s.fromY + 2*u*t*midY + t*t*s.toY
+        };
+      }
+      var leader = bezier(eased);
+      // Leader light
+      treeCtx.fillStyle = pillarColor;
+      treeCtx.shadowBlur = 22;
+      treeCtx.shadowColor = pillarColor;
+      treeCtx.beginPath();
+      treeCtx.arc(leader.x, leader.y, 4.5, 0, Math.PI * 2);
+      treeCtx.fill();
+      // White-hot core inside leader
+      treeCtx.fillStyle = 'rgba(255,255,255,0.9)';
+      treeCtx.shadowBlur = 12;
+      treeCtx.beginPath();
+      treeCtx.arc(leader.x, leader.y, 2, 0, Math.PI * 2);
+      treeCtx.fill();
+      // Trail — 8 particles behind, fading
+      treeCtx.shadowBlur = 0;
+      for(var k = 1; k <= 8; k++){
+        var trailT = Math.max(0, eased - k * 0.04);
+        if(trailT <= 0) continue;
+        var p = bezier(trailT);
+        var trailAlpha = (1 - k / 8) * 0.55;
+        treeCtx.fillStyle = 'rgba(' + pillarRgb + ',' + trailAlpha + ')';
+        treeCtx.beginPath();
+        treeCtx.arc(p.x, p.y, 3 - k * 0.25, 0, Math.PI * 2);
+        treeCtx.fill();
+      }
+      // Just before arrival, mark the anchor receive time so its
+      // segment-pulse animation begins as soon as the streak lands.
+      if(prog > 0.92 && s.phase < 2){
+        anchorReceiveTime[s.pillar] = nowT;
+        s.phase = 2;
+      }
+    } else if(elapsed < 2400){
+      // Phase 2 — RECEIVE. Anchor's segment pulse is already firing
+      // (driven by anchorReceiveTime). Add a brief expanding ring at
+      // the anchor itself for impact.
+      var prog = (elapsed - 1700) / 700;
+      var ringR = 30 + prog * 70;
+      var ringAlpha = (1 - prog) * 0.7;
+      treeCtx.strokeStyle = 'rgba(' + pillarRgb + ',' + ringAlpha + ')';
+      treeCtx.lineWidth = 2.2;
+      treeCtx.shadowBlur = 14;
+      treeCtx.shadowColor = pillarColor;
+      treeCtx.beginPath();
+      treeCtx.arc(s.toX, s.toY, ringR, 0, Math.PI * 2);
+      treeCtx.stroke();
+    } else {
+      // Phase 3 — DONE. Remove from queue.
+      pillarSparks.splice(i, 1);
+    }
+
+    treeCtx.restore();
   }
 }
 
@@ -13898,6 +14253,15 @@ function completeModuleEnergy(){
     return;
   }
 
+  // Mark the skill complete in the curriculum-skills tracking system
+  // (drives getPathNodeState 'done' rendering and pillar anchor segment).
+  markSkillComplete(moduleId);
+
+  // Queue the spark ceremony — fires once the lesson overlay closes
+  // and the user is back on the canvas. The spark travels from the
+  // node to the Vitality anchor and lights one segment of the ring.
+  fireSkillCompletionSpark(moduleId);
+
   // Jump the module vessel to 100%.
   updateModuleVessel(moduleId, 1);
 
@@ -13921,6 +14285,13 @@ function completeModuleEnergy(){
       } else {
         if(!completed.includes(moduleId)) completed.push(moduleId);
         localStorage.setItem('ga_pregame_v2_completed', JSON.stringify(completed));
+      }
+      // Restart the spark timer so the ceremony fires after lesson close
+      // (when the canvas is visible again, not while the overlay is still up).
+      var spark = pillarSparks[pillarSparks.length - 1];
+      if(spark){
+        spark.startMs = (typeof performance !== 'undefined' && performance.now)
+          ? performance.now() : Date.now();
       }
       closeLesson();
     }, 2400);
