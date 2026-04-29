@@ -2719,6 +2719,7 @@ body.codex-open  .nav-trigger {
   <button class="dev-reset-btn" onclick="devFullReset()" title="Clear all Gamer Ascension localStorage keys and reload this page">Full Reset</button>
   <button class="dev-reset-btn" onclick="devBackToStart()" title="Clear all localStorage and return to the Evermark intro video (full first-time experience)">Back to Start</button>
   <button class="dev-reset-btn" onclick="devAutoComplete()" title="Mark all modules complete and fire the ascension sequence">Auto-Complete</button>
+  <button class="dev-reset-btn" onclick="devCompleteAllPathSkills(event)" title="Mark every Path skill complete and fire pillar sparks staggered so you can watch all three pillars charge. Shift-click to add to existing completions instead of resetting first.">Complete Path</button>
 </div>
 
 <canvas class="nebula-canvas" id="nebulaCanvas"></canvas>
@@ -11300,6 +11301,73 @@ function devAutoComplete(){
     console.error('[Dev] Auto-complete failed:', e);
   }
 }
+
+// ===== DEV COMPLETE ALL PATH SKILLS (temporary) =====
+// Marks every Path skill as completed and fires the spark ceremony for each
+// one in a staggered cadence so the developer can watch all three pillars
+// charge in rapid succession. Useful for verifying pillar anchor segment
+// fills, breathing aura on done nodes, and the streak ceremony at scale.
+//
+// Behavior:
+// - Reset completedSkills first so the dev sees the full transition (locked
+//   → done) rather than starting from a partially-completed state. If the
+//   user wants to *add* to existing completions instead of resetting, hold
+//   shift while clicking — that path skips the reset.
+// - Fire sparks at 250ms intervals so the streaks can travel without
+//   overlapping each other heavily; the canvas stays legible.
+// - Skills are processed in week order so the visual progression feels
+//   natural — week 1 fires first, week 16 fires last.
+//
+// Remove this function, the button, and the accompanying CSS before shipping.
+function devCompleteAllPathSkills(event){
+  try {
+    if(typeof PATH_NODES === 'undefined'){
+      console.log('[Dev] PATH_NODES not defined yet');
+      return;
+    }
+    var additive = event && event.shiftKey;
+
+    // Reset unless additive — gives the full charging visual from zero
+    if(!additive){
+      completedSkills.length = 0;
+      localStorage.setItem('ga_completed_skills', JSON.stringify(completedSkills));
+      // Clear any in-flight sparks so we don't stack
+      if(typeof pillarSparks !== 'undefined') pillarSparks.length = 0;
+      console.log('[Dev] Path skills reset. Firing staggered sparks for all skill nodes.');
+    } else {
+      console.log('[Dev] Path skills additive complete (shift-clicked) — adding to existing.');
+    }
+
+    // Build ordered list of skill nodes — sort by week then by x position
+    // so the visual cadence reads as a natural sweep down the path.
+    var skillNodes = PATH_NODES.filter(function(n){ return n.kind === 'skill'; });
+    skillNodes.sort(function(a, b){
+      if(a.week !== b.week) return a.week - b.week;
+      return (a.x || 0) - (b.x || 0);
+    });
+
+    // Stagger: 250ms between each spark. With ~22 skills that's ~5.5s
+    // total — fast enough to feel ceremonial, slow enough to watch each one.
+    var stagger = 250;
+    skillNodes.forEach(function(node, i){
+      setTimeout(function(){
+        // Skip if already complete in additive mode
+        if(additive && completedSkills.indexOf(node.id) !== -1) return;
+        markSkillComplete(node.id);
+        if(typeof fireSkillCompletionSpark === 'function'){
+          fireSkillCompletionSpark(node.id);
+        }
+      }, i * stagger);
+    });
+
+    console.log('[Dev] Queued ' + skillNodes.length + ' skill completions over ' +
+      (skillNodes.length * stagger) + 'ms. Hold shift while clicking to add to existing completions.');
+  } catch(e){
+    console.error('[Dev] Complete Path failed:', e);
+  }
+}
+
+// ===== END DEV =====
 
 // ===== QUEST ACCEPTED OVERLAY =====
 // Big centered modal shown when a quest is accepted. Gives first-time
