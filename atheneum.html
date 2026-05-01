@@ -1179,6 +1179,229 @@ html, body {
   opacity: 1 !important;
 }
 
+/* =====================================================================
+   ATHENEUM ENTRY SEQUENCE — ported verbatim from pregame.
+   First-arrival hero welcome + chained typographic tutorial + spotlight.
+
+   Sequence:
+     1) "Welcome to" eyebrow materializes from mist
+     2) "The Atheneum" hero word materializes
+     3) "Skill Mastery Chamber" subtitle materializes
+     4) Brief gold pulse on landing
+     5) ~1200ms hold beat
+     6) "Welcome to" disintegrates letter-by-letter
+     7) Title block fades, persistent room label appears at top
+     8) Tutorial dim fades in, three paragraphs materialize in sequence
+     9) Begin button appears
+    10) On click: spotlight punches through dim at Gap's position,
+        grows to target radius, holds, then BLOOMS outward (improvement
+        over pregame's straight dim-fade) so Gap "illuminates the room
+        from where it stands"
+    11) START HERE pill appears over Gap (already wired in render)
+
+   Gated by ga_atheneum_welcome_seen flag. On revisits, just the
+   persistent room label, no animation.
+   ===================================================================== */
+
+.atheneum-welcome-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding-top: 28vh;
+  pointer-events: none;
+  z-index: 170;
+}
+.atheneum-welcome-eyebrow {
+  font-family: 'Cinzel', serif;
+  font-size: 14px; font-weight: 400; letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(201, 168, 76, 0.85);
+  margin-bottom: 14px;
+  opacity: 0; filter: blur(20px);
+  transition: opacity 1s ease-out, filter 1s ease-out, transform 1s ease-out;
+  text-shadow: 0 0 24px rgba(201, 168, 76, 0.4);
+}
+.atheneum-welcome-eyebrow.visible {
+  opacity: 1; filter: blur(0);
+  transform: translateY(0);
+}
+.atheneum-welcome-eyebrow .letter {
+  display: inline-block;
+  transition: opacity 0.8s ease-in, transform 0.8s ease-in, filter 0.8s ease-in;
+}
+.atheneum-welcome-eyebrow.dissolving .letter {
+  opacity: 0;
+  transform: translateY(-14px);
+  filter: blur(8px);
+}
+.atheneum-welcome-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(38px, 6.4vw, 64px); font-weight: 700; letter-spacing: 0.04em;
+  color: #e5c574;
+  line-height: 1.05;
+  text-shadow: 0 0 30px rgba(229,197,116,0.55),
+               0 0 60px rgba(229,197,116,0.3),
+               0 0 100px rgba(201,168,76,0.15);
+  margin: 0 0 14px;
+  opacity: 0; filter: blur(20px); transform: scale(0.94);
+  transition: opacity 1.2s ease-out, filter 1.2s ease-out, transform 1.2s ease-out;
+}
+.atheneum-welcome-title.visible {
+  opacity: 1; filter: blur(0); transform: scale(1);
+}
+.atheneum-welcome-title.pulsing {
+  animation: atheneum-title-pulse 800ms ease-out 1;
+}
+@keyframes atheneum-title-pulse {
+  0%   { text-shadow: 0 0 30px rgba(229,197,116,0.55), 0 0 60px rgba(229,197,116,0.3), 0 0 100px rgba(201,168,76,0.15); }
+  40%  { text-shadow: 0 0 50px rgba(245,229,184,0.85), 0 0 100px rgba(229,197,116,0.5), 0 0 150px rgba(201,168,76,0.3); }
+  100% { text-shadow: 0 0 30px rgba(229,197,116,0.55), 0 0 60px rgba(229,197,116,0.3), 0 0 100px rgba(201,168,76,0.15); }
+}
+.atheneum-welcome-subtitle {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(14px, 1.8vw, 18px); font-weight: 400;
+  letter-spacing: 0.32em; text-transform: uppercase;
+  color: rgba(240, 236, 228, 0.78);
+  opacity: 0; filter: blur(20px);
+  transition: opacity 1s ease-out, filter 1s ease-out;
+}
+.atheneum-welcome-subtitle.visible {
+  opacity: 1; filter: blur(0);
+}
+
+/* Persistent room label — sits at top-center after welcome animation */
+.atheneum-room-label {
+  position: fixed;
+  top: 32px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+.atheneum-room-label.visible { opacity: 1; }
+.atheneum-room-label-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(20px, 2.4vw, 26px); font-weight: 700; letter-spacing: 0.04em;
+  color: #e5c574;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(229,197,116,0.4), 0 0 36px rgba(201,168,76,0.18);
+}
+.atheneum-room-label-subtitle {
+  font-family: 'Cinzel', serif;
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.32em; text-transform: uppercase;
+  color: rgba(240, 236, 228, 0.55);
+  margin-top: 4px;
+}
+@media (max-width: 680px) {
+  .atheneum-room-label { top: 24px; }
+  .atheneum-room-label-title { font-size: 17px; }
+  .atheneum-room-label-subtitle { font-size: 9.5px; letter-spacing: 0.28em; }
+}
+
+/* Hide the existing top-left brand mark and top-right phase mark while the
+   room label is the active framing. They re-appear when the welcome
+   sequence is dismissed (subtle visual relief — only one identity element
+   competes for attention at a time during the welcome). */
+.atheneum.welcome-active .frame-brand,
+.atheneum.welcome-active .frame-phase {
+  opacity: 0;
+  transition: opacity 600ms ease;
+  pointer-events: none;
+}
+
+/* Tutorial dim — radial gradient with a transparent spot at (--spot-x, --spot-y, --spot-r) */
+.atheneum-tutorial-dim {
+  position: fixed; inset: 0;
+  --spot-x: 50%;
+  --spot-y: 50%;
+  --spot-r: 0px;
+  background: radial-gradient(circle at var(--spot-x) var(--spot-y),
+    transparent 0,
+    transparent calc(var(--spot-r) - 30px),
+    rgba(4, 3, 6, 1) calc(var(--spot-r) + 30px),
+    rgba(4, 3, 6, 1) 100%);
+  pointer-events: none;
+  z-index: 160;
+  opacity: 0;
+  transition: opacity 800ms ease;
+}
+.atheneum-tutorial-dim.visible { opacity: 1; pointer-events: auto; }
+.atheneum-tutorial-dim.is-blooming {
+  /* Override: solid-fade to fully transparent during the bloom step.
+     The spotlight radius is animated to viewport-diagonal in JS and
+     this opacity transition runs simultaneously, giving "Gap's light
+     fills the room" rather than "dim fades uniformly." */
+  opacity: 0;
+  transition: opacity 700ms ease-out;
+}
+
+.atheneum-tutorial {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0 32px;
+  pointer-events: none;
+  z-index: 175;
+}
+.atheneum-tutorial-inner {
+  max-width: 680px; width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  pointer-events: auto;
+}
+.atheneum-tutorial-para {
+  font-family: 'Crimson Pro', 'Crimson Text', serif;
+  font-size: clamp(16px, 1.95vw, 21px); font-weight: 300;
+  color: rgba(240, 236, 228, 0.86);
+  line-height: 1.65; letter-spacing: 0.005em;
+  margin: 0 0 22px;
+  opacity: 0; filter: blur(16px);
+  transition: opacity 1.2s ease-out, filter 1.2s ease-out, transform 1.2s ease-out;
+  text-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+}
+.atheneum-tutorial-para.visible {
+  opacity: 1; filter: blur(0);
+}
+.atheneum-tutorial-para .accent {
+  font-family: 'Cinzel Decorative', serif;
+  font-weight: 700;
+  color: #e5c574;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 18px rgba(229, 197, 116, 0.5), 0 0 36px rgba(201, 168, 76, 0.25);
+}
+.atheneum-tutorial-close {
+  font-family: 'Crimson Pro', 'Crimson Text', serif;
+  font-size: clamp(14px, 1.6vw, 17px); font-style: italic; font-weight: 400;
+  color: rgba(229, 197, 116, 0.85); letter-spacing: 0.04em;
+  margin: 6px 0 32px;
+  opacity: 0; filter: blur(16px);
+  transition: opacity 1s ease-out, filter 1s ease-out;
+  text-shadow: 0 0 18px rgba(229, 197, 116, 0.3), 0 0 36px rgba(0, 0, 0, 0.5);
+}
+.atheneum-tutorial-close.visible {
+  opacity: 1; filter: blur(0);
+}
+.atheneum-tutorial-begin {
+  background: transparent;
+  border: 1px solid rgba(229, 197, 116, 0.5);
+  color: #e5c574;
+  font-family: 'Cinzel', serif;
+  font-size: 12px; font-weight: 400; letter-spacing: 0.4em; text-transform: uppercase;
+  padding: 13px 38px; border-radius: 2px; cursor: pointer;
+  transition: all 0.35s ease;
+  box-shadow: 0 0 24px rgba(229, 197, 116, 0.18);
+  opacity: 0;
+}
+.atheneum-tutorial-begin.visible { opacity: 1; }
+.atheneum-tutorial-begin:hover {
+  background: rgba(229, 197, 116, 0.08);
+  border-color: rgba(229, 197, 116, 0.85);
+  box-shadow: 0 0 32px rgba(229, 197, 116, 0.35);
+  letter-spacing: 0.46em;
+}
+
 /* ============================================
    DEV PANEL — pinned right edge, transparent at rest, solid when active
    Toggle by clicking the strip. Floats above all UI but below modals.
@@ -2326,6 +2549,38 @@ html, body {
 
 <!-- Dive-in overlay (first-arrival blackout) -->
 <div class="dive-overlay" id="dive-overlay"></div>
+
+<!-- =====================================================================
+     ATHENEUM ENTRY SEQUENCE — first-arrival hero welcome + tutorial.
+     Welcome overlay materializes "Welcome to / The Atheneum / Skill
+     Mastery Chamber" with mist-fade. Then eyebrow disintegrates and
+     persistent room label appears at top-center. Tutorial fires next:
+     dims the world, three paragraphs materialize, Begin button appears.
+     On click: spotlight punches through dim at Gap's position, blooms
+     outward to fill the room. Single seen-flag covers both:
+     ga_atheneum_welcome_seen.
+     ===================================================================== -->
+<div class="atheneum-welcome-overlay" id="atheneum-welcome-overlay" style="display:none;" aria-hidden="true">
+  <div class="atheneum-welcome-eyebrow" id="atheneum-welcome-eyebrow">Welcome to</div>
+  <div class="atheneum-welcome-title" id="atheneum-welcome-title">The Atheneum</div>
+  <div class="atheneum-welcome-subtitle" id="atheneum-welcome-subtitle">Skill Mastery Chamber</div>
+</div>
+
+<!-- Persistent room label removed — top-left brand mark "The Atheneum"
+     in .frame-brand serves the same identity function with cleaner
+     visual hierarchy. The welcome animation still fires on first visit;
+     it just doesn't leave a permanent center label behind. -->
+
+<!-- Tutorial dim + tutorial container — fires after welcome settles -->
+<div class="atheneum-tutorial-dim" id="atheneum-tutorial-dim" aria-hidden="true"></div>
+<div class="atheneum-tutorial" id="atheneum-tutorial" style="display:none;" aria-hidden="true">
+  <div class="atheneum-tutorial-inner">
+    <p class="atheneum-tutorial-para" id="atheneum-tutorial-para1">Here you will find your full education course. It was built to respect how you think and to make the learning process more enjoyable.</p>
+    <p class="atheneum-tutorial-para" id="atheneum-tutorial-para2">Click the glowing module labeled <span class="accent">The Gap</span> to begin your ascension. After you complete all three modules, the next stage unlocks.</p>
+    <p class="atheneum-tutorial-close" id="atheneum-tutorial-close">Onward, ascendant.</p>
+    <button class="atheneum-tutorial-begin" id="atheneum-tutorial-begin" type="button">Begin</button>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -3621,6 +3876,230 @@ function runDiveInArrival() {
 }
 
 // ============================================================
+// ATHENEUM ENTRY SEQUENCE — welcome + typographic tutorial
+// Ported from pregame's runAtheneumWelcome + runAtheneumTypographicTutorial.
+// Adapted for atheneum's coordinate system:
+//   - Spotlight target is the bright primordial glyph's screen position
+//     (constellation-frame's offset + glyph's position within it)
+//   - Bloom step is new (improvement over pregame's straight dim-fade)
+//
+// Single seen flag: ga_atheneum_welcome_seen
+// ============================================================
+
+const WELCOME_SEEN_KEY = 'ga_atheneum_welcome_seen';
+
+function initAtheneumEntry() {
+  let seen = false;
+  try { seen = localStorage.getItem(WELCOME_SEEN_KEY) === '1'; } catch (e) {}
+
+  if (seen) {
+    // Returning visitor: nothing to do — top-left "The Atheneum" brand mark
+    // serves the identity function. No animation, no persistent center label.
+    return;
+  }
+
+  // First-time arrival: welcome → tutorial → mark seen
+  runAtheneumWelcome(() => {
+    runAtheneumTutorial(() => {
+      try { localStorage.setItem(WELCOME_SEEN_KEY, '1'); } catch (e) {}
+    });
+  });
+}
+
+function runAtheneumWelcome(onComplete) {
+  const overlay = document.getElementById('atheneum-welcome-overlay');
+  const eyebrow = document.getElementById('atheneum-welcome-eyebrow');
+  const title = document.getElementById('atheneum-welcome-title');
+  const subtitle = document.getElementById('atheneum-welcome-subtitle');
+  // Persistent room label was removed — top-left frame-brand "The Atheneum"
+  // serves the identity function. Welcome animation just fades out cleanly.
+  const atheneum = document.querySelector('.atheneum');
+
+  if (!overlay || !eyebrow || !title || !subtitle) {
+    if (typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  // Hide top corners during welcome (one identity element at a time)
+  if (atheneum) atheneum.classList.add('welcome-active');
+
+  // Wrap eyebrow letters in spans for the disintegration animation
+  const eyebrowText = eyebrow.textContent;
+  eyebrow.innerHTML = '';
+  for (let i = 0; i < eyebrowText.length; i++) {
+    const ch = eyebrowText[i];
+    const span = document.createElement('span');
+    span.className = 'letter';
+    span.textContent = ch === ' ' ? '\u00A0' : ch;
+    span.style.transitionDelay = (i * 60) + 'ms';
+    eyebrow.appendChild(span);
+  }
+
+  overlay.style.display = 'flex';
+
+  // Sequence (verbatim from pregame):
+  //   t=0ms      eyebrow fades in (1s)
+  //   t=400ms    title materializes (1.2s)
+  //   t=1100ms   subtitle fades in (1s)
+  //   t=1700ms   gold pulse on title
+  //   t=2400ms   hold beat begins
+  //   t=3600ms   eyebrow disintegration begins
+  //   t=4400ms   title block fades, top corners return
+  //   t=5100ms   onComplete fires
+  setTimeout(() => { eyebrow.classList.add('visible'); }, 0);
+  setTimeout(() => { title.classList.add('visible'); }, 400);
+  setTimeout(() => { subtitle.classList.add('visible'); }, 1100);
+  setTimeout(() => { title.classList.add('pulsing'); }, 1700);
+  setTimeout(() => { eyebrow.classList.add('dissolving'); }, 3600);
+
+  // Eyebrow has dissolved — title block fades out, top corners return
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 600ms ease-out, transform 600ms ease-out';
+    overlay.style.opacity = '0';
+    overlay.style.transform = 'translateY(-30px)';
+    if (atheneum) atheneum.classList.remove('welcome-active');
+  }, 4400);
+
+  // Hide overlay completely after fade
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    if (typeof onComplete === 'function') onComplete();
+  }, 5100);
+}
+
+function runAtheneumTutorial(onComplete) {
+  const dim = document.getElementById('atheneum-tutorial-dim');
+  const tutorial = document.getElementById('atheneum-tutorial');
+  const p1 = document.getElementById('atheneum-tutorial-para1');
+  const p2 = document.getElementById('atheneum-tutorial-para2');
+  const close = document.getElementById('atheneum-tutorial-close');
+  const beginBtn = document.getElementById('atheneum-tutorial-begin');
+
+  if (!dim || !tutorial || !p1 || !p2 || !close || !beginBtn) {
+    if (typeof onComplete === 'function') onComplete();
+    return;
+  }
+
+  // Show tutorial, fade in dim
+  tutorial.style.display = 'flex';
+  setTimeout(() => { dim.classList.add('visible'); }, 0);
+
+  // Sequence (verbatim from pregame):
+  //   t=0       dim fades in (800ms)
+  //   t=200ms   paragraph 1 begins materializing (1.2s)
+  //   t=2000ms  paragraph 2 begins materializing (1.2s)
+  //   t=3800ms  paragraph 3 (close) materializes (1s)
+  //   t=4900ms  Begin button fades in
+  setTimeout(() => { p1.classList.add('visible'); }, 200);
+  setTimeout(() => { p2.classList.add('visible'); }, 2000);
+  setTimeout(() => { close.classList.add('visible'); }, 3800);
+  setTimeout(() => { beginBtn.classList.add('visible'); }, 4900);
+
+  function onBegin() {
+    beginBtn.removeEventListener('click', onBegin);
+
+    // Stage 1 — fade out paragraphs and button. Dim stays.
+    p1.classList.remove('visible');
+    p2.classList.remove('visible');
+    close.classList.remove('visible');
+    beginBtn.classList.remove('visible');
+    dim.style.pointerEvents = 'none';
+
+    // Compute the bright primordial glyph's screen position.
+    // Default to the Gap's known position within the constellation-frame.
+    // The frame is centered in canvas-stage; canvas-stage is at fixed
+    // top:50%/left:50% with translate(-50%, -54%).
+    const frame = document.getElementById('constellation-frame');
+    const SPOTLIGHT_TARGET_R = 130;
+    let gapVx = window.innerWidth / 2;
+    let gapVy = window.innerHeight / 2;
+
+    if (frame) {
+      const constellation = CONSTELLATIONS[userState.currentPageIndex];
+      // Find the first non-completed primordial (the bright one)
+      let targetSkill = null;
+      if (constellation && constellation.skills.length) {
+        targetSkill = constellation.skills.find(s => !userState.completedSkills[s.id])
+                      || constellation.skills[0];
+      }
+
+      // Try to read the glyph's actual on-screen position from DOM.
+      // Falls back to known Gap coordinates if the glyph element isn't
+      // queryable (shouldn't happen but safe).
+      if (targetSkill) {
+        const glyphEl = frame.querySelector(`.glyph-position[data-skill-id="${targetSkill.id}"]`);
+        if (glyphEl) {
+          const rect = glyphEl.getBoundingClientRect();
+          gapVx = rect.left + rect.width / 2;
+          gapVy = rect.top + rect.height / 2;
+        }
+      }
+    }
+
+    // Position spotlight at Gap, radius starts at 0
+    dim.style.setProperty('--spot-x', gapVx + 'px');
+    dim.style.setProperty('--spot-y', gapVy + 'px');
+    dim.style.setProperty('--spot-r', '0px');
+
+    // Stage 2a — spotlight expands from 0 to target radius (600ms ease-out cubic)
+    setTimeout(() => {
+      const spotStart = (typeof performance !== 'undefined' && performance.now)
+        ? performance.now() : Date.now();
+      const spotDuration = 600;
+      function spotTick() {
+        const now = (typeof performance !== 'undefined' && performance.now)
+          ? performance.now() : Date.now();
+        const elapsed = now - spotStart;
+        const progress = Math.min(1, elapsed / spotDuration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const r = eased * SPOTLIGHT_TARGET_R;
+        dim.style.setProperty('--spot-r', r + 'px');
+        if (progress < 1) requestAnimationFrame(spotTick);
+      }
+      requestAnimationFrame(spotTick);
+    }, 500);
+
+    // Stage 2b — hold beat (spotlight at full radius, words fully gone)
+    // No code needed — just time elapses
+
+    // Stage 3 — bloom: spotlight radius grows to viewport-diagonal,
+    // dim fades to 0 simultaneously. "Gap illuminates the room."
+    setTimeout(() => {
+      const diagonal = Math.sqrt(window.innerWidth ** 2 + window.innerHeight ** 2);
+      const bloomTargetR = diagonal * 1.1;  // beyond corners
+      const bloomStart = (typeof performance !== 'undefined' && performance.now)
+        ? performance.now() : Date.now();
+      const bloomDuration = 700;
+
+      // Trigger the dim's opacity transition to 0 simultaneously
+      dim.classList.add('is-blooming');
+
+      function bloomTick() {
+        const now = (typeof performance !== 'undefined' && performance.now)
+          ? performance.now() : Date.now();
+        const elapsed = now - bloomStart;
+        const progress = Math.min(1, elapsed / bloomDuration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const r = SPOTLIGHT_TARGET_R + (bloomTargetR - SPOTLIGHT_TARGET_R) * eased;
+        dim.style.setProperty('--spot-r', r + 'px');
+        if (progress < 1) requestAnimationFrame(bloomTick);
+      }
+      requestAnimationFrame(bloomTick);
+    }, 1700);
+
+    // Stage 4 — cleanup, fire onComplete
+    setTimeout(() => {
+      tutorial.style.display = 'none';
+      dim.classList.remove('visible', 'is-blooming');
+      dim.style.setProperty('--spot-r', '0px');
+      if (typeof onComplete === 'function') onComplete();
+    }, 2700);
+  }
+
+  beginBtn.addEventListener('click', onBegin);
+}
+
+// ============================================================
 // DEV CONTROLS — temporary, for testing without lessons wired
 // ============================================================
 
@@ -3647,6 +4126,7 @@ function devReset() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(VIDEO_SEEN_KEY);
     localStorage.removeItem('ga_atheneum_first_dive_done');
+    localStorage.removeItem(WELCOME_SEEN_KEY);
   } catch (e) {}
   userState = Object.assign({}, DEFAULT_STATE);
   saveState();
@@ -3671,6 +4151,11 @@ function devClearVideo() {
   try { localStorage.removeItem(VIDEO_SEEN_KEY); } catch (e) {}
   console.log('[dev] Video seen flag cleared. Next ceremony will replay the video.');
 }
+function devReplayWelcome() {
+  // Clear the welcome-seen flag and re-run the welcome+tutorial sequence.
+  try { localStorage.removeItem(WELCOME_SEEN_KEY); } catch (e) {}
+  initAtheneumEntry();
+}
 window.atheneum = {
   devUnlockAll,
   devCompletePage,
@@ -3678,6 +4163,7 @@ window.atheneum = {
   devTriggerBronze,
   devSimulateDive,
   devClearVideo,
+  devReplayWelcome,
   userState: () => userState,
   CONSTELLATIONS: () => CONSTELLATIONS
 };
@@ -3705,8 +4191,21 @@ function init() {
   wireGlyphPanelCloseHandlers();
   wireLessonHandlers();
 
-  // Dive-in arrival on first visit (URL ?dive=1 from threshold cinematic)
-  checkAndRunDiveIn();
+  // Dive-in arrival on first visit (URL ?dive=1 from threshold cinematic).
+  // Returns true if the dive ran. The welcome is delayed to fire AFTER the
+  // dive-in arrival completes, so the user sees: black → world reveals →
+  // welcome animation. Without this delay, the welcome would run during the
+  // dive's black overlay and be invisible.
+  const isDiving = checkAndRunDiveIn();
+  if (isDiving) {
+    // Dive-in is ~3800ms total (600ms hold + 1200ms fade + 1200ms reveal + ~800ms buffer).
+    // Schedule the welcome to begin after the world is fully revealed.
+    setTimeout(initAtheneumEntry, 4000);
+  } else {
+    // Direct visit (no dive) — show welcome immediately on returning users
+    // (just the room label) or run full sequence on first-time direct.
+    initAtheneumEntry();
+  }
 }
 
 init();
@@ -3727,6 +4226,7 @@ init();
     <div class="dev-panel-section-label">Ceremony</div>
     <button class="dev-panel-btn" id="dev-trigger-bronze">Trigger Bronze ceremony</button>
     <button class="dev-panel-btn" id="dev-simulate-dive">Simulate dive arrival</button>
+    <button class="dev-panel-btn" id="dev-replay-welcome">Replay welcome &amp; tutorial</button>
     <button class="dev-panel-btn" id="dev-clear-video">Clear video-seen flag</button>
   </div>
 
@@ -3800,6 +4300,11 @@ init();
     e.stopPropagation();
     deactivate();
     window.atheneum.devSimulateDive();
+  });
+  document.getElementById('dev-replay-welcome').addEventListener('click', (e) => {
+    e.stopPropagation();
+    deactivate();
+    window.atheneum.devReplayWelcome();
   });
   document.getElementById('dev-clear-video').addEventListener('click', (e) => {
     e.stopPropagation();
