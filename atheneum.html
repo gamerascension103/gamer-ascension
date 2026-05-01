@@ -108,23 +108,84 @@ html, body {
 /* ============================================
    CONSTELLATION CANVAS
    ============================================ */
+/* ============================================================
+   CANVAS STAGE — looping carousel architecture
+   - 5 mounted slots: [prev-2, prev, center, next, next+2]
+     This buffers two pages worth of content on each side so the user
+     never sees empty space when they drag — the leading-edge content
+     is always pre-rendered.
+   - Slot width = min(800px, 100vw) so on desktop you see partial
+     neighbors flanking the center constellation.
+   - Strip translates via transform to pan between slots
+   - On snap settle, slot data-attributes rotate and strip resets — invisible swap
+   ============================================================ */
+:root {
+  --slot-width: min(800px, 100vw);
+}
 .canvas-stage {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 820px;
+  width: 100vw;          /* stage spans full viewport — clips outer slots */
   height: 540px;
   transform: translate(-50%, -54%);
+  /* Clip horizontally (so outer carousel slots don't show past viewport)
+     but allow vertical overflow so glyph drop-shadow halos don't get
+     cut off as a hard horizontal line at the stage edges. The clip-path
+     extends ~120px above and below to give bright-state pulse glows
+     room to fade out naturally. */
+  clip-path: inset(-120px 0 -120px 0);
+  pointer-events: none;
+}
+
+/* Strip is anchored at left:50% of stage, then translated back by 2.5
+   slot widths so slot[2] (the center slot) lines up with stage center. */
+.canvas-strip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: calc(var(--slot-width) * 5);
+  height: 540px;
+  pointer-events: auto;
+  transform: translate3d(calc(var(--slot-width) * -2.5), 0, 0);
+  will-change: transform;
+}
+.canvas-strip.is-dragging {
+  transition: none;
+}
+.canvas-strip.is-snapping {
+  transition: transform var(--snap-duration, 550ms) cubic-bezier(0.32, 0.72, 0.24, 1);
+}
+
+/* Each slot is one slot-width wide. The constellation content sits
+   centered inside it (using flex). */
+.canvas-slot {
+  position: absolute;
+  top: 0;
+  width: var(--slot-width);
+  height: 540px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
+.canvas-slot[data-slot="0"] { left: 0; }
+.canvas-slot[data-slot="1"] { left: var(--slot-width); }
+.canvas-slot[data-slot="2"] { left: calc(var(--slot-width) * 2); }
+.canvas-slot[data-slot="3"] { left: calc(var(--slot-width) * 3); }
+.canvas-slot[data-slot="4"] { left: calc(var(--slot-width) * 4); }
 
-.constellation-title {
+.canvas-slot .constellation-title {
   text-align: center;
   margin-bottom: 8px;
   height: 36px;
 }
+.canvas-slot .constellation-frame {
+  position: relative;
+  width: 720px;
+  height: 480px;
+  /* No transition on the frame itself — strip handles motion */
+}
+
 .constellation-title-text {
   font-family: 'Cinzel', serif;
   font-size: 14px;
@@ -134,17 +195,14 @@ html, body {
   color: var(--parchment);
   text-shadow: 0 0 14px rgba(232, 222, 198, 0.35),
                0 0 28px rgba(232, 222, 198, 0.18);
-  opacity: 0;
-  transition: opacity 0.6s;
+  opacity: 1;
 }
-.constellation-title.is-visible .constellation-title-text { opacity: 1; }
 
+/* Old class kept for compatibility — no longer applied during pan */
 .constellation-frame {
   position: relative;
   width: 720px;
   height: 480px;
-  /* Slide transition during pan */
-  transition: transform 0.6s ease-out, opacity 0.6s;
 }
 
 /* Glyphs */
@@ -173,6 +231,25 @@ html, body {
 }
 .state-dim .glyph-svg { color: var(--silver-dim); opacity: 0.5; }
 .state-lit .glyph-svg { color: var(--silver); filter: drop-shadow(0 0 8px rgba(229,197,116,0.55)); }
+
+/* Lit-state primordials need stronger inner luminosity. Their linework is
+   ink-warm (intentionally near-black for foundation feel) — without a
+   brighter ambient backdrop, the strokes drop below visibility against the
+   ink-deep canvas. We add a brighter gold-tinted glow that illuminates the
+   inside of the gold containing circle, giving the ink-warm strokes
+   something to read against. */
+.state-lit.pillar-primordial .glyph-svg {
+  filter: drop-shadow(0 0 14px rgba(229,197,116,0.75))
+          drop-shadow(0 0 28px rgba(229,197,116,0.4))
+          drop-shadow(0 0 4px rgba(255, 245, 200, 0.6));
+}
+/* Bright-state primordials also need slightly different treatment — the
+   silver-bright is too cool against the gold containing circle */
+.state-bright.pillar-primordial .glyph-svg {
+  filter: drop-shadow(0 0 22px rgba(255, 245, 200, 0.95))
+          drop-shadow(0 0 10px rgba(255, 245, 200, 0.7))
+          drop-shadow(0 0 40px rgba(229, 197, 116, 0.5));
+}
 @keyframes glyph-bright-pulse {
   0%, 100% {
     filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6));
@@ -251,6 +328,10 @@ html, body {
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   pointer-events: none;
   animation: start-here-bounce 2s ease-in-out infinite;
+  /* Fade in/out smoothly when toggled by entry-active (welcome flow) or
+     by autopan tour preview suppression. Without this, the pill snaps in
+     at full opacity after the welcome dim lifts. */
+  transition: opacity 800ms ease-out;
 }
 @keyframes start-here-bounce {
   0%, 100% { transform: translateX(-50%) translateY(0); }
@@ -448,6 +529,16 @@ html, body {
   to   { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 
+/* During a conduit ceremony: freeze the orbital wrapper rotation and
+   the per-glyph counter-rotation so the swelling/settling glyph doesn't
+   drift across the canvas while the lesson is collapsing into it.
+   Also prevents the orbit-keyframe-restart-on-rerender that was causing
+   the visible "skip back" mid-ceremony. */
+.constellation-frame.is-conduit-active .primordial-orbit-wrapper,
+.constellation-frame.is-conduit-active .primordial-orbit-wrapper .glyph-position {
+  animation-play-state: paused;
+}
+
 /* Void particle flow (primordial only) */
 .particle-flow-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .flow-particle {
@@ -500,66 +591,149 @@ html, body {
 /* ============================================
    SCRUBBER
    ============================================ */
+/* ============================================================
+   SCRUBBER — looping horizontal strip, 3 names visible
+   Layout: scrubber container has 3 tick slots in a flex row.
+   Each tick takes ~33% width. The "current" tick is the middle one.
+   Drag the track to pan the names. On snap, we rebalance the tick
+   contents to keep the current tick centered.
+   ============================================================ */
+/* ============================================================
+   SCRUBBER — looping horizontal strip
+   - 5 mounted ticks: [prev-2, prev, center, next, next+2]
+     (mirrors the canvas's 5-slot architecture)
+   - Track is 166.667% wide (5 ticks at 33.333% of scrubber-width each)
+   - Resting transform: translate(-33.333%) so slot[2] is centered
+   - Drag pans the track; snap rebalances data-slot attributes
+   - Mask gradient hides the 2 outermost ticks at rest, lets them slide
+     into view during drag
+   ============================================================ */
 .scrubber {
   position: absolute;
   bottom: 86px;
   left: 50%;
   transform: translateX(-50%);
-  width: 1100px; height: 80px;
+  width: min(900px, 96vw);
+  height: 80px;
   pointer-events: auto;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+          mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
   z-index: 4;
+  overflow: hidden;
 }
 .scrubber-track {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  gap: 56px;
-  transition: transform 0.5s ease-out;
-}
-.scrubber-tick {
-  position: relative;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 166.667%;          /* 5 ticks × 33.333% of scrubber width each */
   height: 100%;
-  cursor: pointer;
-  transition: transform 0.4s ease-out;
+  transform: translate3d(-20%, 0, 0);  /* slot[2] centered */
+  will-change: transform;
 }
-.scrubber-tick-name-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.scrubber-track.is-dragging { transition: none; }
+.scrubber-track.is-snapping { transition: transform var(--snap-duration, 550ms) cubic-bezier(0.32, 0.72, 0.24, 1); }
+
+.scrubber-tick {
+  position: absolute;
+  top: 0;
+  width: 20%;               /* 20% of 166.667% track = 33.333% of scrubber */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.4s ease-out;
+}
+/* Slot positions — each tick is anchored by data-slot, just like the canvas.
+   This means rotation only requires changing data-slot attributes; no flex
+   reorder, no layout recalculation. Transform + data-slot change happen in
+   the same paint, so the user sees no shift. */
+.scrubber-tick[data-slot="0"] { left: 0; }
+.scrubber-tick[data-slot="1"] { left: 20%; }
+.scrubber-tick[data-slot="2"] { left: 40%; }
+.scrubber-tick[data-slot="3"] { left: 60%; }
+.scrubber-tick[data-slot="4"] { left: 80%; }
+
+.scrubber-tick-name-row {
+  display: flex; align-items: center;
+  margin-bottom: 14px;
+  position: relative;
+}
 .scrubber-tick-name {
   font-family: 'Cinzel', serif; text-transform: uppercase;
   white-space: nowrap; text-align: center;
   letter-spacing: 0.28em;
   transition: all 0.4s ease-out;
+  position: relative;
 }
-.scrubber-tick-bracket { width: 14px; height: 18px; color: var(--gold); opacity: 0; transition: opacity 0.4s ease-out; flex-shrink: 0; }
-.scrubber-tick-bracket svg { width: 100%; height: 100%; display: block; }
+/* Active marker — a thin gold underline beneath each tick's name.
+   Opacity is driven by --lit (0=invisible, 1=full). The center tick has
+   --lit=1 at rest; during drag, lit-ness flows continuously between
+   neighbors so the underline grows as a name slides into center and
+   shrinks as it slides out. */
+.scrubber-tick .scrubber-tick-name::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -6px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--gold) 30%, var(--gold-bright) 50%, var(--gold) 70%, transparent 100%);
+  box-shadow: 0 0 6px rgba(229,197,116,0.6);
+  opacity: calc(var(--lit, 0) * 0.9);
+  pointer-events: none;
+}
+
 .scrubber-tick-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  border: 1px solid rgba(216,210,192,0.32);
-  background: transparent;
-  transition: all 0.4s ease-out;
+  /* Dot size & glow interpolate from dim (lit=0) to gold (lit=1).
+     6px dim → 8px lit; transparent border → gold; no shadow → gold glow. */
+  width: calc(6px + 2px * var(--lit, 0));
+  height: calc(6px + 2px * var(--lit, 0));
+  border-radius: 50%;
+  border: 1px solid;
+  border-color: color-mix(in srgb, rgba(216,210,192,0.32) calc((1 - var(--lit, 0)) * 100%), var(--gold));
+  background: color-mix(in srgb, transparent calc((1 - var(--lit, 0)) * 100%), var(--gold));
+  box-shadow:
+    0 0 calc(10px * var(--lit, 0)) rgba(229,197,116, calc(var(--lit, 0) * 0.85)),
+    0 0 calc(4px * var(--lit, 0)) rgba(229,197,116, var(--lit, 0));
 }
-.scrubber-tick.is-far .scrubber-tick-name { font-size: 9px; font-weight: 400; color: rgba(216,210,192,0.28); }
-.scrubber-tick.is-near .scrubber-tick-name { font-size: 11px; font-weight: 400; color: rgba(216,210,192,0.5); }
-.scrubber-tick.is-current .scrubber-tick-name { font-size: 14px; font-weight: 500; color: var(--gold); text-shadow: 0 0 14px rgba(229,197,116,0.45); }
-.scrubber-tick.is-current .scrubber-tick-bracket { opacity: 1; }
-.scrubber-tick.is-current .scrubber-tick-dot {
-  width: 8px; height: 8px;
-  background: var(--gold); border-color: var(--gold);
-  box-shadow: 0 0 10px rgba(229,197,116,0.85), 0 0 4px rgba(229,197,116,1);
+
+/* Name — font-size, weight, color, text-shadow all interpolate by --lit */
+.scrubber-tick-name {
+  font-family: 'Cinzel', serif; text-transform: uppercase;
+  white-space: nowrap; text-align: center;
+  letter-spacing: 0.28em;
+  /* Size interpolates 11px (dim) → 14px (lit) */
+  font-size: calc(11px + 3px * var(--lit, 0));
+  /* Weight interpolates 400 → 500 (browsers handle non-integer weights) */
+  font-weight: calc(400 + 100 * var(--lit, 0));
+  /* Color mixes from dim parchment to gold */
+  color: color-mix(in srgb, rgba(216,210,192,0.45) calc((1 - var(--lit, 0)) * 100%), var(--gold));
+  /* Text-shadow strength scales with lit-ness */
+  text-shadow: 0 0 calc(14px * var(--lit, 0)) rgba(229,197,116, calc(var(--lit, 0) * 0.5));
+  position: relative;
 }
-.scrubber-tick.is-foundational:not(.is-current) .scrubber-tick-dot {
-  background: transparent;
-  border-color: rgba(216,210,192,0.6);
-  border-width: 1.5px;
-  box-shadow: 0 0 6px rgba(216,210,192,0.3);
+
+/* Dot variants for foundational/completed/locked still apply when lit=0,
+   but the lit interpolation overrides them at lit>0. We keep the "dim"
+   side of the interpolation expressing those state distinctions. */
+.scrubber-tick.is-foundational .scrubber-tick-dot {
+  border-color: color-mix(in srgb, rgba(216,210,192,0.6) calc((1 - var(--lit, 0)) * 100%), var(--gold));
+  border-width: calc(1px + 0.5px * (1 - var(--lit, 0)));
+  box-shadow:
+    0 0 calc(6px * (1 - var(--lit, 0)) + 10px * var(--lit, 0)) rgba(229,197,116, calc((1 - var(--lit, 0)) * 0.3 + var(--lit, 0) * 0.85));
 }
-.scrubber-tick.is-completed:not(.is-current):not(.is-foundational) .scrubber-tick-dot {
-  background: rgba(216,210,192,0.5);
-  border-color: rgba(216,210,192,0.5);
+.scrubber-tick.is-completed:not(.is-foundational) .scrubber-tick-dot {
+  background: color-mix(in srgb, rgba(216,210,192,0.5) calc((1 - var(--lit, 0)) * 100%), var(--gold));
+  border-color: color-mix(in srgb, rgba(216,210,192,0.5) calc((1 - var(--lit, 0)) * 100%), var(--gold));
 }
-.scrubber-tick.is-locked .scrubber-tick-name { color: rgba(111,106,94,0.7); }
-.scrubber-tick.is-locked .scrubber-tick-dot { border-color: rgba(111,106,94,0.35); }
+.scrubber-tick.is-locked .scrubber-tick-name {
+  color: color-mix(in srgb, rgba(111,106,94,0.7) calc((1 - var(--lit, 0)) * 100%), var(--gold));
+}
+.scrubber-tick.is-locked .scrubber-tick-dot {
+  border-color: color-mix(in srgb, rgba(111,106,94,0.35) calc((1 - var(--lit, 0)) * 100%), var(--gold));
+}
 .scrubber-center-mark {
   position: absolute; bottom: 0; left: 50%;
   transform: translateX(-50%);
@@ -568,18 +742,46 @@ html, body {
   pointer-events: none;
 }
 .scrubber-arrow {
-  position: absolute; bottom: 112px;
-  width: 24px; height: 24px;
+  position: absolute;
+  bottom: 102px;          /* aligned with scrubber's vertical center */
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: rgba(216,210,192,0.4);
-  transition: color 0.3s, transform 0.3s;
-  z-index: 4;
+  color: rgba(229, 197, 116, 0.55);
+  background: rgba(20, 16, 42, 0.55);
+  border: 1px solid rgba(229, 197, 116, 0.28);
+  border-radius: 50%;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow:
+    0 0 18px rgba(229, 197, 116, 0.12),
+    inset 0 0 14px rgba(229, 197, 116, 0.06);
+  transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.25s, box-shadow 0.25s;
+  z-index: 5;
 }
-.scrubber-arrow:hover { color: var(--gold); transform: scale(1.1); }
+.scrubber-arrow:hover {
+  color: var(--gold-bright);
+  border-color: rgba(229, 197, 116, 0.7);
+  background: rgba(20, 16, 42, 0.75);
+  transform: scale(1.08);
+  box-shadow:
+    0 0 28px rgba(229, 197, 116, 0.32),
+    inset 0 0 18px rgba(229, 197, 116, 0.14);
+}
+.scrubber-arrow:active {
+  transform: scale(0.96);
+}
 .scrubber-arrow.is-disabled { opacity: 0.2; cursor: not-allowed; pointer-events: none; }
-.scrubber-arrow svg { width: 100%; height: 100%; }
-.scrubber-arrow-left { left: calc(50% - 600px); }
-.scrubber-arrow-right { right: calc(50% - 600px); }
+.scrubber-arrow svg { width: 22px; height: 22px; display: block; }
+.scrubber-arrow-left { left: calc(50% - 540px); }
+.scrubber-arrow-right { right: calc(50% - 540px); }
+@media (max-width: 1100px) {
+  .scrubber-arrow-left { left: 16px; }
+  .scrubber-arrow-right { right: 16px; }
+}
 
 /* ============================================
    POOL VESSEL & FOUNDATIONAL DOCK
@@ -626,14 +828,6 @@ html, body {
 .foundational-dock:hover .foundational-mark { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 14px rgba(229,197,116,0.4); }
 .foundational-dock:hover .foundational-count { color: var(--gold); }
 .foundational-mark svg { width: 20px; height: 20px; }
-
-/* ============================================
-   PAN STATES (transitions during navigation)
-   ============================================ */
-.constellation-frame.pan-out-left { transform: translateX(-100px); opacity: 0; }
-.constellation-frame.pan-out-right { transform: translateX(100px); opacity: 0; }
-.constellation-frame.pan-in-left  { transform: translateX(100px); opacity: 0; }
-.constellation-frame.pan-in-right { transform: translateX(-100px); opacity: 0; }
 
 /* ============================================
    GLYPH PANEL (popup CTA) — four states:
@@ -1152,6 +1346,61 @@ html, body {
 }
 
 /* ============================================
+   PATH THREAD — Ariadne's filament
+   A faint gold curve overlaid on the canvas, pointing from the
+   armillary center toward the screen edge in the direction of the
+   next unearned constellation. Hidden by default. Visible only when:
+   - The body has .path-opened (set after bronze ceremony)
+   - AND the thread itself has .is-visible (set when there IS a
+     forward unearned target)
+   - AND the appropriate direction class (.thread-right or .thread-left)
+   Hides during ceremonies and dives.
+   ============================================ */
+.path-thread {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  max-width: 1440px;
+  height: 200px;
+  /* Translate up so the thread's visual center sits at the armillary
+     (which is roughly 110px above viewport-center in our layout). */
+  transform: translate(-50%, calc(-50% - 110px));
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 1.6s ease-out;
+}
+body.path-opened .path-thread.is-visible {
+  opacity: 1;
+}
+.path-thread-curve {
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+}
+.path-thread.thread-right .path-thread-right { opacity: 1; }
+.path-thread.thread-left .path-thread-left { opacity: 1; }
+
+/* Slow breathing — the thread inhales and exhales over a long cycle.
+   We animate the parent SVG's filter brightness via a synthetic shimmer
+   keyframe rather than the path's stroke-opacity, because animating
+   stroke-opacity on a gradient-stroked path produces flicker. */
+body.path-opened .path-thread.is-visible .path-thread-curve {
+  animation: path-thread-breathe 5.5s ease-in-out infinite;
+}
+@keyframes path-thread-breathe {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
+/* Hide thread during dive arrivals and active ceremonies. */
+.atheneum.is-diving .path-thread,
+.atheneum.dive-revealing .path-thread,
+.atheneum.is-ceremony-active .path-thread {
+  opacity: 0 !important;
+}
+
+/* ============================================
    INVITATION CARD — final beat after autopan
    ============================================ */
 .invitation-card {
@@ -1584,14 +1833,27 @@ html, body {
 }
 
 /* Hide the existing top-left brand mark and top-right phase mark while the
-   room label is the active framing. They re-appear when the welcome
-   sequence is dismissed (subtle visual relief — only one identity element
-   competes for attention at a time during the welcome). */
-.atheneum.welcome-active .frame-brand,
-.atheneum.welcome-active .frame-phase {
+   atheneum entry sequence (welcome + tutorial) is active. Same class also
+   hides the dev panel so it doesn't bleed through the tutorial dim. */
+.atheneum.entry-active .frame-brand,
+.atheneum.entry-active .frame-phase {
   opacity: 0;
   transition: opacity 600ms ease;
   pointer-events: none;
+}
+/* Dev panel is OUTSIDE .atheneum so we use a body-level class instead */
+body.entry-active .dev-panel {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 400ms ease;
+}
+/* START HERE pill belongs to the canvas affordance — hide during welcome
+   so it doesn't compete with the tutorial. The tutorial's spotlight
+   teaches the user to click Gap; the pill emerges only after they click
+   Begin and the spotlight blooms outward. */
+.atheneum.entry-active .start-here {
+  opacity: 0;
+  transition: opacity 400ms ease;
 }
 
 /* Tutorial dim — radial gradient with a transparent spot at (--spot-x, --spot-y, --spot-r) */
@@ -1854,6 +2116,136 @@ html, body {
   color: var(--gold);
   font-weight: 500;
 }
+
+/* =====================================================================
+   CEREMONY (simplified — no choppiness version)
+   - Glyph burst: scale up + brief gold flare on the anchor star
+   - Shockwave: expanding ring fades out
+   - Beam: single gold line draws in via stroke-dashoffset, then fades
+   - New ring fades in via opacity transition
+   ===================================================================== */
+
+/* Glyph burst — applied on click. Uses transform on the inner glyph-svg
+   and anchor-star so we don't fight the orbit-wrapper's parent transform.
+   The glyph keeps orbiting normally underneath. */
+.glyph-position.is-bursting {
+  z-index: 8;
+}
+.glyph-position.is-bursting .glyph-svg {
+  animation: ceremony-glyph-burst 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes ceremony-glyph-burst {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6));
+  }
+  40% {
+    transform: scale(1.32);
+    filter: drop-shadow(0 0 40px rgba(255, 245, 200, 1))
+            drop-shadow(0 0 80px rgba(255, 229, 160, 0.85))
+            drop-shadow(0 0 140px rgba(229, 197, 116, 0.5));
+  }
+  100% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 28px rgba(255, 245, 200, 0.9))
+            drop-shadow(0 0 60px rgba(229, 197, 116, 0.6));
+  }
+}
+.glyph-position.is-bursting .anchor-star {
+  animation: ceremony-anchor-burst 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes ceremony-anchor-burst {
+  0% {
+    width: 7px; height: 7px;
+    box-shadow: 0 0 4px rgba(255,255,255,1), 0 0 14px rgba(255,250,230,0.85), 0 0 30px rgba(255,229,160,0.6);
+  }
+  40% {
+    width: 22px; height: 22px;
+    box-shadow: 0 0 18px rgba(255,255,255,1), 0 0 50px rgba(255,250,230,1), 0 0 100px rgba(255,229,160,0.85), 0 0 180px rgba(229,197,116,0.5);
+  }
+  100% {
+    width: 14px; height: 14px;
+    box-shadow: 0 0 10px rgba(255,255,255,1), 0 0 30px rgba(255,250,230,0.95), 0 0 60px rgba(255,229,160,0.6);
+  }
+}
+
+/* Glyph settling — fades from burst-bright back to lit-gold over 600ms */
+.glyph-position.is-settling .glyph-svg {
+  animation: ceremony-glyph-settle 600ms ease-out forwards;
+}
+@keyframes ceremony-glyph-settle {
+  0% {
+    transform: scale(1.12);
+    filter: drop-shadow(0 0 28px rgba(255, 245, 200, 0.9))
+            drop-shadow(0 0 60px rgba(229, 197, 116, 0.6));
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 14px rgba(229, 197, 116, 0.75))
+            drop-shadow(0 0 28px rgba(229, 197, 116, 0.4));
+  }
+}
+.glyph-position.is-settling .anchor-star {
+  animation: ceremony-anchor-settle 600ms ease-out forwards;
+}
+@keyframes ceremony-anchor-settle {
+  0% {
+    width: 14px; height: 14px;
+    box-shadow: 0 0 10px rgba(255,255,255,1), 0 0 30px rgba(255,250,230,0.95), 0 0 60px rgba(255,229,160,0.6);
+  }
+  100% {
+    width: 7px; height: 7px;
+    box-shadow: 0 0 4px rgba(255,255,255,1), 0 0 14px rgba(255,250,230,0.85), 0 0 30px rgba(255,229,160,0.6);
+  }
+}
+
+/* Shockwave — radial ring expanding outward from glyph center */
+.ceremony-shockwave-ring {
+  fill: none;
+  stroke: rgba(255, 245, 200, 0.85);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 8px rgba(255, 229, 160, 0.85))
+          drop-shadow(0 0 20px rgba(229, 197, 116, 0.5));
+  animation: ceremony-shockwave-expand 700ms ease-out forwards;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes ceremony-shockwave-expand {
+  0%   { transform: scale(1); opacity: 1; stroke-width: 2.5; }
+  100% { transform: scale(5.5); opacity: 0; stroke-width: 0.5; }
+}
+
+/* Beam — single gold line drawing in via stroke-dashoffset, then fading */
+.ceremony-beam-line {
+  stroke: rgba(255, 245, 200, 0.95);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  fill: none;
+  filter: drop-shadow(0 0 4px rgba(255, 229, 160, 0.95))
+          drop-shadow(0 0 12px rgba(255, 229, 160, 0.65))
+          drop-shadow(0 0 24px rgba(229, 197, 116, 0.4));
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: ceremony-beam-draw 250ms ease-out forwards;
+  opacity: 1;
+  transition: opacity 400ms ease-out;
+}
+@keyframes ceremony-beam-draw {
+  0%   { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+.ceremony-beam-line.is-fading {
+  opacity: 0;
+}
+
+/* New ring fades in via opacity, no transform gymnastics */
+.armillary-ring.is-fading-in {
+  opacity: 0;
+}
+.armillary-ring {
+  transition: opacity 800ms ease-out;
+}
+
 </style>
 </head>
 <body>
@@ -2678,32 +3070,66 @@ html, body {
     </div>
   </div>
 
-  <!-- Active constellation -->
-  <div class="canvas-stage">
-    <div class="constellation-title is-visible" id="constellation-title">
-      <div class="constellation-title-text" id="constellation-title-text">The Foundation</div>
-    </div>
-    <div class="constellation-frame" id="constellation-frame">
-      <!-- Rendered dynamically by renderConstellation() -->
+  <!-- Active constellation — looping carousel with 5 mounted slots
+       Slots 0,1 are buffers to the left of center; slot 2 is the active
+       center; slots 3,4 are buffers to the right of center. The two
+       outer buffers ensure that during a drag in either direction, the
+       leading-edge content is already pre-rendered. -->
+  <div class="canvas-stage" id="canvas-stage">
+    <div class="canvas-strip" id="canvas-strip">
+      <div class="canvas-slot" data-slot="0" id="canvas-slot-0">
+        <div class="constellation-title">
+          <div class="constellation-title-text" id="title-slot-0">&nbsp;</div>
+        </div>
+        <div class="constellation-frame" id="frame-slot-0"></div>
+      </div>
+      <div class="canvas-slot" data-slot="1" id="canvas-slot-1">
+        <div class="constellation-title">
+          <div class="constellation-title-text" id="title-slot-1">&nbsp;</div>
+        </div>
+        <div class="constellation-frame" id="frame-slot-1"></div>
+      </div>
+      <div class="canvas-slot" data-slot="2" id="canvas-slot-2">
+        <div class="constellation-title">
+          <div class="constellation-title-text" id="title-slot-2">&nbsp;</div>
+        </div>
+        <div class="constellation-frame" id="frame-slot-2"></div>
+      </div>
+      <div class="canvas-slot" data-slot="3" id="canvas-slot-3">
+        <div class="constellation-title">
+          <div class="constellation-title-text" id="title-slot-3">&nbsp;</div>
+        </div>
+        <div class="constellation-frame" id="frame-slot-3"></div>
+      </div>
+      <div class="canvas-slot" data-slot="4" id="canvas-slot-4">
+        <div class="constellation-title">
+          <div class="constellation-title-text" id="title-slot-4">&nbsp;</div>
+        </div>
+        <div class="constellation-frame" id="frame-slot-4"></div>
+      </div>
     </div>
   </div>
 
   <!-- Edge arrows -->
-  <div class="scrubber-arrow scrubber-arrow-left" id="arrow-left">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15,5 8,12 15,19"/>
+  <div class="scrubber-arrow scrubber-arrow-left" id="arrow-left" aria-label="Previous constellation">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="14,6 8,12 14,18"/>
     </svg>
   </div>
-  <div class="scrubber-arrow scrubber-arrow-right" id="arrow-right">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="9,5 16,12 9,19"/>
+  <div class="scrubber-arrow scrubber-arrow-right" id="arrow-right" aria-label="Next constellation">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="10,6 16,12 10,18"/>
     </svg>
   </div>
 
-  <!-- Scrubber -->
-  <div class="scrubber">
+  <!-- Scrubber — 3 visible names, looping strip -->
+  <div class="scrubber" id="scrubber">
     <div class="scrubber-track" id="scrubber-track">
-      <!-- Rendered dynamically by renderScrubber() -->
+      <div class="scrubber-tick" data-slot="0" id="scrubber-tick-0"></div>
+      <div class="scrubber-tick" data-slot="1" id="scrubber-tick-1"></div>
+      <div class="scrubber-tick is-current" data-slot="2" id="scrubber-tick-2"></div>
+      <div class="scrubber-tick" data-slot="3" id="scrubber-tick-3"></div>
+      <div class="scrubber-tick" data-slot="4" id="scrubber-tick-4"></div>
     </div>
     <div class="scrubber-center-mark"></div>
   </div>
@@ -2766,7 +3192,52 @@ html, body {
   <!-- Gold thread that persists below scrubber after Calendar Wakes -->
   <div class="scrubber-thread" id="scrubber-thread"></div>
 
-  <!-- Invitation card (post-autopan) -->
+  <!-- Path thread — Ariadne's filament toward the next unearned constellation.
+       Hidden until bronze fires; persistent thereafter. Direction set by
+       updatePathThread(). The two paths are the right-pointing and
+       left-pointing variants; CSS shows whichever direction class is active. -->
+  <svg class="path-thread" id="path-thread" viewBox="0 0 1440 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <defs>
+      <filter id="path-thread-glow" x="-20%" y="-50%" width="140%" height="200%">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <linearGradient id="path-thread-gradient-right" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="rgba(229,197,116,0.0)"/>
+        <stop offset="15%" stop-color="rgba(229,197,116,0.55)"/>
+        <stop offset="85%" stop-color="rgba(229,197,116,0.35)"/>
+        <stop offset="100%" stop-color="rgba(229,197,116,0.0)"/>
+      </linearGradient>
+      <linearGradient id="path-thread-gradient-left" x1="100%" y1="0%" x2="0%" y2="0%">
+        <stop offset="0%" stop-color="rgba(229,197,116,0.0)"/>
+        <stop offset="15%" stop-color="rgba(229,197,116,0.55)"/>
+        <stop offset="85%" stop-color="rgba(229,197,116,0.35)"/>
+        <stop offset="100%" stop-color="rgba(229,197,116,0.0)"/>
+      </linearGradient>
+    </defs>
+    <!-- Right-pointing curve: starts at center (720,100), arcs slightly
+         upward (a thread tossed across the void), tails into the right
+         edge. The slight rise gives it lift; without it the thread reads
+         as a line rather than a filament. -->
+    <path class="path-thread-curve path-thread-right"
+          d="M 720 100 C 880 88, 1100 92, 1380 100"
+          stroke="url(#path-thread-gradient-right)"
+          stroke-width="1.2"
+          fill="none"
+          filter="url(#path-thread-glow)"/>
+    <!-- Left-pointing curve (reserved for backward direction). -->
+    <path class="path-thread-curve path-thread-left"
+          d="M 720 100 C 560 88, 340 92, 60 100"
+          stroke="url(#path-thread-gradient-left)"
+          stroke-width="1.2"
+          fill="none"
+          filter="url(#path-thread-glow)"/>
+  </svg>
+
+  <!-- Invitation card (post-bronze) -->
   <div class="invitation-card" id="invitation-card">Your path. Tap any name to explore.</div>
 </div>
 
@@ -3199,10 +3670,17 @@ function getCurrentActionSkill() {
 // RENDER — single-constellation render function
 // ============================================================
 
-function renderConstellation(pageIndex) {
+// Render a constellation page into a specific target frame + title element.
+// If targetFrameId/targetTitleId are omitted, we look for slot 1 (the
+// center slot) — used for direct calls from outside the carousel system
+// (e.g., dev controls, ceremonies that want to update the visible page).
+function renderConstellation(pageIndex, targetFrameId, targetTitleId) {
   const c = CONSTELLATIONS[pageIndex];
   if (!c) return;
-  const frame = document.getElementById('constellation-frame');
+  const frameId = targetFrameId || 'frame-slot-2';
+  const titleId = targetTitleId || 'title-slot-2';
+  const frame = document.getElementById(frameId);
+  if (!frame) return;
 
   // Clear is-complete state class (will re-add at the end if appropriate)
   frame.classList.remove('is-complete');
@@ -3238,10 +3716,27 @@ function renderConstellation(pageIndex) {
     frame.classList.add('is-complete');
   }
 
-  // Update title
-  document.getElementById('constellation-title-text').textContent = c.name;
-  document.getElementById('phase-line').textContent = c.phase === 0 ? '' : `Phase ${['', 'One', 'Two', 'Three', 'Four'][c.phase]}`;
-  document.getElementById('phase-name').textContent = c.phaseLabel;
+  // Update title for this slot
+  const titleEl = document.getElementById(titleId);
+  if (titleEl) titleEl.textContent = c.name;
+
+  // Phase-line/phase-name are global top-corner UI — only update for the
+  // active center slot (where currentPageIndex is being rendered)
+  if (frameId === 'frame-slot-2' || pageIndex === userState.currentPageIndex) {
+    updatePhaseIndicator(c);
+  }
+}
+
+// Update the global top-right phase indicator based on a constellation
+// object (or pull from CONSTELLATIONS[currentPageIndex] if no arg given).
+// Called whenever the active page changes — both render and rebalance paths.
+function updatePhaseIndicator(c) {
+  if (!c) c = CONSTELLATIONS[userState.currentPageIndex];
+  if (!c) return;
+  const pl = document.getElementById('phase-line');
+  const pn = document.getElementById('phase-name');
+  if (pl) pl.textContent = c.phase === 0 ? '' : `Phase ${['', 'One', 'Two', 'Three', 'Four'][c.phase]}`;
+  if (pn) pn.textContent = c.phaseLabel;
 }
 
 function renderPrimordialArmillary(c) {
@@ -3525,77 +4020,224 @@ function renderTethers(c) {
 // ============================================================
 // SCRUBBER RENDER
 // ============================================================
+// updateScrubberLitness — sets --lit on each scrubber tick based on its
+// current visual distance from the scrubber's center. Called on every
+// drag-move and after rebalance.
+//
+// The track translates between -20% (rest, slot[2] centered) and ±40%
+// (one full slot pan). At any given track transform, we compute which
+// flex position is at scrubber-x=50%, then set each tick's --lit based
+// on its distance from that center position.
+//
+// dragPct: the current track transform percentage (e.g. -20 at rest,
+// -30 mid-forward-drag, -40 at forward snap target).
+function updateScrubberLitness(trackPct) {
+  // Track transform pct → which flex position is centered.
+  // At -20%, position 2 is centered. At -40%, position 3. At 0%, position 1.
+  // Formula: centeredPosition = 2 + (-20 - trackPct) / 20
+  // (1 unit of pct change = 1 position shift; sign flipped because more
+  // negative pct = later position centered)
+  const centeredPos = 2 + (-20 - trackPct) / 20;
 
-function renderScrubber() {
+  const ticks = document.querySelectorAll('.scrubber-tick');
+  ticks.forEach((tick) => {
+    // Each tick's visual position is driven by its data-slot attribute
+    // (which maps to absolute `left:` via CSS).
+    const slotPos = parseInt(tick.dataset.slot, 10);
+    if (isNaN(slotPos)) return;
+    const distance = Math.abs(slotPos - centeredPos);
+    // Lit-ness: 0 distance → 1.0, 1+ distance → 0. Linear interpolation.
+    const lit = Math.max(0, 1 - distance);
+    tick.style.setProperty('--lit', lit.toFixed(3));
+  });
+}
+
+// animateScrubberLitness — drives litness updates while the scrubber
+// track CSS-transitions from drag-end position to snap target. Reads
+// the live computed transform each frame, so litness mirrors visual
+// motion exactly. Stops once duration has elapsed.
+let scrubberLitnessRaf = null;
+function animateScrubberLitness(targetPct, durationMs) {
+  if (scrubberLitnessRaf !== null) {
+    cancelAnimationFrame(scrubberLitnessRaf);
+    scrubberLitnessRaf = null;
+  }
   const track = document.getElementById('scrubber-track');
-  const current = userState.currentPageIndex;
+  if (!track) return;
+  const startTime = performance.now();
+  const trackWidthPx = track.getBoundingClientRect().width;
 
-  // Show 7 ticks: 3 before, current, 3 after. Fill empty slots with dots.
-  let html = '';
-  for (let offset = -3; offset <= 3; offset++) {
-    const idx = current + offset;
-    if (idx < 0 || idx >= CONSTELLATIONS.length) {
-      html += renderEmptyTick(offset);
+  function step(now) {
+    const elapsed = now - startTime;
+    const matrix = getComputedStyle(track).transform;
+    let livePctOfTrack = targetPct;
+    if (matrix && matrix !== 'none') {
+      const m = matrix.match(/matrix.*\(([^)]+)\)/);
+      if (m) {
+        const parts = m[1].split(',').map(s => parseFloat(s.trim()));
+        const tx = parts.length >= 16 ? parts[12] : parts[4];
+        if (trackWidthPx > 0) livePctOfTrack = (tx / trackWidthPx) * 100;
+      }
+    }
+    updateScrubberLitness(livePctOfTrack);
+
+    if (elapsed < durationMs + 50) {
+      scrubberLitnessRaf = requestAnimationFrame(step);
     } else {
-      html += renderScrubberTick(idx, offset, current);
+      updateScrubberLitness(targetPct);
+      scrubberLitnessRaf = null;
     }
   }
-  track.innerHTML = html;
+  scrubberLitnessRaf = requestAnimationFrame(step);
+}
 
-  // Wire click handlers
-  track.querySelectorAll('.scrubber-tick[data-page]').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.dataset.page);
-      if (!isPageLocked(idx)) navigateToPage(idx);
+// renderScrubberLoop — initial render. Populates all 5 ticks and resets
+// the track transform. Used at init and as a fallback for non-pan navigations.
+function renderScrubberLoop() {
+
+  const cur = userState.currentPageIndex;
+  const indices = [
+    wrapIdx(cur - 2),
+    wrapIdx(cur - 1),
+    cur,
+    wrapIdx(cur + 1),
+    wrapIdx(cur + 2),
+  ];
+
+  for (let s = 0; s < 5; s++) {
+    const idx = indices[s];
+    const el = document.querySelector(`.scrubber-tick[data-slot="${s}"]`);
+    if (!el) continue;
+    populateScrubberTick(el, idx, s);
+    // Set is-current on slot 2 only
+    if (s === 2) el.classList.add('is-current');
+    else el.classList.remove('is-current');
+  }
+
+  // Reset the scrubber track transform — slot[2] centered means -20%
+  // of track-width (= -33.333% of scrubber-width visually)
+  const track = document.getElementById('scrubber-track');
+  if (track) {
+    track.classList.remove('is-snapping');
+    track.classList.add('is-dragging');
+    track.style.transform = 'translate3d(-20%, 0, 0)';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => track.classList.remove('is-dragging'));
+    });
+  }
+  updateScrubberLitness(-20);
+
+  // Update edge arrow disabled-state — never disabled in a loop
+  const al = document.getElementById('arrow-left');
+  const ar = document.getElementById('arrow-right');
+  if (al) al.classList.remove('is-disabled');
+  if (ar) ar.classList.remove('is-disabled');
+}
+
+// rebalanceScrubber — DOM-rotation approach for 5-tick scrubber. Called
+// after a pan with direction (+1 forward, -1 backward). Rotates data-slot
+// attributes on existing tick elements; only the new outermost tick (which
+// is off-screen behind the mask) gets new content.
+function rebalanceScrubber(direction) {
+  if (!direction || (direction !== 1 && direction !== -1)) return;
+
+  // Cancel any in-flight scrubber lit animation — its target was based on
+  // the pre-rebalance flex orders. Once the rebalance shifts orders, the
+  // RAF's final updateScrubberLitness call would fire on the wrong slot.
+  if (scrubberLitnessRaf !== null) {
+    cancelAnimationFrame(scrubberLitnessRaf);
+    scrubberLitnessRaf = null;
+  }
+
+  const track = document.getElementById('scrubber-track');
+  if (!track) return;
+
+  const cur = userState.currentPageIndex;
+  // The new outermost tick needs the page that's 2-out from new center
+  const newOuterIdx = direction > 0 ? wrapIdx(cur + 2) : wrapIdx(cur - 2);
+  const newOuterSlotName = direction > 0 ? '4' : '0';
+
+  // Get all 5 current tick elements by their data-slot
+  const ticks = {
+    '0': track.querySelector('.scrubber-tick[data-slot="0"]'),
+    '1': track.querySelector('.scrubber-tick[data-slot="1"]'),
+    '2': track.querySelector('.scrubber-tick[data-slot="2"]'),
+    '3': track.querySelector('.scrubber-tick[data-slot="3"]'),
+    '4': track.querySelector('.scrubber-tick[data-slot="4"]'),
+  };
+
+  // Rotation mapping mirrors the canvas:
+  //   forward: 0→4, 1→0, 2→1, 3→2, 4→3
+  //   backward: 0→1, 1→2, 2→3, 3→4, 4→0
+  const newSlotName = direction > 0
+    ? { '0': '4', '1': '0', '2': '1', '3': '2', '4': '3' }
+    : { '0': '1', '1': '2', '2': '3', '3': '4', '4': '0' };
+
+  // Disable transition, reset track to centered position
+  track.classList.remove('is-snapping');
+  track.classList.add('is-dragging');
+  track.style.transform = 'translate3d(-20%, 0, 0)';
+
+  // Rename data-slot on each existing tick. We use CSS `order` to drive
+  // Rotate data-slot attributes. Position is driven by CSS rules on
+  // .scrubber-tick[data-slot="N"] { left: ...% }, so changing data-slot
+  // moves the tick instantly. No flex layout, no reorder.
+  for (const oldName of ['0', '1', '2', '3', '4']) {
+    const el = ticks[oldName];
+    if (!el) continue;
+    const newName = newSlotName[oldName];
+    el.dataset.slot = newName;
+    el.id = `scrubber-tick-${newName}`;
+    // is-current is on slot[2] (the new center)
+    if (newName === '2') el.classList.add('is-current');
+    else el.classList.remove('is-current');
+  }
+
+  // Populate the new outer tick (now off-screen, behind the mask)
+  const newOuterEl = track.querySelector(`.scrubber-tick[data-slot="${newOuterSlotName}"]`);
+  if (newOuterEl) {
+    populateScrubberTick(newOuterEl, newOuterIdx, parseInt(newOuterSlotName, 10));
+  }
+
+  // Re-enable transitions after a couple of frames
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      track.classList.remove('is-dragging');
     });
   });
 
-  // Update edge arrows
-  document.getElementById('arrow-left').classList.toggle('is-disabled', current === 0);
-  document.getElementById('arrow-right').classList.toggle('is-disabled', current >= CONSTELLATIONS.length - 1 || isPageLocked(current + 1));
+  updateScrubberLitness(-20);
 }
 
-function renderEmptyTick(offset) {
-  const distance = Math.abs(offset);
-  const cls = distance === 0 ? 'is-current' : (distance === 1 ? 'is-near' : 'is-far');
-  return `
-    <div class="scrubber-tick ${cls} is-locked">
-      <div class="scrubber-tick-name-row">
-        ${bracketSvg()}
-        <div class="scrubber-tick-name">&middot;</div>
-        ${bracketSvg(true)}
-      </div>
-      <div class="scrubber-tick-dot"></div>
-    </div>
-  `;
-}
+// Backward-compatible alias — old code still calls renderScrubber()
+function renderScrubber() { return renderScrubberLoop(); }
 
-function renderScrubberTick(idx, offset, current) {
+function populateScrubberTick(el, idx, slot) {
   const c = CONSTELLATIONS[idx];
-  const distance = Math.abs(offset);
-  const isCurrent = idx === current;
+  if (!c) {
+    el.innerHTML = '';
+    return;
+  }
+  const isCurrent = (slot === 1);
   const isLocked = isPageLocked(idx);
   const isFoundational = isPageFoundational(idx);
   const isCompleted = isPageCompleted(idx);
 
-  let cls = '';
-  if (isCurrent) cls += ' is-current';
-  else if (distance === 1) cls += ' is-near';
-  else cls += ' is-far';
+  // Reset state classes
+  el.classList.remove('is-foundational', 'is-completed', 'is-locked', 'is-current');
+  if (isCurrent) el.classList.add('is-current');
+  if (isLocked && !isCurrent) el.classList.add('is-locked');
+  if (isFoundational) el.classList.add('is-foundational');
+  if (isCompleted) el.classList.add('is-completed');
 
-  if (isLocked && !isCurrent) cls += ' is-locked';
-  if (isFoundational) cls += ' is-foundational';
-  if (isCompleted) cls += ' is-completed';
-
-  return `
-    <div class="scrubber-tick ${cls}" data-page="${idx}">
-      <div class="scrubber-tick-name-row">
-        ${bracketSvg()}
-        <div class="scrubber-tick-name">${c.name}</div>
-        ${bracketSvg(true)}
-      </div>
-      <div class="scrubber-tick-dot"></div>
+  el.dataset.page = String(idx);
+  el.innerHTML = `
+    <div class="scrubber-tick-name-row">
+      ${bracketSvg()}
+      <div class="scrubber-tick-name">${c.name}</div>
+      ${bracketSvg(true)}
     </div>
+    <div class="scrubber-tick-dot"></div>
   `;
 }
 
@@ -3608,45 +4250,312 @@ function bracketSvg(right = false) {
 // NAVIGATION — page changes with transition
 // ============================================================
 
-let isTransitioning = false;
+// ============================================================
+// CAROUSEL — looping page navigation via 3-slot strip
+//
+// State:
+//   userState.currentPageIndex — page index 0..16, modular wrapped on navigation
+//   slotIndices[3]              — which CONSTELLATION index each slot holds
+//                                  Convention: [prev, current, next] modular
+//   stripOffset                 — strip's current translateX in px (during drag)
+//   isTransitioning             — true during snap animation, blocks input
+//
+// Helpers:
+//   getCurrentFrame()  — returns the DOM frame element for the active slot (slot 1)
+//   wrapIdx(n)          — modular wrap into 0..CONSTELLATIONS.length-1
+//   navigateToPage(n)   — animate to a page, then rebalance slots invisibly
+// ============================================================
 
+let isTransitioning = false;
+let slotIndices = [0, 0, 0, 0, 0];   // [prev-2, prev, current, next, next+2] CONSTELLATION indices
+let stripOffsetPx = 0;          // additional offset during drag (0 = no drag)
+
+function wrapIdx(n) {
+  const len = CONSTELLATIONS.length;
+  return ((n % len) + len) % len;
+}
+
+// Slot width for the carousel. Mirrors the CSS variable --slot-width:
+// min(800px, 100vw). Read fresh on each call so window resize is handled.
+function getSlotWidth() {
+  return Math.min(800, window.innerWidth);
+}
+
+// The "active" frame is always the CENTER slot of the 5-slot strip,
+// which is slot[2]. Functions that used to grab the singleton frame
+// should use this instead.
+function getCurrentFrame() {
+  return document.getElementById('frame-slot-2');
+}
+function getCurrentTitleEl() {
+  return document.getElementById('title-slot-2');
+}
+
+// Initialize all 5 slots based on the current page index. Renders content
+// into [prev-2, prev, current, next, next+2] and sets the strip transform
+// so slot[2] (center) is at the stage's visual center. Called once on init.
+function initCarouselSlots() {
+  const cur = userState.currentPageIndex;
+  slotIndices[0] = wrapIdx(cur - 2);
+  slotIndices[1] = wrapIdx(cur - 1);
+  slotIndices[2] = cur;
+  slotIndices[3] = wrapIdx(cur + 1);
+  slotIndices[4] = wrapIdx(cur + 2);
+
+  for (let s = 0; s < 5; s++) {
+    renderConstellation(slotIndices[s], `frame-slot-${s}`, `title-slot-${s}`);
+  }
+
+  // Strip's resting transform: pull strip back by 2.5 slot widths so
+  // slot[2]'s center lines up with the stage's center (the strip is
+  // anchored at left:50% of the stage).
+  const strip = document.getElementById('canvas-strip');
+  if (strip) {
+    strip.classList.remove('is-snapping', 'is-dragging');
+    const sw = getSlotWidth();
+    strip.style.transform = `translate3d(${-sw * 2.5}px, 0, 0)`;
+  }
+  stripOffsetPx = 0;
+}
+
+// Navigate to a target page (with looping). steps is the signed delta.
+// e.g. steps=+1 = next page, steps=-1 = previous, steps=+2 = skip ahead 2.
 function navigateToPage(targetIdx, direction = null) {
   if (isTransitioning) return;
-  if (targetIdx < 0 || targetIdx >= CONSTELLATIONS.length) return;
-  if (isPageLocked(targetIdx)) return;
-  if (targetIdx === userState.currentPageIndex) return;
+  const targetWrapped = wrapIdx(targetIdx);
+  if (targetWrapped === userState.currentPageIndex) return;
 
+  // Compute the signed delta along the loop. Going "forward" means right
+  // (next slot). We pick the shortest path direction unless direction is
+  // explicitly forced.
+  const len = CONSTELLATIONS.length;
+  const cur = userState.currentPageIndex;
+  let steps;
+  if (direction === 'right') {
+    steps = (targetWrapped - cur + len) % len;
+    if (steps === 0) return;
+  } else if (direction === 'left') {
+    steps = -((cur - targetWrapped + len) % len);
+    if (steps === 0) return;
+  } else {
+    // shortest path: forward and backward distances, pick smaller
+    const fwd = (targetWrapped - cur + len) % len;
+    const bwd = (cur - targetWrapped + len) % len;
+    steps = (fwd <= bwd) ? fwd : -bwd;
+  }
+
+  panBySteps(steps);
+}
+
+// Animate the strip to slide by N steps (positive = right/forward,
+// negative = left/back). After the animation lands, rebalance the slots
+// in-place with transition disabled so the user sees no jump.
+//
+// Options:
+//   duration  — snap duration in ms (default 550). The auto-tour uses
+//               a faster duration to fly past intermediate pages.
+function panBySteps(steps, opts) {
+  if (steps === 0 || isTransitioning) return;
   isTransitioning = true;
-  const dir = direction || (targetIdx > userState.currentPageIndex ? 'right' : 'left');
 
-  const frame = document.getElementById('constellation-frame');
-  const title = document.getElementById('constellation-title');
+  const duration = (opts && opts.duration) || 550;
 
-  // Phase 1: pan out
-  frame.classList.add(dir === 'right' ? 'pan-out-left' : 'pan-out-right');
-  title.classList.remove('is-visible');
+  const strip = document.getElementById('canvas-strip');
+  if (!strip) { isTransitioning = false; return; }
 
-  setTimeout(() => {
-    // Phase 2: swap content, set incoming pan position
-    userState.currentPageIndex = targetIdx;
+  const sw = getSlotWidth();
+  const scrubberTrack = document.getElementById('scrubber-track');
+
+  // Multi-step navigation happens by chained pan calls; always pan by 1 slot.
+  const dir = steps > 0 ? 1 : -1;
+
+  // Apply duration via CSS variable (overrides default 550ms)
+  strip.style.setProperty('--snap-duration', duration + 'ms');
+  if (scrubberTrack) scrubberTrack.style.setProperty('--snap-duration', duration + 'ms');
+
+  // Engage snap transitions on both strip and scrubber so they animate
+  // in unison (same duration, same easing — mirrors drag-release behavior).
+  strip.classList.remove('is-dragging');
+  strip.classList.add('is-snapping');
+  if (scrubberTrack) {
+    scrubberTrack.classList.remove('is-dragging');
+    scrubberTrack.classList.add('is-snapping');
+  }
+
+  // Animate strip to the snap point
+  strip.style.transform = `translate3d(${-sw * 2.5 - dir * sw}px, 0, 0)`;
+
+  // Animate scrubber track in parallel — same target percent the drag
+  // path computes: forward (+1) → -40%, backward (-1) → 0%.
+  const targetPct = -20 - dir * 20;
+  if (scrubberTrack) {
+    scrubberTrack.style.transform = `translate3d(${targetPct}%, 0, 0)`;
+  }
+
+  // Drive scrubber lit-ness across the snap so the gold flows continuously
+  // from the active name to the incoming name (instead of binary-flipping
+  // at rebalance time).
+  animateScrubberLitness(targetPct, duration);
+
+  // Rebalance must fire exactly when the snap CSS transition has completed.
+  // Firing mid-easing causes a small visible shift on the rotated tick.
+  // Use transitionend with a fallback timeout (same pattern as drag-release).
+  let rebalanced = false;
+  const doRebalance = () => {
+    if (rebalanced) return;
+    rebalanced = true;
+    strip.removeEventListener('transitionend', onStripEnd);
+    clearTimeout(rebalanceFallback);
+
+    userState.currentPageIndex = wrapIdx(userState.currentPageIndex + dir);
     saveState();
-    renderConstellation(targetIdx);
-    renderScrubber();
+    rebalanceSlots(dir);
+    rebalanceScrubber(dir);
+    updatePhaseIndicator();
+    updatePathThread();
     updateFrameMetrics();
 
-    // Set up incoming animation
-    frame.classList.remove('pan-out-left', 'pan-out-right');
-    frame.classList.add(dir === 'right' ? 'pan-in-right' : 'pan-in-left');
+    isTransitioning = false;
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        // Phase 3: pan in
-        frame.classList.remove('pan-in-left', 'pan-in-right');
-        title.classList.add('is-visible');
-        setTimeout(() => { isTransitioning = false; }, 600);
+    // Chain next step if multi-step — inherits same duration
+    const remaining = steps - dir;
+    if (remaining !== 0) {
+      requestAnimationFrame(() => panBySteps(remaining, opts));
+    }
+  };
+  const onStripEnd = (e) => {
+    if (e.propertyName === 'transform' && e.target === strip) doRebalance();
+  };
+  strip.addEventListener('transitionend', onStripEnd);
+  const rebalanceFallback = setTimeout(doRebalance, duration + 250);
+}
+
+// Rebalance: with the strip currently visually showing slot[1+dir] as center
+// (the destination page), update slotIndices to match the new currentPageIndex,
+// re-render whichever slot now needs new content, and reset strip transform
+// so slot[1] is again the visual center — all in one frame, with transition
+// disabled, so it's invisible to the user.
+function rebalanceSlots(direction) {
+  // Called after a snap completes. `direction` is +1 (forward pan) or -1 (back).
+  //
+  // Strategy: ROTATE the slot DOM elements rather than re-rendering content.
+  // With 5 slots [0..4] where slot[2] is the active center:
+  //
+  // Forward pan: every slot's data-slot decreases by 1.
+  //   old 4→3, 3→2, 2→1, 1→0, 0→4 (wraps; this becomes the new far-right outer slot)
+  //   The element that was at data-slot=3 (the right-side peek) is now slot 2 = center.
+  //   Only the element that was at data-slot=0 (off-screen left) needs new content,
+  //   and it's now at data-slot=4 (off-screen right) — invisible re-render.
+  //
+  // Backward pan: every slot's data-slot increases by 1.
+  //   old 0→1, 1→2, 2→3, 3→4, 4→0 (wraps; the new far-left outer slot)
+  //   The element that was at data-slot=1 is now slot 2 = center.
+  //   Only the element that was at data-slot=4 needs new content, now at data-slot=0.
+  //
+  // userState.currentPageIndex has already been updated to the new page.
+
+  if (!direction || (direction !== 1 && direction !== -1)) return;
+
+  const cur = userState.currentPageIndex;
+  // The new outer slot needs the page that's 2-out from the new center
+  // in the direction of travel. After forward pan, new far-right needs cur+2.
+  // After backward pan, new far-left needs cur-2.
+  const newOuterIdx = direction > 0 ? wrapIdx(cur + 2) : wrapIdx(cur - 2);
+  const newOuterSlotName = direction > 0 ? '4' : '0';
+
+  const strip = document.getElementById('canvas-strip');
+  if (!strip) return;
+  const sw = getSlotWidth();
+
+  // Get all 5 current slot elements by their data-slot attribute
+  const slots = {
+    '0': strip.querySelector('.canvas-slot[data-slot="0"]'),
+    '1': strip.querySelector('.canvas-slot[data-slot="1"]'),
+    '2': strip.querySelector('.canvas-slot[data-slot="2"]'),
+    '3': strip.querySelector('.canvas-slot[data-slot="3"]'),
+    '4': strip.querySelector('.canvas-slot[data-slot="4"]'),
+  };
+
+  // Compute the new data-slot mapping for each existing element.
+  // Forward pan: each slot decreases by 1, with 0 wrapping to 4.
+  // Backward pan: each slot increases by 1, with 4 wrapping to 0.
+  const newSlotName = {};
+  if (direction > 0) {
+    // forward: 0→4, 1→0, 2→1, 3→2, 4→3
+    newSlotName['0'] = '4';
+    newSlotName['1'] = '0';
+    newSlotName['2'] = '1';
+    newSlotName['3'] = '2';
+    newSlotName['4'] = '3';
+  } else {
+    // backward: 0→1, 1→2, 2→3, 3→4, 4→0
+    newSlotName['0'] = '1';
+    newSlotName['1'] = '2';
+    newSlotName['2'] = '3';
+    newSlotName['3'] = '4';
+    newSlotName['4'] = '0';
+  }
+
+  // Disable transition before the transform reset and slot rename
+  strip.classList.remove('is-snapping');
+  strip.classList.add('is-dragging');
+
+  // Reset strip transform to centered (slot[2] at viewport center).
+  // Because the data-slot attributes change in the same synchronous block,
+  // the slot that WAS at the visible center after the snap stays at the
+  // visible center — its data-slot just changes (from "3" to "2" forward,
+  // or from "1" to "2" backward).
+  strip.style.transform = `translate3d(${-sw * 2.5}px, 0, 0)`;
+
+  // Rename all 5 slots and update the corresponding ID-bearing children
+  // (frame and title) so renderConstellation calls still find them by id.
+  for (const oldName of ['0', '1', '2', '3', '4']) {
+    const el = slots[oldName];
+    if (!el) continue;
+    const newName = newSlotName[oldName];
+    el.dataset.slot = newName;
+    el.id = `canvas-slot-${newName}`;
+    const frame = el.querySelector('.constellation-frame');
+    const title = el.querySelector('.constellation-title-text');
+    if (frame) frame.id = `frame-slot-${newName}`;
+    if (title) title.id = `title-slot-${newName}`;
+  }
+
+  // After rotation, sweep is-preview state from all NON-center frames.
+  // Preview state semantically belongs to the active page only; without
+  // this, an is-preview class set during a tour stop migrates with its
+  // element across subsequent rotations and re-emerges when the user
+  // navigates back to that side slot.
+  for (const s of ['0', '1', '3', '4']) {
+    const f = document.getElementById(`frame-slot-${s}`);
+    if (f) {
+      f.classList.remove('is-preview');
+      f.querySelectorAll('[data-preview-bright]').forEach(el => {
+        el.removeAttribute('data-preview-bright');
       });
+    }
+  }
+
+  // Render the new outer page into the slot that just became the new
+  // outer-edge slot. That slot is off-screen so this render is invisible.
+  renderConstellation(newOuterIdx, `frame-slot-${newOuterSlotName}`, `title-slot-${newOuterSlotName}`);
+
+  // Update the slotIndices tracker
+  slotIndices = [
+    wrapIdx(cur - 2),
+    wrapIdx(cur - 1),
+    cur,
+    wrapIdx(cur + 1),
+    wrapIdx(cur + 2),
+  ];
+
+  // Re-enable transitions after a couple of frames so any pending paints
+  // from the slot rename / transform reset have flushed
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      strip.classList.remove('is-dragging');
     });
-  }, 300);
+  });
 }
 
 // ============================================================
@@ -3666,7 +4575,7 @@ function updateFrameMetrics() {
 // ============================================================
 
 function wireEvents() {
-  // Edge arrows
+  // Edge arrows — loop wraps automatically via wrapIdx
   document.getElementById('arrow-left').addEventListener('click', () => {
     navigateToPage(userState.currentPageIndex - 1, 'left');
   });
@@ -3680,42 +4589,260 @@ function wireEvents() {
     else if (e.key === 'ArrowRight') navigateToPage(userState.currentPageIndex + 1, 'right');
   });
 
-  // Glyph click — opens the panel with appropriate four-state CTA
-  document.getElementById('constellation-frame').addEventListener('click', (e) => {
+  // Glyph click — delegated on the strip so all 3 mounted slots' glyphs work.
+  // Suppresses click during/after a drag.
+  document.getElementById('canvas-strip').addEventListener('click', (e) => {
     const pos = e.target.closest('.glyph-position');
-    if (pos && pos.dataset.skillId) {
-      // Suppress click if a drag was in progress
-      if (justDragged) { justDragged = false; return; }
-      openGlyphPanel(pos.dataset.skillId);
-    }
+    if (!pos || !pos.dataset.skillId) return;
+    if (justDragged) { justDragged = false; return; }
+
+    // Only handle clicks on glyphs in the CENTER slot. Side-slot clicks
+    // shouldn't open lessons because they aren't the active page.
+    const slot = pos.closest('.canvas-slot');
+    if (!slot || slot.dataset.slot !== '2') return;
+
+    openGlyphPanel(pos.dataset.skillId);
   });
 
-  // Foundational dock click (placeholder — foundational lesson library popup is a later session)
+  // Foundational dock click (placeholder)
   document.getElementById('foundational-dock').addEventListener('click', () => {
     console.log('[Foundational dock clicked] — library expansion comes in a later session');
   });
 
-  // Drag-to-pan on canvas background
-  let dragStart = null;
-  const stage = document.querySelector('.canvas-stage');
+  // Drag-to-pan on the canvas — works for both mouse and touch
+  wireCarouselDrag();
+
+  // Drag-to-pan on the scrubber — same pattern
+  wireScrubberDrag();
+
+  // Tap on a side scrubber tick to navigate. Use event delegation on the
+  // track so the handler stays correct when ticks get rotated (DOM-rotation
+  // approach swaps data-slot attributes between elements).
+  const scrubberTrack = document.getElementById('scrubber-track');
+  if (scrubberTrack) {
+    scrubberTrack.addEventListener('click', (e) => {
+      if (justDragged) { justDragged = false; return; }
+      const tick = e.target.closest('.scrubber-tick');
+      if (!tick) return;
+      const slot = tick.dataset.slot;
+      if (slot === '1') return;  // already on this page
+      const dir = slot === '0' ? -1 : +1;
+      navigateToPage(userState.currentPageIndex + dir, dir > 0 ? 'right' : 'left');
+    });
+  }
+}
+
+// Flag preventing a drag-pan from also firing a glyph or scrubber click
+let justDragged = false;
+
+// ============================================================
+// CAROUSEL DRAG — mouse + touch handlers for the strip
+// ============================================================
+
+function wireCarouselDrag() {
+  const strip = document.getElementById('canvas-strip');
+  const stage = document.getElementById('canvas-stage');
+  if (!strip || !stage) return;
+
+  let dragState = null;  // { startX, startY, startTime, lastX, hasMoved }
+
+  function onDown(clientX, clientY, fromTouch) {
+    if (isTransitioning) return;
+    if (conduitCeremonyInProgress || ceremonyInProgress) return;
+    dragState = {
+      startX: clientX,
+      startY: clientY,
+      startTime: Date.now(),
+      lastX: clientX,
+      hasMoved: false,
+      fromTouch,
+    };
+    strip.classList.remove('is-snapping');
+    strip.classList.add('is-dragging');
+  }
+
+  function onMove(clientX, clientY) {
+    if (!dragState) return;
+    const dx = clientX - dragState.startX;
+    const dy = clientY - dragState.startY;
+
+    // For touch: detect vertical-vs-horizontal intent. If user is scrolling
+    // vertically, abandon the drag so the page can scroll.
+    if (dragState.fromTouch && !dragState.hasMoved) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
+        // Vertical intent — cancel drag
+        cancelDrag();
+        return;
+      }
+      if (Math.abs(dx) > 8) {
+        dragState.hasMoved = true;
+      }
+    } else if (Math.abs(dx) > 8) {
+      dragState.hasMoved = true;
+    }
+
+    if (!dragState.hasMoved) return;
+
+    dragState.lastX = clientX;
+    const sw = getSlotWidth();
+    // Update strip transform: base position is -2.5*sw (slot 2 centered),
+    // plus the drag delta
+    strip.style.transform = `translate3d(${-sw * 2.5 + dx}px, 0, 0)`;
+    // Drag the scrubber proportionally — 5-tick scrubber rests at -20%
+    // of track-width (centers slot[2]). One full slot of canvas pan
+    // corresponds to one tick-width of scrubber pan, which is 20% of
+    // the track's own width.
+    const scrubberTrack = document.getElementById('scrubber-track');
+    if (scrubberTrack) {
+      const pct = -20 + (dx / sw) * 20;
+      scrubberTrack.classList.remove('is-snapping');
+      scrubberTrack.classList.add('is-dragging');
+      scrubberTrack.style.transform = `translate3d(${pct}%, 0, 0)`;
+      updateScrubberLitness(pct);
+    }
+  }
+
+  function onUp(clientX) {
+    if (!dragState) return;
+    const dx = clientX - dragState.startX;
+    const elapsed = Date.now() - dragState.startTime;
+    const moved = dragState.hasMoved;
+
+    // Decide snap target: if drag went past half a viewport in either
+    // direction, snap to that side. Otherwise snap back.
+    const sw = getSlotWidth();
+    const threshold = sw * 0.10;  // ~10% of slot width = commit threshold (a flick of the wrist)
+    let steps = 0;
+    if (dx <= -threshold) steps = +1;
+    else if (dx >= threshold) steps = -1;
+
+    if (moved) {
+      justDragged = true;
+      // Clear the flag after a short delay so it only suppresses the
+      // immediate click that may follow this drag
+      setTimeout(() => { justDragged = false; }, 50);
+    }
+
+    dragState = null;
+
+    // Re-enable transitions and snap
+    strip.classList.remove('is-dragging');
+    strip.classList.add('is-snapping');
+
+    const scrubberTrack = document.getElementById('scrubber-track');
+    if (scrubberTrack) {
+      scrubberTrack.classList.remove('is-dragging');
+      scrubberTrack.classList.add('is-snapping');
+    }
+
+    if (steps === 0) {
+      // Snap back to current position (slot 2 centered)
+      strip.style.transform = `translate3d(${-sw * 2.5}px, 0, 0)`;
+      if (scrubberTrack) scrubberTrack.style.transform = 'translate3d(-20%, 0, 0)';
+      animateScrubberLitness(-20, 350);
+    } else {
+      // Animate the strip to the snap point, then rebalance
+      strip.style.transform = `translate3d(${-sw * 2.5 - steps * sw}px, 0, 0)`;
+      const targetPct = -20 - steps * 20;
+      if (scrubberTrack) {
+        scrubberTrack.style.transform = `translate3d(${targetPct}%, 0, 0)`;
+      }
+      animateScrubberLitness(targetPct, 550);
+
+      // Rebalance must fire exactly when the snap CSS transition has
+      // completed — not mid-easing. If we fire while the transition is
+      // still settling, the track jumps from its in-progress position to
+      // the new -20% rest, producing a small visible shift on the
+      // rotated tick. Use transitionend with a fallback timeout.
+      isTransitioning = true;
+      let rebalanced = false;
+      const doRebalance = () => {
+        if (rebalanced) return;
+        rebalanced = true;
+        strip.removeEventListener('transitionend', onStripEnd);
+        clearTimeout(rebalanceFallback);
+        userState.currentPageIndex = wrapIdx(userState.currentPageIndex + steps);
+        saveState();
+        rebalanceSlots(steps);
+        rebalanceScrubber(steps);
+        updatePhaseIndicator();
+        updatePathThread();
+        updateFrameMetrics();
+        isTransitioning = false;
+      };
+      const onStripEnd = (e) => {
+        if (e.propertyName === 'transform' && e.target === strip) doRebalance();
+      };
+      strip.addEventListener('transitionend', onStripEnd);
+      // Fallback: if transitionend doesn't fire (e.g. tab backgrounded),
+      // force rebalance after a generous wait.
+      const rebalanceFallback = setTimeout(doRebalance, 800);
+    }
+  }
+
+  function cancelDrag() {
+    dragState = null;
+    strip.classList.remove('is-dragging');
+    strip.classList.add('is-snapping');
+    const sw = getSlotWidth();
+    strip.style.transform = `translate3d(${-sw * 2.5}px, 0, 0)`;
+    const st = document.getElementById('scrubber-track');
+    if (st) {
+      st.classList.remove('is-dragging');
+      st.classList.add('is-snapping');
+      st.style.transform = 'translate3d(-20%, 0, 0)';
+    }
+  }
+
+  // Mouse handlers
   stage.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.glyph-position')) return;  // don't drag from a glyph
-    dragStart = { x: e.clientX, y: e.clientY };
+    // Don't initiate drag from a glyph click — glyphs handle their own clicks
+    if (e.target.closest('.glyph-position')) return;
+    onDown(e.clientX, e.clientY, false);
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (dragState) onMove(e.clientX, e.clientY);
   });
   document.addEventListener('mouseup', (e) => {
-    if (!dragStart) return;
-    const dx = e.clientX - dragStart.x;
-    if (Math.abs(dx) > 60) {
-      justDragged = true;
-      if (dx > 0) navigateToPage(userState.currentPageIndex - 1, 'left');
-      else navigateToPage(userState.currentPageIndex + 1, 'right');
+    if (dragState) onUp(e.clientX);
+  });
+
+  // Touch handlers
+  stage.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.glyph-position')) return;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    onDown(t.clientX, t.clientY, true);
+  }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!dragState) return;
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    onMove(t.clientX, t.clientY);
+    if (dragState && dragState.hasMoved) {
+      e.preventDefault();  // prevent page scroll once we've committed to horizontal
     }
-    dragStart = null;
+  }, { passive: false });
+  document.addEventListener('touchend', (e) => {
+    if (!dragState) return;
+    const t = e.changedTouches && e.changedTouches[0];
+    if (t) onUp(t.clientX);
+    else onUp(dragState.lastX);
+  });
+  document.addEventListener('touchcancel', () => {
+    if (dragState) cancelDrag();
   });
 }
 
-// Flag preventing a drag-pan from also firing a glyph click underneath
-let justDragged = false;
+function wireScrubberDrag() {
+  // The scrubber is currently driven by the canvas drag (proportional).
+  // We could add independent scrubber drag, but to keep behavior coherent
+  // with the canvas, we let canvas drag drive the scrubber. Click-to-navigate
+  // on prev/next ticks is wired in wireEvents().
+  //
+  // Independent scrubber drag is a polish item we can add later if needed.
+}
 
 // ============================================================
 // GLYPH PANEL — popup CTA, four states (ported from pregame's openNodePanel)
@@ -3971,6 +5098,29 @@ function completeSkill(skillId) {
 
 let conduitCeremonyInProgress = false;
 
+// ============================================================
+// CONDUIT CEREMONY — simplified, no choppiness version.
+//
+// Sequence:
+//   1. Lesson uniform fade-out (500ms) — no transform gymnastics
+//   2. Glyph BURST — anchor star detonates as radial flare,
+//      glyph briefly enlarges, shockwave ring expands and fades (600ms)
+//   3. BEAM — single gold line draws from glyph center to sphere center
+//      in 250ms, fades over 400ms
+//   4. Sphere absorbs — new ring fades in via DOM mutation (no re-render),
+//      halo brightens, astral fades in (800ms)
+//   5. Glyph settles to lit state
+//   6. After ceremony ends, invisibly re-render to sync state
+//
+// Key principle: nothing happens during the visible ceremony that
+// requires DOM destruction or animation freeze. The orbit keeps
+// running. Ceremony elements are layered ABOVE the existing canvas
+// without disturbing it. Only after the ceremony completes does the
+// constellation re-render — and the user is no longer watching.
+//
+// On Interpreter completion (closes the trio), chain into Bronze.
+// ============================================================
+
 function runConduitCeremony(skillId) {
   if (conduitCeremonyInProgress) return;
   conduitCeremonyInProgress = true;
@@ -3981,16 +5131,16 @@ function runConduitCeremony(skillId) {
     return;
   }
 
-  // Find the skill being completed and its DOM element on the canvas
   const skill = constellation.skills.find(s => s.id === skillId);
   if (!skill) {
     conduitCeremonyInProgress = false;
     return;
   }
 
-  const frame = document.getElementById('constellation-frame');
+  const frame = getCurrentFrame();
   const lessonOverlay = document.getElementById('lesson-overlay');
   const glyphEl = frame.querySelector(`.glyph-position[data-skill-id="${skillId}"]`);
+
   if (!glyphEl) {
     // Fallback: just complete normally if we can't find the glyph
     completeSkill(skillId);
@@ -3999,186 +5149,235 @@ function runConduitCeremony(skillId) {
     return;
   }
 
-  // Capture glyph position in viewport coords (for lesson collapse target)
-  // and in canvas-frame-local coords (for particle stream origin)
-  const glyphRect = glyphEl.getBoundingClientRect();
-  const glyphViewportX = glyphRect.left + glyphRect.width / 2;
-  const glyphViewportY = glyphRect.top + glyphRect.height / 2;
+  // ===== BEAT 1 — Lesson uniform fade-out (500ms) =====
+  // Simple opacity transition. No transform, no scale, no translate.
+  lessonOverlay.style.transition = 'opacity 500ms ease-out';
+  lessonOverlay.style.opacity = '0';
 
-  // Frame-local coords for particle stream — based on the skill's
-  // designed position within the 720x480 constellation-frame
-  const glyphFrameX = skill.x;
-  const glyphFrameY = skill.y;
-  const sphereFrameX = 360;
-  const sphereFrameY = 260;
-
-  // ===== BEAT 1 — Lesson collapse (1.2s) =====
-  // The lesson container shrinks/translates toward the glyph's viewport
-  // position. transform-origin set to center of viewport (where lesson
-  // container is centered), final transform = scale(0) translate(toward glyph).
-  const viewportCenterX = window.innerWidth / 2;
-  const viewportCenterY = window.innerHeight / 2;
-  const dxToGlyph = glyphViewportX - viewportCenterX;
-  const dyToGlyph = glyphViewportY - viewportCenterY;
-
-  lessonOverlay.classList.add('is-collapsing');
-  lessonOverlay.style.transformOrigin = `${glyphViewportX}px ${glyphViewportY}px`;
-  // Apply transform on next frame so the transition picks it up
-  requestAnimationFrame(() => {
-    lessonOverlay.style.transform = `scale(0) translate(${dxToGlyph * 0.2}px, ${dyToGlyph * 0.2}px)`;
-    lessonOverlay.style.opacity = '0';
-    lessonOverlay.style.filter = 'blur(8px)';
-  });
-
-  // ===== BEAT 2 — Glyph swell (starts at 600ms into collapse) =====
-  // Begin while the lesson is still mid-collapse — visual handoff:
-  // lesson is becoming small/dim while glyph is becoming large/charged
+  // ===== BEAT 2 — Glyph burst (starts at 500ms, runs 600ms) =====
   setTimeout(() => {
-    glyphEl.classList.add('is-swelling');
-  }, 600);
-
-  // ===== BEAT 3 — Particle stream (starts at 1200ms — when collapse completes) =====
-  setTimeout(() => {
-    // Reset lesson overlay so next open works cleanly
-    lessonOverlay.classList.remove('is-open', 'is-collapsing');
-    lessonOverlay.style.transform = '';
+    // Reset lesson overlay so next lesson opens cleanly
+    lessonOverlay.classList.remove('is-open');
+    lessonOverlay.style.transition = '';
     lessonOverlay.style.opacity = '';
-    lessonOverlay.style.filter = '';
-    lessonOverlay.style.transformOrigin = '';
     currentLessonId = null;
 
-    // Spawn the particle stream — color matches skill pillar
-    spawnConduitStream(frame, skill.pillar, glyphFrameX, glyphFrameY, sphereFrameX, sphereFrameY);
+    // Apply burst to the glyph. The glyph is still orbiting; the burst
+    // animation runs in its own transform space layered onto the orbit.
+    glyphEl.classList.add('is-bursting');
 
-    // Sphere absorbs — flare in the middle of the stream's arrival window
-    setTimeout(() => {
-      const armillary = frame.querySelector('.armillary');
-      if (armillary) {
-        armillary.classList.add('is-absorbing');
-        setTimeout(() => armillary.classList.remove('is-absorbing'), 1200);
-      }
-    }, 700);
-  }, 1200);
+    // Spawn the shockwave ring at the glyph's current position
+    const glyphRect = glyphEl.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    const glyphCenterX = glyphRect.left + glyphRect.width / 2 - frameRect.left;
+    const glyphCenterY = glyphRect.top + glyphRect.height / 2 - frameRect.top;
+    spawnShockwave(frame, glyphCenterX, glyphCenterY);
+  }, 500);
 
-  // ===== BEAT 4 — State commit + re-render at 2400ms =====
-  // Stream has been flowing for ~1200ms, particles arriving at sphere.
-  // Commit state, re-render with new ring/halo/astrals.
-  // Mark new ring for inscription animation immediately after re-render.
+  // ===== BEAT 3 — Beam (starts at 800ms, draws in 250ms, fades 400ms) =====
   setTimeout(() => {
-    // Commit completion to state (this is where pool/foundational counters update)
+    // Capture position FRESH at beam-fire moment so the beam connects
+    // glyph and sphere correctly even though the glyph is still orbiting
+    const glyphRect = glyphEl.getBoundingClientRect();
+    const frameRect = frame.getBoundingClientRect();
+    const scaleX = 720 / frameRect.width;
+    const scaleY = 480 / frameRect.height;
+    const fromX = (glyphRect.left + glyphRect.width / 2 - frameRect.left) * scaleX;
+    const fromY = (glyphRect.top + glyphRect.height / 2 - frameRect.top) * scaleY;
+    spawnBeam(frame, fromX, fromY, 360, 260);
+  }, 800);
+
+  // ===== BEAT 4 — New ring fades in via DOM mutation (no re-render) =====
+  // At t=1100ms — beam has reached sphere — append the new ring directly
+  // to the existing armillary-scene. Halo and astral also added without
+  // touching anything else.
+  setTimeout(() => {
+    insertCeremonyRing(frame, skill);
+    // Brighten the halo via class
+    const armillary = frame.querySelector('.armillary-primordial');
+    if (armillary) {
+      const newStage = (parseInt(armillary.dataset.stage || '0', 10)) + 1;
+      armillary.dataset.stage = String(Math.min(3, newStage));
+    }
+  }, 1100);
+
+  // ===== BEAT 5 — Glyph settles, ceremony ends at ~2100ms =====
+  setTimeout(() => {
+    glyphEl.classList.remove('is-bursting');
+    glyphEl.classList.add('is-settling');
+    setTimeout(() => glyphEl.classList.remove('is-settling'), 600);
+  }, 2000);
+
+  // ===== BEAT 6 — Invisible state sync (~2700ms) =====
+  // Commit state without destroying the visible DOM. We update the
+  // glyph state classes in place (the just-completed glyph becomes
+  // 'lit', the next-up glyph becomes 'bright') and refresh the
+  // scrubber + frame metrics. We DELIBERATELY do NOT call
+  // renderConstellation here, because that would replace the orbit-
+  // wrapper element and cause its CSS animation to restart from
+  // rotation 0deg — the entire trio would snap to its starting orbital
+  // position. By updating in place, the orbit keeps its current angle
+  // and the user sees no jump.
+  setTimeout(() => {
     userState.completedSkills[skillId] = true;
     userState.totalEssence += 50;
     saveState();
 
-    // Re-render constellation — new ring will be in DOM
-    renderConstellation(userState.currentPageIndex);
-    renderScrubber();
-    updateFrameMetrics();
-
-    // Apply inscription animation to the just-added ring. The new ring
-    // is the LAST ring in the armillary-scene (rings are appended in
-    // completion order). Identify it and add the is-inscribing class.
-    const rings = frame.querySelectorAll('.armillary-scene .armillary-ring');
-    const newRing = rings[rings.length - 1];
-    if (newRing && !newRing.classList.contains('ring-primordial-graduated')) {
-      newRing.classList.add('is-inscribing');
-      setTimeout(() => newRing.classList.remove('is-inscribing'), 1200);
+    // In-place glyph state class update on the OLD DOM:
+    // - The just-completed glyph: any state → 'lit'
+    // - The next-uncompleted skill on this page: any state → 'bright'
+    // - The remaining incomplete skills: stay dim
+    const completedSet = userState.completedSkills;
+    const c = CONSTELLATIONS[userState.currentPageIndex];
+    if (c) {
+      const firstIncomplete = c.skills.find(s => !completedSet[s.id]);
+      c.skills.forEach((s) => {
+        const el = frame.querySelector(`.glyph-position[data-skill-id="${s.id}"]`);
+        if (!el) return;
+        el.classList.remove('state-bright', 'state-dim', 'state-lit');
+        if (completedSet[s.id]) {
+          el.classList.add('state-lit');
+        } else if (firstIncomplete && firstIncomplete.id === s.id) {
+          el.classList.add('state-bright');
+        } else {
+          el.classList.add('state-dim');
+        }
+        // The START HERE pill should also be removed if Gap is now done.
+        // The pregame trio render has the start-here child element only
+        // when Gap is not-yet-completed, so we manually remove it here
+        // since we're skipping the re-render that would otherwise prune it.
+        if (s.id === 'gap' && completedSet.gap) {
+          const pill = el.querySelector('.start-here');
+          if (pill) pill.remove();
+        }
+      });
     }
 
-    // The newly rendered glyph is now in 'lit' state. We want it to feel
-    // like it just settled from the swollen-charged state — apply a brief
-    // settling glow that fades from pillar-charged to gold-lit.
-    const newGlyphEl = frame.querySelector(`.glyph-position[data-skill-id="${skillId}"]`);
-    if (newGlyphEl) {
-      newGlyphEl.classList.add('is-just-settled');
-      setTimeout(() => newGlyphEl.classList.remove('is-just-settled'), 800);
-    }
-  }, 2400);
+    renderScrubber();        // updates the scrubber bar (separate DOM, safe)
+    updateFrameMetrics();    // updates pool fill + foundational counter
 
-  // ===== BEAT 5 — Ceremony complete at ~4000ms =====
-  // Inscription has finished, settling has run, control returns —
-  // OR we chain into the Bronze ceremony if this completion closed the trio.
-  setTimeout(() => {
     conduitCeremonyInProgress = false;
 
     // Check for trio completion → chain to Bronze
     const pregame = CONSTELLATIONS[0];
     const allTrioComplete = pregame.skills.every(s => userState.completedSkills[s.id]);
     if (allTrioComplete && !userState.bronzeCeremonyFired) {
-      // Brief breath, then Bronze ceremony — Interpreter's conduit was the
-      // first beat of Bronze, the apotheosis is the next.
       setTimeout(fireBronzeCeremony, 600);
     }
-  }, 4000);
+  }, 2700);
 }
 
-// Particle stream — spawns a flow of conduit particles from glyph to sphere
-// along a curved path. Particles are SVG circles inside a temporary
-// .conduit-stream container that gets cleaned up after the stream completes.
-function spawnConduitStream(frame, pillar, fromX, fromY, toX, toY) {
-  const PARTICLE_COUNT = 36;
-  const STREAM_DURATION = 1500;        // total time particles are emitted
-  const PARTICLE_FLIGHT = 700;         // each particle's travel time
+// Shockwave ring — single SVG circle that expands outward from glyph center
+// and fades. Spawned at the moment of burst, removed after 700ms.
+function spawnShockwave(frame, cx, cy) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'ceremony-shockwave-svg');
+  svg.setAttribute('viewBox', `0 0 ${frame.clientWidth} ${frame.clientHeight}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;overflow:visible;';
 
-  // Compute control point for the bezier curve. The curve arcs *outward*
-  // from the straight line between glyph and sphere — gives a graceful
-  // sweep rather than a direct shot. Offset perpendicular to the line.
-  const midX = (fromX + toX) / 2;
-  const midY = (fromY + toY) / 2;
-  const dx = toX - fromX;
-  const dy = toY - fromY;
-  const perpX = -dy;
-  const perpY = dx;
-  const perpLen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
-  // Normalize and apply curvature offset (positive = outward from origin/center)
-  // Determine curve direction: prefer the side away from the canvas center
-  const fromIsLeft = fromX < toX;
-  const curveAmount = 80;
-  const curveDir = fromIsLeft ? 1 : -1;
-  const cpX = midX + (perpX / perpLen) * curveAmount * curveDir;
-  const cpY = midY + (perpY / perpLen) * curveAmount * curveDir - 30;  // slight upward bias for elegance
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', cx);
+  circle.setAttribute('cy', cy);
+  circle.setAttribute('r', '20');
+  circle.setAttribute('class', 'ceremony-shockwave-ring');
+  svg.appendChild(circle);
+  frame.appendChild(svg);
 
-  // Create stream container
-  const stream = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  stream.classList.add('conduit-stream');
-  stream.setAttribute('viewBox', '0 0 720 480');
-  stream.setAttribute('preserveAspectRatio', 'none');
-  frame.appendChild(stream);
+  setTimeout(() => {
+    if (svg.parentNode) svg.parentNode.removeChild(svg);
+  }, 800);
+}
 
-  // Pillar class for color
-  const pillarClass = `is-${pillar}`;
+// Beam — single gold line from glyph to sphere. Uses stroke-dasharray
+// to animate the line drawing in (250ms), then fades the whole element (400ms).
+function spawnBeam(frame, fromX, fromY, toX, toY) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'ceremony-beam-svg');
+  svg.setAttribute('viewBox', '0 0 720 480');
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;overflow:visible;';
 
-  // Spawn particles with staggered delays. Each particle:
-  //   - Starts at a small jitter around the glyph position
-  //   - Animates along the bezier toward sphere center
-  //   - Fades in at start, fades out at end
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const delay = (i / PARTICLE_COUNT) * STREAM_DURATION;
-    const jitterX = (Math.random() - 0.5) * 16;
-    const jitterY = (Math.random() - 0.5) * 16;
-    const jitterCpX = (Math.random() - 0.5) * 30;
-    const jitterCpY = (Math.random() - 0.5) * 30;
-    const radius = 1.6 + Math.random() * 1.4;
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', fromX);
+  line.setAttribute('y1', fromY);
+  line.setAttribute('x2', toX);
+  line.setAttribute('y2', toY);
+  line.setAttribute('class', 'ceremony-beam-line');
+  svg.appendChild(line);
+  frame.appendChild(svg);
 
-    const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    particle.setAttribute('cx', '0');
-    particle.setAttribute('cy', '0');
-    particle.setAttribute('r', radius.toFixed(2));
-    particle.classList.add('conduit-particle', pillarClass);
-    particle.style.setProperty('--conduit-from-x', (fromX + jitterX).toFixed(1));
-    particle.style.setProperty('--conduit-from-y', (fromY + jitterY).toFixed(1));
-    particle.style.setProperty('--conduit-cp-x', (cpX + jitterCpX).toFixed(1));
-    particle.style.setProperty('--conduit-cp-y', (cpY + jitterCpY).toFixed(1));
-    particle.style.setProperty('--conduit-to-x', toX.toFixed(1));
-    particle.style.setProperty('--conduit-to-y', toY.toFixed(1));
-    particle.style.animation = `conduit-flight ${PARTICLE_FLIGHT}ms ease-in-out ${delay}ms forwards`;
-    stream.appendChild(particle);
+  // Trigger fade-out after the line has drawn in
+  setTimeout(() => {
+    line.classList.add('is-fading');
+  }, 280);
+
+  setTimeout(() => {
+    if (svg.parentNode) svg.parentNode.removeChild(svg);
+  }, 750);
+}
+
+// Insert the new ring into the existing armillary-scene WITHOUT triggering
+// a full constellation re-render. The ring fades in via opacity transition.
+// Maps the skill to the appropriate ring class based on its pillar.
+function insertCeremonyRing(frame, skill) {
+  const scene = frame.querySelector('.armillary-scene');
+  if (!scene) return;
+
+  const isPrimordial = (skill.id === 'gap' || skill.id === 'engine' || skill.id === 'interpreter');
+
+  let ringHtml;
+  if (isPrimordial) {
+    if (skill.id === 'gap') {
+      ringHtml = `<div class="armillary-ring ring-primordial-spirit-1 is-fading-in">
+        <svg class="ring-svg" viewBox="-100 -100 200 200">
+          <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-spirit"/>
+          <circle cx="0" cy="-68" r="2.4" class="ring-pole"/>
+          <circle cx="0" cy="68" r="2.4" class="ring-pole"/>
+        </svg>
+      </div>`;
+    } else if (skill.id === 'engine') {
+      ringHtml = `<div class="armillary-ring ring-primordial-vitality is-fading-in">
+        <svg class="ring-svg" viewBox="-100 -100 200 200">
+          <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-vitality"/>
+          <circle cx="-68" cy="0" r="2.4" class="ring-pole"/>
+          <circle cx="68" cy="0" r="2.4" class="ring-pole"/>
+        </svg>
+      </div>`;
+    } else if (skill.id === 'interpreter') {
+      ringHtml = `<div class="armillary-ring ring-primordial-spirit-2 is-fading-in">
+        <svg class="ring-svg" viewBox="-100 -100 200 200">
+          <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-spirit"/>
+          <circle cx="0" cy="-68" r="2.4" class="ring-pole"/>
+          <circle cx="0" cy="68" r="2.4" class="ring-pole"/>
+        </svg>
+      </div>`;
+    }
+  } else {
+    // Curriculum skill — smaller ring sized for the curriculum armillary
+    const ringClass = ['ring-vitality', 'ring-spirit-1', 'ring-spirit-2'][0];  // simplified
+    const strokeClass = `ring-stroke-${skill.pillar}`;
+    ringHtml = `<div class="armillary-ring ${ringClass} is-fading-in">
+      <svg class="ring-svg" viewBox="-70 -70 140 140">
+        <circle cx="0" cy="0" r="50" fill="none" stroke-width="1.0" class="${strokeClass}"/>
+        <circle cx="-50" cy="0" r="1.6" class="ring-pole"/>
+        <circle cx="50" cy="0" r="1.6" class="ring-pole"/>
+      </svg>
+    </div>`;
   }
 
-  // Cleanup stream after all particles have completed
-  setTimeout(() => {
-    if (stream.parentNode) stream.parentNode.removeChild(stream);
-  }, STREAM_DURATION + PARTICLE_FLIGHT + 200);
+  if (ringHtml) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = ringHtml;
+    const ringEl = wrapper.firstElementChild;
+    scene.appendChild(ringEl);
+    // Trigger the fade-in by removing the class on next frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        ringEl.classList.remove('is-fading-in');
+      });
+    });
+  }
 }
 
 // ============================================================
@@ -4270,7 +5469,7 @@ function fireBronzeCeremony() {
 }
 
 function ceremonyBeat1_apotheosis() {
-  const frame = document.getElementById('constellation-frame');
+  const frame = getCurrentFrame();
   frame.classList.add('is-apotheosis');
 
   // Hold the peak for 2.5s, then begin settling
@@ -4280,7 +5479,7 @@ function ceremonyBeat1_apotheosis() {
 }
 
 function ceremonyBeat2_settling() {
-  const frame = document.getElementById('constellation-frame');
+  const frame = getCurrentFrame();
   frame.classList.remove('is-apotheosis');
   // Settling is just removal of the apotheosis class — the natural CSS
   // animations return to baseline. Brief hold then rank-up overlay.
@@ -4352,63 +5551,86 @@ function ceremonyBeat4_calendarWakes() {
 function ceremonyBeat5_video() {
   openPostRankVideo().then(() => {
     setTimeout(() => {
-      ceremonyBeat6_autopanTour();
+      ceremonyBeat6_pathOpens();
     }, 700);
   });
 }
 
-function ceremonyBeat6_autopanTour() {
-  // Phase-spanning tour: W1 (Beginning), W5 (The Selves Within), W9 (What Drives)
-  const tourPages = [1, 5, 9];
-  const startPage = userState.currentPageIndex;  // pregame, page 0
-  const HOLD_MS = 2500;
-  const TRANSITION_MS = 700;
+// ============================================================
+// PATH THREAD — Ariadne's filament toward the next unearned constellation
+// After bronze is earned, a faint gold thread appears in the world.
+// It points from the user's current armillary toward the screen edge in
+// the direction of the next-uncompleted page that lies forward of where
+// they are. It's persistent (always present when applicable), ambient
+// (breathes slowly, never demanding), and gets out of the way during
+// ceremonies and dives.
+//
+// The thread is rendered as a single SVG curve in an overlay layer —
+// it does NOT travel with the carousel during a pan. On every page
+// change (rebalance, drag-release, arrow click), updatePathThread()
+// recomputes whether to show it and in which direction.
+// ============================================================
 
-  let i = 0;
-  function nextStop() {
-    if (i >= tourPages.length) {
-      // Soft return — pan back through visited pages to home
-      returnHome();
-      return;
+function updatePathThread() {
+  const threadEl = document.getElementById('path-thread');
+  if (!threadEl) return;
+
+  const cur = userState.currentPageIndex;
+  const len = CONSTELLATIONS.length;
+
+  // Find the next-unearned forward target. We scan forward (with loop
+  // wrap, but stop at the natural end — pages 0..16 in linear order)
+  // and pick the first page that is not completed.
+  let target = -1;
+  for (let i = cur + 1; i < len; i++) {
+    if (!isPageCompleted(i)) {
+      target = i;
+      break;
     }
-    const target = tourPages[i];
-    navigateToPagePreview(target);
-    i++;
-    setTimeout(nextStop, HOLD_MS + TRANSITION_MS);
   }
 
-  function returnHome() {
-    // Soft pan back: W9 → W5 → W1 → pregame, faster transitions
-    const reverse = [...tourPages].reverse();
-    let j = 0;
-    function back() {
-      if (j >= reverse.length) {
-        // Already passed through reverse stops — final pan to home (page 0)
-        navigateToPage(0, 'left');
-        // Clear preview state on the home page render
-        setTimeout(() => {
-          const frame = document.getElementById('constellation-frame');
-          frame.classList.remove('is-preview');
-          ceremonyBeat7_invitation();
-        }, TRANSITION_MS + 200);
-        return;
-      }
-      // For return pan, use regular navigateToPage (not preview)
-      // Skip the first reverse stop because we're already on it from the forward tour
-      if (j === 0) {
-        j++;
-        back();
-        return;
-      }
-      const target = reverse[j];
-      navigateToPagePreview(target, 'left');
-      j++;
-      setTimeout(back, 600);  // faster on the return
-    }
-    back();
+  // No forward unearned page → user has earned everything past their
+  // current spot. Hide the thread.
+  if (target === -1) {
+    threadEl.classList.remove('is-visible', 'thread-left', 'thread-right');
+    return;
   }
 
-  setTimeout(nextStop, 200);
+  // The thread always points right in our linear progression model
+  // (forward = next constellation in the curriculum order). The carousel
+  // wraps, but the curriculum doesn't.
+  threadEl.classList.add('is-visible', 'thread-right');
+  threadEl.classList.remove('thread-left');
+}
+
+// ============================================================
+// CEREMONY BEAT 6 — Path opens
+// After the post-rank-up video, the carousel settles and the path-thread
+// fades into the world. No tour, no fly-through — the user keeps their
+// position and agency. The thread is the quiet announcement that the
+// way forward is open. Beat 7 (invitation card) follows shortly after.
+// ============================================================
+
+function ceremonyBeat6_pathOpens() {
+  // Make sure the thread state is correct for the current page
+  updatePathThread();
+  // Activate the post-bronze world — adds a body class that lets the
+  // thread fade in (CSS-driven). Persists for the rest of the session
+  // (and is restored on reload via applyPathThreadStateOnLoad).
+  document.body.classList.add('path-opened');
+  // Invitation card follows after a brief settle so the thread can
+  // establish itself before the text arrives.
+  setTimeout(ceremonyBeat7_invitation, 1400);
+}
+
+// On page load, restore the path-opened state if the user has already
+// earned bronze. The thread should be a permanent companion once
+// established, not a one-time animation tied to the ceremony beat.
+function applyPathThreadStateOnLoad() {
+  if (userState && userState.bronzeCeremonyFired) {
+    document.body.classList.add('path-opened');
+    updatePathThread();
+  }
 }
 
 function ceremonyBeat7_invitation() {
@@ -4426,53 +5648,6 @@ function ceremonyBeat7_invitation() {
   }, 3500);
 }
 
-// ============================================================
-// PREVIEW NAVIGATION — autopan tour helper
-// Same as navigateToPage but adds is-preview class so next-uncompleted
-// glyph renders bright regardless of actual completion state.
-// ============================================================
-
-function navigateToPagePreview(targetIdx, direction = null) {
-  if (targetIdx < 0 || targetIdx >= CONSTELLATIONS.length) return;
-  if (targetIdx === userState.currentPageIndex) return;
-
-  const dir = direction || (targetIdx > userState.currentPageIndex ? 'right' : 'left');
-  const frame = document.getElementById('constellation-frame');
-  const title = document.getElementById('constellation-title');
-
-  frame.classList.add(dir === 'right' ? 'pan-out-left' : 'pan-out-right');
-  title.classList.remove('is-visible');
-
-  setTimeout(() => {
-    userState.currentPageIndex = targetIdx;
-    saveState();
-    renderConstellation(targetIdx);
-    renderScrubber();
-
-    // Apply preview-bright state — first unfinished glyph gets the marker
-    const c = CONSTELLATIONS[targetIdx];
-    if (c) {
-      frame.classList.add('is-preview');
-      // Find the first non-completed skill on this page (for users who haven't done the work yet,
-      // that's the first skill in the array)
-      const firstSkill = c.skills[0];
-      if (firstSkill) {
-        const glyphEl = frame.querySelector(`.glyph-position[data-skill-id="${firstSkill.id}"]`);
-        if (glyphEl) glyphEl.setAttribute('data-preview-bright', '1');
-      }
-    }
-
-    frame.classList.remove('pan-out-left', 'pan-out-right');
-    frame.classList.add(dir === 'right' ? 'pan-in-right' : 'pan-in-left');
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        frame.classList.remove('pan-in-left', 'pan-in-right');
-        title.classList.add('is-visible');
-      });
-    });
-  }, 300);
-}
 
 // ============================================================
 // DIVE-IN ARRIVAL
@@ -4571,8 +5746,11 @@ function runAtheneumWelcome(onComplete) {
     return;
   }
 
-  // Hide top corners during welcome (one identity element at a time)
-  if (atheneum) atheneum.classList.add('welcome-active');
+  // Mark entry sequence active — hides top corners + dev panel for the
+  // duration of welcome + tutorial. Class is removed at the END of the
+  // tutorial (after Begin click), not at the welcome→tutorial handoff.
+  if (atheneum) atheneum.classList.add('entry-active');
+  document.body.classList.add('entry-active');
 
   // Wrap eyebrow letters in spans for the disintegration animation
   const eyebrowText = eyebrow.textContent;
@@ -4608,7 +5786,8 @@ function runAtheneumWelcome(onComplete) {
     overlay.style.transition = 'opacity 600ms ease-out, transform 600ms ease-out';
     overlay.style.opacity = '0';
     overlay.style.transform = 'translateY(-30px)';
-    if (atheneum) atheneum.classList.remove('welcome-active');
+    // Note: entry-active class stays on — removed at end of tutorial,
+    // not here. Keeps top corners and dev panel hidden through tutorial.
   }, 4400);
 
   // Hide overlay completely after fade
@@ -4660,7 +5839,7 @@ function runAtheneumTutorial(onComplete) {
     // Default to the Gap's known position within the constellation-frame.
     // The frame is centered in canvas-stage; canvas-stage is at fixed
     // top:50%/left:50% with translate(-50%, -54%).
-    const frame = document.getElementById('constellation-frame');
+    const frame = getCurrentFrame();
     const SPOTLIGHT_TARGET_R = 130;
     let gapVx = window.innerWidth / 2;
     let gapVy = window.innerHeight / 2;
@@ -4743,6 +5922,10 @@ function runAtheneumTutorial(onComplete) {
       tutorial.style.display = 'none';
       dim.classList.remove('visible', 'is-blooming');
       dim.style.setProperty('--spot-r', '0px');
+      // Entry sequence is complete — restore top corners and dev panel
+      const atheneum = document.querySelector('.atheneum');
+      if (atheneum) atheneum.classList.remove('entry-active');
+      document.body.classList.remove('entry-active');
       if (typeof onComplete === 'function') onComplete();
     }, 2700);
   }
@@ -4829,32 +6012,34 @@ function init() {
     userState.unlockedThroughPage = 0;
   }
 
-  // No auto-complete of pregame — user starts with all primordials in their
-  // bright/dim states, will progress through them via lessons. The Bronze
-  // ceremony fires when all three are completed.
-
   saveState();
 
-  renderConstellation(userState.currentPageIndex);
-  renderScrubber();
+  // Initialize the carousel — mounts prev/current/next slots and
+  // sets the strip transform so the current page is centered.
+  initCarouselSlots();
+  renderScrubberLoop();
   updateFrameMetrics();
+  applyPathThreadStateOnLoad();
   wireEvents();
   wireGlyphPanelCloseHandlers();
   wireLessonHandlers();
 
-  // Dive-in arrival on first visit (URL ?dive=1 from threshold cinematic).
-  // Returns true if the dive ran. The welcome is delayed to fire AFTER the
-  // dive-in arrival completes, so the user sees: black → world reveals →
-  // welcome animation. Without this delay, the welcome would run during the
-  // dive's black overlay and be invisible.
+  // Update strip transform on viewport resize so the centering math
+  // stays correct.
+  window.addEventListener('resize', () => {
+    if (isTransitioning) return;
+    const strip = document.getElementById('canvas-strip');
+    if (!strip) return;
+    strip.classList.remove('is-snapping', 'is-dragging');
+    const sw = getSlotWidth();
+    strip.style.transform = `translate3d(${-sw * 2.5}px, 0, 0)`;
+  });
+
+  // Dive-in arrival on first visit
   const isDiving = checkAndRunDiveIn();
   if (isDiving) {
-    // Dive-in is ~3800ms total (600ms hold + 1200ms fade + 1200ms reveal + ~800ms buffer).
-    // Schedule the welcome to begin after the world is fully revealed.
     setTimeout(initAtheneumEntry, 4000);
   } else {
-    // Direct visit (no dive) — show welcome immediately on returning users
-    // (just the room label) or run full sequence on first-time direct.
     initAtheneumEntry();
   }
 }
