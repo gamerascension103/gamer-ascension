@@ -17,6 +17,9 @@
   --silver-bright:  #e8e2d0;
   --silver-label:   #f0eada;
   --silver-dim:     #6f6a5e;
+  --parchment:      #e8dec6;
+  --ink-warm:       #1a0e0a;
+  --ink-warm-deep:  #0d0805;
   --ink-black:      #0a0712;
   --ink-deep:       #06040d;
   --ink-purple:     #14102a;
@@ -128,8 +131,9 @@ html, body {
   font-weight: 500;
   letter-spacing: 0.4em;
   text-transform: uppercase;
-  color: var(--silver);
-  text-shadow: 0 0 14px rgba(229, 197, 116, 0.3);
+  color: var(--parchment);
+  text-shadow: 0 0 14px rgba(232, 222, 198, 0.35),
+               0 0 28px rgba(232, 222, 198, 0.18);
   opacity: 0;
   transition: opacity 0.6s;
 }
@@ -165,13 +169,19 @@ html, body {
 .state-bright .glyph-svg {
   color: var(--silver-bright);
   filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6));
-  animation: glyph-bright-pulse 2.6s ease-in-out infinite;
+  animation: glyph-bright-pulse 2.2s ease-in-out infinite;
 }
 .state-dim .glyph-svg { color: var(--silver-dim); opacity: 0.5; }
 .state-lit .glyph-svg { color: var(--silver); filter: drop-shadow(0 0 8px rgba(229,197,116,0.55)); }
 @keyframes glyph-bright-pulse {
-  0%, 100% { filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6)); transform: scale(1); }
-  50%      { filter: drop-shadow(0 0 28px rgba(255,250,230,1)) drop-shadow(0 0 10px rgba(255,250,230,0.8)); transform: scale(1.03); }
+  0%, 100% {
+    filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 36px rgba(255,250,230,1)) drop-shadow(0 0 14px rgba(255,250,230,0.95)) drop-shadow(0 0 4px rgba(229,197,116,0.5));
+    transform: scale(1.05);
+  }
 }
 
 /* Float animations */
@@ -319,10 +329,56 @@ html, body {
   background: radial-gradient(circle, rgba(229,197,116,0.10) 0%, rgba(229,197,116,0.04) 40%, transparent 75%);
   z-index: 1; pointer-events: none;
   animation: primordial-halo-breath 7s ease-in-out infinite;
+  transition: opacity 1.4s ease-out, transform 1.4s ease-out;
 }
 @keyframes primordial-halo-breath {
   0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
   50%      { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+}
+
+/* Stage-based intensity for the primordial sphere.
+   Stage 0 (no primordials done): halo dim, star tiny, graduated ring faint.
+   Stage 1 (Gap done): halo +20%, star +25%, graduated ring stronger.
+   Stage 2 (Engine done): halo +50%, star +50%, ring near-full.
+   Stage 3 (all done): full intensity — exactly the original design.
+   Each transition is smooth so when a primordial completes the build is visible. */
+.armillary-primordial[data-stage="0"] .primordial-halo { opacity: 0.25; transform: translate(-50%, -50%) scale(0.85); animation: none; }
+.armillary-primordial[data-stage="1"] .primordial-halo { opacity: 0.5; transform: translate(-50%, -50%) scale(0.92); }
+.armillary-primordial[data-stage="2"] .primordial-halo { opacity: 0.75; transform: translate(-50%, -50%) scale(0.97); }
+.armillary-primordial[data-stage="3"] .primordial-halo { opacity: 1; }
+
+.armillary-primordial[data-stage="0"] .primordial-star {
+  width: 5px; height: 5px;
+  box-shadow: 0 0 2px rgba(255,255,255,0.55), 0 0 6px rgba(255,250,230,0.35), 0 0 12px rgba(229,197,116,0.18);
+  animation: none;
+  opacity: 0.55;
+}
+.armillary-primordial[data-stage="1"] .primordial-star {
+  width: 8px; height: 8px;
+  box-shadow: 0 0 4px rgba(255,255,255,0.85), 0 0 12px rgba(255,250,230,0.7), 0 0 24px rgba(229,197,116,0.45);
+  animation-duration: 5.5s;
+}
+.armillary-primordial[data-stage="2"] .primordial-star {
+  width: 11px; height: 11px;
+}
+.armillary-primordial[data-stage="3"] .primordial-star {
+  /* Default — already full intensity from the base .primordial-star rule */
+}
+
+/* Graduated ring fades to its design intensity as stages advance */
+.armillary-primordial[data-stage="0"] .ring-stroke-primordial-graduated { stroke-opacity: 0.15; }
+.armillary-primordial[data-stage="1"] .ring-stroke-primordial-graduated { stroke-opacity: 0.25; }
+.armillary-primordial[data-stage="2"] .ring-stroke-primordial-graduated { stroke-opacity: 0.32; }
+.armillary-primordial[data-stage="0"] .graduated-tick { stroke-opacity: 0.2; }
+.armillary-primordial[data-stage="1"] .graduated-tick { stroke-opacity: 0.35; }
+.armillary-primordial[data-stage="2"] .graduated-tick { stroke-opacity: 0.45; }
+
+/* Smooth transitions on all the stage-targeted elements so the
+   build-up reads as growth, not popping */
+.armillary-primordial .primordial-star,
+.armillary-primordial .ring-stroke-primordial-graduated,
+.armillary-primordial .graduated-tick {
+  transition: opacity 1.4s ease-out, width 1.4s ease-out, height 1.4s ease-out, box-shadow 1.4s ease-out, stroke-opacity 1.4s ease-out;
 }
 
 /* Ring rotations - curriculum (faster) */
@@ -804,24 +860,27 @@ html, body {
   font-weight: 500;
   letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--ink-deep);
-  background: var(--gold);
-  border: none;
-  padding: 14px 32px;
+  color: var(--gold);
+  background: transparent;
+  border: 1.5px solid var(--ink-warm);
+  padding: 13px 31px;  /* -1px to compensate for border */
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.25s;
-  box-shadow: 0 0 20px rgba(229, 197, 116, 0.35);
+  box-shadow: 0 0 14px rgba(26, 14, 10, 0.4), inset 0 0 0 0 rgba(26, 14, 10, 0);
 }
 .lesson-complete:hover {
-  background: var(--gold-bright);
-  box-shadow: 0 0 30px rgba(255, 229, 160, 0.6);
+  border-color: var(--ink-warm-deep);
+  background: rgba(26, 14, 10, 0.5);
+  color: var(--gold-bright);
+  box-shadow: 0 0 22px rgba(229, 197, 116, 0.25), inset 0 0 14px rgba(13, 8, 5, 0.4);
 }
 .lesson-complete.is-done {
-  background: rgba(229, 197, 116, 0.2);
-  color: rgba(229, 197, 116, 0.7);
+  background: var(--ink-warm);
+  border-color: var(--ink-warm);
+  color: var(--gold);
   cursor: default;
-  box-shadow: none;
+  box-shadow: 0 0 18px rgba(26, 14, 10, 0.6), 0 0 8px rgba(229, 197, 116, 0.2);
 }
 
 /* ============================================
@@ -1036,7 +1095,7 @@ html, body {
 }
 @keyframes apotheosis-star-blaze {
   0% { box-shadow: 0 0 6px rgba(255,255,255,1), 0 0 18px rgba(255,250,230,1), 0 0 40px rgba(255,229,160,0.85), 0 0 80px rgba(255,229,160,0.55), 0 0 130px rgba(229,197,116,0.35); }
-  50% { box-shadow: 0 0 14px rgba(255,255,255,1), 0 0 40px rgba(255,250,230,1), 0 0 90px rgba(255,229,160,1), 0 0 180px rgba(255,229,160,0.85), 0 0 280px rgba(229,197,116,0.65); }
+  50% { box-shadow: 0 0 18px rgba(255,255,255,1), 0 0 50px rgba(255,250,230,1), 0 0 110px rgba(255,229,160,1), 0 0 200px rgba(255,229,160,0.85), 0 0 300px rgba(229,197,116,0.65); }
   100% { box-shadow: 0 0 8px rgba(255,255,255,1), 0 0 24px rgba(255,250,230,1), 0 0 50px rgba(255,229,160,0.9), 0 0 100px rgba(255,229,160,0.6), 0 0 160px rgba(229,197,116,0.4); }
 }
 .constellation-frame.is-apotheosis .primordial-halo {
@@ -1177,6 +1236,230 @@ html, body {
   color: var(--silver-label) !important;
   text-shadow: 0 0 10px rgba(255, 250, 230, 0.6) !important;
   opacity: 1 !important;
+}
+
+/* =====================================================================
+   CONDUIT CEREMONY — per-skill completion ceremony.
+   When a user marks a lesson complete: lesson collapses inward toward
+   the just-completed glyph, glyph swells, particle stream flows from
+   glyph to sphere center, new ring inscribes itself, settling.
+
+   Scope: fires for both primordials and curriculum skills.
+   Differentiator: particle color shifts based on skill type
+     - Primordial: gold-white-void
+     - Vitality: orange-warm
+     - Spirit: violet
+     - Alignment: jade-green
+   ===================================================================== */
+
+/* Lesson collapse — overlay shrinks/translates toward the glyph position.
+   The transform-origin and final translate are set inline by JS based
+   on the glyph's getBoundingClientRect() at the moment of collapse start. */
+.lesson-overlay.is-collapsing {
+  transition: transform 1.2s cubic-bezier(0.5, 0, 0.7, 0.4),
+              opacity 1.2s cubic-bezier(0.5, 0, 0.7, 0.4),
+              filter 1.2s ease-out;
+  pointer-events: none;
+  /* JS sets: transform-origin: <glyph-x>px <glyph-y>px;
+              transform: scale(0) translate(...);
+              opacity: 0;
+              filter: blur(8px); */
+}
+
+/* Glyph swell — the just-completed glyph briefly enlarges and charges
+   with pillar color before releasing the conduit stream */
+.glyph-position.is-swelling {
+  z-index: 10;
+  animation: glyph-swell 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes glyph-swell {
+  0%   { transform: translate(-50%, -50%) scale(1); }
+  60%  { transform: translate(-50%, -50%) scale(1.28); }
+  100% { transform: translate(-50%, -50%) scale(1.1); }
+}
+.glyph-position.is-swelling .glyph-svg {
+  animation: glyph-svg-charge 0.8s ease-out forwards !important;
+}
+@keyframes glyph-svg-charge {
+  0%   { filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6)); }
+  100% { filter: drop-shadow(0 0 28px rgba(var(--pillar-color), 0.95))
+                drop-shadow(0 0 56px rgba(var(--pillar-color), 0.6))
+                drop-shadow(0 0 100px rgba(var(--pillar-color), 0.3)); }
+}
+.glyph-position.is-swelling.pillar-primordial .glyph-svg {
+  animation: glyph-svg-charge-primordial 0.8s ease-out forwards !important;
+}
+@keyframes glyph-svg-charge-primordial {
+  0%   { filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6)); }
+  100% { filter: drop-shadow(0 0 30px rgba(255,255,255,1))
+                drop-shadow(0 0 60px rgba(229,197,116,0.8))
+                drop-shadow(0 0 110px rgba(229,197,116,0.4)); }
+}
+.glyph-position.is-swelling .anchor-star {
+  animation: anchor-star-charge 0.8s ease-out forwards !important;
+}
+@keyframes anchor-star-charge {
+  0%   { width: 7px; height: 7px; box-shadow: 0 0 4px rgba(255,255,255,1), 0 0 14px rgba(255,250,230,0.85), 0 0 30px rgba(255,229,160,0.6); }
+  100% { width: 14px; height: 14px; box-shadow: 0 0 10px rgba(255,255,255,1), 0 0 30px rgba(var(--pillar-color), 0.95), 0 0 60px rgba(var(--pillar-color), 0.6); }
+}
+.glyph-position.is-swelling.pillar-primordial .anchor-star {
+  animation: anchor-star-charge-primordial 0.8s ease-out forwards !important;
+}
+@keyframes anchor-star-charge-primordial {
+  0%   { width: 7px; height: 7px; box-shadow: 0 0 4px rgba(255,255,255,1), 0 0 14px rgba(255,250,230,0.85), 0 0 30px rgba(255,229,160,0.6); }
+  100% { width: 16px; height: 16px; box-shadow: 0 0 12px rgba(255,255,255,1), 0 0 36px rgba(255,250,230,0.95), 0 0 72px rgba(229,197,116,0.7); }
+}
+
+/* Conduit stream container — full-canvas SVG layer that holds all
+   particles flowing from glyph to sphere center along a curved path */
+.conduit-stream {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+  overflow: visible;
+}
+.conduit-particle {
+  --conduit-from-x: 0;
+  --conduit-from-y: 0;
+  --conduit-cp-x: 0;
+  --conduit-cp-y: 0;
+  --conduit-to-x: 360;
+  --conduit-to-y: 260;
+  --conduit-color: rgba(229, 197, 116, 0.9);
+  --conduit-glow: rgba(229, 197, 116, 0.6);
+  fill: var(--conduit-color);
+  stroke: none;
+  filter: drop-shadow(0 0 4px var(--conduit-glow)) drop-shadow(0 0 10px var(--conduit-glow));
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* Each particle uses a CSS animation that follows a quadratic bezier curve.
+   We approximate the curve with a 3-step animation: start position →
+   control point → end position. Smooth enough at 60fps for the eye. */
+@keyframes conduit-flight {
+  0% {
+    transform: translate(calc(var(--conduit-from-x) * 1px), calc(var(--conduit-from-y) * 1px)) scale(0.6);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(calc(var(--conduit-cp-x) * 1px), calc(var(--conduit-cp-y) * 1px)) scale(1);
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(var(--conduit-to-x) * 1px), calc(var(--conduit-to-y) * 1px)) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* Pillar-colored particle variants */
+.conduit-particle.is-primordial {
+  --conduit-color: rgba(255, 250, 230, 0.95);
+  --conduit-glow: rgba(229, 197, 116, 0.7);
+}
+.conduit-particle.is-vitality {
+  --conduit-color: rgba(255, 160, 110, 0.95);
+  --conduit-glow: rgba(255, 124, 88, 0.7);
+}
+.conduit-particle.is-spirit {
+  --conduit-color: rgba(216, 180, 255, 0.95);
+  --conduit-glow: rgba(196, 158, 255, 0.7);
+}
+.conduit-particle.is-alignment {
+  --conduit-color: rgba(150, 240, 190, 0.95);
+  --conduit-glow: rgba(130, 232, 178, 0.7);
+}
+
+/* Sphere absorption pulse — the sphere flares briefly when the particle
+   stream arrives, signaling the new ring is being inscribed */
+.armillary.is-absorbing .primordial-halo,
+.armillary.is-absorbing .armillary-anchor {
+  animation: sphere-absorb-pulse 1.2s ease-out forwards;
+}
+@keyframes sphere-absorb-pulse {
+  0%   { filter: brightness(1); }
+  40%  { filter: brightness(1.8); }
+  100% { filter: brightness(1); }
+}
+
+/* Ring inscription — the newly-added ring draws itself from one pole to
+   the other rather than popping in. Achieved with stroke-dasharray +
+   stroke-dashoffset animation. The .is-inscribing class is added on the
+   newly-rendered ring, then removed after the animation completes. */
+.armillary-ring.is-inscribing circle {
+  stroke-dasharray: 470;  /* 2*PI*r where r=68 — full circumference + buffer */
+  stroke-dashoffset: 470;
+  animation: ring-inscribe 1.0s ease-out forwards;
+}
+@keyframes ring-inscribe {
+  0%   { stroke-dashoffset: 470; }
+  100% { stroke-dashoffset: 0; }
+}
+.armillary-ring.is-inscribing .ring-pole {
+  opacity: 0;
+  animation: ring-pole-emerge 0.4s ease-out 0.7s forwards;
+}
+@keyframes ring-pole-emerge {
+  0%   { opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(0.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* When the constellation re-renders mid-conduit-ceremony, the just-completed
+   glyph appears in its new lit state. is-just-settled is briefly applied to
+   create a "fading from charged" appearance — pillar color glow fades out
+   over 800ms revealing the settled gold-tinted lit state underneath. */
+.glyph-position.is-just-settled .glyph-svg {
+  animation: glyph-just-settled 0.8s ease-out forwards;
+}
+@keyframes glyph-just-settled {
+  0% {
+    filter: drop-shadow(0 0 28px rgba(var(--pillar-color), 0.95))
+            drop-shadow(0 0 56px rgba(var(--pillar-color), 0.6))
+            drop-shadow(0 0 100px rgba(var(--pillar-color), 0.3));
+    transform: scale(1.1);
+  }
+  100% {
+    filter: drop-shadow(0 0 8px rgba(229,197,116,0.55));
+    transform: scale(1);
+  }
+}
+.glyph-position.is-just-settled.pillar-primordial .glyph-svg {
+  animation: glyph-just-settled-primordial 0.8s ease-out forwards;
+}
+@keyframes glyph-just-settled-primordial {
+  0% {
+    filter: drop-shadow(0 0 30px rgba(255,255,255,1))
+            drop-shadow(0 0 60px rgba(229,197,116,0.8))
+            drop-shadow(0 0 110px rgba(229,197,116,0.4));
+    transform: scale(1.1);
+  }
+  100% {
+    filter: drop-shadow(0 0 8px rgba(229,197,116,0.55));
+    transform: scale(1);
+  }
+}
+.glyph-position.is-just-settled .anchor-star {
+  animation: anchor-star-just-settled 0.8s ease-out forwards;
+}
+@keyframes anchor-star-just-settled {
+  0% { width: 14px; height: 14px; box-shadow: 0 0 10px rgba(255,255,255,1), 0 0 30px rgba(var(--pillar-color), 0.95), 0 0 60px rgba(var(--pillar-color), 0.6); }
+  100% { width: 7px; height: 7px; box-shadow: 0 0 4px rgba(255,255,255,1), 0 0 14px rgba(255,250,230,0.85), 0 0 30px rgba(255,229,160,0.6); }
+}
+
+/* Suppress START HERE on the autopan tour — the tour is showcasing the
+   curriculum's shape, not directing action. The pill would visually trail
+   across previewed pages and confuse the moment. */
+.constellation-frame.is-preview .start-here {
+  display: none !important;
 }
 
 /* =====================================================================
@@ -1654,12 +1937,12 @@ html, body {
   <!-- The Gap — the original wound, the discontinuity that makes
        the work necessary. Broken stroke through the containing circle. -->
   <symbol id="glyph-gap-parent" viewBox="0 0 200 200">
-    <g transform="translate(100,100)" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <g filter="url(#glyph-ink-bleed)">
+    <g transform="translate(100,100)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574">
         <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
         <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
       </g>
-      <g filter="url(#glyph-primal-bleed)">
+      <g filter="url(#glyph-primal-bleed)" stroke="#1a0e0a">
         <line x1="-30" y1="-34" x2="-8" y2="-8" stroke-width="5.4"/>
         <line x1="10" y1="10" x2="32" y2="36" stroke-width="5.4"/>
         <line x1="-8" y1="-8" x2="-4" y2="-2" stroke-width="3.0"/>
@@ -1671,16 +1954,16 @@ html, body {
   <!-- The Engine — the body, the vessel that carries the work.
        Vesica vessel with axis and core mark. -->
   <symbol id="glyph-engine-parent" viewBox="0 0 200 200">
-    <g transform="translate(100,100)" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <g filter="url(#glyph-ink-bleed)">
+    <g transform="translate(100,100)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574">
         <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
         <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
       </g>
-      <g filter="url(#glyph-primal-bleed)">
-        <path d="M -32 -36 Q -46 0 -32 36 Q 0 50 32 36 Q 46 0 32 -36 Q 0 -50 -32 -36 Z" stroke-width="4.6" fill="currentColor" fill-opacity="0.06"/>
+      <g filter="url(#glyph-primal-bleed)" stroke="#1a0e0a">
+        <path d="M -32 -36 Q -46 0 -32 36 Q 0 50 32 36 Q 46 0 32 -36 Q 0 -50 -32 -36 Z" stroke-width="4.6" fill="#1a0e0a" fill-opacity="0.06"/>
         <path d="M -20 -24 Q -32 0 -20 24 Q 0 36 20 24 Q 32 0 20 -24 Q 0 -36 -20 -24 Z" stroke-width="2.4"/>
         <line x1="0" y1="-24" x2="0" y2="24" stroke-width="1.8"/>
-        <circle cx="0" cy="0" r="5" fill="currentColor" stroke="none"/>
+        <circle cx="0" cy="0" r="5" fill="#1a0e0a" stroke="none"/>
       </g>
     </g>
   </symbol>
@@ -1688,16 +1971,16 @@ html, body {
   <!-- The Interpreter — the meta-perceiver, the witnessing self.
        Eye-aperture above with descending witness line. -->
   <symbol id="glyph-interpreter-parent" viewBox="0 0 200 200">
-    <g transform="translate(100,100)" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <g filter="url(#glyph-ink-bleed)">
+    <g transform="translate(100,100)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574">
         <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
         <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
       </g>
-      <g filter="url(#glyph-primal-bleed)">
+      <g filter="url(#glyph-primal-bleed)" stroke="#1a0e0a">
         <circle cx="0" cy="-22" r="16" stroke-width="4.4"/>
-        <circle cx="0" cy="-22" r="6" fill="currentColor" stroke="none"/>
+        <circle cx="0" cy="-22" r="6" fill="#1a0e0a" stroke="none"/>
         <line x1="0" y1="-6" x2="0" y2="28" stroke-width="3.0" stroke-dasharray="2,5"/>
-        <circle cx="0" cy="28" r="3" fill="currentColor" stroke="none"/>
+        <circle cx="0" cy="28" r="3" fill="#1a0e0a" stroke="none"/>
       </g>
     </g>
   </symbol>
@@ -2877,6 +3160,42 @@ function countFoundationalUnlocked() {
 }
 
 // ============================================================
+// CURRENT ACTION — the user's one next-action skill globally.
+// Returns { pageIndex, skillId } or null if everything is done.
+//
+// Logic:
+//   - First incomplete primordial in pregame, OR
+//   - If pregame is complete AND user has unlocked curriculum:
+//       first incomplete skill on the user's deepest unlocked page
+//
+// Used for START HERE pill placement so it only appears on the
+// user's actual next-action glyph, not on every bright glyph
+// across constellations they pan through.
+// ============================================================
+function getCurrentActionSkill() {
+  // Pregame first
+  const pregame = CONSTELLATIONS[0];
+  const pregameNext = pregame.skills.find(s => !userState.completedSkills[s.id]);
+  if (pregameNext) {
+    return { pageIndex: 0, skillId: pregameNext.id };
+  }
+
+  // Pregame done — find the deepest unlocked page with an incomplete skill
+  // (only relevant post-purchase; pre-purchase, unlockedThroughPage stays at 0
+  // and curriculum stays locked behind the popup CTA, so this returns null)
+  for (let i = 1; i <= userState.unlockedThroughPage; i++) {
+    const c = CONSTELLATIONS[i];
+    if (!c) continue;
+    const next = c.skills.find(s => !userState.completedSkills[s.id]);
+    if (next) {
+      return { pageIndex: i, skillId: next.id };
+    }
+  }
+
+  return null;  // Everything available is complete
+}
+
+// ============================================================
 // RENDER — single-constellation render function
 // ============================================================
 
@@ -2926,52 +3245,92 @@ function renderConstellation(pageIndex) {
 }
 
 function renderPrimordialArmillary(c) {
-  return `
-    <div class="armillary armillary-primordial">
-      <div class="primordial-halo"></div>
-      <div class="armillary-scene">
-        <div class="armillary-ring ring-primordial-graduated">
-          <svg class="ring-svg" viewBox="-100 -100 200 200">
-            <circle cx="0" cy="0" r="78" fill="none" class="ring-stroke-primordial-graduated"/>
-            <line x1="78" y1="0" x2="84" y2="0" class="graduated-tick"/>
-            <line x1="67.5" y1="39" x2="72.7" y2="42" class="graduated-tick"/>
-            <line x1="39" y1="67.5" x2="42" y2="72.7" class="graduated-tick"/>
-            <line x1="0" y1="78" x2="0" y2="84" class="graduated-tick"/>
-            <line x1="-39" y1="67.5" x2="-42" y2="72.7" class="graduated-tick"/>
-            <line x1="-67.5" y1="39" x2="-72.7" y2="42" class="graduated-tick"/>
-            <line x1="-78" y1="0" x2="-84" y2="0" class="graduated-tick"/>
-            <line x1="-67.5" y1="-39" x2="-72.7" y2="-42" class="graduated-tick"/>
-            <line x1="-39" y1="-67.5" x2="-42" y2="-72.7" class="graduated-tick"/>
-            <line x1="0" y1="-78" x2="0" y2="-84" class="graduated-tick"/>
-            <line x1="39" y1="-67.5" x2="42" y2="-72.7" class="graduated-tick"/>
-            <line x1="67.5" y1="-39" x2="72.7" y2="-42" class="graduated-tick"/>
-          </svg>
-        </div>
-        <div class="armillary-ring ring-primordial-vitality">
-          <svg class="ring-svg" viewBox="-100 -100 200 200">
-            <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-vitality"/>
-            <circle cx="-68" cy="0" r="2.4" class="ring-pole"/>
-            <circle cx="68" cy="0" r="2.4" class="ring-pole"/>
-          </svg>
-        </div>
-        <div class="armillary-ring ring-primordial-spirit-1">
-          <svg class="ring-svg" viewBox="-100 -100 200 200">
-            <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-spirit"/>
-            <circle cx="0" cy="-68" r="2.4" class="ring-pole"/>
-            <circle cx="0" cy="68" r="2.4" class="ring-pole"/>
-          </svg>
-        </div>
-        <div class="armillary-ring ring-primordial-spirit-2">
-          <svg class="ring-svg" viewBox="-100 -100 200 200">
-            <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-spirit"/>
-            <circle cx="0" cy="-68" r="2.4" class="ring-pole"/>
-            <circle cx="0" cy="68" r="2.4" class="ring-pole"/>
-          </svg>
-        </div>
+  // Progressive build: each completed primordial adds its ring to the
+  // sphere. Gap=spirit-1, Engine=vitality, Interpreter=spirit-2.
+  // The graduated structural ring is always present (faint at stage 0,
+  // brighter as stages advance) — same logic as the curriculum's
+  // structural ring on 1-skill weeks: it shows where the sphere will be built.
+  //
+  // Stages:
+  //   0 = nothing complete — only graduated ring (faint), star tiny, halo dim, no astrals, no particles
+  //   1 = Gap done       — adds spirit-1 ring + astral 1, halo brightens, star grows, particles begin
+  //   2 = Engine done    — adds vitality ring + astral 2, halo brighter, star bigger, more particles
+  //   3 = Interpreter done — adds spirit-2 ring + astral 3, full sphere, full halo, full star, full particles
+  //
+  // The `data-stage` attribute on the armillary lets CSS scope visual
+  // intensity (halo opacity, star size, particle visibility) to the stage.
+
+  const stage = c.skills.filter(s => userState.completedSkills[s.id]).length;
+  const gapDone        = !!userState.completedSkills['gap'];
+  const engineDone     = !!userState.completedSkills['engine'];
+  const interpreterDone = !!userState.completedSkills['interpreter'];
+
+  // Graduated structural ring — always present, more emphatic at higher stages
+  let ringsHtml = `
+    <div class="armillary-ring ring-primordial-graduated">
+      <svg class="ring-svg" viewBox="-100 -100 200 200">
+        <circle cx="0" cy="0" r="78" fill="none" class="ring-stroke-primordial-graduated"/>
+        <line x1="78" y1="0" x2="84" y2="0" class="graduated-tick"/>
+        <line x1="67.5" y1="39" x2="72.7" y2="42" class="graduated-tick"/>
+        <line x1="39" y1="67.5" x2="42" y2="72.7" class="graduated-tick"/>
+        <line x1="0" y1="78" x2="0" y2="84" class="graduated-tick"/>
+        <line x1="-39" y1="67.5" x2="-42" y2="72.7" class="graduated-tick"/>
+        <line x1="-67.5" y1="39" x2="-72.7" y2="42" class="graduated-tick"/>
+        <line x1="-78" y1="0" x2="-84" y2="0" class="graduated-tick"/>
+        <line x1="-67.5" y1="-39" x2="-72.7" y2="-42" class="graduated-tick"/>
+        <line x1="-39" y1="-67.5" x2="-42" y2="-72.7" class="graduated-tick"/>
+        <line x1="0" y1="-78" x2="0" y2="-84" class="graduated-tick"/>
+        <line x1="39" y1="-67.5" x2="42" y2="-72.7" class="graduated-tick"/>
+        <line x1="67.5" y1="-39" x2="72.7" y2="-42" class="graduated-tick"/>
+      </svg>
+    </div>
+  `;
+
+  if (gapDone) {
+    ringsHtml += `
+      <div class="armillary-ring ring-primordial-spirit-1">
+        <svg class="ring-svg" viewBox="-100 -100 200 200">
+          <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-spirit"/>
+          <circle cx="0" cy="-68" r="2.4" class="ring-pole"/>
+          <circle cx="0" cy="68" r="2.4" class="ring-pole"/>
+        </svg>
       </div>
-      <div class="astral-orbit astral-orbit-1"><div class="astral-body"></div></div>
-      <div class="astral-orbit astral-orbit-2"><div class="astral-body"></div></div>
-      <div class="astral-orbit astral-orbit-3"><div class="astral-body"></div></div>
+    `;
+  }
+  if (engineDone) {
+    ringsHtml += `
+      <div class="armillary-ring ring-primordial-vitality">
+        <svg class="ring-svg" viewBox="-100 -100 200 200">
+          <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-vitality"/>
+          <circle cx="-68" cy="0" r="2.4" class="ring-pole"/>
+          <circle cx="68" cy="0" r="2.4" class="ring-pole"/>
+        </svg>
+      </div>
+    `;
+  }
+  if (interpreterDone) {
+    ringsHtml += `
+      <div class="armillary-ring ring-primordial-spirit-2">
+        <svg class="ring-svg" viewBox="-100 -100 200 200">
+          <circle cx="0" cy="0" r="68" fill="none" class="ring-stroke-primordial-spirit"/>
+          <circle cx="0" cy="-68" r="2.4" class="ring-pole"/>
+          <circle cx="0" cy="68" r="2.4" class="ring-pole"/>
+        </svg>
+      </div>
+    `;
+  }
+
+  // Astral orbits — one activates per completion
+  let astralsHtml = '';
+  if (gapDone)         astralsHtml += '<div class="astral-orbit astral-orbit-1"><div class="astral-body"></div></div>';
+  if (engineDone)      astralsHtml += '<div class="astral-orbit astral-orbit-2"><div class="astral-body"></div></div>';
+  if (interpreterDone) astralsHtml += '<div class="astral-orbit astral-orbit-3"><div class="astral-body"></div></div>';
+
+  return `
+    <div class="armillary armillary-primordial" data-stage="${stage}">
+      <div class="primordial-halo"></div>
+      <div class="armillary-scene">${ringsHtml}</div>
+      ${astralsHtml}
       <div class="primordial-star"></div>
     </div>
   `;
@@ -3027,42 +3386,93 @@ function renderCurriculumArmillary(c) {
 }
 
 function renderPregameTrioWrapped(c) {
-  // Pregame: orbiting trio with void particles, all glyphs lit
+  // Pregame: orbiting trio with progressive activation.
+  // Each primordial's void particles only render once that primordial
+  // is complete (the void began flowing when the user first looked at it).
+  // Glyphs use the same bright/dim/lit state machine as curriculum skills.
+
+  const gapDone        = !!userState.completedSkills['gap'];
+  const engineDone     = !!userState.completedSkills['engine'];
+  const interpreterDone = !!userState.completedSkills['interpreter'];
+
+  let particlesHtml = '';
+  if (gapDone) {
+    particlesHtml += `
+      <circle cx="360" cy="260" r="2.0" class="flow-particle out-gap-1"/>
+      <circle cx="360" cy="260" r="2.4" class="flow-particle out-gap-2"/>
+      <circle cx="360" cy="260" r="1.8" class="flow-particle out-gap-3"/>
+      <circle cx="360" cy="260" r="2.2" class="flow-particle out-gap-4"/>
+      <circle cx="360" cy="260" r="2.0" class="flow-particle in-gap-1"/>
+      <circle cx="360" cy="260" r="2.2" class="flow-particle in-gap-2"/>
+      <circle cx="360" cy="260" r="1.8" class="flow-particle in-gap-3"/>
+      <circle cx="360" cy="260" r="2.4" class="flow-particle in-gap-4"/>
+    `;
+  }
+  if (engineDone) {
+    particlesHtml += `
+      <circle cx="360" cy="260" r="2.2" class="flow-particle out-engine-1"/>
+      <circle cx="360" cy="260" r="1.8" class="flow-particle out-engine-2"/>
+      <circle cx="360" cy="260" r="2.0" class="flow-particle out-engine-3"/>
+      <circle cx="360" cy="260" r="2.4" class="flow-particle out-engine-4"/>
+      <circle cx="360" cy="260" r="2.0" class="flow-particle in-engine-1"/>
+      <circle cx="360" cy="260" r="2.2" class="flow-particle in-engine-2"/>
+      <circle cx="360" cy="260" r="1.8" class="flow-particle in-engine-3"/>
+      <circle cx="360" cy="260" r="2.0" class="flow-particle in-engine-4"/>
+    `;
+  }
+  if (interpreterDone) {
+    particlesHtml += `
+      <circle cx="360" cy="260" r="2.0" class="flow-particle out-interp-1"/>
+      <circle cx="360" cy="260" r="2.4" class="flow-particle out-interp-2"/>
+      <circle cx="360" cy="260" r="1.8" class="flow-particle out-interp-3"/>
+      <circle cx="360" cy="260" r="2.2" class="flow-particle out-interp-4"/>
+      <circle cx="360" cy="260" r="2.2" class="flow-particle in-interp-1"/>
+      <circle cx="360" cy="260" r="1.8" class="flow-particle in-interp-2"/>
+      <circle cx="360" cy="260" r="2.4" class="flow-particle in-interp-3"/>
+      <circle cx="360" cy="260" r="2.0" class="flow-particle in-interp-4"/>
+    `;
+  }
+
+  // Glyph state determination:
+  //   - completed → 'lit' (gold-tinted, anchored)
+  //   - first incomplete → 'bright' (silver-bright, pulsing)
+  //   - others → 'dim' (silver-dim, half opacity)
+  // Same machinery as the curriculum render.
+  const firstIncomplete = c.skills.find(s => !userState.completedSkills[s.id]);
+
+  const glyphsHtml = c.skills.map((s, i) => {
+    let state;
+    if (userState.completedSkills[s.id]) state = 'lit';
+    else if (firstIncomplete && firstIncomplete.id === s.id) state = 'bright';
+    else state = 'dim';
+
+    // START HERE pill rule (same as renderGlyphPosition): only on Gap
+    // before it's been completed.
+    const isFirstEverSkill = i === 0 && !userState.completedSkills[s.id];
+
+    return `
+      <div class="glyph-position state-${state} pillar-primordial" style="left: ${s.x}px; top: ${s.y}px;" data-skill-id="${s.id}">
+        ${isFirstEverSkill ? `
+          <div class="start-here">
+            <div class="start-here-pill">Start Here</div>
+            <svg class="start-here-arrow" viewBox="0 0 14 12">
+              <path d="M7 11 L1 1 L13 1 Z"/>
+            </svg>
+          </div>
+        ` : ''}
+        <div class="anchor-star"></div>
+        <svg class="glyph-svg" viewBox="0 0 200 200"><use href="#${s.glyph}"/></svg>
+        <div class="glyph-label">${s.label}</div>
+      </div>
+    `;
+  }).join('');
+
   return `
     <div class="primordial-orbit-wrapper">
       <svg class="particle-flow-svg" viewBox="0 0 720 480" preserveAspectRatio="none">
-        <circle cx="360" cy="260" r="2.0" class="flow-particle out-gap-1"/>
-        <circle cx="360" cy="260" r="2.4" class="flow-particle out-gap-2"/>
-        <circle cx="360" cy="260" r="1.8" class="flow-particle out-gap-3"/>
-        <circle cx="360" cy="260" r="2.2" class="flow-particle out-gap-4"/>
-        <circle cx="360" cy="260" r="2.0" class="flow-particle in-gap-1"/>
-        <circle cx="360" cy="260" r="2.2" class="flow-particle in-gap-2"/>
-        <circle cx="360" cy="260" r="1.8" class="flow-particle in-gap-3"/>
-        <circle cx="360" cy="260" r="2.4" class="flow-particle in-gap-4"/>
-        <circle cx="360" cy="260" r="2.2" class="flow-particle out-engine-1"/>
-        <circle cx="360" cy="260" r="1.8" class="flow-particle out-engine-2"/>
-        <circle cx="360" cy="260" r="2.0" class="flow-particle out-engine-3"/>
-        <circle cx="360" cy="260" r="2.4" class="flow-particle out-engine-4"/>
-        <circle cx="360" cy="260" r="2.0" class="flow-particle in-engine-1"/>
-        <circle cx="360" cy="260" r="2.2" class="flow-particle in-engine-2"/>
-        <circle cx="360" cy="260" r="1.8" class="flow-particle in-engine-3"/>
-        <circle cx="360" cy="260" r="2.0" class="flow-particle in-engine-4"/>
-        <circle cx="360" cy="260" r="2.0" class="flow-particle out-interp-1"/>
-        <circle cx="360" cy="260" r="2.4" class="flow-particle out-interp-2"/>
-        <circle cx="360" cy="260" r="1.8" class="flow-particle out-interp-3"/>
-        <circle cx="360" cy="260" r="2.2" class="flow-particle out-interp-4"/>
-        <circle cx="360" cy="260" r="2.2" class="flow-particle in-interp-1"/>
-        <circle cx="360" cy="260" r="1.8" class="flow-particle in-interp-2"/>
-        <circle cx="360" cy="260" r="2.4" class="flow-particle in-interp-3"/>
-        <circle cx="360" cy="260" r="2.0" class="flow-particle in-interp-4"/>
+        ${particlesHtml}
       </svg>
-      ${c.skills.map((s, i) => `
-        <div class="glyph-position state-lit pillar-primordial" style="left: ${s.x}px; top: ${s.y}px;" data-skill-id="${s.id}">
-          <div class="anchor-star"></div>
-          <svg class="glyph-svg" viewBox="0 0 200 200"><use href="#${s.glyph}"/></svg>
-          <div class="glyph-label">${s.label}</div>
-        </div>
-      `).join('')}
+      ${glyphsHtml}
     </div>
   `;
 }
@@ -3070,7 +3480,17 @@ function renderPregameTrioWrapped(c) {
 function renderGlyphPosition(skill, idx, pageIndex) {
   const state = getSkillState(skill, pageIndex);
   const floatClass = `glyph-float-${(idx % 3) + 1}`;
-  const isStartHere = state === 'bright';
+
+  // START HERE pill: ONLY on the very first skill of the very first
+  // constellation, and ONLY if it has never been completed. Gap on the
+  // pregame page on a brand-new user's first arrival. After Gap is done,
+  // the pill never appears again — the bright pulse on subsequent
+  // next-up glyphs is enough affordance for users who've learned the
+  // visual vocabulary.
+  const isFirstEverSkill = pageIndex === 0
+    && skill.id === CONSTELLATIONS[0].skills[0].id
+    && !userState.completedSkills[skill.id];
+  const isStartHere = isFirstEverSkill && state === 'bright';
 
   return `
     <div class="glyph-position state-${state} ${floatClass} pillar-${skill.pillar}" style="left: ${skill.x}px; top: ${skill.y}px;" data-skill-id="${skill.id}">
@@ -3315,6 +3735,7 @@ const CALENDLY_URL = 'https://calendly.com/straincoaching/insightcall';
 function openGlyphPanel(skillId) {
   if (isTransitioning) return;
   if (ceremonyInProgress) return;
+  if (conduitCeremonyInProgress) return;
 
   const constellation = CONSTELLATIONS[userState.currentPageIndex];
   if (!constellation) return;
@@ -3485,25 +3906,22 @@ function wireLessonHandlers() {
   document.getElementById('lesson-back').addEventListener('click', closeLesson);
   document.getElementById('lesson-complete').addEventListener('click', () => {
     if (!currentLessonId) return;
-    completeSkill(currentLessonId);
-    // Update button state visually
+    if (conduitCeremonyInProgress) return;
+
+    // Update button state visually first (immediate feedback)
     const btn = document.getElementById('lesson-complete');
     btn.textContent = 'Completed ✓';
     btn.classList.add('is-done');
     btn.disabled = true;
     document.getElementById('lesson-progress-fill').style.width = '100%';
 
-    // After a beat, close the lesson and re-render the constellation
+    // Brief pause so the button state change registers, then fire the
+    // conduit ceremony. The ceremony handles everything from here:
+    // lesson collapse, glyph swell, particle stream, ring inscription,
+    // settling, and chaining to Bronze ceremony if the trio is now complete.
     setTimeout(() => {
-      closeLesson();
-      // Check for trio completion → fire Bronze ceremony
-      const pregame = CONSTELLATIONS[0];
-      const allTrioComplete = pregame.skills.every(s => userState.completedSkills[s.id]);
-      if (allTrioComplete && !userState.bronzeCeremonyFired) {
-        // Schedule the ceremony so the lesson close transition completes first
-        setTimeout(fireBronzeCeremony, 600);
-      }
-    }, 1200);
+      runConduitCeremony(currentLessonId);
+    }, 600);
   });
 
   // Simple scroll-to-progress on lesson body
@@ -3528,6 +3946,239 @@ function completeSkill(skillId) {
   renderConstellation(userState.currentPageIndex);
   renderScrubber();
   updateFrameMetrics();
+}
+
+// ============================================================
+// CONDUIT CEREMONY — per-skill completion
+// Fires when the user marks a lesson complete. Orchestrates:
+//   1. Lesson collapse — overlay shrinks/translates toward glyph position
+//   2. Glyph swell — just-completed glyph charges with pillar color
+//   3. Particle stream — flows from glyph to sphere center along curve
+//   4. Sphere absorbs — flares brightly as stream arrives
+//   5. State commits + re-render — new ring is now in DOM
+//   6. Ring inscription — new ring draws itself via stroke-dashoffset
+//   7. Settling — astrals/halo/particles update, glyph settles to lit
+//
+// Differentiator: particle color matches skill type
+//   - Primordial: gold-white-void (denser, weightier)
+//   - Vitality: orange-warm
+//   - Spirit: violet
+//   - Alignment: jade-green
+//
+// On Interpreter completion that closes the trio: instead of returning
+// control after settling, chains directly into Bronze ceremony.
+// ============================================================
+
+let conduitCeremonyInProgress = false;
+
+function runConduitCeremony(skillId) {
+  if (conduitCeremonyInProgress) return;
+  conduitCeremonyInProgress = true;
+
+  const constellation = CONSTELLATIONS[userState.currentPageIndex];
+  if (!constellation) {
+    conduitCeremonyInProgress = false;
+    return;
+  }
+
+  // Find the skill being completed and its DOM element on the canvas
+  const skill = constellation.skills.find(s => s.id === skillId);
+  if (!skill) {
+    conduitCeremonyInProgress = false;
+    return;
+  }
+
+  const frame = document.getElementById('constellation-frame');
+  const lessonOverlay = document.getElementById('lesson-overlay');
+  const glyphEl = frame.querySelector(`.glyph-position[data-skill-id="${skillId}"]`);
+  if (!glyphEl) {
+    // Fallback: just complete normally if we can't find the glyph
+    completeSkill(skillId);
+    closeLesson();
+    conduitCeremonyInProgress = false;
+    return;
+  }
+
+  // Capture glyph position in viewport coords (for lesson collapse target)
+  // and in canvas-frame-local coords (for particle stream origin)
+  const glyphRect = glyphEl.getBoundingClientRect();
+  const glyphViewportX = glyphRect.left + glyphRect.width / 2;
+  const glyphViewportY = glyphRect.top + glyphRect.height / 2;
+
+  // Frame-local coords for particle stream — based on the skill's
+  // designed position within the 720x480 constellation-frame
+  const glyphFrameX = skill.x;
+  const glyphFrameY = skill.y;
+  const sphereFrameX = 360;
+  const sphereFrameY = 260;
+
+  // ===== BEAT 1 — Lesson collapse (1.2s) =====
+  // The lesson container shrinks/translates toward the glyph's viewport
+  // position. transform-origin set to center of viewport (where lesson
+  // container is centered), final transform = scale(0) translate(toward glyph).
+  const viewportCenterX = window.innerWidth / 2;
+  const viewportCenterY = window.innerHeight / 2;
+  const dxToGlyph = glyphViewportX - viewportCenterX;
+  const dyToGlyph = glyphViewportY - viewportCenterY;
+
+  lessonOverlay.classList.add('is-collapsing');
+  lessonOverlay.style.transformOrigin = `${glyphViewportX}px ${glyphViewportY}px`;
+  // Apply transform on next frame so the transition picks it up
+  requestAnimationFrame(() => {
+    lessonOverlay.style.transform = `scale(0) translate(${dxToGlyph * 0.2}px, ${dyToGlyph * 0.2}px)`;
+    lessonOverlay.style.opacity = '0';
+    lessonOverlay.style.filter = 'blur(8px)';
+  });
+
+  // ===== BEAT 2 — Glyph swell (starts at 600ms into collapse) =====
+  // Begin while the lesson is still mid-collapse — visual handoff:
+  // lesson is becoming small/dim while glyph is becoming large/charged
+  setTimeout(() => {
+    glyphEl.classList.add('is-swelling');
+  }, 600);
+
+  // ===== BEAT 3 — Particle stream (starts at 1200ms — when collapse completes) =====
+  setTimeout(() => {
+    // Reset lesson overlay so next open works cleanly
+    lessonOverlay.classList.remove('is-open', 'is-collapsing');
+    lessonOverlay.style.transform = '';
+    lessonOverlay.style.opacity = '';
+    lessonOverlay.style.filter = '';
+    lessonOverlay.style.transformOrigin = '';
+    currentLessonId = null;
+
+    // Spawn the particle stream — color matches skill pillar
+    spawnConduitStream(frame, skill.pillar, glyphFrameX, glyphFrameY, sphereFrameX, sphereFrameY);
+
+    // Sphere absorbs — flare in the middle of the stream's arrival window
+    setTimeout(() => {
+      const armillary = frame.querySelector('.armillary');
+      if (armillary) {
+        armillary.classList.add('is-absorbing');
+        setTimeout(() => armillary.classList.remove('is-absorbing'), 1200);
+      }
+    }, 700);
+  }, 1200);
+
+  // ===== BEAT 4 — State commit + re-render at 2400ms =====
+  // Stream has been flowing for ~1200ms, particles arriving at sphere.
+  // Commit state, re-render with new ring/halo/astrals.
+  // Mark new ring for inscription animation immediately after re-render.
+  setTimeout(() => {
+    // Commit completion to state (this is where pool/foundational counters update)
+    userState.completedSkills[skillId] = true;
+    userState.totalEssence += 50;
+    saveState();
+
+    // Re-render constellation — new ring will be in DOM
+    renderConstellation(userState.currentPageIndex);
+    renderScrubber();
+    updateFrameMetrics();
+
+    // Apply inscription animation to the just-added ring. The new ring
+    // is the LAST ring in the armillary-scene (rings are appended in
+    // completion order). Identify it and add the is-inscribing class.
+    const rings = frame.querySelectorAll('.armillary-scene .armillary-ring');
+    const newRing = rings[rings.length - 1];
+    if (newRing && !newRing.classList.contains('ring-primordial-graduated')) {
+      newRing.classList.add('is-inscribing');
+      setTimeout(() => newRing.classList.remove('is-inscribing'), 1200);
+    }
+
+    // The newly rendered glyph is now in 'lit' state. We want it to feel
+    // like it just settled from the swollen-charged state — apply a brief
+    // settling glow that fades from pillar-charged to gold-lit.
+    const newGlyphEl = frame.querySelector(`.glyph-position[data-skill-id="${skillId}"]`);
+    if (newGlyphEl) {
+      newGlyphEl.classList.add('is-just-settled');
+      setTimeout(() => newGlyphEl.classList.remove('is-just-settled'), 800);
+    }
+  }, 2400);
+
+  // ===== BEAT 5 — Ceremony complete at ~4000ms =====
+  // Inscription has finished, settling has run, control returns —
+  // OR we chain into the Bronze ceremony if this completion closed the trio.
+  setTimeout(() => {
+    conduitCeremonyInProgress = false;
+
+    // Check for trio completion → chain to Bronze
+    const pregame = CONSTELLATIONS[0];
+    const allTrioComplete = pregame.skills.every(s => userState.completedSkills[s.id]);
+    if (allTrioComplete && !userState.bronzeCeremonyFired) {
+      // Brief breath, then Bronze ceremony — Interpreter's conduit was the
+      // first beat of Bronze, the apotheosis is the next.
+      setTimeout(fireBronzeCeremony, 600);
+    }
+  }, 4000);
+}
+
+// Particle stream — spawns a flow of conduit particles from glyph to sphere
+// along a curved path. Particles are SVG circles inside a temporary
+// .conduit-stream container that gets cleaned up after the stream completes.
+function spawnConduitStream(frame, pillar, fromX, fromY, toX, toY) {
+  const PARTICLE_COUNT = 36;
+  const STREAM_DURATION = 1500;        // total time particles are emitted
+  const PARTICLE_FLIGHT = 700;         // each particle's travel time
+
+  // Compute control point for the bezier curve. The curve arcs *outward*
+  // from the straight line between glyph and sphere — gives a graceful
+  // sweep rather than a direct shot. Offset perpendicular to the line.
+  const midX = (fromX + toX) / 2;
+  const midY = (fromY + toY) / 2;
+  const dx = toX - fromX;
+  const dy = toY - fromY;
+  const perpX = -dy;
+  const perpY = dx;
+  const perpLen = Math.sqrt(perpX * perpX + perpY * perpY) || 1;
+  // Normalize and apply curvature offset (positive = outward from origin/center)
+  // Determine curve direction: prefer the side away from the canvas center
+  const fromIsLeft = fromX < toX;
+  const curveAmount = 80;
+  const curveDir = fromIsLeft ? 1 : -1;
+  const cpX = midX + (perpX / perpLen) * curveAmount * curveDir;
+  const cpY = midY + (perpY / perpLen) * curveAmount * curveDir - 30;  // slight upward bias for elegance
+
+  // Create stream container
+  const stream = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  stream.classList.add('conduit-stream');
+  stream.setAttribute('viewBox', '0 0 720 480');
+  stream.setAttribute('preserveAspectRatio', 'none');
+  frame.appendChild(stream);
+
+  // Pillar class for color
+  const pillarClass = `is-${pillar}`;
+
+  // Spawn particles with staggered delays. Each particle:
+  //   - Starts at a small jitter around the glyph position
+  //   - Animates along the bezier toward sphere center
+  //   - Fades in at start, fades out at end
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const delay = (i / PARTICLE_COUNT) * STREAM_DURATION;
+    const jitterX = (Math.random() - 0.5) * 16;
+    const jitterY = (Math.random() - 0.5) * 16;
+    const jitterCpX = (Math.random() - 0.5) * 30;
+    const jitterCpY = (Math.random() - 0.5) * 30;
+    const radius = 1.6 + Math.random() * 1.4;
+
+    const particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    particle.setAttribute('cx', '0');
+    particle.setAttribute('cy', '0');
+    particle.setAttribute('r', radius.toFixed(2));
+    particle.classList.add('conduit-particle', pillarClass);
+    particle.style.setProperty('--conduit-from-x', (fromX + jitterX).toFixed(1));
+    particle.style.setProperty('--conduit-from-y', (fromY + jitterY).toFixed(1));
+    particle.style.setProperty('--conduit-cp-x', (cpX + jitterCpX).toFixed(1));
+    particle.style.setProperty('--conduit-cp-y', (cpY + jitterCpY).toFixed(1));
+    particle.style.setProperty('--conduit-to-x', toX.toFixed(1));
+    particle.style.setProperty('--conduit-to-y', toY.toFixed(1));
+    particle.style.animation = `conduit-flight ${PARTICLE_FLIGHT}ms ease-in-out ${delay}ms forwards`;
+    stream.appendChild(particle);
+  }
+
+  // Cleanup stream after all particles have completed
+  setTimeout(() => {
+    if (stream.parentNode) stream.parentNode.removeChild(stream);
+  }, STREAM_DURATION + PARTICLE_FLIGHT + 200);
 }
 
 // ============================================================
