@@ -1345,60 +1345,6 @@ html, body {
   transition: opacity 1.5s ease-out;
 }
 
-/* ============================================
-   PATH THREAD — Ariadne's filament
-   A faint gold curve overlaid on the canvas, pointing from the
-   armillary center toward the screen edge in the direction of the
-   next unearned constellation. Hidden by default. Visible only when:
-   - The body has .path-opened (set after bronze ceremony)
-   - AND the thread itself has .is-visible (set when there IS a
-     forward unearned target)
-   - AND the appropriate direction class (.thread-right or .thread-left)
-   Hides during ceremonies and dives.
-   ============================================ */
-.path-thread {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 100vw;
-  max-width: 1440px;
-  height: 200px;
-  /* Translate up so the thread's visual center sits at the armillary
-     (which is roughly 110px above viewport-center in our layout). */
-  transform: translate(-50%, calc(-50% - 110px));
-  pointer-events: none;
-  z-index: 3;
-  opacity: 0;
-  transition: opacity 1.6s ease-out;
-}
-body.path-opened .path-thread.is-visible {
-  opacity: 1;
-}
-.path-thread-curve {
-  opacity: 0;
-  transition: opacity 0.8s ease-out;
-}
-.path-thread.thread-right .path-thread-right { opacity: 1; }
-.path-thread.thread-left .path-thread-left { opacity: 1; }
-
-/* Slow breathing — the thread inhales and exhales over a long cycle.
-   We animate the parent SVG's filter brightness via a synthetic shimmer
-   keyframe rather than the path's stroke-opacity, because animating
-   stroke-opacity on a gradient-stroked path produces flicker. */
-body.path-opened .path-thread.is-visible .path-thread-curve {
-  animation: path-thread-breathe 5.5s ease-in-out infinite;
-}
-@keyframes path-thread-breathe {
-  0%, 100% { opacity: 0.55; }
-  50%      { opacity: 1; }
-}
-
-/* Hide thread during dive arrivals and active ceremonies. */
-.atheneum.is-diving .path-thread,
-.atheneum.dive-revealing .path-thread,
-.atheneum.is-ceremony-active .path-thread {
-  opacity: 0 !important;
-}
 
 /* ============================================
    INVITATION CARD — final beat after autopan
@@ -2215,27 +2161,110 @@ body.entry-active .dev-panel {
   100% { transform: scale(5.5); opacity: 0; stroke-width: 0.5; }
 }
 
-/* Beam — single gold line drawing in via stroke-dashoffset, then fading */
-.ceremony-beam-line {
-  stroke: rgba(255, 245, 200, 0.95);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  fill: none;
-  filter: drop-shadow(0 0 4px rgba(255, 229, 160, 0.95))
-          drop-shadow(0 0 12px rgba(255, 229, 160, 0.65))
-          drop-shadow(0 0 24px rgba(229, 197, 116, 0.4));
-  stroke-dasharray: 1000;
-  stroke-dashoffset: 1000;
-  animation: ceremony-beam-draw 250ms ease-out forwards;
-  opacity: 1;
-  transition: opacity 400ms ease-out;
+.ceremony-void-orb {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(8, 6, 14, 1) 0%,
+    rgba(14, 10, 22, 1) 45%,
+    rgba(28, 22, 40, 0.9) 75%,
+    transparent 100%);
+  box-shadow:
+    inset 0 0 8px rgba(0, 0, 0, 0.9),
+    0 0 6px rgba(180, 160, 220, 0.35),
+    0 0 18px rgba(120, 100, 180, 0.25);
+  pointer-events: none;
+  z-index: 7;
+  transform: translate(-50%, -50%) scale(1);
+  transition: left 600ms cubic-bezier(0.4, 0, 0.2, 1),
+              top 600ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 200ms ease-in;
+  will-change: transform, left, top;
 }
-@keyframes ceremony-beam-draw {
-  0%   { stroke-dashoffset: 1000; }
-  100% { stroke-dashoffset: 0; }
+.ceremony-void-orb.is-absorbing {
+  transition: transform 200ms ease-in;
+  transform: translate(-50%, -50%) scale(0);
 }
-.ceremony-beam-line.is-fading {
-  opacity: 0;
+
+/* Void inversion — dark radial explosion from star center */
+.ceremony-void-inversion {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 60px;
+  height: 60px;
+  margin-left: -30px;
+  margin-top: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(8, 6, 14, 0.95) 0%,
+    rgba(14, 10, 22, 0.85) 30%,
+    rgba(28, 22, 40, 0.5) 60%,
+    rgba(40, 30, 60, 0.2) 80%,
+    transparent 100%);
+  pointer-events: none;
+  z-index: 6;
+  transform: scale(0);
+  animation: ceremony-void-inversion-expand 800ms cubic-bezier(0.2, 0.6, 0.3, 1) forwards;
+  mix-blend-mode: multiply;
+}
+@keyframes ceremony-void-inversion-expand {
+  0%   { transform: scale(0); opacity: 1; }
+  40%  { transform: scale(4); opacity: 0.95; }
+  100% { transform: scale(7); opacity: 0; }
+}
+
+/* Void shockwave — luminous indigo ring riding the inversion's edge */
+.ceremony-void-shockwave {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 80px;
+  height: 80px;
+  margin-left: -40px;
+  margin-top: -40px;
+  border-radius: 50%;
+  border: 2px solid rgba(140, 110, 220, 0.85);
+  box-shadow:
+    0 0 12px rgba(120, 90, 200, 0.7),
+    0 0 28px rgba(100, 70, 180, 0.5),
+    inset 0 0 10px rgba(80, 50, 160, 0.4);
+  pointer-events: none;
+  z-index: 7;
+  transform: scale(0);
+  animation: ceremony-void-shockwave-expand 800ms cubic-bezier(0.15, 0.7, 0.3, 1) forwards;
+}
+@keyframes ceremony-void-shockwave-expand {
+  0%   { transform: scale(0); opacity: 0; border-width: 3px; }
+  20%  { transform: scale(1.2); opacity: 1; border-width: 2px; }
+  100% { transform: scale(5); opacity: 0; border-width: 0.5px; }
+}
+
+/* Star swell — overrides idle pulse during absorb beat */
+.primordial-star.is-swelling {
+  animation: primordial-star-swell 500ms ease-out forwards;
+}
+@keyframes primordial-star-swell {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 6px rgba(255,255,255,1), 0 0 18px rgba(255,250,230,1),
+                0 0 40px rgba(255,229,160,0.85), 0 0 80px rgba(255,229,160,0.55),
+                0 0 130px rgba(229,197,116,0.35);
+  }
+  30% {
+    transform: translate(-50%, -50%) scale(1.6);
+    box-shadow: 0 0 14px rgba(255,255,255,1), 0 0 40px rgba(255,250,230,1),
+                0 0 90px rgba(255,229,160,1), 0 0 170px rgba(255,229,160,0.85),
+                0 0 250px rgba(229,197,116,0.6);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    box-shadow: 0 0 6px rgba(255,255,255,1), 0 0 18px rgba(255,250,230,1),
+                0 0 40px rgba(255,229,160,0.85), 0 0 80px rgba(255,229,160,0.55),
+                0 0 130px rgba(229,197,116,0.35);
+  }
 }
 
 /* New ring fades in via opacity, no transform gymnastics */
@@ -2243,7 +2272,7 @@ body.entry-active .dev-panel {
   opacity: 0;
 }
 .armillary-ring {
-  transition: opacity 800ms ease-out;
+  transition: opacity 1200ms ease-out;
 }
 
 </style>
@@ -3192,50 +3221,6 @@ body.entry-active .dev-panel {
   <!-- Gold thread that persists below scrubber after Calendar Wakes -->
   <div class="scrubber-thread" id="scrubber-thread"></div>
 
-  <!-- Path thread — Ariadne's filament toward the next unearned constellation.
-       Hidden until bronze fires; persistent thereafter. Direction set by
-       updatePathThread(). The two paths are the right-pointing and
-       left-pointing variants; CSS shows whichever direction class is active. -->
-  <svg class="path-thread" id="path-thread" viewBox="0 0 1440 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-    <defs>
-      <filter id="path-thread-glow" x="-20%" y="-50%" width="140%" height="200%">
-        <feGaussianBlur stdDeviation="2" result="blur"/>
-        <feMerge>
-          <feMergeNode in="blur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-      <linearGradient id="path-thread-gradient-right" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stop-color="rgba(229,197,116,0.0)"/>
-        <stop offset="15%" stop-color="rgba(229,197,116,0.55)"/>
-        <stop offset="85%" stop-color="rgba(229,197,116,0.35)"/>
-        <stop offset="100%" stop-color="rgba(229,197,116,0.0)"/>
-      </linearGradient>
-      <linearGradient id="path-thread-gradient-left" x1="100%" y1="0%" x2="0%" y2="0%">
-        <stop offset="0%" stop-color="rgba(229,197,116,0.0)"/>
-        <stop offset="15%" stop-color="rgba(229,197,116,0.55)"/>
-        <stop offset="85%" stop-color="rgba(229,197,116,0.35)"/>
-        <stop offset="100%" stop-color="rgba(229,197,116,0.0)"/>
-      </linearGradient>
-    </defs>
-    <!-- Right-pointing curve: starts at center (720,100), arcs slightly
-         upward (a thread tossed across the void), tails into the right
-         edge. The slight rise gives it lift; without it the thread reads
-         as a line rather than a filament. -->
-    <path class="path-thread-curve path-thread-right"
-          d="M 720 100 C 880 88, 1100 92, 1380 100"
-          stroke="url(#path-thread-gradient-right)"
-          stroke-width="1.2"
-          fill="none"
-          filter="url(#path-thread-glow)"/>
-    <!-- Left-pointing curve (reserved for backward direction). -->
-    <path class="path-thread-curve path-thread-left"
-          d="M 720 100 C 560 88, 340 92, 60 100"
-          stroke="url(#path-thread-gradient-left)"
-          stroke-width="1.2"
-          fill="none"
-          filter="url(#path-thread-glow)"/>
-  </svg>
 
   <!-- Invitation card (post-bronze) -->
   <div class="invitation-card" id="invitation-card">Your path. Tap any name to explore.</div>
@@ -3273,7 +3258,7 @@ body.entry-active .dev-panel {
 <!-- Completion / rank-up overlay -->
 <div class="completion-overlay" id="completion-overlay">
   <div class="completion-eyebrow" id="completion-eyebrow">The Foundation Is Set</div>
-  <h1 class="completion-title" id="completion-title">Bronze</h1>
+  <h1 class="completion-title" id="completion-title">Anchored</h1>
   <div class="completion-rank-emblem" id="completion-rank-emblem">
     <svg viewBox="0 0 24 24" fill="none" stroke="#c08850" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="9.5"/>
@@ -3393,7 +3378,7 @@ const CONSTELLATIONS = [
   },
   {
     id: 'week-4', pageNumber: 4, name: 'The Bronze Threshold', phase: 1, phaseLabel: 'Stabilize',
-    isOneSkillWeek: true, isPhaseCloser: true, rank: 'bronze',
+    isOneSkillWeek: true, isPhaseCloser: true, rank: 'anchored',
     skills: [
       { id: 'action', glyph: 'glyph-before-want', label: 'Action Taking', pillar: 'spirit', x: 360, y: 110 }
     ]
@@ -3421,7 +3406,7 @@ const CONSTELLATIONS = [
   },
   {
     id: 'week-8', pageNumber: 8, name: 'The Silver Threshold', phase: 2, phaseLabel: 'Define',
-    isOneSkillWeek: true, isPhaseCloser: true, rank: 'silver',
+    isOneSkillWeek: true, isPhaseCloser: true, rank: 'imbued',
     skills: [
       { id: 'environment', glyph: 'glyph-shaping-room', label: 'Environment Design', pillar: 'alignment', x: 360, y: 110 }
     ]
@@ -3449,7 +3434,7 @@ const CONSTELLATIONS = [
   },
   {
     id: 'week-12', pageNumber: 12, name: 'The Gold Threshold', phase: 3, phaseLabel: 'Refine',
-    isOneSkillWeek: true, isPhaseCloser: true, rank: 'gold',
+    isOneSkillWeek: true, isPhaseCloser: true, rank: 'radiant',
     skills: [
       { id: 'boundaries', glyph: 'glyph-lines-tasks', label: 'Boundaries', pillar: 'alignment', x: 360, y: 110 }
     ]
@@ -3470,7 +3455,7 @@ const CONSTELLATIONS = [
   },
   {
     id: 'week-16', pageNumber: 16, name: 'The Iron Threshold', phase: 4, phaseLabel: 'Integrate',
-    isOneSkillWeek: true, isPhaseCloser: true, rank: 'iron',
+    isOneSkillWeek: true, isPhaseCloser: true, rank: 'sovereign',
     skills: [
       { id: 'integration', glyph: 'glyph-daily-work', label: 'Integration & Transition', pillar: 'alignment', x: 360, y: 110 }
     ]
@@ -3567,9 +3552,9 @@ const DEFAULT_STATE = {
   currentPageIndex: 0,        // which page is active
   completedSkills: {},        // { skillId: true } for completed skills
   totalEssence: 0,            // running total
-  currentRank: 'iron',        // iron / bronze / silver / gold / iron-final
+  currentRank: 'aware',       // aware / anchored / imbued / radiant / sovereign
   unlockedThroughPage: 0,     // user has access through page index N
-  bronzeCeremonyFired: false  // set true after Bronze ceremony runs
+  anchoredCeremonyFired: false  // set true after Anchored ceremony runs
 };
 
 let userState = loadState();
@@ -4412,7 +4397,6 @@ function panBySteps(steps, opts) {
     rebalanceSlots(dir);
     rebalanceScrubber(dir);
     updatePhaseIndicator();
-    updatePathThread();
     updateFrameMetrics();
 
     isTransitioning = false;
@@ -4766,7 +4750,6 @@ function wireCarouselDrag() {
         rebalanceSlots(steps);
         rebalanceScrubber(steps);
         updatePhaseIndicator();
-        updatePathThread();
         updateFrameMetrics();
         isTransitioning = false;
       };
@@ -5174,9 +5157,9 @@ function runConduitCeremony(skillId) {
     spawnShockwave(frame, glyphCenterX, glyphCenterY);
   }, 500);
 
-  // ===== BEAT 3 — Beam (starts at 800ms, draws in 250ms, fades 400ms) =====
+  // ===== BEAT 3 — Void orb (spawns at 800ms, travels 600ms to sphere) =====
   setTimeout(() => {
-    // Capture position FRESH at beam-fire moment so the beam connects
+    // Capture position FRESH at orb-fire moment so the orb connects
     // glyph and sphere correctly even though the glyph is still orbiting
     const glyphRect = glyphEl.getBoundingClientRect();
     const frameRect = frame.getBoundingClientRect();
@@ -5184,13 +5167,14 @@ function runConduitCeremony(skillId) {
     const scaleY = 480 / frameRect.height;
     const fromX = (glyphRect.left + glyphRect.width / 2 - frameRect.left) * scaleX;
     const fromY = (glyphRect.top + glyphRect.height / 2 - frameRect.top) * scaleY;
-    spawnBeam(frame, fromX, fromY, 360, 260);
+    spawnVoidOrb(frame, fromX, fromY, 360, 260);
   }, 800);
 
-  // ===== BEAT 4 — New ring fades in via DOM mutation (no re-render) =====
-  // At t=1100ms — beam has reached sphere — append the new ring directly
-  // to the existing armillary-scene. Halo and astral also added without
-  // touching anything else.
+  // ===== BEAT 4 — Void explosion at 1400ms; ring born from disturbance at 1700ms =====
+  setTimeout(() => {
+    spawnVoidExplosion(frame);
+  }, 1400);
+
   setTimeout(() => {
     insertCeremonyRing(frame, skill);
     // Brighten the halo via class
@@ -5199,14 +5183,14 @@ function runConduitCeremony(skillId) {
       const newStage = (parseInt(armillary.dataset.stage || '0', 10)) + 1;
       armillary.dataset.stage = String(Math.min(3, newStage));
     }
-  }, 1100);
+  }, 1700);
 
   // ===== BEAT 5 — Glyph settles, ceremony ends at ~2100ms =====
   setTimeout(() => {
     glyphEl.classList.remove('is-bursting');
     glyphEl.classList.add('is-settling');
     setTimeout(() => glyphEl.classList.remove('is-settling'), 600);
-  }, 2000);
+  }, 2200);
 
   // ===== BEAT 6 — Invisible state sync (~2700ms) =====
   // Commit state without destroying the visible DOM. We update the
@@ -5256,15 +5240,51 @@ function runConduitCeremony(skillId) {
     renderScrubber();        // updates the scrubber bar (separate DOM, safe)
     updateFrameMetrics();    // updates pool fill + foundational counter
 
+    // Inject the void-particle flow for the just-completed primordial
+    // directly into the existing .particle-flow-svg, so the particles
+    // appear without requiring a re-render (which would reset the orbit).
+    const primordialKey = (skillId === 'gap') ? 'gap'
+                        : (skillId === 'engine') ? 'engine'
+                        : (skillId === 'interpreter') ? 'interp'
+                        : null;
+    if (primordialKey) {
+      const flowSvg = frame.querySelector('.particle-flow-svg');
+      if (flowSvg) {
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const radii = {
+          out: ['2.0', '2.4', '1.8', '2.2'],
+          in:  ['2.0', '2.2', '1.8', '2.4']
+        };
+        // Special case: engine's "in" radii are slightly different from
+        // gap/interp. Match the existing renderPregameTrioWrapped values.
+        if (primordialKey === 'engine') {
+          radii.out = ['2.2', '1.8', '2.0', '2.4'];
+          radii.in  = ['2.0', '2.2', '1.8', '2.0'];
+        } else if (primordialKey === 'interp') {
+          radii.in  = ['2.2', '1.8', '2.4', '2.0'];
+        }
+        ['out', 'in'].forEach((dir) => {
+          for (let i = 1; i <= 4; i++) {
+            const c = document.createElementNS(SVG_NS, 'circle');
+            c.setAttribute('cx', '360');
+            c.setAttribute('cy', '260');
+            c.setAttribute('r', radii[dir][i - 1]);
+            c.setAttribute('class', `flow-particle ${dir}-${primordialKey}-${i}`);
+            flowSvg.appendChild(c);
+          }
+        });
+      }
+    }
+
     conduitCeremonyInProgress = false;
 
     // Check for trio completion → chain to Bronze
     const pregame = CONSTELLATIONS[0];
     const allTrioComplete = pregame.skills.every(s => userState.completedSkills[s.id]);
-    if (allTrioComplete && !userState.bronzeCeremonyFired) {
-      setTimeout(fireBronzeCeremony, 600);
+    if (allTrioComplete && !userState.anchoredCeremonyFired) {
+      setTimeout(fireAnchoredCeremony, 600);
     }
-  }, 2700);
+  }, 2900);
 }
 
 // Shockwave ring — single SVG circle that expands outward from glyph center
@@ -5289,32 +5309,65 @@ function spawnShockwave(frame, cx, cy) {
   }, 800);
 }
 
-// Beam — single gold line from glyph to sphere. Uses stroke-dasharray
-// to animate the line drawing in (250ms), then fades the whole element (400ms).
-function spawnBeam(frame, fromX, fromY, toX, toY) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'ceremony-beam-svg');
-  svg.setAttribute('viewBox', '0 0 720 480');
-  svg.setAttribute('preserveAspectRatio', 'none');
-  svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;overflow:visible;';
+function spawnVoidOrb(frame, fromX, fromY, toX, toY) {
+  const orb = document.createElement('div');
+  orb.className = 'ceremony-void-orb';
 
-  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  line.setAttribute('x1', fromX);
-  line.setAttribute('y1', fromY);
-  line.setAttribute('x2', toX);
-  line.setAttribute('y2', toY);
-  line.setAttribute('class', 'ceremony-beam-line');
-  svg.appendChild(line);
-  frame.appendChild(svg);
+  // Convert viewBox coords (720x480) to actual frame pixel coords
+  const frameRect = frame.getBoundingClientRect();
+  const scaleX = frameRect.width / 720;
+  const scaleY = frameRect.height / 480;
+  const startX = fromX * scaleX;
+  const startY = fromY * scaleY;
+  const endX = toX * scaleX;
+  const endY = toY * scaleY;
 
-  // Trigger fade-out after the line has drawn in
+  orb.style.left = startX + 'px';
+  orb.style.top = startY + 'px';
+  frame.appendChild(orb);
+
+  // Trigger travel on next frame so the transition fires
+  requestAnimationFrame(() => {
+    orb.style.left = endX + 'px';
+    orb.style.top = endY + 'px';
+  });
+
+  // At travel end (600ms), orb absorbs into star
   setTimeout(() => {
-    line.classList.add('is-fading');
-  }, 280);
+    orb.classList.add('is-absorbing');
+    // Trigger star swell at the same moment
+    const star = frame.querySelector('.primordial-star');
+    if (star) {
+      star.classList.add('is-swelling');
+      setTimeout(() => star.classList.remove('is-swelling'), 500);
+    }
+  }, 600);
+
+  // Remove orb after absorb completes
+  setTimeout(() => {
+    if (orb.parentNode) orb.parentNode.removeChild(orb);
+  }, 850);
+}
+
+// Void explosion — dark radial inversion + luminous indigo shockwave
+// fires from the armillary center at the moment of orb absorption.
+// Both layers spawn simultaneously and self-clean after 850ms.
+function spawnVoidExplosion(frame) {
+  const armillary = frame.querySelector('.armillary-primordial');
+  if (!armillary) return;
+
+  const inversion = document.createElement('div');
+  inversion.className = 'ceremony-void-inversion';
+  armillary.appendChild(inversion);
+
+  const shockwave = document.createElement('div');
+  shockwave.className = 'ceremony-void-shockwave';
+  armillary.appendChild(shockwave);
 
   setTimeout(() => {
-    if (svg.parentNode) svg.parentNode.removeChild(svg);
-  }, 750);
+    if (inversion.parentNode) inversion.parentNode.removeChild(inversion);
+    if (shockwave.parentNode) shockwave.parentNode.removeChild(shockwave);
+  }, 850);
 }
 
 // Insert the new ring into the existing armillary-scene WITHOUT triggering
@@ -5453,12 +5506,12 @@ function dismissPostRankVideo() {
 
 let ceremonyInProgress = false;
 
-function fireBronzeCeremony() {
-  if (userState.bronzeCeremonyFired) return;
+function fireAnchoredCeremony() {
+  if (userState.anchoredCeremonyFired) return;
   if (ceremonyInProgress) return;
   ceremonyInProgress = true;
-  userState.bronzeCeremonyFired = true;
-  userState.currentRank = 'bronze';
+  userState.anchoredCeremonyFired = true;
+  userState.currentRank = 'anchored';
   // Unlock curriculum visibility (locked but visible) — every page becomes
   // navigable to so the user can browse the path. Actual access is still
   // gated by the popup CTA.
@@ -5491,7 +5544,7 @@ function ceremonyBeat2_settling() {
 function ceremonyBeat3_rankUpOverlay() {
   // Update rank text + emblem in overlay (already Bronze in default markup)
   document.getElementById('completion-eyebrow').textContent = 'The Foundation Is Set';
-  document.getElementById('completion-title').textContent = 'Bronze';
+  document.getElementById('completion-title').textContent = 'Anchored';
   document.getElementById('completion-line').textContent = 'The trio is complete. The path awaits.';
 
   const overlay = document.getElementById('completion-overlay');
@@ -5556,82 +5609,12 @@ function ceremonyBeat5_video() {
   });
 }
 
-// ============================================================
-// PATH THREAD — Ariadne's filament toward the next unearned constellation
-// After bronze is earned, a faint gold thread appears in the world.
-// It points from the user's current armillary toward the screen edge in
-// the direction of the next-uncompleted page that lies forward of where
-// they are. It's persistent (always present when applicable), ambient
-// (breathes slowly, never demanding), and gets out of the way during
-// ceremonies and dives.
-//
-// The thread is rendered as a single SVG curve in an overlay layer —
-// it does NOT travel with the carousel during a pan. On every page
-// change (rebalance, drag-release, arrow click), updatePathThread()
-// recomputes whether to show it and in which direction.
-// ============================================================
 
-function updatePathThread() {
-  const threadEl = document.getElementById('path-thread');
-  if (!threadEl) return;
-
-  const cur = userState.currentPageIndex;
-  const len = CONSTELLATIONS.length;
-
-  // Find the next-unearned forward target. We scan forward (with loop
-  // wrap, but stop at the natural end — pages 0..16 in linear order)
-  // and pick the first page that is not completed.
-  let target = -1;
-  for (let i = cur + 1; i < len; i++) {
-    if (!isPageCompleted(i)) {
-      target = i;
-      break;
-    }
-  }
-
-  // No forward unearned page → user has earned everything past their
-  // current spot. Hide the thread.
-  if (target === -1) {
-    threadEl.classList.remove('is-visible', 'thread-left', 'thread-right');
-    return;
-  }
-
-  // The thread always points right in our linear progression model
-  // (forward = next constellation in the curriculum order). The carousel
-  // wraps, but the curriculum doesn't.
-  threadEl.classList.add('is-visible', 'thread-right');
-  threadEl.classList.remove('thread-left');
-}
-
-// ============================================================
-// CEREMONY BEAT 6 — Path opens
-// After the post-rank-up video, the carousel settles and the path-thread
-// fades into the world. No tour, no fly-through — the user keeps their
-// position and agency. The thread is the quiet announcement that the
-// way forward is open. Beat 7 (invitation card) follows shortly after.
-// ============================================================
-
+// CEREMONY BEAT 6 — brief breath before the invitation card.
 function ceremonyBeat6_pathOpens() {
-  // Make sure the thread state is correct for the current page
-  updatePathThread();
-  // Activate the post-bronze world — adds a body class that lets the
-  // thread fade in (CSS-driven). Persists for the rest of the session
-  // (and is restored on reload via applyPathThreadStateOnLoad).
-  document.body.classList.add('path-opened');
-  // Invitation card follows after a brief settle so the thread can
-  // establish itself before the text arrives.
   setTimeout(ceremonyBeat7_invitation, 1400);
 }
 
-// On page load, restore the path-opened state if the user has already
-// earned bronze. The thread should be a permanent companion once
-// established, not a one-time animation tied to the ceremony beat.
-function applyPathThreadStateOnLoad() {
-  if (userState && userState.bronzeCeremonyFired) {
-    document.body.classList.add('path-opened');
-    updatePathThread();
-  }
-}
 
 function ceremonyBeat7_invitation() {
   const card = document.getElementById('invitation-card');
@@ -5973,7 +5956,7 @@ function devTriggerBronze() {
   pregame.skills.forEach(s => userState.completedSkills[s.id] = true);
   saveState();
   renderConstellation(userState.currentPageIndex);
-  fireBronzeCeremony();
+  fireAnchoredCeremony();
 }
 function devSimulateDive() {
   // Clear the dive-done flag and re-run the arrival
@@ -6019,7 +6002,6 @@ function init() {
   initCarouselSlots();
   renderScrubberLoop();
   updateFrameMetrics();
-  applyPathThreadStateOnLoad();
   wireEvents();
   wireGlyphPanelCloseHandlers();
   wireLessonHandlers();
@@ -6060,7 +6042,7 @@ init();
 
   <div class="dev-panel-section">
     <div class="dev-panel-section-label">Ceremony</div>
-    <button class="dev-panel-btn" id="dev-trigger-bronze">Trigger Bronze ceremony</button>
+    <button class="dev-panel-btn" id="dev-trigger-bronze">Trigger Anchored ceremony</button>
     <button class="dev-panel-btn" id="dev-simulate-dive">Simulate dive arrival</button>
     <button class="dev-panel-btn" id="dev-replay-welcome">Replay welcome &amp; tutorial</button>
     <button class="dev-panel-btn" id="dev-clear-video">Clear video-seen flag</button>
@@ -6171,14 +6153,14 @@ init();
   function refreshState() {
     const s = window.atheneum.userState();
     const completedCount = Object.keys(s.completedSkills || {}).length;
-    const ceremonyFired = s.bronzeCeremonyFired ? 'yes' : 'no';
+    const ceremonyFired = s.anchoredCeremonyFired ? 'yes' : 'no';
     document.getElementById('dev-panel-state').innerHTML =
       'Page <strong>' + s.currentPageIndex + '</strong> &middot; ' +
       'Unlocked through <strong>' + s.unlockedThroughPage + '</strong><br>' +
       'Completed <strong>' + completedCount + '</strong> &middot; ' +
       'Essence <strong>' + s.totalEssence + '</strong><br>' +
       'Rank <strong>' + s.currentRank + '</strong> &middot; ' +
-      'Bronze fired <strong>' + ceremonyFired + '</strong>';
+      'Anchored fired <strong>' + ceremonyFired + '</strong>';
   }
 
   // Initial state populate
