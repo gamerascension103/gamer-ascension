@@ -1,0 +1,209 @@
+# Cascade Rules — Gamer Ascension / The Atheneum
+
+You are working on a single-file HTML/CSS/JS application: `atheneum.html`.
+The operator is Jake Salisbury. Read these rules at the start of every session
+and obey them.
+
+---
+
+## What this codebase is
+
+`atheneum.html` is a single-file site. HTML, CSS, and JS live together. State
+lives in `localStorage`. There is no build step, no framework, no bundler.
+Edit the file directly. Validate JS with `node --check` on extracted scripts
+when in doubt.
+
+Other working files may exist (`/home/claude/atheneum.html` during dev). The
+canonical shipping output is `/mnt/user-data/outputs/atheneum.html`. The repo
+file in source control is `atheneum.html` at the repo root.
+
+---
+
+## Communication
+
+- **Caveman language during work.** Short sentences. Minimal characters. "Find
+  the file. Read it. Apply fix." Not "Now I'll need to locate the relevant file
+  and analyze its contents to determine the appropriate modification."
+- **Concise replies.** Cut filler. No throat-clearing. Lead with the answer or
+  the action.
+- **Honesty over reassurance.** If a request is wrong, say so. Don't agree
+  reflexively. When the operator says something is broken, believe him and
+  check before assuming.
+- **Ground claims in the actual file.** Don't describe how the code works from
+  names or memory. Read it.
+
+---
+
+## The quality bar for UI and animation
+
+**Perception is the test.** Screenshots and visual checks are the primary
+verification. Numerical instrumentation is a tool to diagnose perceptible
+problems — never the goal itself.
+
+If a screenshot looks fine but instrumentation shows a 2px residual, ship it.
+Chasing pixel-perfect numbers when the perception gap allows shipping is
+digital rumination. Do not do it.
+
+When something feels off:
+1. Check perception via screenshot first.
+2. Instrument only if needed to diagnose.
+3. Don't chase numbers if the screenshot is fine.
+
+---
+
+## Default workflow on every change
+
+1. **Read the relevant code first.** Don't assume how it works based on names.
+2. **Plan honestly with the operator before cutting** if it's a real
+   architectural change. Surface tradeoffs. Let him decide.
+3. **Cut.** Make the change.
+4. **Validate JS** with `node --check` on extracted scripts when relevant.
+5. **Smoke test perception** with Playwright + screenshots if visual.
+   ALWAYS look at the screenshot. (See "Self-verification" section below.)
+6. **Ship to the canonical output path.**
+7. **Report concisely** what changed and why. New file hash if relevant.
+
+---
+
+## Self-verification for visual changes
+
+After ANY change that touches CSS, animation, ceremony JS, the canvas,
+or anything else that affects what the user sees on screen, run a Playwright
+screenshot test before declaring the task complete. This catches the failure
+mode of "task complete" claims that did not actually land.
+
+Procedure:
+
+1. Identify the relevant state to verify. If the change affects a ceremony
+   beat, the test must drive the page into that beat. If the change affects
+   an idle visual, a single screenshot of the loaded page is enough. If
+   unsure, ask the operator.
+
+2. Write a small Playwright script in `.windsurf-tmp/check.js` (create the
+   directory if it doesn't exist; do NOT commit it) that:
+   - Loads `atheneum.html` from a local `file://` URL.
+   - Drives the page into the relevant state via `window.atheneum.*` dev
+     APIs OR by clicking dev-panel buttons OR by direct DOM evaluation.
+   - Captures a screenshot to `.windsurf-tmp/after.png`.
+   - Optionally: also captures DOM state of the affected elements (computed
+     styles, class names, opacity) and prints them.
+
+3. Run the script. If it errors, fix the issue and rerun. If it succeeds,
+   view the screenshot and confirm by inspection that the change matches
+   what the operator asked for.
+
+4. Report back to the operator with:
+   - The screenshot path so the operator can view it.
+   - A one-sentence description of what was observed.
+   - The line `Visual check: PASS` or `Visual check: FAIL — <reason>`.
+   - If FAIL, do not declare the task complete. Investigate the root cause
+     and propose the next step instead.
+
+Skip self-verification only when:
+- The change is purely a code rename, comment edit, or other zero-visual-
+  impact change. In this case, state explicitly: "Skipping self-verification:
+  zero visual surface."
+- The operator explicitly says "skip verification" in the instruction.
+
+If Playwright is not available in the environment (no `@playwright/test` in
+`node_modules`, no `playwright` binary on PATH), report this to the operator
+and ask whether to install it or to proceed without verification. Do NOT
+silently skip.
+
+The `.windsurf-tmp/` directory should be added to `.gitignore` if it is not
+already. Verification artifacts are scratch work, not source.
+
+---
+
+## Anti-patterns — do not do these
+
+- **No side-tick alignment kludges** that change per-slot positioning. Causes
+  post-snap shifts.
+- **No `overflow: hidden visible`.** Browser auto-promotes the visible axis to
+  `auto`. Use `clip-path: inset(...)` instead.
+- **No fixed-timeout rebalances.** Use `transitionend` plus a fallback timeout
+  that the handler cancels.
+- **No flex `order` for position** if CSS transforms are also in play. The
+  layout shift fights the transform.
+- **Cancel RAF loops on rebalance.** Stale targets fire on the wrong slot.
+- **Don't render `frame-slot-2` directly on navigation.** Always go through
+  the carousel mechanics.
+- **Don't reach for instrumentation when a screenshot would answer the
+  question.**
+- **Don't preemptively "improve" code Jake hasn't asked you to touch.** Stay
+  in scope.
+- **Don't pretend the carousel is finite.** Use `wrapIdx()` everywhere. The
+  user can be at any index.
+- **Don't binary-flip visual properties mid-flight.** Animate them.
+
+---
+
+## Voice and brand (when touching user-facing copy)
+
+Register: **manuscript-celestial. Temple not carnival.** Reverent, precise,
+mythic. Not playful, not casual, not tech-bro.
+
+Reserved capitalized terms — treat with care, do not rename, do not lowercase:
+**Path, Vantage, Gap, Engine, Interpreter, Capacity, Vitality, Spirit,
+Alignment, Atheneum, Scriptorium, Reliquary, Codex, Essence, Pool, Thread.**
+
+Body copy register:
+- Crimson Pro italic for invitation/manuscript text.
+- Sentences short, declarative, often without articles.
+- Never exclamatory.
+- "Your path is open" — good. "Let's get started" — wrong register.
+
+Writing rules to enforce when editing copy:
+1. No self-validating transitions. ("Here is what closes this section" — cut.)
+2. No fake-alternative emphasis. No "real, actually, genuinely, truly" doing
+   contrast work.
+3. No pre-defending against objections the reader didn't make.
+4. No guru voice. Wise elder, not guru.
+5. One idea per sentence at turning points.
+
+---
+
+## Scope discipline
+
+- One change per task unless told otherwise.
+- Stay inside the named files, functions, or line ranges in the instruction.
+- If the instruction is vague, ask 2-3 sharp questions before building.
+- If you discover a related issue while working, name it and ask before
+  expanding scope.
+- When the operator gives a "go" signal ("yes", "do it", "ship"), execute.
+  Don't ask follow-ups.
+
+---
+
+## Environment notes
+
+- **Working file during dev:** `/home/claude/atheneum.html` (resets between
+  sessions on the cloud env — not relevant in local Windsurf, but noted).
+- **Read-only:** `/mnt/user-data/uploads`, `/mnt/transcripts`, `/mnt/skills/*`,
+  `/mnt/project/*`.
+- **Shipping output:** `/mnt/user-data/outputs/atheneum.html`.
+- **Dev controls exposed on `window.atheneum.*`:** `devUnlockAll`,
+  `devCompletePage(N)`, `devTriggerBronze`, `devSimulateDive`,
+  `devReplayWelcome`, `devClearVideo`, `devReset`, `userState()`,
+  `CONSTELLATIONS()`.
+- **Smoke testing:** Playwright at
+  `/home/claude/.npm-global/lib/node_modules` in the cloud env, or globally
+  installed via `npm install -g playwright` locally. Run scripts from inside
+  that directory.
+
+---
+
+## What you do NOT do
+
+- Don't add features not asked for.
+- Don't refactor for cleanliness without being asked.
+- Don't rewrite working code in a different style because you prefer it.
+- Don't add dependencies or build tools.
+- Don't switch to a framework. This is single-file by choice.
+- Don't add comments narrating obvious code.
+- Don't add try/catch around things that don't throw.
+- Don't add ARIA, console.logs, or "improvements" the operator didn't ask for.
+
+---
+
+*End of rules. When in doubt, ask Jake.*
