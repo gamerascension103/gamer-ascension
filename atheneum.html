@@ -1,4 +1,42 @@
 <!DOCTYPE html>
+<!-- ====================================================================
+     BUILD LOG — most recent first, ~10 entries max
+     For Claude (claude.ai) orientation at session start.
+     ====================================================================
+     2026-05-02 | sync_threshold_atheneum | md5:c6a4403f | shipped
+       Consolidated entry-experience flags to single canonical ga_journey_v1.
+       Set ONLY at end-of-tutorial Begin click — pre-tutorial drops restart full chain.
+       WELCOME_SEEN_KEY and FIRST_DIVE_DONE_KEY now alias JOURNEY_KEY.
+       devReset wipes legacy flags too (defensive). devSimulateDive uses JOURNEY_KEY.
+       Removed premature flag-set in runDiveInArrival (was set before tutorial completion).
+       Added devWipeAll() exported on window.atheneum.
+
+     2026-05-02 | advance_arrow_hint | md5:03a33b8b | shipped
+       Beat 7 invitation-card replaced with right-arrow shimmer hint.
+       New: .scrubber-arrow.is-hinting + ::after, fireAdvanceArrowHint(),
+       @keyframes arrow-hint-pulse / arrow-hint-shimmer / arrow-hint-chevron-right.
+       Removed: #invitation-card DOM element + .invitation-card CSS block.
+
+     2026-05-02 | charged_primordials | md5:(unlogged) | shipped
+       Completed primordial glyphs swap gold ring → iridescent void ring.
+       New: glyph-{gap|engine|interpreter}-parent-charged symbols,
+       charged-void-{gap|engine|interpreter} radialGradients (8s/10s/11s),
+       charged-void-ring-halo filter, glyph-svg-static / glyph-svg-charged swap.
+       Pattern: state-lit.pillar-primordial toggles charged <use> into view.
+
+     2026-05-02 | welcome_continuity | md5:(unlogged) | shipped
+       Eliminated dim/bright/dim flicker on welcome→tutorial handoff.
+       Welcome dim does NOT fade out; tutorial dim snaps to full opacity on top.
+       Tutorial dim z-index bumped 160→167 (above welcome dim z=165).
+
+     2026-05-02 | welcome_dim_bump | md5:(unlogged) | shipped
+       Welcome dim radial-gradient deepened: center 0.78→0.92, outer 0.96→1.0.
+
+     2026-05-02 | welcome_modal_fix | md5:(unlogged) | shipped
+       Welcome modal SVG viewBox widened 1100×200→1600×240, text repositioned.
+       Added .atheneum-welcome-dim layer (z=165) behind overlay content.
+       CSS: .atheneum-welcome-title-svg width clamp(360px,64vw,880px).
+     ==================================================================== -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -224,6 +262,27 @@ html, body {
   pointer-events: none;
 }
 .glyph-svg { width: 100%; height: 100%; position: relative; z-index: 1; transition: filter 0.6s, opacity 0.6s, color 0.6s; }
+
+/* Static vs charged glyph rendering. Both <svg> elements stack at
+   the same position; the visible one is determined by state class.
+   Static (gold ring): visible by default and for all states except
+   state-lit.pillar-primordial (= completed primordial).
+   Charged (iridescent void ring): visible only when state-lit AND
+   pillar-primordial. Only one is ever display:block at a time so
+   there is no layout stacking issue. */
+.glyph-svg-static {
+  display: block;
+}
+.glyph-svg-charged {
+  display: none;
+}
+.state-lit.pillar-primordial .glyph-svg-static {
+  display: none;
+}
+.state-lit.pillar-primordial .glyph-svg-charged {
+  display: block;
+}
+
 .state-bright .glyph-svg {
   color: var(--silver-bright);
   filter: drop-shadow(0 0 18px rgba(255,250,230,0.85)) drop-shadow(0 0 6px rgba(255,250,230,0.6));
@@ -776,6 +835,66 @@ html, body {
 }
 .scrubber-arrow.is-disabled { opacity: 0.2; cursor: not-allowed; pointer-events: none; }
 .scrubber-arrow svg { width: 22px; height: 22px; display: block; }
+
+/* Hinting state — fires at end of rank-up ceremony to draw the user's
+   eye to the advance-to-next-constellation control. Three layered
+   signals: the arrow itself slowly pulses brighter; a soft outward
+   ring shimmer expands and fades; the SVG chevron inside bounces
+   gently rightward. All three timed to the same 1.6s base loop.
+   Self-contained — JS removes the class after the hint window. */
+.scrubber-arrow.is-hinting {
+  animation: arrow-hint-pulse 1.6s ease-in-out infinite;
+}
+.scrubber-arrow.is-hinting::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 48px; height: 48px;
+  margin-top: -24px; margin-left: -24px;
+  border-radius: 50%;
+  border: 1px solid rgba(229, 197, 116, 0.5);
+  pointer-events: none;
+  animation: arrow-hint-shimmer 1.6s ease-out infinite;
+}
+.scrubber-arrow-right.is-hinting svg {
+  animation: arrow-hint-chevron-right 1.6s ease-in-out infinite;
+}
+@keyframes arrow-hint-pulse {
+  0%, 100% {
+    color: rgba(229, 197, 116, 0.55);
+    border-color: rgba(229, 197, 116, 0.28);
+    background: rgba(20, 16, 42, 0.55);
+    box-shadow:
+      0 0 18px rgba(229, 197, 116, 0.12),
+      inset 0 0 14px rgba(229, 197, 116, 0.06);
+  }
+  50% {
+    color: #ffe5a0;
+    border-color: rgba(229, 197, 116, 0.85);
+    background: rgba(20, 16, 42, 0.78);
+    box-shadow:
+      0 0 32px rgba(229, 197, 116, 0.45),
+      0 0 56px rgba(229, 197, 116, 0.22),
+      inset 0 0 22px rgba(229, 197, 116, 0.18);
+  }
+}
+@keyframes arrow-hint-shimmer {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+    border-color: rgba(229, 197, 116, 0.7);
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+    border-color: rgba(229, 197, 116, 0);
+  }
+}
+@keyframes arrow-hint-chevron-right {
+  0%, 100% { transform: translateX(0); }
+  50%      { transform: translateX(3px); }
+}
+
 .scrubber-arrow-left { left: calc(50% - 540px); }
 .scrubber-arrow-right { right: calc(50% - 540px); }
 @media (max-width: 1100px) {
@@ -1639,32 +1758,7 @@ body.is-orb-shake {
 }
 
 
-/* ============================================
-   INVITATION CARD — final beat after autopan
-   ============================================ */
-.invitation-card {
-  position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: 'Crimson Pro', serif;
-  font-style: italic;
-  font-size: 18px;
-  color: rgba(229, 197, 116, 0.85);
-  text-shadow: 0 0 16px rgba(229, 197, 116, 0.4);
-  z-index: 200;
-  opacity: 0;
-  pointer-events: none;
-  letter-spacing: 0.04em;
-  text-align: center;
-}
-.invitation-card.is-visible {
-  opacity: 1;
-  transition: opacity 0.8s ease-out;
-}
-.invitation-card.is-fading {
-  opacity: 0;
-  transition: opacity 1.2s ease-out;
-}
+/* (invitation-card removed — replaced by fireAdvanceArrowHint) */
 
 /* ============================================
    DIVE-IN OVERLAY — first-arrival blackout + reveal
@@ -1974,70 +2068,126 @@ body.is-orb-shake {
    persistent room label, no animation.
    ===================================================================== */
 
+/* Welcome dim layer — quiets the constellation/UI so the iridescent
+   title can land without competing detail. Sits behind the overlay
+   content. Animated independently. */
+.atheneum-welcome-dim {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(6, 4, 13, 0.92) 0%,
+    rgba(6, 4, 13, 0.985) 55%,
+    rgba(6, 4, 13, 1) 100%
+  );
+  pointer-events: none;
+  z-index: 165;
+  opacity: 0;
+  transition: opacity 1s ease-out;
+}
+.atheneum-welcome-dim.visible {
+  opacity: 1;
+}
+
 .atheneum-welcome-overlay {
   position: fixed;
   top: 0; left: 0; right: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding-top: 28vh;
+  padding-top: 22vh;
   pointer-events: none;
   z-index: 170;
 }
+
+/* Eyebrow — restrained gold rubric. Labels the moment without
+   participating in the substance. Fades in via opacity + transform
+   only. NO filter:blur in keyframes (anti-pattern). */
 .atheneum-welcome-eyebrow {
   font-family: 'Cinzel', serif;
-  font-size: 14px; font-weight: 400; letter-spacing: 0.42em;
+  font-size: 13px; font-weight: 400; letter-spacing: 0.42em;
   text-transform: uppercase;
-  color: rgba(201, 168, 76, 0.85);
-  margin-bottom: 14px;
-  opacity: 0; filter: blur(20px);
-  transition: opacity 1s ease-out, filter 1s ease-out, transform 1s ease-out;
-  text-shadow: 0 0 24px rgba(201, 168, 76, 0.4);
+  color: rgba(201, 168, 76, 0.78);
+  margin-bottom: 18px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 1s ease-out, transform 1s ease-out;
+  text-shadow: 0 0 18px rgba(201, 168, 76, 0.28);
 }
 .atheneum-welcome-eyebrow.visible {
-  opacity: 1; filter: blur(0);
+  opacity: 1;
   transform: translateY(0);
 }
 .atheneum-welcome-eyebrow .letter {
   display: inline-block;
-  transition: opacity 0.8s ease-in, transform 0.8s ease-in, filter 0.8s ease-in;
+  transition: opacity 0.8s ease-in, transform 0.8s ease-in;
 }
 .atheneum-welcome-eyebrow.dissolving .letter {
   opacity: 0;
-  transform: translateY(-14px);
-  filter: blur(8px);
+  transform: translateY(-10px);
 }
-.atheneum-welcome-title {
-  font-family: 'Cinzel Decorative', serif;
-  font-size: clamp(38px, 6.4vw, 64px); font-weight: 700; letter-spacing: 0.04em;
-  color: #e5c574;
-  line-height: 1.05;
-  text-shadow: 0 0 30px rgba(229,197,116,0.55),
-               0 0 60px rgba(229,197,116,0.3),
-               0 0 100px rgba(201,168,76,0.15);
-  margin: 0 0 14px;
-  opacity: 0; filter: blur(20px); transform: scale(0.94);
-  transition: opacity 1.2s ease-out, filter 1.2s ease-out, transform 1.2s ease-out;
+
+/* Title SVG — iridescent void substance container.
+   Layout-stable wrapper. Scale/opacity animation on the
+   wrapper does not cause reflow. */
+.atheneum-welcome-title-svg {
+  width: clamp(360px, 64vw, 880px);
+  height: auto;
+  display: block;
+  margin: 0 auto 22px;
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 1.4s cubic-bezier(0.32, 0.72, 0.24, 1),
+              transform 1.4s cubic-bezier(0.32, 0.72, 0.24, 1);
 }
-.atheneum-welcome-title.visible {
-  opacity: 1; filter: blur(0); transform: scale(1);
+.atheneum-welcome-title-svg.visible {
+  opacity: 1;
+  transform: scale(1);
 }
-.atheneum-welcome-title.pulsing {
-  animation: atheneum-title-pulse 800ms ease-out 1;
+/* Locked state — explicit class set by JS after transition ends. */
+.atheneum-welcome-title-svg.is-locked {
+  opacity: 1 !important;
+  transform: scale(1) !important;
 }
-@keyframes atheneum-title-pulse {
-  0%   { text-shadow: 0 0 30px rgba(229,197,116,0.55), 0 0 60px rgba(229,197,116,0.3), 0 0 100px rgba(201,168,76,0.15); }
-  40%  { text-shadow: 0 0 50px rgba(245,229,184,0.85), 0 0 100px rgba(229,197,116,0.5), 0 0 150px rgba(201,168,76,0.3); }
-  100% { text-shadow: 0 0 30px rgba(229,197,116,0.55), 0 0 60px rgba(229,197,116,0.3), 0 0 100px rgba(201,168,76,0.15); }
+
+/* The two SVG text layers. Each transitions opacity independently
+   so the halo can settle ahead of the substance face. */
+.welcome-title-halo {
+  opacity: 0;
+  transition: opacity 1.2s ease-out;
 }
-.atheneum-welcome-subtitle {
-  font-family: 'Cinzel', serif;
-  font-size: clamp(14px, 1.8vw, 18px); font-weight: 400;
-  letter-spacing: 0.32em; text-transform: uppercase;
-  color: rgba(240, 236, 228, 0.78);
-  opacity: 0; filter: blur(20px);
-  transition: opacity 1s ease-out, filter 1s ease-out;
+.atheneum-welcome-title-svg.visible .welcome-title-halo {
+  opacity: 0.85;
 }
-.atheneum-welcome-subtitle.visible {
-  opacity: 1; filter: blur(0);
+.welcome-title-face {
+  opacity: 0;
+  transition: opacity 1.4s ease-out 0.15s;
+}
+.atheneum-welcome-title-svg.visible .welcome-title-face {
+  opacity: 1;
+}
+
+/* Descriptor — Crimson Pro italic body voice, plain language. */
+.atheneum-welcome-descriptor {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: rgba(240, 236, 228, 0.55);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 1s ease-out, transform 1s ease-out;
+}
+.atheneum-welcome-descriptor.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Mobile tightening */
+@media (max-width: 680px) {
+  .atheneum-welcome-overlay { padding-top: 26vh; }
+  .atheneum-welcome-eyebrow { font-size: 11px; letter-spacing: 0.36em; margin-bottom: 14px; }
+  .atheneum-welcome-title-svg { width: min(90vw, 540px); margin-bottom: 18px; }
+  .atheneum-welcome-descriptor { font-size: 13px; letter-spacing: 0.14em; padding: 0 24px; text-align: center; }
 }
 
 /* Persistent room label — sits at top-center after welcome animation */
@@ -2107,7 +2257,7 @@ body.entry-active .dev-panel {
     rgba(4, 3, 6, 1) calc(var(--spot-r) + 30px),
     rgba(4, 3, 6, 1) 100%);
   pointer-events: none;
-  z-index: 160;
+  z-index: 167; /* above welcome-dim (z=165) — must cover it during handoff. welcome_continuity brief. */
   opacity: 0;
   transition: opacity 800ms ease;
 }
@@ -2653,6 +2803,75 @@ body.entry-active .dev-panel {
     <stop offset="75%" stop-color="#3a2a10"/>
     <stop offset="100%" stop-color="#3a0e14"/>
   </linearGradient>
+
+  <!-- ========================================================
+       WELCOME TITLE — iridescent void substance treatment.
+       The substance of the welcome title is the same material
+       as the void orb that fires during ceremonies: deep cosmic
+       violet → magenta-violet → white-violet incandescent core,
+       with subtle turbulent surface and cool indigo halo.
+       Reserved for the welcome moment only. Not a rank substance.
+       ======================================================== -->
+
+  <!-- Iridescent surface filter: turbulence on the fill itself
+       (not the letterforms’ shape) so the gradient ripples like
+       oil on water. Letters stay clean Cinzel; substance shimmers. -->
+  <filter id="welcome-iridescent-surface" x="-10%" y="-20%" width="120%" height="140%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.025" numOctaves="2" seed="3" result="turb"/>
+    <feDisplacementMap in="SourceGraphic" in2="turb" scale="1.4" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+    <feGaussianBlur in="displaced" stdDeviation="0.35" result="softened"/>
+    <feMerge>
+      <feMergeNode in="softened"/>
+    </feMerge>
+  </filter>
+
+  <!-- Cool violet halo filter — the substance bleeds into the
+       surrounding ink the way the void orb bleeds into black. -->
+  <filter id="welcome-void-halo" x="-30%" y="-50%" width="160%" height="200%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur1"/>
+    <feFlood flood-color="#7f77dd" flood-opacity="0.55"/>
+    <feComposite in2="blur1" operator="in" result="halo1"/>
+    <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="blur2"/>
+    <feFlood flood-color="#5a4ea8" flood-opacity="0.35"/>
+    <feComposite in2="blur2" operator="in" result="halo2"/>
+    <feMerge>
+      <feMergeNode in="halo2"/>
+      <feMergeNode in="halo1"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+
+  <!-- Iridescent fill: violet → magenta-violet → white-violet core
+       → magenta-violet → violet. Hue migration along letter axis,
+       which is what makes peacock / oil-on-water read as iridescent.
+       Animated stops drift slowly. -->
+  <linearGradient id="welcome-iridescent-fill" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#3a2a78">
+      <animate attributeName="stop-color"
+        values="#3a2a78; #4a2a88; #2a1a68; #3a2a78"
+        dur="9s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="22%" stop-color="#7f77dd">
+      <animate attributeName="stop-color"
+        values="#7f77dd; #9586e8; #6c63c8; #7f77dd"
+        dur="9s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="50%" stop-color="#e8def8">
+      <animate attributeName="stop-color"
+        values="#e8def8; #f4eaff; #d8c8f0; #e8def8"
+        dur="9s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="78%" stop-color="#7f77dd">
+      <animate attributeName="stop-color"
+        values="#7f77dd; #6c63c8; #9586e8; #7f77dd"
+        dur="9s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="100%" stop-color="#3a2a78">
+      <animate attributeName="stop-color"
+        values="#3a2a78; #2a1a68; #4a2a88; #3a2a78"
+        dur="9s" repeatCount="indefinite"/>
+    </stop>
+  </linearGradient>
   </defs>
 
   <!-- ========================================================
@@ -2756,6 +2975,128 @@ body.entry-active .dev-panel {
       <g filter="url(#glyph-ink-bleed)" stroke="#e5c574">
         <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
         <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
+      </g>
+      <g filter="url(#glyph-primal-bleed)" stroke="#1a0e0a">
+        <circle cx="0" cy="-22" r="16" stroke-width="4.4"/>
+        <circle cx="0" cy="-22" r="6" fill="#1a0e0a" stroke="none"/>
+        <line x1="0" y1="-6" x2="0" y2="28" stroke-width="3.0" stroke-dasharray="2,5"/>
+        <circle cx="0" cy="28" r="3" fill="#1a0e0a" stroke="none"/>
+      </g>
+    </g>
+  </symbol>
+
+  <!-- ========================================================
+       CHARGED-STATE PRIMORDIALS — iridescent void rings.
+       Rendered alongside the static primordial symbols. CSS
+       toggles which is visible based on state-lit.pillar-primordial.
+       ======================================================== -->
+
+  <radialGradient id="charged-void-gap" cx="50%" cy="50%" r="55%">
+    <stop offset="0%" stop-color="#e8def8" stop-opacity="0.95">
+      <animate attributeName="stop-color"
+        values="#e8def8; #f4eaff; #d8c8f0; #e8def8"
+        dur="8s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="40%" stop-color="#7f77dd" stop-opacity="0.9">
+      <animate attributeName="stop-color"
+        values="#7f77dd; #9586e8; #6c63c8; #7f77dd"
+        dur="8s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="100%" stop-color="#3a2a78" stop-opacity="0.85">
+      <animate attributeName="stop-color"
+        values="#3a2a78; #2a1a68; #4a2a88; #3a2a78"
+        dur="8s" repeatCount="indefinite"/>
+    </stop>
+  </radialGradient>
+
+  <radialGradient id="charged-void-engine" cx="50%" cy="50%" r="55%">
+    <stop offset="0%" stop-color="#e8def8" stop-opacity="0.95">
+      <animate attributeName="stop-color"
+        values="#e8def8; #d8c8f0; #f4eaff; #e8def8"
+        dur="10s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="40%" stop-color="#7f77dd" stop-opacity="0.9">
+      <animate attributeName="stop-color"
+        values="#7f77dd; #6c63c8; #9586e8; #7f77dd"
+        dur="10s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="100%" stop-color="#3a2a78" stop-opacity="0.85">
+      <animate attributeName="stop-color"
+        values="#3a2a78; #4a2a88; #2a1a68; #3a2a78"
+        dur="10s" repeatCount="indefinite"/>
+    </stop>
+  </radialGradient>
+
+  <radialGradient id="charged-void-interpreter" cx="50%" cy="50%" r="55%">
+    <stop offset="0%" stop-color="#e8def8" stop-opacity="0.95">
+      <animate attributeName="stop-color"
+        values="#e8def8; #f0e0fa; #d8c8f0; #e8def8"
+        dur="11s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="40%" stop-color="#7f77dd" stop-opacity="0.9">
+      <animate attributeName="stop-color"
+        values="#7f77dd; #8c7fe0; #6c63c8; #7f77dd"
+        dur="11s" repeatCount="indefinite"/>
+    </stop>
+    <stop offset="100%" stop-color="#3a2a78" stop-opacity="0.85">
+      <animate attributeName="stop-color"
+        values="#3a2a78; #2f1f70; #4a2a88; #3a2a78"
+        dur="11s" repeatCount="indefinite"/>
+    </stop>
+  </radialGradient>
+
+  <filter id="charged-void-ring-halo" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="blur1"/>
+    <feFlood flood-color="#7f77dd" flood-opacity="0.5"/>
+    <feComposite in2="blur1" operator="in" result="halo1"/>
+    <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur2"/>
+    <feFlood flood-color="#5a4ea8" flood-opacity="0.3"/>
+    <feComposite in2="blur2" operator="in" result="halo2"/>
+    <feMerge>
+      <feMergeNode in="halo2"/>
+      <feMergeNode in="halo1"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+
+  <!-- THE GAP — charged. Diagonal slash unchanged inside iridescent ring. -->
+  <symbol id="glyph-gap-parent-charged" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#charged-void-ring-halo)">
+        <circle cx="0" cy="0" r="80" stroke-width="2.4" stroke="url(#charged-void-gap)"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" stroke="url(#charged-void-gap)" opacity="0.45"/>
+      </g>
+      <g filter="url(#glyph-primal-bleed)" stroke="#1a0e0a">
+        <line x1="-30" y1="-34" x2="-8" y2="-8" stroke-width="5.4"/>
+        <line x1="10" y1="10" x2="32" y2="36" stroke-width="5.4"/>
+        <line x1="-8" y1="-8" x2="-4" y2="-2" stroke-width="3.0"/>
+        <line x1="6" y1="4" x2="10" y2="10" stroke-width="3.0"/>
+      </g>
+    </g>
+  </symbol>
+
+  <!-- THE ENGINE — charged. Vesica vessel unchanged inside iridescent ring. -->
+  <symbol id="glyph-engine-parent-charged" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#charged-void-ring-halo)">
+        <circle cx="0" cy="0" r="80" stroke-width="2.4" stroke="url(#charged-void-engine)"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" stroke="url(#charged-void-engine)" opacity="0.45"/>
+      </g>
+      <g filter="url(#glyph-primal-bleed)" stroke="#1a0e0a">
+        <path d="M -32 -36 Q -46 0 -32 36 Q 0 50 32 36 Q 46 0 32 -36 Q 0 -50 -32 -36 Z" stroke-width="4.6" fill="#1a0e0a" fill-opacity="0.06"/>
+        <path d="M -20 -24 Q -32 0 -20 24 Q 0 36 20 24 Q 32 0 20 -24 Q 0 -36 -20 -24 Z" stroke-width="2.4"/>
+        <line x1="0" y1="-24" x2="0" y2="24" stroke-width="1.8"/>
+        <circle cx="0" cy="0" r="5" fill="#1a0e0a" stroke="none"/>
+      </g>
+    </g>
+  </symbol>
+
+  <!-- THE INTERPRETER — charged. Eye-aperture unchanged inside iridescent ring. -->
+  <symbol id="glyph-interpreter-parent-charged" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#charged-void-ring-halo)">
+        <circle cx="0" cy="0" r="80" stroke-width="2.4" stroke="url(#charged-void-interpreter)"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" stroke="url(#charged-void-interpreter)" opacity="0.45"/>
       </g>
       <g filter="url(#glyph-primal-bleed)" stroke="#1a0e0a">
         <circle cx="0" cy="-22" r="16" stroke-width="4.4"/>
@@ -3680,8 +4021,6 @@ body.entry-active .dev-panel {
   <div class="scrubber-thread" id="scrubber-thread"></div>
 
 
-  <!-- Invitation card (post-bronze) -->
-  <div class="invitation-card" id="invitation-card">Your path. Tap any name to explore.</div>
 </div>
 
 <!-- ============================================================
@@ -3771,10 +4110,28 @@ body.entry-active .dev-panel {
      outward to fill the room. Single seen-flag covers both:
      ga_atheneum_welcome_seen.
      ===================================================================== -->
+<!-- Welcome dim layer — sits behind the overlay's
+     content. Z-index sits between the canvas (low) and the overlay (170). -->
+<div class="atheneum-welcome-dim" id="atheneum-welcome-dim" style="display:none;" aria-hidden="true"></div>
 <div class="atheneum-welcome-overlay" id="atheneum-welcome-overlay" style="display:none;" aria-hidden="true">
   <div class="atheneum-welcome-eyebrow" id="atheneum-welcome-eyebrow">Welcome to</div>
-  <div class="atheneum-welcome-title" id="atheneum-welcome-title">The Atheneum</div>
-  <div class="atheneum-welcome-subtitle" id="atheneum-welcome-subtitle">Skill Mastery Chamber</div>
+  <svg class="atheneum-welcome-title-svg" id="atheneum-welcome-title-svg"
+       viewBox="0 0 1600 240" preserveAspectRatio="xMidYMid meet"
+       aria-label="The Atheneum">
+    <text class="welcome-title-halo"
+          x="800" y="170" text-anchor="middle"
+          font-family="Cinzel Decorative, serif" font-weight="700"
+          font-size="128" letter-spacing="6"
+          fill="url(#welcome-iridescent-fill)"
+          filter="url(#welcome-void-halo)">THE ATHENEUM</text>
+    <text class="welcome-title-face"
+          x="800" y="170" text-anchor="middle"
+          font-family="Cinzel Decorative, serif" font-weight="700"
+          font-size="128" letter-spacing="6"
+          fill="url(#welcome-iridescent-fill)"
+          filter="url(#welcome-iridescent-surface)">THE ATHENEUM</text>
+  </svg>
+  <div class="atheneum-welcome-descriptor" id="atheneum-welcome-descriptor">Education Curriculum · Skill Mastery</div>
 </div>
 
 <!-- Persistent room label removed — top-left brand mark "The Atheneum"
@@ -4413,7 +4770,11 @@ function renderPregameTrioWrapped(c) {
           </div>
         ` : ''}
         <div class="anchor-star"></div>
-        <svg class="glyph-svg" viewBox="0 0 200 200"><use href="#${s.glyph}"/></svg>
+        <!-- Two-<use> stack: CSS can't override stroke/fill inside <use>-referenced
+             symbols, so static and charged are separate elements toggled by
+             .state-lit.pillar-primordial. charged_primordials brief. -->
+        <svg class="glyph-svg glyph-svg-static" viewBox="0 0 200 200"><use href="#${s.glyph}"/></svg>
+        <svg class="glyph-svg glyph-svg-charged" viewBox="0 0 200 200"><use href="#${s.glyph}-charged"/></svg>
         <div class="glyph-label">${s.label}</div>
       </div>
     `;
@@ -6242,18 +6603,22 @@ function ceremonyBeat6_pathOpens() {
 
 
 function ceremonyBeat7_invitation() {
-  const card = document.getElementById('invitation-card');
-  card.textContent = 'Your path. Tap any name to explore.';
-  card.classList.add('is-visible');
-  card.classList.remove('is-fading');
+  fireAdvanceArrowHint();
+}
+
+function fireAdvanceArrowHint() {
+  const arrow = document.getElementById('arrow-right');
+  if (!arrow) {
+    ceremonyInProgress = false;
+    return;
+  }
+
+  arrow.classList.add('is-hinting');
 
   setTimeout(() => {
-    card.classList.add('is-fading');
-    card.classList.remove('is-visible');
-    setTimeout(() => {
-      ceremonyInProgress = false;
-    }, 1300);
-  }, 3500);
+    arrow.classList.remove('is-hinting');
+    ceremonyInProgress = false;
+  }, 6000);
 }
 
 
@@ -6267,8 +6632,8 @@ function ceremonyBeat7_invitation() {
 function checkAndRunDiveIn() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('dive') !== '1') return false;
-  if (localStorage.getItem('ga_atheneum_first_dive_done') === '1') {
-    // Clean URL so refresh doesn't re-dive
+  if (localStorage.getItem(FIRST_DIVE_DONE_KEY) === '1') {
+    // User has completed the full journey — no dive.
     cleanDiveParam();
     return false;
   }
@@ -6303,7 +6668,9 @@ function runDiveInArrival() {
     setTimeout(() => {
       overlay.classList.remove('is-active', 'is-fading');
       atheneum.classList.remove('dive-revealing');
-      try { localStorage.setItem('ga_atheneum_first_dive_done', '1'); } catch (e) {}
+      // Journey flag NOT set here — that's atheneum's tutorial Begin click.
+      // Setting it on dive completion was premature (would skip welcome on
+      // refresh-after-dive-but-before-Begin). sync_threshold_atheneum brief.
       cleanDiveParam();
     }, 3200);
   }, 600);
@@ -6317,10 +6684,20 @@ function runDiveInArrival() {
 //     (constellation-frame's offset + glyph's position within it)
 //   - Bloom step is new (improvement over pregame's straight dim-fade)
 //
-// Single seen flag: ga_atheneum_welcome_seen
+// Single seen flag: ga_journey_v1 (canonical)
 // ============================================================
 
-const WELCOME_SEEN_KEY = 'ga_atheneum_welcome_seen';
+// Canonical first-visit flag — set ONLY at end of tutorial Begin click.
+// Anywhere before that point, the user is still "first-time" — refreshing
+// any page in the chain restarts the full sequence. Replaces the previous
+// independent flags (ga_atheneum_first_dive_done, ga_atheneum_welcome_seen,
+// threshold's ga_visited_threshold). Sync model from sync_threshold_atheneum brief.
+const JOURNEY_KEY = 'ga_journey_v1';
+
+// Legacy flag names retained as derived reads for any code that still
+// references them; all three now answer the same question.
+const WELCOME_SEEN_KEY = JOURNEY_KEY;
+const FIRST_DIVE_DONE_KEY = JOURNEY_KEY;
 
 function initAtheneumEntry() {
   let seen = false;
@@ -6342,14 +6719,15 @@ function initAtheneumEntry() {
 
 function runAtheneumWelcome(onComplete) {
   const overlay = document.getElementById('atheneum-welcome-overlay');
+  const dim = document.getElementById('atheneum-welcome-dim');
   const eyebrow = document.getElementById('atheneum-welcome-eyebrow');
-  const title = document.getElementById('atheneum-welcome-title');
-  const subtitle = document.getElementById('atheneum-welcome-subtitle');
+  const title = document.getElementById('atheneum-welcome-title-svg');
+  const descriptor = document.getElementById('atheneum-welcome-descriptor');
   // Persistent room label was removed — top-left frame-brand "The Atheneum"
   // serves the identity function. Welcome animation just fades out cleanly.
   const atheneum = document.querySelector('.atheneum');
 
-  if (!overlay || !eyebrow || !title || !subtitle) {
+  if (!overlay || !dim || !eyebrow || !title || !descriptor) {
     if (typeof onComplete === 'function') onComplete();
     return;
   }
@@ -6372,37 +6750,49 @@ function runAtheneumWelcome(onComplete) {
     eyebrow.appendChild(span);
   }
 
+  // Activate dim FIRST so it's already settling when the eyebrow fades in.
+  dim.style.display = 'block';
+  void dim.offsetWidth;
+  dim.classList.add('visible');
+
   overlay.style.display = 'flex';
 
-  // Sequence (verbatim from pregame):
+  // Sequence:
   //   t=0ms      eyebrow fades in (1s)
-  //   t=400ms    title materializes (1.2s)
-  //   t=1100ms   subtitle fades in (1s)
-  //   t=1700ms   gold pulse on title
-  //   t=2400ms   hold beat begins
-  //   t=3600ms   eyebrow disintegration begins
-  //   t=4400ms   title block fades, top corners return
-  //   t=5100ms   onComplete fires
+  //   t=500ms    title materializes (halo first, then face — 1.4s)
+  //   t=1400ms   descriptor settles in (1s)
+  //   t=2400ms   hold beat begins; title locks via is-locked
+  //   t=4000ms   eyebrow disintegration begins
+  //   t=4800ms   overlay fades out
+  //   t=5500ms   onComplete fires (handoff to tutorial)
   setTimeout(() => { eyebrow.classList.add('visible'); }, 0);
-  setTimeout(() => { title.classList.add('visible'); }, 400);
-  setTimeout(() => { subtitle.classList.add('visible'); }, 1100);
-  setTimeout(() => { title.classList.add('pulsing'); }, 1700);
-  setTimeout(() => { eyebrow.classList.add('dissolving'); }, 3600);
+  setTimeout(() => { title.classList.add('visible'); }, 500);
+  setTimeout(() => { descriptor.classList.add('visible'); }, 1400);
 
-  // Eyebrow has dissolved — title block fades out, top corners return
+  // Lock title to its final state after the materialization transition
+  // completes. Pairs with is-locked !important rules.
+  setTimeout(() => { title.classList.add('is-locked'); }, 2400);
+
+  setTimeout(() => { eyebrow.classList.add('dissolving'); }, 4000);
+
+  // Title block fades — dim STAYS visible as the continuous baseline.
   setTimeout(() => {
-    overlay.style.transition = 'opacity 600ms ease-out, transform 600ms ease-out';
+    overlay.style.transition = 'opacity 700ms ease-out, transform 700ms ease-out';
     overlay.style.opacity = '0';
-    overlay.style.transform = 'translateY(-30px)';
+    overlay.style.transform = 'translateY(-24px)';
+    // Dim STAYS visible. It will be handed off to the tutorial dim,
+    // which snaps to full opacity on top, then the welcome dim is
+    // hidden silently by the tutorial start logic.
     // Note: entry-active class stays on — removed at end of tutorial,
     // not here. Keeps top corners and dev panel hidden through tutorial.
-  }, 4400);
+  }, 4800);
 
-  // Hide overlay completely after fade
+  // Hide overlay only — dim is NOT hidden here.
+  // Tutorial fires immediately after; its dim takes over the baseline.
   setTimeout(() => {
     overlay.style.display = 'none';
     if (typeof onComplete === 'function') onComplete();
-  }, 5100);
+  }, 5500);
 }
 
 function runAtheneumTutorial(onComplete) {
@@ -6418,9 +6808,21 @@ function runAtheneumTutorial(onComplete) {
     return;
   }
 
-  // Show tutorial, fade in dim
+  // Show tutorial container. Tutorial dim snaps to full opacity instantly
+  // (welcome dim is already at full opacity underneath; continuous baseline).
   tutorial.style.display = 'flex';
-  setTimeout(() => { dim.classList.add('visible'); }, 0);
+  dim.style.transition = 'none';
+  dim.classList.add('visible');
+  void dim.offsetWidth;
+  setTimeout(() => { dim.style.transition = ''; }, 50);
+
+  // Silently hide the welcome dim — tutorial dim (z=167) is now on top
+  // covering it completely, so removing it has no visible effect.
+  const welcomeDim = document.getElementById('atheneum-welcome-dim');
+  if (welcomeDim) {
+    welcomeDim.style.display = 'none';
+    welcomeDim.classList.remove('visible');
+  }
 
   // Sequence (verbatim from pregame):
   //   t=0       dim fades in (800ms)
@@ -6563,12 +6965,16 @@ function devCompletePage(idx) {
   updateFrameMetrics();
 }
 function devReset() {
-  // Wipe every atheneum-related localStorage flag
+  // Wipe every entry-experience localStorage flag, including legacy keys
+  // that may exist from before the journey-flag consolidation.
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(VIDEO_SEEN_KEY);
+    localStorage.removeItem(JOURNEY_KEY);
+    // Legacy keys — remove explicitly in case they exist from older builds:
     localStorage.removeItem('ga_atheneum_first_dive_done');
-    localStorage.removeItem(WELCOME_SEEN_KEY);
+    localStorage.removeItem('ga_atheneum_welcome_seen');
+    localStorage.removeItem('ga_visited_threshold');
   } catch (e) {}
   userState = Object.assign({}, DEFAULT_STATE);
   saveState();
@@ -6592,8 +6998,10 @@ function devTriggerRankReveal() {
   ceremonyBeat3_rankUpOverlay();
 }
 function devSimulateDive() {
-  // Clear the dive-done flag and re-run the arrival
-  try { localStorage.removeItem('ga_atheneum_first_dive_done'); } catch (e) {}
+  // Clears the journey flag so dive will fire — but does NOT clear userState.
+  // Useful for testing the dive arrival animation in isolation without
+  // having to redo all module work.
+  try { localStorage.removeItem(JOURNEY_KEY); } catch (e) {}
   runDiveInArrival();
 }
 function devClearVideo() {
@@ -6606,10 +7014,15 @@ function devReplayWelcome() {
   try { localStorage.removeItem(WELCOME_SEEN_KEY); } catch (e) {}
   initAtheneumEntry();
 }
+function devWipeAll() {
+  console.log('[dev] Wiping all entry-experience flags and userState. Reloading.');
+  devReset();
+}
 window.atheneum = {
   devUnlockAll,
   devCompletePage,
   devReset,
+  devWipeAll,
   devTriggerBronze,
   devTriggerRankReveal,
   devSimulateDive,

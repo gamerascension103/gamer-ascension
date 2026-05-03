@@ -1,10 +1,154 @@
 <!DOCTYPE html>
+<!-- ====================================================================
+     BUILD LOG — most recent first, ~10 entries max
+     For Claude (claude.ai) orientation at session start.
+     ====================================================================
+     2026-05-03 | atlas_annotations_anchor_fix | md5:ac8861e0 | shipped
+       Text anchor changed: .atlas-annotation gains transform-origin:left center.
+       spawnAnnotation inline transform changed from translate(-50%,-50%)rotate()
+       to translateY(-50%)rotate(). Phrases now grow rightward from their x position
+       like real handwriting. Note: x:80+ phrases may clip right edge — watch first
+       10 phrases in Chrome and nudge inward if needed.
+
+     2026-05-03 | atlas_pulses_removed | md5:edb31646 | shipped
+       Full pulse system stripped: buildPulseStage, startPulseScheduler,
+       stopPulseScheduler, scheduleNextPulse, firePulse, spawnPulseOrb deleted.
+       Vars pulseSchedulerStarted/pulseSchedulerTimeout deleted. .atlas-pulse-stage
+       and .atlas-pulse-orb CSS deleted. buildOverlay/openAtlas/closeAtlas lifecycle
+       hooks removed. Atlas relies on cosmic auras + chamber distinction for
+       relational signaling. No orbs, no lines, no console pulse logs.
+
+     2026-05-03 | atlas_makers_annotations | md5:9fd31a58 | shipped
+       The Maker writes on the map. MAKERS_NOTES: 22 phrases (riddles, fragments,
+       incantations, quotes, state-aware mysteries). New helpers: buildAnnotationStage,
+       startAnnotationScheduler/stopAnnotationScheduler, scheduleNextAnnotation,
+       fireAnnotation (context-filtered selection, no consecutive repeat),
+       spawnAnnotation (type-on @55ms/char + 5s hold + 2s fade + DOM removal),
+       isContextValid (arcanium-sealed, scriptorium-sealed, agora-sealed, always).
+       First phrase fires 2.5s after open. Caveat italic 15px, slight rotation jitter.
+
+     2026-05-03 | atlas_pulses_primordial | md5:3ed11c1c | shipped
+       Orbs restructured: dark core (#0e0a26, r=1.5) + iridescent corona (r=3.5,
+       5-stop animated radialGradient cycling stop-color on 1.5s loop) + outer aurora
+       (r=5.5, radialGradient 0.4→0 opacity). ~3x larger than prior orbs. Cyan-violet
+       palette for current-chamber pulses, baseline violet otherwise. First pulse fires
+       1.5s after Atlas opens (early preview). Console.log diagnostics added in firePulse.
+
+     2026-05-03 | atlas_pulses_no_lines | md5:78f98f37 | shipped
+       Removed all chamber-to-chamber lines (buildVoidEnergyLines deleted entirely,
+       .atlas-void-lines CSS removed). Replaced with irregular iridescent pulse system.
+       New helpers: buildPulseStage (SVG container), startPulseScheduler/stopPulseScheduler
+       (lifecycle), scheduleNextPulse (jittered 8-12s delays), firePulse (chamber selection
+       + color), spawnPulseOrb (3-layer orb: trail/halo/core via SMIL animateMotion on
+       curved quadratic paths). Open-only sources, any-chamber destinations. ~60% bias
+       toward current chamber. Cyan-violet palette when current involved, baseline violet
+       otherwise. Scheduler starts on Atlas open, stops on close. Cosmic drift bumped
+       6→10 with expanded coverage and varied speeds (86-124s).
+
+     2026-05-03 | atlas_png_stars | md5:c828231d | shipped
+       Stars upgraded from SVG cross-marks to PNG-based luminous orbs. Three
+       DALL-E-rendered variants (star-small/medium/large.png in /assets/space/)
+       with warm-gold luminous centers, pencil cross structures, and halftone
+       stippled halos. ~52 stars across the map: 38 small, 10 medium, 4 large
+       showpieces. ~30% twinkle on staggered 4.5-7.5s cycles via CSS opacity
+       animation, animation-delay offsets prevent unison-pulse. Per-variant
+       base opacity (small 0.7, medium 0.82, large 0.95) gives natural depth
+       hierarchy. Random rotation per star (22.5° increments) prevents grid-feel.
+       Also: stripped leftover bearing arrow + arrowhead from buildAstrolabeMarks
+       (M 15 22 path and arrowhead — confirmed absent). Astrolabe now contains
+       only the two scholar's sigils as intended.
+
+     2026-05-03 | atlas_distinction | md5:7630acdd | shipped
+       Two refinements. (1) Stripped 5 stale astrolabe elements (Roman numerals VII
+       and III, XII° angle marker with V-mark, dotted measurement arc, bearing arrow).
+       Kept 2 cross-circle sigils for quiet scholar weight. (2) Chamber distinction:
+       every chamber wrapped in atlas-chamber-pill (cream rounded rectangle, thin border).
+       Open-chamber pills have warm gold border; sealed neutral; current brightest.
+       Open chambers carry always-on warm drop-shadow at ~30% hover intensity; current
+       is brighter still. Three-tier visual hierarchy: lit+placarded > placarded-quiet
+       > unlabeled ambient.
+
+     2026-05-03 | atlas_living_cosmos | md5:ce9dc43e | shipped
+       (1) buildStarField rewritten: 44 stars in 4 types (dot/cross/showpiece/anchor),
+       ~30% twinkling, diffraction spikes on showpieces, stippled halos on anchors.
+       (2) Cosmic auras behind open chambers (sealed get none, current is brighter),
+       8-10s breathe cycles, multiply blend for violet glow on cream.
+       (3) buildVoidEnergyLines: 4 pencil ley-lines from Atheneum to other chambers
+       with iridescent pulses on 12-16s staggered cycles. Open=brighter, sealed=dimmer.
+       (4) buildCosmicDrift: 6 violet specks on 86-110s cycles, multiply blend.
+       (5) COSMIC_OBJECTS resized: comet 380→220, planets →90-95, artifact →75.
+       Repositioned to deep void edges. Comet animation deleted (now static).
+
+     2026-05-02 | atlas_cosmic_populate | md5:14e51487 | shipped
+       Atlas populated with cosmic content. (1) buildStarField: 40 SVG stars in
+       naturalistic distribution, ~14 twinkling on staggered cycles. (2) buildAstrolabeMarks:
+       7 sparse precise notations (angle markers, dotted measurement arc, sextant sigils,
+       Roman numerals) in faint pencil with fractalNoise filter. (3) buildCosmicObjects:
+       stub <img> tags for assets/space/space-{comet|planet-1|planet-2|artifact-1}.png —
+       render when files exist, hide via onerror when missing. Comet: 75s horizontal drift.
+       New COSMIC_OBJECTS registry. All cosmic layers below chambers (z:3-4 vs z:6). Mobile: skipped.
+
+     2026-05-02 | atlas_motion | md5:ad48922b | shipped
+       Three ambient motion layers (CSS+SVG overlays, no asset changes):
+       (1) Threshold iridescent void drift — animated linearGradient + 5 upward particles, screen blend.
+       (2) Arcanium seam pulse — 9s breathing radialGradient + seam highlight rect, screen blend.
+       (3) Atheneum cavity twinkling stars — 5 SVG circles, staggered opacity anims, screen blend.
+       Paper-wide: 8 dust motes, 47-71s drift cycles, per-mote @keyframes, screen blend.
+       New helpers: buildThresholdVoidLayer, buildArcaniumPulseLayer, buildAtheneumStarsLayer,
+       buildPaperDust. New container: .atlas-chamber-art wraps img + motionLayer.
+
+     2026-05-02 | atlas_polish_final | md5:aab7de58 | shipped
+       5/5 chamber assets at /assets/chambers/ now have transparent backgrounds
+       (background pixels alpha=0, edges feathered preserving pencil softness,
+       drawing pixels untouched). Paper substrate restored to canonical #ebe2cf.
+       No mask, no blend mode on chamber images. Candle passes through chambers cleanly.
+
+     2026-05-02 | atlas_polish_v3 | md5:369aa90b | shipped
+       isolation:isolate on .atlas-chamber — prevents candle mix-blend-mode:multiply
+       from reaching into chamber image pixels. Candle still warms paper around chambers.
+       Paper substrate retuned to #efe0cc (avg of five asset backgrounds) — radial
+       vignette proportionally darkened to match.
+
+     2026-05-02 | atlas_polish_v2 | md5:0a7d551f | shipped
+       Mask only, no blend mode. Stronger fade: black 50% → transparent 85%.
+       Removes visible rectangle edges in real hardware-accelerated browser.
+       Single .atlas-chamber img rule replaces the previous two-rule blend+mask approach.
+
+     2026-05-02 | atlas_polish | md5:989ee31f | shipped
+       Chamber assets blend into paper via mix-blend-mode:multiply (kills visible rectangles).
+       Sealed chambers no longer desaturated — quieter via opacity only (0.72→0.85 hover).
+       Sealed hover now responsive (subtle scale + opacity bump). Cursor: default not not-allowed.
+       Path softened: thinner stroke, finer dash pattern, lower opacity.
+
+     2026-05-02 | atlas_world_map | md5:13031be8 | shipped
+       Nav.js dropdown → full-screen Atlas world map overlay on cream paper.
+       Five chambers at geographic positions: /assets/chambers/chamber-{id}.png.
+       cursor-as-candle, breathing here-mark on current, ESC/backdrop close.
+       Mobile ≤680px: vertical card list. New: CHAMBER_PATHS, Atlas IIFE, Caveat font.
+       Atheneum href /atheneum.html?dive=1; Scriptorium → sealed.
+
+     2026-05-02 | sync_threshold_atheneum | md5:345bb7c3 | shipped
+       Threshold no longer writes ga_visited_threshold. Reads ga_journey_v1
+       (canonical) for return-visit gating. Atheneum sets the flag at end of
+       its tutorial — that's the only "journey complete" moment.
+       devResetThreshold clears ga_journey_v1 + legacy keys.
+       devBackToStart already clears all ga_* keys (no change needed).
+
+     2026-05-02 | threshold_rebuild | md5:8d4ed3e7 | shipped
+       Single-scene rebuild: tutorial/dialogue/realms scenes cut entirely.
+       New: iridescent-void EVERMARK title (two-<text> halo+face stack),
+       threshold-iridescent-fill gradient (9s animated), threshold-void-halo
+       filter, threshold-iridescent-surface filter. Defs in hidden <svg>
+       before header. Header: Bebas Neue red → Cinzel letterspaced Evermark.
+       New fn: crossThresholdToAtheneum() → triggerPullThroughToAtheneum().
+       Navigation target: /atheneum.html?dive=1 (was /pregame.html?dive=1).
+     ==================================================================== -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Threshold · Gamer Ascension</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;500;600&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <!-- Animation library for living rift (Session 9 upgrade) — GSAP only.
      tsParticles was attempted but could not be made to render particles
      reliably in this rendering context. The SVG-based CSS embers remain
@@ -32,17 +176,17 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
 @keyframes twinkle{0%,100%{opacity:0.15}50%{opacity:0.7}}
 
 /* HEADER */
-.header{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(8,8,16,0.7);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px}
-.header-logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:.05em;color:var(--text);text-decoration:none;white-space:nowrap}
-.header-logo span{color:var(--red)}
-.header-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
-.header-btn{display:inline-flex;align-items:center;gap:6px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;padding:7px 12px;border-radius:3px;text-decoration:none;transition:background .2s;white-space:nowrap}
-.header-btn:hover{background:#a93226}
-@media(min-width:500px){
-  .header{padding:0 24px}
-  .header-logo{font-size:20px}
-  .header-right{gap:16px}
-  .header-btn{font-size:12px;padding:8px 16px}
+.header{position:fixed;top:0;left:0;right:0;z-index:100;height:56px;background:rgba(6,4,13,0.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(201,168,76,0.12);display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.header-logo{font-family:'Cinzel',serif;font-size:13px;letter-spacing:.34em;color:rgba(240,236,228,0.75);text-decoration:none;white-space:nowrap;text-transform:uppercase;transition:color .25s}
+.header-logo:hover{color:var(--gold-bright,#ffe5a0)}
+.header-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.header-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;color:rgba(201,168,76,0.78);font-family:'Cinzel',serif;font-size:10px;font-weight:400;letter-spacing:.32em;text-transform:uppercase;padding:8px 18px;border:1px solid rgba(201,168,76,0.32);border-radius:1px;text-decoration:none;transition:all .3s;white-space:nowrap}
+.header-btn:hover{color:var(--gold-bright,#ffe5a0);border-color:rgba(201,168,76,0.6);background:rgba(20,16,42,0.4);box-shadow:0 0 18px rgba(201,168,76,0.15)}
+@media(min-width:768px){
+  .header{padding:0 28px}
+  .header-logo{font-size:14px}
+  .header-right{gap:18px}
+  .header-btn{font-size:11px;padding:9px 22px}
 }
 
 /* STAGE */
@@ -156,39 +300,51 @@ body.horizon-collapsing .starfield{
 .horizon-content > *{pointer-events:auto}
 
 .arrival-eyebrow{
-  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.4em;
-  color:rgba(201,168,76,0.85);text-transform:uppercase;
+  font-family:'Cinzel',serif;font-size:11px;letter-spacing:.42em;
+  color:rgba(201,168,76,0.78);text-transform:uppercase;
   opacity:0;animation:horizon-content-in 1.2s ease-out forwards 3.8s;
+  margin-bottom:14px;
+  text-shadow:0 0 18px rgba(201,168,76,0.28);
 }
-.arrival-title{
-  font-family:'Cinzel Decorative',serif;
-  font-size:clamp(34px,6.4vw,62px);font-weight:700;letter-spacing:.04em;
-  color:#f5eecc;line-height:1.05;
-  text-shadow:0 0 30px rgba(157,139,255,0.6),0 0 60px rgba(157,139,255,0.25);
-  opacity:0;animation:horizon-content-in 1.4s ease-out forwards 4.2s;
-  margin:4px 0 2px;
+
+.arrival-title-svg{
+  width:clamp(280px,52vw,560px);
+  height:auto;
+  display:block;
+  margin:0 auto;
+  opacity:0;
+  transform:scale(0.96);
+  animation:arrival-title-materialize 1.6s cubic-bezier(0.32,0.72,0.24,1) forwards 4.2s;
 }
-.arrival-subtitle{
-  font-family:'Cinzel',serif;
-  font-size:clamp(16px,2.6vw,22px);
-  letter-spacing:.28em;
-  color:rgba(240,236,228,0.78);text-transform:uppercase;font-weight:400;
-  opacity:0;animation:horizon-content-in 1.2s ease-out forwards 4.8s;
-  margin-top:2px;
+.arrival-title-halo{
+  opacity:0;
+  animation:arrival-title-halo-in 1.4s ease-out forwards 4.4s;
 }
-.arrival-lore{
-  font-family:'DM Sans',sans-serif;font-style:italic;font-size:13px;
-  color:rgba(240,236,228,0.62);line-height:1.65;max-width:400px;font-weight:300;
-  margin-top:8px;
-  opacity:0;animation:horizon-content-in 1.2s ease-out forwards 5.4s;
+.arrival-title-face{
+  opacity:0;
+  animation:arrival-title-face-in 1.6s ease-out forwards 4.55s;
 }
+
+@keyframes arrival-title-materialize{
+  from{opacity:0;transform:scale(0.96)}
+  to{opacity:1;transform:scale(1)}
+}
+@keyframes arrival-title-halo-in{
+  from{opacity:0}
+  to{opacity:0.85}
+}
+@keyframes arrival-title-face-in{
+  from{opacity:0}
+  to{opacity:1}
+}
+
 @keyframes horizon-content-in{
   from{opacity:0;transform:translateY(8px)}
   to{opacity:1;transform:translateY(0)}
 }
 
 .cross-btn{
-  margin-top:18px;background:transparent;
+  margin-top:32px;background:transparent;
   border:1px solid rgba(201,168,76,0.5);color:var(--gold);
   font-family:'Cinzel',serif;font-size:12px;font-weight:400;letter-spacing:.35em;
   padding:15px 42px;border-radius:1px;cursor:pointer;text-transform:uppercase;
@@ -197,182 +353,24 @@ body.horizon-collapsing .starfield{
 }
 .cross-btn:hover{
   border-color:var(--gold);color:#fff;
-  box-shadow:0 0 32px rgba(201,168,76,0.45),inset 0 0 20px rgba(201,168,76,0.12);
+  box-shadow:0 0 32px rgba(127,119,221,0.4),inset 0 0 20px rgba(127,119,221,0.12);
   letter-spacing:.4em;
 }
 .cross-btn::before{
   content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
-  background:linear-gradient(90deg,transparent 0%,rgba(201,168,76,0.2) 50%,transparent 100%);
+  background:linear-gradient(90deg,transparent 0%,rgba(127,119,221,0.25) 50%,transparent 100%);
   transition:left .7s;
 }
 .cross-btn:hover::before{left:100%}
 
-/* Enter button — used by returning-visitor flow */
-.enter-btn{margin-top:24px;background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-family:'Cinzel',serif;font-size:14px;font-weight:400;letter-spacing:.25em;padding:16px 40px;border-radius:2px;cursor:pointer;text-transform:uppercase;transition:all .3s;position:relative;overflow:hidden}
-.enter-btn:hover{border-color:var(--gold);color:#fff;box-shadow:0 0 24px rgba(201,168,76,0.25)}
-.enter-btn::before{content:'';position:absolute;top:50%;left:-100%;width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.6),transparent);transition:left .6s}
-.enter-btn:hover::before{left:100%}
+@media (max-width: 680px){
+  .arrival-title-svg{width:min(86vw,440px)}
+  .cross-btn{margin-top:24px;padding:14px 36px;font-size:11px}
+}
 
-/* SCENE 2 — TUTORIAL */
-#tutorial{gap:24px}
-.video-frame{width:100%;max-width:520px;aspect-ratio:9/16;max-height:70vh;background:rgba(0,0,0,0.6);border:1px solid rgba(201,168,76,0.25);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
-.video-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 20px;text-align:center}
-.video-icon{width:64px;height:64px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:24px}
-.video-icon::before{content:'▶';margin-left:4px}
-.video-label{font-family:'Cinzel',serif;font-size:12px;letter-spacing:.2em;color:var(--tdim);text-transform:uppercase}
-.video-caption{font-size:13px;color:var(--tmuted);max-width:320px;line-height:1.5}
 
-/* SCENE 3 — GUIDE DIALOGUE WITH SENTINEL MARK */
-#dialogue{gap:14px;flex-direction:column;justify-content:flex-start;padding-top:20px}
 
-.sentinel-stage{position:relative;width:min(340px,78vw);height:min(420px,52vh);display:flex;align-items:center;justify-content:center;contain:layout style;flex-shrink:0}
 
-.sentinel-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:95%;height:95%;z-index:3;pointer-events:none;
-  display:flex;align-items:center;justify-content:center;
-  contain:layout style;
-  animation:sm-float 8s ease-in-out infinite}
-@keyframes sm-float{0%,100%{transform:translate(-50%,-50%) translateY(0)}50%{transform:translate(-50%,-50%) translateY(-5px)}}
-
-.sentinel-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:140%;height:140%;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,
-    rgba(197,184,255,0.3) 0%,
-    rgba(157,139,255,0.18) 25%,
-    rgba(122,106,217,0.1) 55%,
-    rgba(80,60,160,0.05) 75%,
-    transparent 90%);
-  filter:blur(22px);mix-blend-mode:screen;
-  opacity:0.75;transition:opacity 1.5s ease;
-  animation:sm-glow-breathe 6s ease-in-out infinite}
-@keyframes sm-glow-breathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.04)}}
-.sentinel-wrap.speaking .sentinel-glow{opacity:0.95}
-
-.sentinel-svg{position:relative;width:100%;height:100%;z-index:2;overflow:visible;
-  filter:drop-shadow(0 0 4px rgba(197,184,255,0.55)) drop-shadow(0 0 12px rgba(157,139,255,0.35));
-  will-change:filter;transition:filter 1.5s ease;
-  animation:sm-wrap-breathe 9s ease-in-out infinite}
-@keyframes sm-wrap-breathe{0%,100%{opacity:0.92}50%{opacity:1}}
-.sentinel-wrap.speaking .sentinel-svg{filter:drop-shadow(0 0 6px rgba(224,216,240,0.85)) drop-shadow(0 0 16px rgba(197,184,255,0.5)) drop-shadow(0 0 28px rgba(157,139,255,0.3))}
-
-/* 5 orbitals, alternating directions */
-.sm-orbit{transform-origin:200px 200px}
-.sm-orbit-1{animation:sm-rot-cw 52s linear infinite}
-.sm-orbit-2{animation:sm-rot-ccw 44s linear infinite}
-.sm-orbit-3{animation:sm-rot-cw 36s linear infinite}
-.sm-orbit-4{animation:sm-rot-ccw 28s linear infinite}
-.sm-orbit-5{animation:sm-rot-cw 20s linear infinite}
-@keyframes sm-rot-cw{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes sm-rot-ccw{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
-
-.sm-orbit-1 .sm-shape{opacity:0.85}
-.sm-orbit-2 .sm-shape{opacity:0.9}
-.sm-orbit-3 .sm-shape{opacity:0.85}
-.sm-orbit-4 .sm-shape{opacity:0.9}
-.sm-orbit-5 .sm-shape{opacity:0.9}
-
-.sm-shape.giving{animation:sm-shape-give 1.6s ease-out}
-@keyframes sm-shape-give{0%{opacity:1}30%{opacity:0.35}100%{opacity:0.9}}
-
-.sm-particle{animation:sm-particle-travel 1.8s ease-in forwards}
-@keyframes sm-particle-travel{0%{opacity:0;r:1}15%{opacity:0.9;r:3}85%{opacity:1;r:4}100%{opacity:0;r:1}}
-
-.sm-pupil.absorbing{animation:sm-pupil-absorb 0.5s ease-out !important}
-@keyframes sm-pupil-absorb{0%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}40%{r:7.5;fill:rgba(255,255,255,1);filter:brightness(1.8)}100%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}}
-
-.sm-pupil.big-absorbing{animation:sm-pupil-big-absorb 0.9s ease-out !important}
-@keyframes sm-pupil-big-absorb{0%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}30%{r:11;fill:rgba(255,255,255,1);filter:brightness(2.5) drop-shadow(0 0 12px rgba(200,250,250,1))}60%{r:8;fill:rgba(240,252,255,1);filter:brightness(1.6)}100%{r:5;fill:rgba(245,238,255,1);filter:brightness(1)}}
-
-.sm-runes{transform-origin:200px 200px;animation:sm-runes-drift 90s linear infinite}
-@keyframes sm-runes-drift{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-.sm-rune{animation:sm-rune-fade 6s ease-in-out infinite}
-.sm-rune-1{animation-delay:0s}.sm-rune-2{animation-delay:1.2s}.sm-rune-3{animation-delay:2.4s}.sm-rune-4{animation-delay:3.6s}.sm-rune-5{animation-delay:4.8s}
-@keyframes sm-rune-fade{0%,100%{opacity:0.45}50%{opacity:0.9}}
-
-.sm-anchor{transform-origin:center;animation:sm-anchor-breathe 5s ease-in-out infinite}
-.sm-anchor-ne{animation-delay:0s}.sm-anchor-se{animation-delay:1.25s}.sm-anchor-sw{animation-delay:2.5s}.sm-anchor-nw{animation-delay:3.75s}
-@keyframes sm-anchor-breathe{0%,100%{opacity:0.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
-
-.sm-thread{animation:sm-thread-fade 8s ease-in-out infinite}
-.sm-thread-ne{animation-delay:0s}.sm-thread-se{animation-delay:2s}.sm-thread-sw{animation-delay:4s}.sm-thread-nw{animation-delay:6s}
-@keyframes sm-thread-fade{0%,100%{opacity:0.4}50%{opacity:0.8}}
-
-.sm-eyelid{transform-origin:200px 200px;animation:sm-eyelid-drift 11s ease-in-out infinite}
-.sm-eyelid-lower{animation-delay:5.5s}
-@keyframes sm-eyelid-drift{0%,100%{opacity:0.55}50%{opacity:0.85}}
-
-.sm-eye{transform-origin:200px 200px}
-.sm-pupil{transform-origin:200px 200px;transition:r 0.3s ease,fill 0.3s ease}
-
-/* Blink */
-.sm-eye-lids{transform-origin:200px 200px;transform-box:view-box;transition:transform 360ms ease-in-out}
-.sm-eye.blinking .sm-eye-lids{transform:scaleY(0.02);transition:transform 360ms ease-in-out}
-.sm-eye.blink-opening .sm-eye-lids{transform:scaleY(1);transition:transform 480ms ease-in-out}
-
-/* Tier 3 Dialogue Box */
-.dialogue-box{width:100%;max-width:680px;
-  background:linear-gradient(180deg,rgba(15,12,28,0.92) 0%,rgba(8,8,20,0.92) 100%);
-  border:1px solid rgba(201,168,76,0.35);border-radius:4px;padding:26px 30px 22px;
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:relative;z-index:1;
-  min-height:180px;
-  box-shadow:0 0 40px rgba(157,139,255,0.2),0 0 80px rgba(157,139,255,0.1),inset 0 1px 0 rgba(255,240,200,0.08),inset 0 0 60px rgba(157,139,255,0.05);
-  display:flex;flex-direction:column;
-  transition:box-shadow .4s ease}
-
-.dialogue-box-corners{position:absolute;inset:0;pointer-events:none}
-.dialogue-corner{position:absolute;width:14px;height:14px;border:1px solid rgba(201,168,76,0.7)}
-.dialogue-corner-tl{top:-1px;left:-1px;border-right:none;border-bottom:none}
-.dialogue-corner-tr{top:-1px;right:-1px;border-left:none;border-bottom:none}
-.dialogue-corner-bl{bottom:-1px;left:-1px;border-right:none;border-top:none}
-.dialogue-corner-br{bottom:-1px;right:-1px;border-left:none;border-top:none}
-
-.speaker-label{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.3em;color:rgba(201,168,76,0.85);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
-.speaker-label::before{content:'';width:32px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.7))}
-.speaker-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,0.3),transparent)}
-
-.dialogue-text{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:300;line-height:1.7;color:var(--text);flex:1;min-height:80px}
-.dialogue-text .cursor{display:inline-block;width:8px;height:16px;background:var(--gold);margin-left:4px;vertical-align:middle;animation:cursor-blink 0.8s ease-in-out infinite}
-@keyframes cursor-blink{0%,49%{opacity:1}50%,100%{opacity:0}}
-
-.dialogue-footer{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px;flex-wrap:wrap}
-.dialogue-progress{font-size:10px;color:var(--tmuted);letter-spacing:.15em;font-family:'Cinzel',serif;text-transform:uppercase}
-.dialogue-continue{background:transparent;border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-family:'Cinzel',serif;font-size:11px;font-weight:400;letter-spacing:.2em;padding:10px 22px;border-radius:2px;cursor:pointer;text-transform:uppercase;transition:all .2s}
-.dialogue-continue:hover{border-color:var(--gold);background:rgba(201,168,76,0.08)}
-.dialogue-continue:disabled{opacity:0.3;cursor:not-allowed}
-
-/* SCENE 4 — REALM SELECTION */
-#realms{gap:16px;justify-content:flex-start;padding-top:80px}
-.realms-header{text-align:center;margin-bottom:20px}
-.realms-eyebrow{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.3em;color:rgba(201,168,76,0.6);text-transform:uppercase;margin-bottom:6px}
-.realms-title{font-family:'Cinzel Decorative',serif;font-size:clamp(22px,4.5vw,32px);font-weight:700;color:var(--text);line-height:1.2}
-.realms-subtitle{font-family:'DM Sans',sans-serif;font-size:13px;color:var(--tdim);margin-top:8px;max-width:480px;line-height:1.5}
-.realm-grid{display:grid;grid-template-columns:1fr;gap:14px;width:100%;max-width:640px;margin-top:8px}
-@media(min-width:640px){.realm-grid{grid-template-columns:1fr 1fr;gap:16px}}
-.realm-card{display:block;background:rgba(13,13,26,0.65);border:1px solid rgba(255,255,255,0.08);border-radius:4px;padding:18px 20px;text-decoration:none;color:var(--text);transition:all .3s;position:relative;backdrop-filter:blur(8px);cursor:pointer}
-.realm-card:hover{border-color:rgba(201,168,76,0.35);background:rgba(20,20,35,0.75);transform:translateY(-2px)}
-.realm-card.available{border-color:rgba(201,168,76,0.25)}
-.realm-card.locked{opacity:0.55;cursor:not-allowed}
-.realm-card.locked:hover{transform:none;border-color:rgba(255,255,255,0.08);background:rgba(13,13,26,0.65)}
-.realm-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:10px}
-.realm-name{font-family:'Cinzel Decorative',serif;font-size:20px;font-weight:700;letter-spacing:.02em;color:var(--text);line-height:1.2}
-.realm-status{font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;padding:3px 8px;border-radius:2px;white-space:nowrap;flex-shrink:0}
-.realm-status.available{color:var(--gold);border:1px solid rgba(201,168,76,0.4);background:rgba(201,168,76,0.08)}
-.realm-status.soon{color:var(--tmuted);border:1px solid var(--border);background:transparent}
-.realm-function{font-family:'Cinzel',serif;font-size:11px;letter-spacing:.15em;color:rgba(157,139,255,0.7);text-transform:uppercase;margin-bottom:10px}
-.realm-desc{font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.6;color:var(--tdim)}
-.realm-enter{font-family:'Cinzel',serif;font-size:10px;letter-spacing:.2em;color:var(--gold);text-transform:uppercase;margin-top:12px;display:flex;align-items:center;gap:6px}
-.realm-enter-arrow{transition:transform .2s}
-.realm-card:hover .realm-enter-arrow{transform:translateX(4px)}
-
-.realms-help{margin-top:24px;text-align:center;font-size:11px;color:var(--tmuted);letter-spacing:.05em}
-.realms-help a{color:var(--tdim);text-decoration:underline;text-decoration-color:rgba(240,236,228,0.2)}
-.realms-help a:hover{color:var(--text)}
-
-.scene-utility{position:absolute;top:16px;right:16px;font-family:'DM Sans',sans-serif;font-size:10px;letter-spacing:.1em;color:var(--tmuted);background:transparent;border:none;cursor:pointer;text-transform:uppercase;padding:6px 10px}
-.scene-utility:hover{color:var(--tdim)}
-
-.returning-reset-btn{margin-top:16px;background:transparent;border:none;color:var(--tmuted);font-size:11px;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;font-family:'DM Sans',sans-serif;padding:6px 10px;transition:color .2s}
-.returning-reset-btn:hover{color:var(--tdim)}
 
 /* ===== DEV PANEL — always-visible reset button (bottom-left) ===== */
 .dev-panel{
@@ -401,10 +399,6 @@ body.horizon-collapsing .starfield{
 .fade-in{animation:fade-in-anim .9s ease forwards}
 @keyframes fade-in-anim{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-@media (max-width:640px){
-  .sentinel-stage{width:min(280px,82vw);height:min(340px,44vh)}
-  .dialogue-box{padding:20px 22px 18px;min-height:160px}
-}
 </style>
 </head>
 <body>
@@ -412,10 +406,63 @@ body.horizon-collapsing .starfield{
 <div class="nebula"></div>
 <div class="starfield" id="starfield"></div>
 
+<!-- Hidden defs SVG — iridescent void substance gradients and filters
+     for the EVERMARK arrival title. Same family as Atheneum welcome. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="threshold-iridescent-fill" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3a2a78">
+        <animate attributeName="stop-color"
+          values="#3a2a78; #4a2a88; #2a1a68; #3a2a78"
+          dur="9s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="22%" stop-color="#7f77dd">
+        <animate attributeName="stop-color"
+          values="#7f77dd; #9586e8; #6c63c8; #7f77dd"
+          dur="9s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="50%" stop-color="#e8def8">
+        <animate attributeName="stop-color"
+          values="#e8def8; #f4eaff; #d8c8f0; #e8def8"
+          dur="9s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="78%" stop-color="#7f77dd">
+        <animate attributeName="stop-color"
+          values="#7f77dd; #6c63c8; #9586e8; #7f77dd"
+          dur="9s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#3a2a78">
+        <animate attributeName="stop-color"
+          values="#3a2a78; #2a1a68; #4a2a88; #3a2a78"
+          dur="9s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+    <filter id="threshold-void-halo" x="-30%" y="-50%" width="160%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur1"/>
+      <feFlood flood-color="#7f77dd" flood-opacity="0.55"/>
+      <feComposite in2="blur1" operator="in" result="halo1"/>
+      <feGaussianBlur in="SourceAlpha" stdDeviation="11" result="blur2"/>
+      <feFlood flood-color="#5a4ea8" flood-opacity="0.35"/>
+      <feComposite in2="blur2" operator="in" result="halo2"/>
+      <feMerge>
+        <feMergeNode in="halo2"/>
+        <feMergeNode in="halo1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="threshold-iridescent-surface" x="-10%" y="-20%" width="120%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.025" numOctaves="2" seed="5" result="turb"/>
+      <feDisplacementMap in="SourceGraphic" in2="turb" scale="1.2" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="0.3" result="softened"/>
+      <feMerge><feMergeNode in="softened"/></feMerge>
+    </filter>
+  </defs>
+</svg>
+
 <div class="header">
-  <a href="/" class="header-logo">Gamer<span>Ascension</span></a>
+  <a href="/" class="header-logo">Evermark</a>
   <div class="header-right">
-    <a href="https://calendly.com/straincoaching/insightcall" class="header-btn">Book a call →</a>
+    <a href="https://calendly.com/straincoaching/insightcall" class="header-btn">Speak with Jake</a>
   </div>
 </div>
 
@@ -483,32 +530,39 @@ body.horizon-collapsing .starfield{
       <!-- Content inside the horizon -->
       <div class="horizon-content">
         <div class="arrival-eyebrow">Welcome to</div>
-        <h1 class="arrival-title">Evermark</h1>
-        <div class="arrival-subtitle">University</div>
-        <p class="arrival-lore">One Curriculum. One Goal. Ascension.</p>
-        <button class="cross-btn" onclick="showTutorial()">Enter</button>
+        <!-- Two-<text> stack: halo layer uses threshold-void-halo filter
+             for the cool violet bleed; face layer uses threshold-iridescent-surface
+             for the turbulent ripple on the gradient fill. Same pattern as
+             atheneum-welcome-title-svg. threshold_rebuild brief. -->
+        <svg class="arrival-title-svg" id="arrival-title-svg"
+             viewBox="0 0 1200 220" preserveAspectRatio="xMidYMid meet"
+             aria-label="Evermark">
+          <text class="arrival-title-halo"
+                x="600" y="155" text-anchor="middle"
+                font-family="Cinzel Decorative, serif" font-weight="700"
+                font-size="140" letter-spacing="6"
+                fill="url(#threshold-iridescent-fill)"
+                filter="url(#threshold-void-halo)">EVERMARK</text>
+          <text class="arrival-title-face"
+                x="600" y="155" text-anchor="middle"
+                font-family="Cinzel Decorative, serif" font-weight="700"
+                font-size="140" letter-spacing="6"
+                fill="url(#threshold-iridescent-fill)"
+                filter="url(#threshold-iridescent-surface)">EVERMARK</text>
+        </svg>
+        <button class="cross-btn" onclick="crossThresholdToAtheneum()">Enter</button>
       </div>
     </div>
 
   </div>
 
 
-  <!-- SCENE 2 — TUTORIAL VIDEO -->
-  <div class="scene" id="tutorial">
-    <button class="scene-utility" onclick="showDialogue()">Skip Tutorial</button>
-    <div class="video-frame">
-      <div class="video-placeholder">
-        <div class="video-icon"></div>
-        <div class="video-label">Tutorial — 30 to 45 seconds</div>
-        <div class="video-caption">Introduction from Jake: what this place is, why he built it, what is waiting for you within.</div>
-        <div class="video-caption" style="color:var(--tmuted);font-size:11px;margin-top:16px">[ Video to be recorded and embedded here ]</div>
-      </div>
-    </div>
-    <button class="enter-btn" onclick="showDialogue()">Continue →</button>
-  </div>
 
-  <!-- SCENE 3 — GUIDE DIALOGUE (SENTINEL MARK) -->
-  <div class="scene" id="dialogue">
+  <!-- SCENES 3 and 4 (tutorial, dialogue, realms) removed — single-scene architecture -->
+  <!-- dialogue div kept (display:none) rather than deleted to avoid breaking
+       any external references to #dialogue or sentinelWrap during the
+       transition period. Can be deleted once no other files reference it. -->
+  <div class="scene" id="dialogue" style="display:none">
 
     <div class="sentinel-stage">
       <div class="sentinel-wrap" id="sentinelWrap">
@@ -620,60 +674,6 @@ body.horizon-collapsing .starfield{
     </div>
   </div>
 
-  <!-- SCENE 4 — REALM SELECTION -->
-  <div class="scene" id="realms">
-    <div class="realms-header">
-      <div class="realms-eyebrow">Choose your path</div>
-      <h2 class="realms-title">The Realms</h2>
-      <p class="realms-subtitle">Each realm serves a purpose. Visit them in any order. Return as often as you like.</p>
-    </div>
-
-    <div class="realm-grid">
-      <a class="realm-card available" href="/pregame.html">
-        <div class="realm-header">
-          <div class="realm-name">The Atheneum</div>
-          <span class="realm-status available">Open</span>
-        </div>
-        <div class="realm-function">Skill Mastery</div>
-        <div class="realm-desc">The living map of what there is to learn. Twenty-nine skill nodes across three pillars. The first three modules are free.</div>
-        <div class="realm-enter">Enter <span class="realm-enter-arrow">→</span></div>
-      </a>
-
-      <div class="realm-card locked" onclick="return false">
-        <div class="realm-header">
-          <div class="realm-name">The Arcanium</div>
-          <span class="realm-status soon">Coming Soon</span>
-        </div>
-        <div class="realm-function">Library</div>
-        <div class="realm-desc">A curated library. Tell it what you are wrestling with, and it returns the books written by those who wrestled with it first.</div>
-        <div class="realm-enter" style="color:var(--tmuted)">Sealed <span class="realm-enter-arrow">—</span></div>
-      </div>
-
-      <a class="realm-card available" href="/scriptorium.html">
-        <div class="realm-header">
-          <div class="realm-name">The Scriptorium</div>
-          <span class="realm-status available">Open</span>
-        </div>
-        <div class="realm-function">Journal</div>
-        <div class="realm-desc">Where the work is written down. A place to practice the skill of looking at yourself on paper.</div>
-        <div class="realm-enter">Enter <span class="realm-enter-arrow">→</span></div>
-      </a>
-
-      <div class="realm-card locked" onclick="return false">
-        <div class="realm-header">
-          <div class="realm-name">The Agora</div>
-          <span class="realm-status soon">Coming Soon</span>
-        </div>
-        <div class="realm-function">Community Forum</div>
-        <div class="realm-desc">The gathering place. Where those walking the same path meet, challenge, and sharpen each other.</div>
-        <div class="realm-enter" style="color:var(--tmuted)">Sealed <span class="realm-enter-arrow">—</span></div>
-      </div>
-    </div>
-
-    <div class="realms-help">
-      Not sure where to begin? <a href="https://calendly.com/straincoaching/insightcall">Book a free PlayBook call</a> and Jake will walk you through it.
-    </div>
-  </div>
 
 </div>
 
@@ -719,8 +719,12 @@ body.horizon-collapsing .starfield{
 function initEventHorizon(){
   console.log('[Threshold] Event Horizon init. GSAP:', typeof gsap);
 
+  // Sync model: read the canonical journey flag. The user is "returning"
+  // on threshold if and only if they've completed the full threshold→dive→
+  // atheneum welcome+tutorial journey. Pre-tutorial-Begin, they're still
+  // first-time on every page in the chain. sync_threshold_atheneum brief.
   var isReturning = false;
-  try { isReturning = localStorage.getItem('ga_visited_threshold') === '1'; } catch(e){}
+  try { isReturning = localStorage.getItem('ga_journey_v1') === '1'; } catch(e){}
 
   // Kick off the canvas renderer immediately; disk particles will begin
   // orbiting empty space until the horizon materializes. The birth timeline
@@ -739,8 +743,8 @@ function initEventHorizon(){
   startIdleAnimations();
   hookButtonReactions();
 
-  // Mark visited for future loads
-  try { localStorage.setItem('ga_visited_threshold', '1'); } catch(e){}
+  // Journey flag is NOT set here — that's atheneum's tutorial Begin click.
+  // Threshold marks nothing; the canonical flag lives in atheneum. sync brief.
 }
 
 // ============================================================================
@@ -1208,20 +1212,9 @@ function wireButton(btn){
     }
   });
 
-  // Click — override inline onclick with cinematic dive into void.
-  // The arrival view (with the Cross/Enter button) always dives straight to
-  // the Atheneum. Whether a user has dived before or not doesn't change the
-  // outcome — the old tutorial/dialogue/realms path is never the right
-  // behavior from this button. Returning users who want the realm picker
-  // reach it via the "Welcome back" view, which replaces the arrival view
-  // entirely when ga_visited_threshold is set.
-  //
-  // We still set ga_first_threshold_crossed on first dive so any legacy code
-  // paths that check it still work, but it's no longer a routing gate here.
+  // Click — always dives to Atheneum regardless of visit state.
   btn.removeAttribute('onclick');
   btn.addEventListener('click', function(){
-    localStorage.setItem('ga_first_threshold_crossed', '1');
-    localStorage.setItem('ga_visited_threshold', '1');
     triggerPullThroughToAtheneum();
   });
 }
@@ -1342,28 +1335,19 @@ function triggerPullThrough(callback){
 }
 
 // ============================================================================
-// First-time visitors skip the tutorial/dialogue/realms scenes entirely. The
-// dive that currently ends on the Threshold tutorial is redirected to the
-// Atheneum, where pregame.html picks up the motion from the same visual
-// state (full darkness at peak dive velocity) and resolves into a zoom onto
-// the Gap node.
-//
-// Returning visitors (flag ga_first_threshold_crossed already set) continue
-// to see the original tutorial/dialogue/realms flow. This function is only
-// wired to the Cross button on first visit.
+// Cinematic pull-through from the Threshold to the Atheneum.
+// Always navigates to /atheneum.html?dive=1 — atheneum.html decides
+// whether to honor the dive based on ga_journey_v1 (returning users skip it).
 //
 // Handoff contract:
-//   - At 1.5s (peak darkness), navigate to pregame.html?dive=1
-//   - pregame.html detects the query param, renders a full-screen black
-//     overlay immediately, then runs its own zoom-in-and-reveal timeline
-//   - The visual state at the moment of navigation (fully black screen)
-//     matches pregame.html's initial state (fully black overlay), so the
-//     user sees a single continuous darkness while the page swap happens
-//     underneath
+//   - At 1.5s (peak darkness), navigate to /atheneum.html?dive=1
+//   - atheneum.html detects the query param, renders a full-screen black
+//     overlay immediately, then runs its zoom-in-and-reveal timeline
+//   - The visual state at navigation (fully black screen) matches atheneum's
+//     initial dive state, so the page swap is invisible to the user
 function triggerPullThroughToAtheneum(){
   if(typeof gsap === 'undefined'){
-    // Fallback: just navigate. No animation, but still works.
-    window.location.href = '/pregame.html?dive=1';
+    window.location.href = '/atheneum.html?dive=1';
     return;
   }
   HORIZON_STATE.pullThroughActive = true;
@@ -1393,8 +1377,12 @@ function triggerPullThroughToAtheneum(){
   // new page will render its own black overlay immediately so the darkness
   // appears continuous.
   tl.call(function(){
-    window.location.href = '/pregame.html?dive=1';
+    window.location.href = '/atheneum.html?dive=1';
   }, null, 1.5);
+}
+
+function crossThresholdToAtheneum(){
+  triggerPullThroughToAtheneum();
 }
 
 // ============================================================================
@@ -1467,127 +1455,14 @@ function showScene(id){
   }, 400);
 }
 
-function showTutorial(){ showScene('tutorial'); }
-function showDialogue(){ showScene('dialogue'); }
-function showRealms(){ showScene('realms'); }
 
-// ========= DIALOGUE SCRIPT — THE THRESHOLD =========
-var dialogueScript = [
-  { speaker: 'The Guide', text: 'You have crossed into The Threshold. Welcome, traveler. I am the keeper of this crossing — and I was here before you arrived.' },
-  { speaker: 'The Guide', text: 'This place is not a product. It is a world built for people who refused to stay who they were. The realms beyond this chamber were made for you, though not by me.' },
-  { speaker: 'The Guide', text: 'You will find four realms. Each serves a purpose. None of them will rush you. Walk them in any order. Return as often as you like. The path is yours to shape.' },
-  { speaker: 'The Guide', text: 'Some realms are open now. Others remain sealed while the architects of this place finish their work. Trust that what is not ready for you today will be when you need it.' },
-  { speaker: 'The Guide', text: 'Go now. Choose the realm that calls to you. I will be here if you ever wish to return to the beginning.' }
-];
-
-var dialogueIndex = 0;
-var typewriterTimeout = null;
-var sentinelWrap = null;
-var dialogueTapHandlerWired = false;
-
-function startDialogueSequence(){
-  dialogueIndex = 0;
-  sentinelWrap = document.getElementById('sentinelWrap');
-  wireDialogueTapToSkip();
-  renderDialogueLine();
-}
-
-// Tap-to-skip: clicking the dialogue box or the Sentinel stage advances the
-// dialogue — either skipping the typewriter to completion (if mid-line) or
-// advancing to the next line (if complete). Matches the pattern used by the
-// Guide in pregame.html. Same advanceDialogue() handles both cases because
-// it already branches on continueBtn.disabled. Wired once (idempotent).
-function wireDialogueTapToSkip(){
-  if(dialogueTapHandlerWired) return;
-  var dialogueBox = document.getElementById('dialogueBox');
-  var sentinelStage = document.querySelector('#dialogue .sentinel-stage');
-
-  function handleSkipTap(e){
-    // Ignore clicks on the continue button itself (it has its own onclick)
-    // and any other interactive elements. This prevents double-fires.
-    if(e.target.closest('#dialogueContinue, a, button')) return;
-    advanceDialogue();
-  }
-
-  if(dialogueBox) dialogueBox.addEventListener('click', handleSkipTap);
-  if(sentinelStage) sentinelStage.addEventListener('click', handleSkipTap);
-  dialogueTapHandlerWired = true;
-}
-
-function renderDialogueLine(){
-  var line = dialogueScript[dialogueIndex];
-  var nameEl = document.getElementById('speakerName');
-  var textEl = document.getElementById('dialogueText');
-  var progressEl = document.getElementById('dialogueProgress');
-  var continueBtn = document.getElementById('dialogueContinue');
-
-  nameEl.textContent = line.speaker;
-  textEl.innerHTML = '';
-  progressEl.textContent = (dialogueIndex+1)+' / '+dialogueScript.length;
-  continueBtn.disabled = true;
-  continueBtn.textContent = 'Continue';
-
-  if(sentinelWrap) sentinelWrap.classList.add('speaking');
-
-  var i = 0;
-  var full = line.text;
-  if(typewriterTimeout) clearTimeout(typewriterTimeout);
-
-  function tick(){
-    if(i <= full.length){
-      textEl.innerHTML = full.substring(0,i) + '<span class="cursor"></span>';
-      i++;
-      typewriterTimeout = setTimeout(tick, 22);
-    } else {
-      textEl.innerHTML = full;
-      continueBtn.disabled = false;
-      if(sentinelWrap) sentinelWrap.classList.remove('speaking');
-      if(dialogueIndex === dialogueScript.length - 1){
-        continueBtn.textContent = 'Enter the Realms →';
-      }
-    }
-  }
-  tick();
-}
-
-function advanceDialogue(){
-  var textEl = document.getElementById('dialogueText');
-  var continueBtn = document.getElementById('dialogueContinue');
-  if(continueBtn.disabled){
-    if(typewriterTimeout) clearTimeout(typewriterTimeout);
-    textEl.innerHTML = dialogueScript[dialogueIndex].text;
-    continueBtn.disabled = false;
-    if(sentinelWrap) sentinelWrap.classList.remove('speaking');
-    if(dialogueIndex === dialogueScript.length - 1){
-      continueBtn.textContent = 'Enter the Realms →';
-    }
-    return;
-  }
-
-  if(dialogueIndex < dialogueScript.length - 1){
-    dialogueIndex++;
-    renderDialogueLine();
-  } else {
-    try { localStorage.setItem('ga_visited_threshold', '1'); } catch(e){}
-    showRealms();
-  }
-}
 
 // ========= RETURNING VISITOR =========
+// Single-scene architecture: returning visitors see the same arrival scene.
+// skipBirthSequence() handles settling the visual into its resting state.
+// No innerHTML rewrite needed — the ENTER button always dives to the Atheneum.
 (function checkReturning(){
-  try {
-    var visited = localStorage.getItem('ga_visited_threshold');
-    if(visited === '1'){
-      var arrival = document.getElementById('arrival');
-      arrival.innerHTML = ''+
-        '<div class="arrival-eyebrow fade-in">Welcome back to</div>'+
-        '<h1 class="arrival-title fade-in">Evermark</h1>'+
-        '<div class="arrival-subtitle fade-in">University</div>'+
-        '<p class="arrival-lore fade-in">Continue your ascension.</p>'+
-        '<button class="enter-btn fade-in" onclick="showRealms()">Enter the Realms</button>'+
-        '<button class="returning-reset-btn" onclick="resetThreshold()">See the Introduction Again</button>';
-    }
-  } catch(e){}
+  // No-op body retained for any future returning-visitor hooks.
 })();
 
 function resetThreshold(){
@@ -1604,18 +1479,11 @@ function resetThreshold(){
   window.location.href = '/evermark.html';
 }
 
-// ========= SENTINEL MARK ANIMATIONS =========
-// Particle feeding
+// ========= SENTINEL MARK ANIMATIONS (archived — scene removed) =========
 var stylesInjectedAt = Date.now();
-var ORBITALS = [
-  { radius: 160, period: 52000, dir:  1 },
-  { radius: 135, period: 44000, dir: -1 },
-  { radius: 115, period: 36000, dir:  1 },
-  { radius:  95, period: 28000, dir: -1 },
-  { radius:  78, period: 20000, dir:  1 }
-];
+var ORBITALS = [];
 
-function getShapePosition(orbitalIndex){
+function getShapePosition(orbitalIndex){ if(!ORBITALS.length) return {x:0,y:0};
   var elapsed = Date.now() - stylesInjectedAt;
   var orb = ORBITALS[orbitalIndex];
   var angleRad = orb.dir * (elapsed / orb.period) * 2 * Math.PI;
@@ -1713,108 +1581,7 @@ function triggerBigAbsorb(){
   setTimeout(function(){ if(pupil) pupil.classList.remove('big-absorbing'); }, 900);
 }
 
-function scheduleNextParticle(){
-  if(!isDialogueVisible()){
-    setTimeout(scheduleNextParticle, 2000);
-    return;
-  }
-  var roll = Math.random();
-  var delay;
-  if(roll < 0.45){ fireSingle(); delay = 3500 + Math.random() * 3000; }
-  else if(roll < 0.80){ fireMiniBurst(); delay = 7000 + Math.random() * 4000; }
-  else { fireFullBurst(); delay = 11000 + Math.random() * 6000; }
-  setTimeout(scheduleNextParticle, delay);
-}
-setTimeout(scheduleNextParticle, 3000);
 
-// Blinking
-function performBlink(onComplete){
-  var eye = document.querySelector('.sm-eye');
-  if(!eye){ if(onComplete) setTimeout(onComplete, 0); return; }
-  eye.classList.remove('blink-opening');
-  eye.classList.add('blinking');
-  setTimeout(function(){
-    eye.classList.remove('blinking');
-    eye.classList.add('blink-opening');
-    setTimeout(function(){ eye.classList.remove('blink-opening'); if(onComplete) onComplete(); }, 500);
-  }, 420);
-}
-function scheduleNextBlink(){
-  if(!isDialogueVisible()){
-    setTimeout(scheduleNextBlink, 2000);
-    return;
-  }
-  var delay = 6000 + Math.random() * 6000;
-  setTimeout(function(){ performBlink(scheduleNextBlink); }, delay);
-}
-setTimeout(scheduleNextBlink, 3000);
-
-// Eye tracking
-var pupilTargetX = 0, pupilTargetY = 0;
-var pupilCurrentX = 0, pupilCurrentY = 0;
-var lastMouseMoveTime = 0;
-var IDLE_TIMEOUT_MS = 1500;
-
-document.addEventListener('mousemove', function(e){
-  if(!isDialogueVisible()) return;
-  var svg = document.querySelector('.sentinel-svg');
-  if(!svg) return;
-  lastMouseMoveTime = Date.now();
-  var rect = svg.getBoundingClientRect();
-  var svgCenterX = rect.left + rect.width / 2;
-  var svgCenterY = rect.top + rect.height / 2;
-  var dx = e.clientX - svgCenterX;
-  var dy = e.clientY - svgCenterY;
-  var scaleX = 400 / rect.width;
-  var scaleY = 400 / rect.height;
-  var targetX = dx * scaleX;
-  var targetY = dy * scaleY;
-  var maxRange = 6;
-  var dist = Math.sqrt(targetX * targetX + targetY * targetY);
-  if(dist > 0){
-    var eased = Math.min(dist / 150, 1);
-    var factor = (maxRange * eased) / dist;
-    pupilTargetX = targetX * factor;
-    pupilTargetY = targetY * factor;
-  } else {
-    pupilTargetX = 0;
-    pupilTargetY = 0;
-  }
-});
-
-function computeIdleTarget(){
-  var t = Date.now() / 1000;
-  var x = Math.sin(t * 0.35) * 3 + Math.sin(t * 0.17) * 1.5;
-  var y = Math.cos(t * 0.29) * 2.2 + Math.sin(t * 0.13) * 1;
-  return { x: x, y: y };
-}
-
-function followLoop(){
-  if(!isDialogueVisible()){
-    requestAnimationFrame(followLoop);
-    return;
-  }
-  var pupil = document.getElementById('smPupil');
-  if(pupil){
-    var now = Date.now();
-    var isIdle = (now - lastMouseMoveTime) > IDLE_TIMEOUT_MS;
-    var tx, ty;
-    if(isIdle){
-      var idle = computeIdleTarget();
-      tx = idle.x;
-      ty = idle.y;
-    } else {
-      tx = pupilTargetX;
-      ty = pupilTargetY;
-    }
-    var lerp = isIdle ? 0.04 : 0.08;
-    pupilCurrentX += (tx - pupilCurrentX) * lerp;
-    pupilCurrentY += (ty - pupilCurrentY) * lerp;
-    pupil.style.transform = 'translate(' + pupilCurrentX.toFixed(2) + 'px,' + pupilCurrentY.toFixed(2) + 'px)';
-  }
-  requestAnimationFrame(followLoop);
-}
-requestAnimationFrame(followLoop);
 </script>
 
 <!-- DEV PANEL — reset localStorage to replay the arrival sequence -->
@@ -1826,9 +1593,9 @@ requestAnimationFrame(followLoop);
 
 <script>
 function devResetThreshold(){
-  // Local reset — clears just the threshold flags so you see the rift birth
-  // again. Does not touch pregame or evermark intro state.
   try {
+    localStorage.removeItem('ga_journey_v1');
+    // Legacy keys for safety:
     localStorage.removeItem('ga_visited_threshold');
     localStorage.removeItem('ga_first_threshold_crossed');
   } catch(e){}
@@ -1853,244 +1620,814 @@ function devBackToStart(){
 </script>
 
 <script>
-/*
- * nav.js — Persistent chamber navigation for Gamer Ascension
+/**
+ * Atlas — full-screen world map navigation for Evermark.
  *
- * Usage:
- *   1. Include as a script tag (src="nav.js") near end of body
- *   2. Call Nav.init({ current: 'atheneum' }) to mark the current chamber
- *      (valid values: 'threshold', 'atheneum', 'arcanium', 'scriptorium', 'agora')
+ * Replaces the previous nav.js dropdown. The trigger button stays in the same
+ * top-left position but opens the full-screen Atlas overlay instead.
  *
- * Renders a compass icon in the top-left header area. Clicking it opens a
- * chamber list panel. Current chamber is highlighted; sealed chambers are shown
- * but disabled.
- *
- * No external dependencies. Pure vanilla JS. Self-contained styles injected
- * into the document head on init.
+ * Usage: Atlas.init({ current: 'threshold' });
  */
 
 (function(){
   'use strict';
 
+  // Chamber registry. Coordinates are percentages of map area (x: left, y: top).
+  // Scale is asset render diameter in px on desktop. Atheneum href passes ?dive=1;
+  // atheneum.html decides whether to honor it via ga_journey_v1. atlas_world_map brief.
   var CHAMBERS = [
-    { id: 'threshold',   name: 'The Threshold',   func: 'World Map',         href: '/threshold.html',   status: 'open' },
-    { id: 'atheneum',    name: 'The Atheneum',    func: 'Skill Mastery',     href: '/pregame.html',     status: 'open' },
-    { id: 'arcanium',    name: 'The Arcanium',    func: 'Library',           href: null,                status: 'sealed' },
-    { id: 'scriptorium', name: 'The Scriptorium', func: 'Journal',           href: '/scriptorium.html', status: 'open' },
-    { id: 'agora',       name: 'The Agora',       func: 'Community Forum',   href: null,                status: 'sealed' }
+    { id: 'atheneum',    name: 'The Atheneum',    func: 'Skill Mastery', href: '/atheneum.html?dive=1', asset: 'assets/chambers/chamber-atheneum.png',    status: 'open',   x: 50, y: 48, scale: 280 },
+    { id: 'scriptorium', name: 'The Scriptorium', func: 'Journal',       href: '/scriptorium.html',     asset: 'assets/chambers/chamber-scriptorium.png', status: 'sealed', x: 30, y: 28, scale: 200 },
+    { id: 'threshold',   name: 'The Threshold',   func: 'World Map',     href: '/threshold.html',       asset: 'assets/chambers/chamber-threshold.png',   status: 'open',   x: 18, y: 75, scale: 200 },
+    { id: 'arcanium',    name: 'The Arcanium',    func: 'Library',       href: null,                    asset: 'assets/chambers/chamber-arcanium.png',    status: 'sealed', x: 80, y: 35, scale: 200 },
+    { id: 'agora',       name: 'The Agora',       func: 'Community',     href: null,                    asset: 'assets/chambers/chamber-agora.png',       status: 'sealed', x: 75, y: 80, scale: 200 }
+  ];
+
+  // Pencil paths drawn between connected open chambers. Sealed chambers have no paths.
+  // atheneum↔scriptorium added when scriptorium unseals post-Anchored ceremony.
+  var CHAMBER_PATHS = [
+    { from: 'atheneum', to: 'threshold' }
+  ];
+
+  // Cosmic objects — atmospheric assets populating the void between chambers.
+  // Not navigable. Each asset is rendered as an <img> with onerror hiding it
+  // if the file is missing, so operators can ship the map even before all
+  // assets exist. Drop files into /assets/space/ to enable.
+  // Position: percentage of paper area. Scale: rendered px width on desktop.
+  // Cosmic objects — atmospheric assets in deep void.
+  // Smaller and pushed to map edges so chambers physically dominate.
+  // Comet stays static (visible mid-passage as captured by The Maker).
+  var COSMIC_OBJECTS = [
+    { id: 'comet',      asset: 'assets/space/space-comet.png',      x: 70, y: 8,  scale: 220, motion: null },
+    { id: 'planet-1',   asset: 'assets/space/space-planet-1.png',   x: 95, y: 55, scale: 90,  motion: null },
+    { id: 'planet-2',   asset: 'assets/space/space-planet-2.png',   x: 5,  y: 55, scale: 95,  motion: null },
+    { id: 'artifact-1', asset: 'assets/space/space-artifact-1.png', x: 50, y: 95, scale: 75,  motion: null }
+  ];
+
+  var MAKERS_NOTES = [
+    { text: "the cavity holds a smaller cavity",       x: 50, y: 35, context: 'always' },
+    { text: "the void is itself a substance",          x: 38, y: 60, context: 'always' },
+    { text: "all roads return to the Atheneum",        x: 58, y: 60, context: 'always' },
+    { text: "before the Threshold there was no name",  x: 28, y: 86, context: 'always' },
+    { text: "what falls inward becomes a sky",         x: 40, y: 30, context: 'always' },
+    { text: "what enters the cavity does not return the same", x: 42, y: 56, context: 'always' },
+    { text: "the way through is not around",           x: 48, y: 70, context: 'always' },
+    { text: "between two waves, a doorway",            x: 22, y: 86, context: 'always' },
+    { text: "what is sealed remembers what was kept",  x: 70, y: 25, context: 'always' },
+    { text: "what burns in stillness is not fire",     x: 24, y: 60, context: 'always' },
+    { text: "by the cavity, by the threshold, by the silent third", x: 50, y: 28, context: 'always' },
+    { text: "open as the geode opens",                 x: 60, y: 38, context: 'always' },
+    { text: "as above the cavity, so within",          x: 44, y: 24, context: 'always' },
+    { text: "I drew what I could not enter",           x: 12, y: 24, context: 'always' },
+    { text: "every star here was once a question",     x: 80, y: 50, context: 'always' },
+    { text: "the third seal will open in its time",    x: 45, y: 90, context: 'arcanium-sealed' },
+    { text: "still sealed, still listening",           x: 68, y: 28, context: 'arcanium-sealed' },
+    { text: "what waits beyond is also waiting",       x: 78, y: 80, context: 'agora-sealed' },
+    { text: "let the seal hold until the keeper is ready", x: 30, y: 22, context: 'scriptorium-sealed' },
+    { text: "the comet returns when called",           x: 64, y: 14, context: 'always' },
+    { text: "the artifact remains unread",             x: 50, y: 90, context: 'always' },
+    { text: "no map is the territory; this one tries", x: 88, y: 70, context: 'always' }
   ];
 
   var currentChamberId = null;
   var isOpen = false;
   var triggerBtn = null;
-  var panelEl = null;
-  var backdropEl = null;
+  var overlayEl = null;
+  var paperEl = null;
 
-  var Nav = {
+  var Atlas = {
     init: function(config){
       config = config || {};
       currentChamberId = config.current || null;
       injectStyles();
       mount();
     },
-    open: function(){ openPanel(); },
-    close: function(){ closePanel(); }
+    open: function(){ openAtlas(); },
+    close: function(){ closeAtlas(); }
   };
-  window.Nav = Nav;
+  window.Atlas = Atlas;
 
   function injectStyles(){
-    if(document.getElementById('nav-styles')) return;
+    if(document.getElementById('atlas-styles')) return;
     var style = document.createElement('style');
-    style.id = 'nav-styles';
-    style.textContent = '' +
-      // Trigger button — compass icon + "Chambers" label, positioned below the page header
-      '.nav-trigger{position:fixed;top:68px;left:12px;height:36px;' +
-        'background:rgba(8,8,20,0.85);border:1px solid rgba(201,168,76,0.5);' +
-        'border-radius:20px;cursor:pointer;z-index:9997;padding:0 16px 0 12px;' +
-        'display:inline-flex;align-items:center;gap:8px;' +
-        'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);' +
-        'transition:all .25s;outline:none;' +
-        'box-shadow:0 2px 14px rgba(0,0,0,0.4),0 0 18px rgba(201,168,76,0.15);' +
-        'font-family:\'Cinzel\',serif;font-size:10.5px;letter-spacing:.22em;' +
-        'color:rgba(240,236,228,0.88);text-transform:uppercase}' +
-      '.nav-trigger:hover{border-color:rgba(201,168,76,0.85);' +
-        'color:#f0ece4;box-shadow:0 2px 14px rgba(0,0,0,0.4),0 0 20px rgba(201,168,76,0.45)}' +
-      '.nav-trigger:focus,.nav-trigger:focus-visible{outline:none;box-shadow:0 2px 12px rgba(0,0,0,0.3)}' +
-      '.nav-trigger.open{border-color:rgba(201,168,76,0.75);' +
-        'background:rgba(30,22,12,0.85);color:#f0ece4}' +
-      '.nav-trigger svg{width:18px;height:18px;transition:transform .4s ease;flex-shrink:0}' +
-      '.nav-trigger.open svg{transform:rotate(180deg)}' +
-      '.nav-trigger-label{display:inline-block;line-height:1}' +
-      '@media(min-width:500px){' +
-        '.nav-trigger{top:74px;left:16px;height:36px;padding:0 16px 0 12px;font-size:11px}' +
-        '.nav-trigger svg{width:20px;height:20px}' +
-      '}' +
+    style.id = 'atlas-styles';
+    style.textContent = [
+      '.atlas-trigger{position:fixed;top:68px;left:12px;height:36px;',
+        'background:rgba(8,8,20,0.85);border:1px solid rgba(201,168,76,0.5);',
+        'border-radius:20px;cursor:pointer;z-index:9997;padding:0 18px;',
+        'display:inline-flex;align-items:center;gap:8px;',
+        'backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);',
+        'transition:all .25s;outline:none;',
+        'box-shadow:0 2px 14px rgba(0,0,0,0.4),0 0 18px rgba(201,168,76,0.15);',
+        'font-family:\'Cinzel\',serif;font-size:10.5px;letter-spacing:.28em;',
+        'color:rgba(240,236,228,0.88);text-transform:uppercase}',
+      '.atlas-trigger:hover{border-color:rgba(201,168,76,0.85);',
+        'color:#f0ece4;box-shadow:0 2px 14px rgba(0,0,0,0.4),0 0 22px rgba(201,168,76,0.5)}',
+      '.atlas-trigger:focus,.atlas-trigger:focus-visible{outline:none}',
+      '.atlas-trigger.open{border-color:rgba(201,168,76,0.75);background:rgba(30,22,12,0.85);color:#f0ece4}',
+      '@media(min-width:500px){.atlas-trigger{top:74px;left:16px;font-size:11px;padding:0 22px}}',
 
-      // Backdrop (click-to-close)
-      '.nav-backdrop{position:fixed;inset:0;z-index:9995;background:transparent;' +
-        'opacity:0;pointer-events:none;transition:opacity .3s ease}' +
-      '.nav-backdrop.active{opacity:1;pointer-events:auto}' +
+      '.atlas-overlay{position:fixed;inset:0;z-index:9996;',
+        'background:rgba(6,4,13,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);',
+        'opacity:0;pointer-events:none;transition:opacity .5s ease;',
+        'display:flex;align-items:center;justify-content:center;padding:40px 20px}',
+      '.atlas-overlay.active{opacity:1;pointer-events:auto}',
 
-      // Panel
-      '.nav-panel{position:fixed;top:112px;left:12px;width:min(320px,calc(100vw - 24px));' +
-        'background:linear-gradient(180deg,rgba(15,12,28,0.95) 0%,rgba(8,8,20,0.95) 100%);' +
-        'border:1px solid rgba(201,168,76,0.35);border-radius:4px;padding:14px;' +
-        'backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);' +
-        'box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 60px rgba(157,139,255,0.15),' +
-          'inset 0 1px 0 rgba(255,240,200,0.08);' +
-        'z-index:9996;opacity:0;pointer-events:none;' +
-        'transform:translateY(-8px);transition:opacity .3s ease,transform .3s ease;' +
-        'max-height:calc(100vh - 80px);overflow-y:auto}' +
-      '.nav-panel.active{opacity:1;pointer-events:auto;transform:translateY(0)}' +
-      '@media(min-width:500px){.nav-panel{top:120px;left:16px}}' +
+      '.atlas-paper{position:relative;width:min(1200px,92vw);height:min(820px,82vh);',
+        'background:radial-gradient(ellipse at 50% 45%,#ebe2cf 0%,#e6dcc6 70%,#c9bea4 100%),#ebe2cf;',
+        'box-shadow:inset 0 0 100px rgba(80,60,30,0.14),0 30px 80px rgba(0,0,0,0.7),0 8px 20px rgba(0,0,0,0.5);',
+        'border-radius:2px;overflow:hidden;',
+        'transform:scale(0.94);opacity:0;',
+        'transition:transform .7s cubic-bezier(0.32,0.72,0.24,1),opacity .6s ease}',
+      '.atlas-overlay.active .atlas-paper{transform:scale(1);opacity:1}',
 
-      // Panel header
-      '.nav-panel-header{font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:.3em;' +
-        'color:rgba(201,168,76,0.75);text-transform:uppercase;padding:2px 8px 12px;' +
-        'display:flex;align-items:center;gap:10px}' +
-      '.nav-panel-header::after{content:\'\';flex:1;height:1px;' +
-        'background:linear-gradient(90deg,rgba(201,168,76,0.3),transparent)}' +
+      '.atlas-grid,.atlas-grid-major{position:absolute;inset:0;pointer-events:none}',
+      '.atlas-grid{background-image:linear-gradient(to right,rgba(120,130,145,0.14) 0.5px,transparent 0.5px),',
+        'linear-gradient(to bottom,rgba(120,130,145,0.14) 0.5px,transparent 0.5px);',
+        'background-size:24px 24px;z-index:1;opacity:0.85}',
+      '.atlas-grid-major{background-image:linear-gradient(to right,rgba(120,130,145,0.20) 0.7px,transparent 0.7px),',
+        'linear-gradient(to bottom,rgba(120,130,145,0.20) 0.7px,transparent 0.7px);',
+        'background-size:120px 120px;z-index:2;opacity:0.7}',
+      '.atlas-grain{position:absolute;inset:0;pointer-events:none;z-index:3;mix-blend-mode:multiply;opacity:0.4}',
 
-      // Chamber row
-      '.nav-chamber{display:block;padding:12px 14px;border-radius:3px;' +
-        'border:1px solid transparent;text-decoration:none;color:inherit;' +
-        'transition:all .2s;margin-bottom:4px;cursor:pointer}' +
-      '.nav-chamber:last-child{margin-bottom:0}' +
-      '.nav-chamber.open-chamber:hover{background:rgba(201,168,76,0.05);' +
-        'border-color:rgba(201,168,76,0.3)}' +
-      '.nav-chamber.sealed{opacity:0.45;cursor:not-allowed}' +
-      '.nav-chamber.current{background:rgba(157,139,255,0.08);' +
-        'border-color:rgba(157,139,255,0.35);cursor:default}' +
-      '.nav-chamber.current:hover{background:rgba(157,139,255,0.08);' +
-        'border-color:rgba(157,139,255,0.35)}' +
+      '.atlas-candle{position:absolute;width:520px;height:520px;border-radius:50%;',
+        'background:radial-gradient(circle at center,rgba(255,200,100,0.30) 0%,rgba(244,180,100,0.18) 30%,rgba(244,180,100,0.06) 55%,transparent 80%);',
+        'pointer-events:none;z-index:5;filter:blur(6px);',
+        'transform:translate(-50%,-50%);left:50%;top:50%;opacity:0;',
+        'transition:opacity .6s ease;mix-blend-mode:multiply}',
+      '.atlas-paper:hover .atlas-candle{opacity:1}',
 
-      '.nav-chamber-top{display:flex;justify-content:space-between;align-items:baseline;' +
-        'gap:10px;margin-bottom:3px}' +
-      '.nav-chamber-name{font-family:\'Cinzel Decorative\',serif;font-size:16px;' +
-        'font-weight:700;letter-spacing:.01em;color:#f0ece4;line-height:1.15}' +
-      '.nav-chamber.sealed .nav-chamber-name{color:rgba(240,236,228,0.6)}' +
-      '.nav-chamber-tag{font-family:\'DM Sans\',sans-serif;font-size:8px;' +
-        'letter-spacing:.2em;text-transform:uppercase;padding:2px 7px;border-radius:2px;' +
-        'white-space:nowrap;flex-shrink:0}' +
-      '.nav-chamber-tag.current-tag{color:rgba(157,139,255,0.9);' +
-        'border:1px solid rgba(157,139,255,0.4);background:rgba(157,139,255,0.08)}' +
-      '.nav-chamber-tag.sealed-tag{color:rgba(240,236,228,0.4);' +
-        'border:1px solid rgba(255,255,255,0.1);background:transparent}' +
+      '.atlas-dust{position:absolute;inset:0;pointer-events:none;z-index:5}',
+      '.atlas-dust-mote{position:absolute;width:2px;height:2px;border-radius:50%;' +
+        'background:radial-gradient(circle,#fff5d8 0%,#f4c673 60%,transparent 100%);' +
+        'opacity:0;mix-blend-mode:screen;filter:blur(0.4px)}',
 
-      '.nav-chamber-func{font-family:\'Cinzel\',serif;font-size:10px;' +
-        'letter-spacing:.2em;color:rgba(157,139,255,0.65);text-transform:uppercase}' +
-      '.nav-chamber.sealed .nav-chamber-func{color:rgba(240,236,228,0.3)}' +
+      '.atlas-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}',
+      '.atlas-star{position:absolute;display:block;pointer-events:none;opacity:0.85;will-change:opacity}',
+      '.atlas-star-small{opacity:0.7}',
+      '.atlas-star-medium{opacity:0.82}',
+      '.atlas-star-large{opacity:0.95}',
+      '@keyframes atlas-star-twinkle{0%,100%{opacity:0.4}50%{opacity:1}}',
 
-      '.nav-panel-footer{margin-top:10px;padding:10px 8px 2px;' +
-        'border-top:1px solid rgba(255,255,255,0.06);' +
-        'font-family:\'DM Sans\',sans-serif;font-size:10px;letter-spacing:.05em;' +
-        'color:rgba(240,236,228,0.35);text-align:center}' +
-      '.nav-panel-footer a{color:rgba(240,236,228,0.55);text-decoration:underline;' +
-        'text-decoration-color:rgba(240,236,228,0.15)}' +
-      '.nav-panel-footer a:hover{color:#f0ece4}' +
-      '';
+
+      '.atlas-astrolabe{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}',
+
+      '.atlas-annotation-stage{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5.4;overflow:hidden}',
+      '.atlas-annotation{position:absolute;font-family:\'Caveat\',cursive;font-style:italic;font-weight:500;' +
+        'font-size:15px;color:#1a1815;opacity:0.72;line-height:1.1;text-align:left;white-space:nowrap;' +
+        'pointer-events:none;letter-spacing:0.01em;text-shadow:0 0 0.4px rgba(26,24,21,0.3);' +
+        'transform-origin:left center;transition:opacity 2s ease-out}',
+      '.atlas-annotation-fading{opacity:0}',
+
+
+      '.atlas-cosmic{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:4}',
+      '.atlas-cosmic img{display:block;width:100%;height:auto;opacity:0.92}',
+      '.atlas-cosmic-drift{position:absolute;inset:0;pointer-events:none;z-index:5}',
+      '.atlas-cosmic-drifter{position:absolute;width:3px;height:3px;border-radius:50%;' +
+        'background:radial-gradient(circle,#b8a8f0 0%,#7f77dd 50%,transparent 100%);' +
+        'opacity:0;mix-blend-mode:multiply;filter:blur(0.6px)}',
+
+      '.atlas-paths{position:absolute;inset:0;pointer-events:none;z-index:4}',
+
+      '.atlas-chamber{position:absolute;transform:translate(-50%,-50%);',
+        'background:none;border:none;padding:0;margin:0;',
+        'display:flex;flex-direction:column;align-items:center;',
+        'cursor:pointer;z-index:6;isolation:isolate;',
+        'transition:transform .4s cubic-bezier(0.32,0.72,0.24,1),filter .4s ease}',
+      '.atlas-chamber-art{position:relative;width:100%;display:block}',
+      '.atlas-chamber-art img{display:block;width:100%;height:auto;transition:filter .4s ease}',
+      '.atlas-threshold-void{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;opacity:0.85}',
+      '.atlas-arcanium-pulse{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}',
+      '.atlas-atheneum-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen}',
+      '.atlas-chamber.open{filter:drop-shadow(0 0 12px rgba(244,198,115,0.18)) drop-shadow(0 0 4px rgba(255,220,150,0.12))}',
+      '.atlas-chamber.open:hover{transform:translate(-50%,-50%) scale(1.04);' +
+        'filter:drop-shadow(0 0 24px rgba(244,198,115,0.45)) drop-shadow(0 0 8px rgba(255,220,150,0.35))}',
+      '.atlas-chamber.current{filter:drop-shadow(0 0 16px rgba(244,198,115,0.30)) drop-shadow(0 0 6px rgba(255,220,150,0.22))}',
+      '.atlas-chamber.current:hover{transform:translate(-50%,-50%) scale(1.04);' +
+        'filter:drop-shadow(0 0 26px rgba(244,198,115,0.50)) drop-shadow(0 0 8px rgba(255,220,150,0.40))}',
+      '.atlas-chamber.sealed{cursor:default;opacity:0.72;transition:opacity .4s ease,transform .4s cubic-bezier(0.32,0.72,0.24,1)}',
+      '.atlas-chamber.sealed:hover{transform:translate(-50%,-50%) scale(1.015);opacity:0.85}',
+
+      '.atlas-chamber.current .atlas-here-mark{display:block}',
+      '.atlas-here-mark{display:none;position:absolute;top:42%;left:50%;',
+        'transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;',
+        'background:radial-gradient(circle,#ffe5a0 0%,#f4c673 50%,transparent 100%);',
+        'animation:atlas-here-breathe 6s ease-in-out infinite;pointer-events:none;',
+        'box-shadow:0 0 14px rgba(244,198,115,0.7);z-index:1}',
+      '@keyframes atlas-here-breathe{',
+        '0%,100%{opacity:0.65;transform:translate(-50%,-50%) scale(1)}',
+        '50%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}}',
+
+      '.atlas-chamber-pill{margin-top:8px;display:inline-flex;flex-direction:column;' +
+        'align-items:center;padding:5px 14px;border-radius:14px;' +
+        'background:rgba(235,226,207,0.55);' +
+        'border:1px solid rgba(26,24,21,0.18);' +
+        'pointer-events:none;' +
+        'transition:background .35s ease,border-color .35s ease}',
+      '.atlas-chamber.open .atlas-chamber-pill{' +
+        'border-color:rgba(201,168,76,0.40);' +
+        'background:rgba(244,232,210,0.62)}',
+      '.atlas-chamber.current .atlas-chamber-pill{' +
+        'border-color:rgba(201,168,76,0.65);' +
+        'background:rgba(252,238,212,0.78)}',
+      '.atlas-chamber.open:hover .atlas-chamber-pill{' +
+        'background:rgba(252,238,212,0.78);' +
+        'border-color:rgba(201,168,76,0.65)}',
+      '.atlas-chamber.sealed .atlas-chamber-pill{' +
+        'background:rgba(220,212,194,0.45);' +
+        'border-color:rgba(26,24,21,0.14)}',
+      '.atlas-chamber-label{font-family:\'Cinzel Decorative\',serif;font-weight:700;' +
+        'font-size:13px;letter-spacing:.10em;color:#1a1815;opacity:0.92;' +
+        'text-align:center;white-space:nowrap;line-height:1.1}',
+      '.atlas-chamber-func{margin-top:2px;font-family:\'Caveat\',cursive;font-weight:500;' +
+        'font-size:13px;color:#4a4843;opacity:0.78;text-align:center;' +
+        'white-space:nowrap;line-height:1}',
+      '.atlas-chamber.sealed .atlas-chamber-label{opacity:0.62}',
+      '.atlas-chamber.sealed .atlas-chamber-func{opacity:0.55}',
+      '.atlas-chamber.sealed .atlas-chamber-func::after{content:\' \u00b7 sealed\';font-style:italic;opacity:0.85}',
+
+      '.atlas-chamber-aura{position:absolute;top:50%;left:50%;' +
+        'width:140%;height:140%;transform:translate(-50%,-50%);' +
+        'border-radius:50%;pointer-events:none;z-index:-1;' +
+        'background:radial-gradient(circle at center,' +
+          'rgba(127,119,221,0.18) 0%,' +
+          'rgba(127,119,221,0.10) 25%,' +
+          'rgba(127,119,221,0.04) 50%,' +
+          'transparent 70%);' +
+        'animation:atlas-aura-breathe 10s ease-in-out infinite;' +
+        'mix-blend-mode:multiply;filter:blur(12px)}',
+      '.atlas-chamber-aura-hidden{display:none}',
+      '.atlas-chamber-aura-current{' +
+        'background:radial-gradient(circle at center,' +
+          'rgba(127,119,221,0.28) 0%,' +
+          'rgba(127,119,221,0.15) 25%,' +
+          'rgba(127,119,221,0.05) 50%,' +
+          'transparent 70%);' +
+        'animation:atlas-aura-breathe-current 8s ease-in-out infinite}',
+      '@keyframes atlas-aura-breathe{' +
+        '0%,100%{opacity:0.55;transform:translate(-50%,-50%) scale(1)}' +
+        '50%{opacity:0.85;transform:translate(-50%,-50%) scale(1.06)}}',
+      '@keyframes atlas-aura-breathe-current{' +
+        '0%,100%{opacity:0.7;transform:translate(-50%,-50%) scale(1)}' +
+        '50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}',
+
+
+      '.atlas-title{position:absolute;top:32px;left:50%;transform:translateX(-50%);z-index:7;',
+        'font-family:\'Cinzel\',serif;font-weight:600;font-size:14px;',
+        'letter-spacing:.42em;color:#1a1815;opacity:0.85;text-transform:uppercase;',
+        'pointer-events:none;text-align:center;white-space:nowrap}',
+      '.atlas-title::before,.atlas-title::after{content:\'·\';margin:0 14px;opacity:0.6}',
+
+      '.atlas-compass{position:absolute;bottom:28px;left:32px;width:80px;height:80px;',
+        'opacity:0.55;z-index:7;pointer-events:none}',
+
+      '.atlas-maker{position:absolute;bottom:24px;right:32px;z-index:7;',
+        'font-family:\'Caveat\',cursive;font-style:italic;font-size:13px;',
+        'color:#4a4843;opacity:0.6;letter-spacing:.04em;pointer-events:none}',
+
+      '.atlas-close{position:absolute;top:24px;right:24px;width:36px;height:36px;',
+        'background:none;border:1px solid rgba(26,24,21,0.3);border-radius:50%;',
+        'cursor:pointer;z-index:8;display:flex;align-items:center;justify-content:center;',
+        'transition:all .25s;color:#1a1815;opacity:0.6;font-size:20px;line-height:1;',
+        'font-family:\'Cinzel\',serif}',
+      '.atlas-close:hover{opacity:1;border-color:rgba(26,24,21,0.7);background:rgba(26,24,21,0.05)}',
+
+      '@media(max-width:680px){',
+        '.atlas-paper{width:92vw;height:88vh;overflow-y:auto;padding:20px 16px}',
+        '.atlas-paths,.atlas-compass{display:none}',
+        '.atlas-title{position:relative;top:auto;left:auto;transform:none;margin:8px auto 24px}',
+        '.atlas-maker{position:relative;bottom:auto;right:auto;text-align:right;margin-top:24px}',
+        '.atlas-chambers-mobile{display:flex;flex-direction:column;gap:18px;align-items:center;padding-bottom:20px}',
+        '.atlas-chamber{position:relative;left:auto!important;top:auto!important;transform:none!important;width:88%;max-width:280px}',
+        '.atlas-chamber img{width:60%;margin:0 auto}',
+        '.atlas-chamber.open:hover,.atlas-chamber.sealed:hover{transform:none!important}',
+        '.atlas-chamber.open:active{transform:scale(0.98)!important}',
+        '.atlas-chambers-desktop{display:none}',
+      '}',
+      '@media(min-width:681px){',
+        '.atlas-chambers-mobile{display:none}',
+        '.atlas-chambers-desktop{display:block;position:absolute;inset:0}',
+      '}'
+    ].join('');
     document.head.appendChild(style);
   }
 
   function mount(){
-    // Remove any existing elements (re-mount safe)
-    var existingTrigger = document.querySelector('.nav-trigger');
-    if(existingTrigger) existingTrigger.remove();
-    var existingPanel = document.querySelector('.nav-panel');
-    if(existingPanel) existingPanel.remove();
-    var existingBackdrop = document.querySelector('.nav-backdrop');
-    if(existingBackdrop) existingBackdrop.remove();
-
-    // Trigger button with compass SVG
     triggerBtn = document.createElement('button');
-    triggerBtn.className = 'nav-trigger';
-    triggerBtn.setAttribute('aria-label', 'Open chamber navigation');
-    triggerBtn.setAttribute('title', 'Navigate chambers');
-    triggerBtn.innerHTML = '' +
-      '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-        // Outer circle
-        '<circle cx="12" cy="12" r="9.5" stroke="rgba(201,168,76,0.85)" stroke-width="1"/>' +
-        // Inner circle
-        '<circle cx="12" cy="12" r="1.3" fill="rgba(201,168,76,0.95)"/>' +
-        // Four cardinal points (N/E/S/W) — compass needle
-        '<path d="M 12 3.5 L 13.2 11 L 12 12 L 10.8 11 Z" fill="rgba(201,168,76,0.95)"/>' +
-        '<path d="M 12 20.5 L 10.8 13 L 12 12 L 13.2 13 Z" fill="rgba(201,168,76,0.45)"/>' +
-        '<path d="M 3.5 12 L 11 13.2 L 12 12 L 11 10.8 Z" fill="rgba(201,168,76,0.45)"/>' +
-        '<path d="M 20.5 12 L 13 10.8 L 12 12 L 13 13.2 Z" fill="rgba(201,168,76,0.45)"/>' +
-      '</svg>' +
-      '<span class="nav-trigger-label">Chambers</span>';
-    triggerBtn.addEventListener('click', togglePanel);
+    triggerBtn.className = 'atlas-trigger';
+    triggerBtn.setAttribute('aria-label','Open the Atlas');
+    triggerBtn.textContent = 'Atlas';
+    triggerBtn.addEventListener('click', function(){ isOpen ? closeAtlas() : openAtlas(); });
     document.body.appendChild(triggerBtn);
+  }
 
-    // Backdrop
-    backdropEl = document.createElement('div');
-    backdropEl.className = 'nav-backdrop';
-    backdropEl.addEventListener('click', closePanel);
-    document.body.appendChild(backdropEl);
+  function buildOverlay(){
+    if(overlayEl) return;
 
-    // Panel
-    panelEl = document.createElement('div');
-    panelEl.className = 'nav-panel';
-    panelEl.setAttribute('role', 'navigation');
-    panelEl.setAttribute('aria-label', 'Chamber navigation');
+    overlayEl = document.createElement('div');
+    overlayEl.className = 'atlas-overlay';
+    overlayEl.setAttribute('aria-hidden','true');
 
-    var headerHtml = '<div class="nav-panel-header">Chambers</div>';
-    var chambersHtml = CHAMBERS.map(function(ch){
-      var isCurrent = ch.id === currentChamberId;
-      var isSealed = ch.status === 'sealed';
-      var classes = ['nav-chamber'];
-      if(isSealed) classes.push('sealed');
-      else if(isCurrent) classes.push('current');
-      else classes.push('open-chamber');
+    overlayEl.innerHTML = [
+      '<div class="atlas-paper" id="atlasPaper">',
+        '<div class="atlas-grid"></div>',
+        '<div class="atlas-grid-major"></div>',
+        '<svg class="atlas-grain" preserveAspectRatio="none" viewBox="0 0 100 100">',
+          '<defs><filter id="atlas-grain-f">',
+            '<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11"/>',
+            '<feColorMatrix values="0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.2 0 0 0 0.5 0"/>',
+          '</filter></defs>',
+          '<rect width="100" height="100" filter="url(#atlas-grain-f)"/>',
+        '</svg>',
+        '<div class="atlas-candle" id="atlasCandle"></div>',
+        buildStarField(),
+        buildAstrolabeMarks(),
+        buildCosmicObjects(false),
+        buildCosmicDrift(),
+        buildPaperDust(),
+        buildAnnotationStage(),
+        '<div class="atlas-title">Evermark</div>',
+        '<svg class="atlas-compass" viewBox="0 0 80 80">',
+          '<defs><filter id="atlas-pencil-c"><feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="1.0"/></filter></defs>',
+          '<g filter="url(#atlas-pencil-c)" stroke="#1a1815" fill="none" stroke-linecap="round" stroke-width="0.8">',
+            '<circle cx="40" cy="40" r="32"/>',
+            '<circle cx="40" cy="40" r="26" stroke-width="0.5" opacity="0.6"/>',
+            '<line x1="40" y1="6" x2="40" y2="74"/>',
+            '<line x1="6" y1="40" x2="74" y2="40"/>',
+            '<line x1="16" y1="16" x2="64" y2="64" stroke-width="0.5" opacity="0.6"/>',
+            '<line x1="16" y1="64" x2="64" y2="16" stroke-width="0.5" opacity="0.6"/>',
+            '<path d="M 36 8 L 40 2 L 44 8 L 40 6 Z" fill="#1a1815"/>',
+            '<circle cx="40" cy="40" r="2" fill="#1a1815"/>',
+          '</g>',
+          '<text x="40" y="86" font-family="Cinzel" font-size="6" letter-spacing="0.2em" fill="#1a1815" opacity="0.6" text-anchor="middle">N</text>',
+        '</svg>',
+        '<div class="atlas-maker">— drawn by The Maker</div>',
+        '<button class="atlas-close" id="atlasClose" aria-label="Close Atlas">\u00d7</button>',
+        buildPathsSVG(),
+        '<div class="atlas-chambers-desktop">' + buildChambersHTML(false) + '</div>',
+        '<div class="atlas-chambers-mobile">' + buildChambersHTML(true) + '</div>',
+      '</div>'
+    ].join('');
 
-      var tagHtml = '';
-      if(isCurrent) tagHtml = '<span class="nav-chamber-tag current-tag">Here</span>';
-      else if(isSealed) tagHtml = '<span class="nav-chamber-tag sealed-tag">Sealed</span>';
+    document.body.appendChild(overlayEl);
+    paperEl = overlayEl.querySelector('#atlasPaper');
 
-      var tag = ch.href && !isSealed && !isCurrent ? 'a' : 'div';
-      var hrefAttr = (tag === 'a') ? ' href="' + ch.href + '"' : '';
+    overlayEl.querySelector('#atlasClose').addEventListener('click', closeAtlas);
+    overlayEl.addEventListener('click', function(e){ if(e.target === overlayEl) closeAtlas(); });
+    document.addEventListener('keydown', function(e){ if(isOpen && e.key === 'Escape') closeAtlas(); });
 
-      return '<' + tag + ' class="' + classes.join(' ') + '"' + hrefAttr + '>' +
-        '<div class="nav-chamber-top">' +
-          '<span class="nav-chamber-name">' + ch.name + '</span>' +
-          tagHtml +
-        '</div>' +
-        '<div class="nav-chamber-func">' + ch.func + '</div>' +
-      '</' + tag + '>';
-    }).join('');
+    var candle = overlayEl.querySelector('#atlasCandle');
+    paperEl.addEventListener('mousemove', function(e){
+      var rect = paperEl.getBoundingClientRect();
+      candle.style.left = (e.clientX - rect.left) + 'px';
+      candle.style.top  = (e.clientY - rect.top)  + 'px';
+    });
 
-    var footerHtml = '<div class="nav-panel-footer">' +
-      'Realms open as the architects finish their work.' +
-      '</div>';
-
-    panelEl.innerHTML = headerHtml + chambersHtml + footerHtml;
-    document.body.appendChild(panelEl);
-
-    // Keyboard: ESC closes
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape' && isOpen) closePanel();
+    overlayEl.querySelectorAll('.atlas-chamber').forEach(function(el){
+      el.addEventListener('click', function(){
+        var id = el.getAttribute('data-chamber-id');
+        var ch = CHAMBERS.find(function(c){ return c.id === id; });
+        if(!ch || ch.status !== 'open' || !ch.href) return;
+        if(id === currentChamberId){ closeAtlas(); return; }
+        window.location.href = ch.href;
+      });
     });
   }
 
-  function togglePanel(){
-    if(isOpen) closePanel();
-    else openPanel();
+  function buildStarField(){
+    var stars = [
+      // SMALL stars (38)
+      { x: 60, y: 8,  size: 24, variant: 'small', rot: 22,  twinkle: true,  dur: 5.5 },
+      { x: 64, y: 14, size: 18, variant: 'small', rot: 0,   twinkle: false },
+      { x: 70, y: 10, size: 22, variant: 'small', rot: 45,  twinkle: true,  dur: 6.8 },
+      { x: 82, y: 18, size: 20, variant: 'small', rot: 67,  twinkle: false },
+      { x: 88, y: 22, size: 18, variant: 'small', rot: 22,  twinkle: true,  dur: 4.2 },
+      { x: 95, y: 50, size: 22, variant: 'small', rot: 0,   twinkle: false },
+      { x: 97, y: 65, size: 18, variant: 'small', rot: 45,  twinkle: false },
+      { x: 35, y: 68, size: 22, variant: 'small', rot: 22,  twinkle: false },
+      { x: 42, y: 82, size: 24, variant: 'small', rot: 67,  twinkle: false },
+      { x: 50, y: 95, size: 18, variant: 'small', rot: 0,   twinkle: true,  dur: 6.1 },
+      { x: 58, y: 88, size: 22, variant: 'small', rot: 45,  twinkle: false },
+      { x: 62, y: 95, size: 20, variant: 'small', rot: 22,  twinkle: false },
+      { x: 4,  y: 12, size: 24, variant: 'small', rot: 0,   twinkle: false },
+      { x: 6,  y: 28, size: 20, variant: 'small', rot: 67,  twinkle: true,  dur: 5.5 },
+      { x: 3,  y: 50, size: 22, variant: 'small', rot: 22,  twinkle: false },
+      { x: 5,  y: 90, size: 22, variant: 'small', rot: 45,  twinkle: false },
+      { x: 88, y: 60, size: 24, variant: 'small', rot: 0,   twinkle: false },
+      { x: 92, y: 65, size: 18, variant: 'small', rot: 67,  twinkle: true,  dur: 4.8 },
+      { x: 94, y: 70, size: 18, variant: 'small', rot: 22,  twinkle: false },
+      { x: 38, y: 14, size: 18, variant: 'small', rot: 45,  twinkle: false },
+      { x: 22, y: 50, size: 18, variant: 'small', rot: 22,  twinkle: false },
+      { x: 14, y: 60, size: 20, variant: 'small', rot: 0,   twinkle: false },
+      { x: 8,  y: 5,  size: 22, variant: 'small', rot: 67,  twinkle: false },
+      { x: 14, y: 8,  size: 20, variant: 'small', rot: 22,  twinkle: true,  dur: 5.3 },
+      { x: 30, y: 5,  size: 18, variant: 'small', rot: 0,   twinkle: false },
+      { x: 56, y: 22, size: 20, variant: 'small', rot: 45,  twinkle: false },
+      { x: 28, y: 92, size: 20, variant: 'small', rot: 67,  twinkle: false },
+      { x: 78, y: 92, size: 22, variant: 'small', rot: 22,  twinkle: false },
+      { x: 4,  y: 75, size: 18, variant: 'small', rot: 0,   twinkle: false },
+      { x: 25, y: 16, size: 18, variant: 'small', rot: 45,  twinkle: true,  dur: 4.5 },
+      { x: 82, y: 38, size: 20, variant: 'small', rot: 22,  twinkle: false },
+      { x: 12, y: 42, size: 18, variant: 'small', rot: 67,  twinkle: false },
+      { x: 88, y: 10, size: 18, variant: 'small', rot: 0,   twinkle: false },
+      { x: 22, y: 32, size: 20, variant: 'small', rot: 45,  twinkle: true,  dur: 5.8 },
+      { x: 50, y: 50, size: 18, variant: 'small', rot: 22,  twinkle: false },
+      { x: 74, y: 80, size: 20, variant: 'small', rot: 67,  twinkle: false },
+      { x: 38, y: 30, size: 18, variant: 'small', rot: 0,   twinkle: true,  dur: 4.8 },
+      { x: 66, y: 76, size: 18, variant: 'small', rot: 22,  twinkle: false },
+      // MEDIUM stars (10)
+      { x: 76, y: 6,  size: 38, variant: 'medium', rot: 0,   twinkle: false },
+      { x: 42, y: 8,  size: 36, variant: 'medium', rot: 22,  twinkle: true,  dur: 7.0 },
+      { x: 18, y: 4,  size: 40, variant: 'medium', rot: 45,  twinkle: false },
+      { x: 93, y: 78, size: 42, variant: 'medium', rot: 67,  twinkle: true,  dur: 5.0 },
+      { x: 90, y: 72, size: 38, variant: 'medium', rot: 0,   twinkle: false },
+      { x: 28, y: 30, size: 36, variant: 'medium', rot: 22,  twinkle: true,  dur: 6.5 },
+      { x: 72, y: 45, size: 38, variant: 'medium', rot: 45,  twinkle: true,  dur: 6.5 },
+      { x: 8,  y: 82, size: 38, variant: 'medium', rot: 0,   twinkle: false },
+      { x: 86, y: 30, size: 36, variant: 'medium', rot: 67,  twinkle: false },
+      { x: 32, y: 76, size: 38, variant: 'medium', rot: 22,  twinkle: false },
+      // LARGE showpiece stars (4)
+      { x: 96, y: 38, size: 64, variant: 'large', rot: 0,   twinkle: true,  dur: 6.0 },
+      { x: 14, y: 22, size: 60, variant: 'large', rot: 22,  twinkle: false },
+      { x: 80, y: 88, size: 62, variant: 'large', rot: 45,  twinkle: true,  dur: 7.5 },
+      { x: 16, y: 70, size: 58, variant: 'large', rot: 67,  twinkle: false }
+    ];
+
+    var html = '<div class="atlas-stars">';
+    stars.forEach(function(s, i){
+      var twinkleStyle = '';
+      if(s.twinkle){
+        twinkleStyle = 'animation:atlas-star-twinkle ' + s.dur + 's ease-in-out infinite;' +
+                       'animation-delay:' + (-i * 0.3) + 's;';
+      }
+      html += '<img class="atlas-star atlas-star-' + s.variant + '" ' +
+                'src="/assets/space/star-' + s.variant + '.png" alt="" ' +
+                'style="left:' + s.x + '%;top:' + s.y + '%;' +
+                       'width:' + s.size + 'px;height:' + s.size + 'px;' +
+                       'transform:translate(-50%,-50%) rotate(' + s.rot + 'deg);' +
+                       twinkleStyle + '" ' +
+                'onerror="this.style.display=\'none\'" loading="lazy"/>';
+    });
+    html += '</div>';
+    return html;
   }
 
-  function openPanel(){
-    if(!panelEl || !triggerBtn) return;
+  function buildAstrolabeMarks(){
+    return [
+      '<svg class="atlas-astrolabe" viewBox="0 0 100 100" preserveAspectRatio="none">',
+        '<defs>',
+          '<filter id="atlas-astro-pencil" x="-3%" y="-3%" width="106%" height="106%">',
+            '<feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="9"/>',
+            '<feDisplacementMap in="SourceGraphic" scale="0.5"/>',
+          '</filter>',
+        '</defs>',
+        '<g filter="url(#atlas-astro-pencil)" stroke="#1a1815" fill="none" stroke-linecap="round" opacity="0.35">',
+
+          '<circle cx="9" cy="44" r="2" stroke-width="0.2"/>',
+          '<line x1="7" y1="44" x2="11" y2="44" stroke-width="0.2"/>',
+          '<line x1="9" y1="42" x2="9" y2="46" stroke-width="0.2"/>',
+
+          '<line x1="93" y1="55" x2="97" y2="55" stroke-width="0.2"/>',
+          '<line x1="95" y1="53" x2="95" y2="57" stroke-width="0.2"/>',
+          '<circle cx="95" cy="55" r="0.6" stroke-width="0.15"/>',
+
+        '</g>',
+      '</svg>'
+    ].join('');
+  }
+
+  function buildCosmicObjects(isMobile){
+    if(isMobile) return '';
+    return COSMIC_OBJECTS.map(function(obj){
+      var motionClass = obj.motion ? ' atlas-cosmic-' + obj.motion : '';
+      return '<div class="atlas-cosmic' + motionClass + '" ' +
+               'style="left:' + obj.x + '%;top:' + obj.y + '%;width:' + obj.scale + 'px" ' +
+               'data-cosmic-id="' + obj.id + '">' +
+               '<img src="' + obj.asset + '" alt="" ' +
+                    'onerror="this.parentElement.style.display=\'none\'" ' +
+                    'loading="lazy"/>' +
+             '</div>';
+    }).join('');
+  }
+
+
+  function buildCosmicDrift(){
+    var drifters = [
+      { x: 70, y: 30, dur: 92,  dx: -45, dy: 25,  delay: 0    },
+      { x: 25, y: 25, dur: 105, dx: 50,  dy: -10, delay: -25  },
+      { x: 85, y: 75, dur: 88,  dx: -55, dy: -30, delay: -52  },
+      { x: 15, y: 65, dur: 110, dx: 60,  dy: -40, delay: -38  },
+      { x: 55, y: 85, dur: 97,  dx: 25,  dy: -55, delay: -70  },
+      { x: 45, y: 12, dur: 86,  dx: -30, dy: 50,  delay: -15  },
+      { x: 78, y: 18, dur: 118, dx: -65, dy: 40,  delay: -88  },
+      { x: 8,  y: 42, dur: 95,  dx: 70,  dy: 20,  delay: -42  },
+      { x: 92, y: 55, dur: 102, dx: -50, dy: 30,  delay: -60  },
+      { x: 35, y: 92, dur: 124, dx: 40,  dy: -65, delay: -110 }
+    ];
+    var html = '<div class="atlas-cosmic-drift">';
+    drifters.forEach(function(d, i){
+      html += '<div class="atlas-cosmic-drifter" style="' +
+        'left:' + d.x + '%;top:' + d.y + '%;' +
+        'animation:atlas-drift-' + i + ' ' + d.dur + 's ease-in-out infinite;' +
+        'animation-delay:' + d.delay + 's' +
+      '"></div>';
+    });
+    html += '<style>';
+    drifters.forEach(function(d, i){
+      html += '@keyframes atlas-drift-' + i + '{' +
+        '0%,100%{transform:translate(0,0);opacity:0}' +
+        '20%{opacity:0.5}' +
+        '50%{transform:translate(' + d.dx + 'vw,' + d.dy + 'vh);opacity:0.6}' +
+        '80%{opacity:0.4}' +
+      '}';
+    });
+    html += '</style>';
+    html += '</div>';
+    return html;
+  }
+
+  function buildPaperDust(){
+    var motes = [
+      { x: 15, y: 20, dur: 47, dx: 70,  dy: 10,  delay: 0   },
+      { x: 80, y: 15, dur: 53, dx: -65, dy: 20,  delay: -8  },
+      { x: 25, y: 60, dur: 61, dx: 50,  dy: -15, delay: -22 },
+      { x: 70, y: 70, dur: 49, dx: -55, dy: 5,   delay: -14 },
+      { x: 50, y: 30, dur: 67, dx: 30,  dy: 40,  delay: -36 },
+      { x: 90, y: 50, dur: 55, dx: -75, dy: -25, delay: -19 },
+      { x: 10, y: 80, dur: 71, dx: 60,  dy: -50, delay: -44 },
+      { x: 60, y: 10, dur: 59, dx: -20, dy: 60,  delay: -27 }
+    ];
+    var html = '<div class="atlas-dust">';
+    motes.forEach(function(m, i){
+      html += '<div class="atlas-dust-mote" style="' +
+        'left:' + m.x + '%;top:' + m.y + '%;' +
+        'animation:atlas-dust-' + i + ' ' + m.dur + 's ease-in-out infinite;' +
+        'animation-delay:' + m.delay + 's' +
+      '"></div>';
+    });
+    html += '<style>';
+    motes.forEach(function(m, i){
+      html += '@keyframes atlas-dust-' + i + '{' +
+        '0%,100%{transform:translate(0,0);opacity:0}' +
+        '20%{opacity:0.45}' +
+        '50%{transform:translate(' + m.dx + 'px,' + m.dy + 'px);opacity:0.55}' +
+        '80%{opacity:0.4}' +
+      '}';
+    });
+    html += '</style>';
+    html += '</div>';
+    return html;
+  }
+
+  function buildPathsSVG(){
+    if(!CHAMBER_PATHS.length) return '<svg class="atlas-paths"></svg>';
+    var lookup = {};
+    CHAMBERS.forEach(function(c){ lookup[c.id] = c; });
+    var paths = CHAMBER_PATHS.map(function(p){
+      var a = lookup[p.from], b = lookup[p.to];
+      if(!a || !b) return '';
+      var midX = (a.x + b.x) / 2;
+      var midY = (a.y + b.y) / 2 + 4;
+      return '<path d="M ' + a.x + ' ' + a.y + ' Q ' + midX + ' ' + midY + ' ' + b.x + ' ' + b.y + '" ' +
+             'stroke="#1a1815" stroke-width="0.18" fill="none" stroke-dasharray="0.3,0.6" opacity="0.28" stroke-linecap="round"/>';
+    }).join('');
+    return '<svg class="atlas-paths" viewBox="0 0 100 100" preserveAspectRatio="none">' +
+           '<defs><filter id="atlas-path-pencil" x="-3%" y="-3%" width="106%" height="106%">' +
+             '<feTurbulence type="fractalNoise" baseFrequency="0.4" numOctaves="2" seed="5"/>' +
+             '<feDisplacementMap in="SourceGraphic" scale="0.4"/>' +
+           '</filter></defs>' +
+           '<g filter="url(#atlas-path-pencil)">' + paths + '</g>' +
+           '</svg>';
+  }
+
+  function buildThresholdVoidLayer(){
+    return [
+      '<svg class="atlas-threshold-void" viewBox="0 0 100 100" preserveAspectRatio="none">',
+        '<defs>',
+          '<linearGradient id="atlas-void-grad" x1="0%" y1="0%" x2="0%" y2="100%">',
+            '<stop offset="0%" stop-color="#9586e8" stop-opacity="0.0">',
+              '<animate attributeName="stop-color" values="#9586e8;#b8a8f0;#7f77dd;#9586e8" dur="11s" repeatCount="indefinite"/>',
+            '</stop>',
+            '<stop offset="35%" stop-color="#b8a8f0" stop-opacity="0.45">',
+              '<animate attributeName="stop-color" values="#b8a8f0;#e8def8;#9586e8;#b8a8f0" dur="11s" repeatCount="indefinite"/>',
+              '<animate attributeName="stop-opacity" values="0.45;0.6;0.45" dur="9s" repeatCount="indefinite"/>',
+            '</stop>',
+            '<stop offset="65%" stop-color="#7f77dd" stop-opacity="0.5">',
+              '<animate attributeName="stop-color" values="#7f77dd;#9586e8;#6c63c8;#7f77dd" dur="11s" repeatCount="indefinite"/>',
+              '<animate attributeName="stop-opacity" values="0.5;0.65;0.5" dur="9s" repeatCount="indefinite"/>',
+            '</stop>',
+            '<stop offset="100%" stop-color="#3a2a78" stop-opacity="0.0">',
+              '<animate attributeName="stop-color" values="#3a2a78;#5a4ea8;#3a2a78" dur="11s" repeatCount="indefinite"/>',
+            '</stop>',
+          '</linearGradient>',
+        '</defs>',
+        '<rect x="42" y="28" width="16" height="64" fill="url(#atlas-void-grad)" rx="4"/>',
+        '<circle cx="48" cy="80" r="0.6" fill="#fff0f8" opacity="0.85">',
+          '<animate attributeName="cy" values="92;30" dur="8s" repeatCount="indefinite" begin="0s"/>',
+          '<animate attributeName="opacity" values="0;0.85;0" dur="8s" repeatCount="indefinite" begin="0s"/>',
+        '</circle>',
+        '<circle cx="52" cy="70" r="0.5" fill="#e8def8" opacity="0.7">',
+          '<animate attributeName="cy" values="92;30" dur="9.5s" repeatCount="indefinite" begin="-2.3s"/>',
+          '<animate attributeName="opacity" values="0;0.7;0" dur="9.5s" repeatCount="indefinite" begin="-2.3s"/>',
+        '</circle>',
+        '<circle cx="46" cy="60" r="0.4" fill="#fff0f8" opacity="0.6">',
+          '<animate attributeName="cy" values="92;30" dur="11s" repeatCount="indefinite" begin="-5.5s"/>',
+          '<animate attributeName="opacity" values="0;0.6;0" dur="11s" repeatCount="indefinite" begin="-5.5s"/>',
+        '</circle>',
+        '<circle cx="50" cy="55" r="0.7" fill="#e8def8" opacity="0.75">',
+          '<animate attributeName="cy" values="92;28" dur="7.5s" repeatCount="indefinite" begin="-1.2s"/>',
+          '<animate attributeName="opacity" values="0;0.75;0" dur="7.5s" repeatCount="indefinite" begin="-1.2s"/>',
+        '</circle>',
+        '<circle cx="54" cy="65" r="0.4" fill="#fff0f8" opacity="0.65">',
+          '<animate attributeName="cy" values="92;28" dur="10s" repeatCount="indefinite" begin="-4.1s"/>',
+          '<animate attributeName="opacity" values="0;0.65;0" dur="10s" repeatCount="indefinite" begin="-4.1s"/>',
+        '</circle>',
+      '</svg>'
+    ].join('');
+  }
+
+  function buildArcaniumPulseLayer(){
+    return [
+      '<svg class="atlas-arcanium-pulse" viewBox="0 0 100 100" preserveAspectRatio="none">',
+        '<defs>',
+          '<radialGradient id="atlas-arc-pulse-grad" cx="50%" cy="50%" r="35%">',
+            '<stop offset="0%" stop-color="#b8a8f0" stop-opacity="0.0"/>',
+            '<stop offset="40%" stop-color="#9586e8" stop-opacity="0.0"/>',
+            '<stop offset="100%" stop-color="#7f77dd" stop-opacity="0.0"/>',
+          '</radialGradient>',
+        '</defs>',
+        '<ellipse cx="50" cy="50" rx="22" ry="40" fill="url(#atlas-arc-pulse-grad)">',
+          '<animate attributeName="opacity" values="0.0;0.55;0.0" dur="9s" repeatCount="indefinite"/>',
+        '</ellipse>',
+        '<rect x="46" y="22" width="8" height="56" fill="#b8a8f0" opacity="0" rx="2">',
+          '<animate attributeName="opacity" values="0;0.32;0" dur="9s" repeatCount="indefinite"/>',
+        '</rect>',
+      '</svg>'
+    ].join('');
+  }
+
+  function buildAtheneumStarsLayer(){
+    return [
+      '<svg class="atlas-atheneum-stars" viewBox="0 0 100 100" preserveAspectRatio="none">',
+        '<circle cx="44" cy="35" r="0.4" fill="#fff5d8" opacity="0">',
+          '<animate attributeName="opacity" values="0;0.9;0" dur="4.5s" repeatCount="indefinite" begin="0s"/>',
+        '</circle>',
+        '<circle cx="56" cy="32" r="0.5" fill="#fff5d8" opacity="0">',
+          '<animate attributeName="opacity" values="0;0.85;0" dur="6s" repeatCount="indefinite" begin="-1.8s"/>',
+        '</circle>',
+        '<circle cx="50" cy="38" r="0.35" fill="#e8def8" opacity="0">',
+          '<animate attributeName="opacity" values="0;0.7;0" dur="5s" repeatCount="indefinite" begin="-3.2s"/>',
+        '</circle>',
+        '<circle cx="61" cy="40" r="0.4" fill="#fff5d8" opacity="0">',
+          '<animate attributeName="opacity" values="0;0.8;0" dur="7s" repeatCount="indefinite" begin="-4.5s"/>',
+        '</circle>',
+        '<circle cx="40" cy="42" r="0.3" fill="#e8def8" opacity="0">',
+          '<animate attributeName="opacity" values="0;0.6;0" dur="5.8s" repeatCount="indefinite" begin="-2.4s"/>',
+        '</circle>',
+      '</svg>'
+    ].join('');
+  }
+
+  function buildChambersHTML(isMobile){
+    return CHAMBERS.map(function(ch){
+      var classes = ['atlas-chamber', ch.status];
+      if(ch.id === currentChamberId) classes.push('current');
+      var posStyle = isMobile ? '' : ' style="left:' + ch.x + '%;top:' + ch.y + '%;width:' + ch.scale + 'px"';
+      var motionLayer = '';
+      if(ch.id === 'threshold'){
+        motionLayer = buildThresholdVoidLayer();
+      } else if(ch.id === 'arcanium'){
+        motionLayer = buildArcaniumPulseLayer();
+      } else if(ch.id === 'atheneum'){
+        motionLayer = buildAtheneumStarsLayer();
+      }
+      var auraClass = ch.status === 'open' ? 'atlas-chamber-aura' : 'atlas-chamber-aura atlas-chamber-aura-hidden';
+      if(ch.id === currentChamberId) auraClass += ' atlas-chamber-aura-current';
+
+      return '<button class="' + classes.join(' ') + '"' + posStyle + ' data-chamber-id="' + ch.id + '" aria-label="' + ch.name + (ch.status === 'sealed' ? ' (sealed)' : '') + '">' +
+               '<div class="' + auraClass + '"></div>' +
+               '<div class="atlas-chamber-art">' +
+                 '<img src="' + ch.asset + '" alt="' + ch.name + '" loading="lazy"/>' +
+                 motionLayer +
+               '</div>' +
+               '<div class="atlas-here-mark"></div>' +
+               '<div class="atlas-chamber-pill">' +
+                 '<div class="atlas-chamber-label">' + ch.name + '</div>' +
+                 '<div class="atlas-chamber-func">' + ch.func + '</div>' +
+               '</div>' +
+             '</button>';
+    }).join('');
+  }
+
+
+  function buildAnnotationStage(){
+    return '<div class="atlas-annotation-stage"></div>';
+  }
+
+  var annotationSchedulerStarted = false;
+  var annotationSchedulerTimeout = null;
+  var lastNoteIndex = -1;
+
+  function startAnnotationScheduler(){
+    if(annotationSchedulerStarted) return;
+    annotationSchedulerStarted = true;
+    annotationSchedulerTimeout = setTimeout(function(){
+      fireAnnotation();
+      scheduleNextAnnotation();
+    }, 2500);
+  }
+
+  function stopAnnotationScheduler(){
+    annotationSchedulerStarted = false;
+    if(annotationSchedulerTimeout){
+      clearTimeout(annotationSchedulerTimeout);
+      annotationSchedulerTimeout = null;
+    }
+  }
+
+  function scheduleNextAnnotation(){
+    if(!annotationSchedulerStarted) return;
+    var delay = 10000 + Math.random() * 8000;
+    annotationSchedulerTimeout = setTimeout(function(){
+      fireAnnotation();
+      scheduleNextAnnotation();
+    }, delay);
+  }
+
+  function isContextValid(context){
+    if(context === 'always') return true;
+    if(context === 'arcanium-sealed'){
+      var a = CHAMBERS.find(function(c){ return c.id === 'arcanium'; });
+      return a && a.status === 'sealed';
+    }
+    if(context === 'scriptorium-sealed'){
+      var s = CHAMBERS.find(function(c){ return c.id === 'scriptorium'; });
+      return s && s.status === 'sealed';
+    }
+    if(context === 'agora-sealed'){
+      var ag = CHAMBERS.find(function(c){ return c.id === 'agora'; });
+      return ag && ag.status === 'sealed';
+    }
+    return true;
+  }
+
+  function fireAnnotation(){
+    if(!overlayEl || !overlayEl.classList.contains('active')) return;
+    var stage = overlayEl.querySelector('.atlas-annotation-stage');
+    if(!stage) return;
+    var validNotes = MAKERS_NOTES.filter(function(note, i){
+      return isContextValid(note.context) && i !== lastNoteIndex;
+    });
+    if(validNotes.length === 0) return;
+    var note = validNotes[Math.floor(Math.random() * validNotes.length)];
+    lastNoteIndex = MAKERS_NOTES.indexOf(note);
+    spawnAnnotation(stage, note);
+  }
+
+  function spawnAnnotation(stage, note){
+    var el = document.createElement('div');
+    el.className = 'atlas-annotation';
+    el.style.left = note.x + '%';
+    el.style.top = note.y + '%';
+    el.textContent = '';
+    var rotation = (Math.random() - 0.5) * 4;
+    el.style.transform = 'translateY(-50%) rotate(' + rotation + 'deg)';
+    stage.appendChild(el);
+    var i = 0;
+    var typeInterval = setInterval(function(){
+      if(i < note.text.length){
+        el.textContent = note.text.substring(0, i + 1);
+        i++;
+      } else {
+        clearInterval(typeInterval);
+        setTimeout(function(){
+          el.classList.add('atlas-annotation-fading');
+          setTimeout(function(){
+            if(el.parentNode) el.parentNode.removeChild(el);
+          }, 2200);
+        }, 5000);
+      }
+    }, 55);
+  }
+
+  function openAtlas(){
+    buildOverlay();
     isOpen = true;
-    panelEl.classList.add('active');
-    backdropEl.classList.add('active');
     triggerBtn.classList.add('open');
+    overlayEl.setAttribute('aria-hidden','false');
+    void overlayEl.offsetWidth;
+    overlayEl.classList.add('active');
+    startAnnotationScheduler();
   }
 
-  function closePanel(){
-    if(!panelEl || !triggerBtn) return;
+  function closeAtlas(){
     isOpen = false;
-    panelEl.classList.remove('active');
-    backdropEl.classList.remove('active');
     triggerBtn.classList.remove('open');
+    if(overlayEl){
+      overlayEl.classList.remove('active');
+      overlayEl.setAttribute('aria-hidden','true');
+    }
+    stopAnnotationScheduler();
   }
 
 })();
@@ -2100,8 +2437,8 @@ function devBackToStart(){
   // Initialize the persistent chamber nav — compass icon top-left.
   // Marks the Threshold as the current chamber.
   window.addEventListener("load", function(){
-    if(typeof Nav !== "undefined" && typeof Nav.init === "function"){
-      Nav.init({ current: "threshold" });
+    if(typeof Atlas !== 'undefined' && typeof Atlas.init === 'function'){
+      Atlas.init({ current: 'threshold' });
     }
   });
 </script>
