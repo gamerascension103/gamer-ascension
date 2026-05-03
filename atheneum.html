@@ -1195,90 +1195,383 @@ html, body {
 .completion-overlay {
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 50%, rgba(229, 197, 116, 0.08) 0%, var(--ink-deep) 60%, var(--ink-black) 100%);
+  background: #000;
   z-index: 340;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.8s ease-out;
+  transition: opacity 1.0s ease-out;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 40px;
   text-align: center;
+  cursor: pointer;
 }
 .completion-overlay.is-open { opacity: 1; pointer-events: auto; }
+/* Overlay stack — free-floating positioning context inside overlay */
+.completion-overlay-stack {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* Void orb — single protagonist of the build phase */
+.completion-orb {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 50px);
+  width: 24px;
+  height: 24px;
+  margin-left: -12px;
+  margin-top: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 245, 200, 0.9) 0%,
+    rgba(160, 110, 220, 0.85) 30%,
+    rgba(60, 30, 120, 0.85) 65%,
+    rgba(20, 10, 50, 0.5) 95%,
+    transparent 100%);
+  box-shadow:
+    0 0 24px rgba(140, 90, 220, 0.7),
+    0 0 60px rgba(80, 40, 160, 0.45),
+    0 0 120px rgba(40, 20, 100, 0.3);
+  transform: scale(0);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+  will-change: transform, opacity;
+}
+.completion-orb.is-growing {
+  animation: completion-orb-grow 2800ms cubic-bezier(0.55, 0, 0.7, 0.4) forwards,
+             completion-orb-pulse 800ms ease-in-out infinite;
+}
+.completion-orb.is-exploding {
+  animation: completion-orb-explode 600ms cubic-bezier(0.5, 0, 0.3, 1) forwards;
+}
+@keyframes completion-orb-grow {
+  0%   { transform: scale(0); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: scale(8); opacity: 1; }
+}
+@keyframes completion-orb-pulse {
+  0%, 100% { filter: brightness(1.0); }
+  50%      { filter: brightness(1.6); }
+}
+@keyframes completion-orb-explode {
+  0%   { transform: scale(8); opacity: 1; filter: brightness(2.0); }
+  30%  { transform: scale(20); opacity: 0.85; filter: brightness(2.5); }
+  100% { transform: scale(40); opacity: 0; filter: brightness(1.0); }
+}
+
+/* World shake — body-level, ramps over 4s during orb build */
+body.is-orb-shake {
+  animation: orb-shake-ramp 2800ms cubic-bezier(0.7, 0, 0.95, 0.5) forwards;
+}
+@keyframes orb-shake-ramp {
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(0.4px, -0.3px); }
+  40%  { transform: translate(-0.8px, 0.6px); }
+  60%  { transform: translate(1.4px, -1.0px); }
+  75%  { transform: translate(-2.5px, 1.8px); }
+  85%  { transform: translate(3.2px, -2.4px); }
+  92%  { transform: translate(-4.5px, 3.2px); }
+  97%  { transform: translate(5.8px, -4.5px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Impact shake — on overlay at explosion moment */
+.completion-overlay.is-impact-shaking {
+  animation: completion-impact-shake 380ms cubic-bezier(0.2, 0.7, 0.4, 1);
+}
+@keyframes completion-impact-shake {
+  0%   { transform: translate(0, 0); }
+  10%  { transform: translate(-9px, 5px); }
+  20%  { transform: translate(11px, -7px); }
+  30%  { transform: translate(-8px, 9px); }
+  45%  { transform: translate(10px, -4px); }
+  60%  { transform: translate(-6px, 7px); }
+  75%  { transform: translate(7px, -8px); }
+  88%  { transform: translate(-3px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+.completion-dust-cloud {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 900px;
+  height: 900px;
+  margin-left: -450px;
+  margin-top: -450px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(195, 185, 165, 0.7) 0%,
+    rgba(155, 145, 125, 0.5) 28%,
+    rgba(110, 100, 85, 0.28) 52%,
+    rgba(70, 65, 55, 0.1) 72%,
+    rgba(60, 55, 45, 0) 88%);
+  opacity: 0;
+  transform: scale(0.3);
+  pointer-events: none;
+  z-index: 4;
+  filter: blur(8px);
+}
+.completion-dust-cloud.is-bursting {
+  animation: completion-dust-cloud-burst 1400ms cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
+}
+@keyframes completion-dust-cloud-burst {
+  0%   { transform: scale(0.3); opacity: 0; }
+  20%  { transform: scale(1.2); opacity: 1.0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.completion-overlay.is-rank-up-shaking {
+  animation: completion-rank-up-shake 350ms cubic-bezier(0.2, 0.7, 0.4, 1);
+}
+@keyframes completion-rank-up-shake {
+  0%   { transform: translate(0, 0); }
+  15%  { transform: translate(-6px, 4px); }
+  30%  { transform: translate(7px, -5px); }
+  50%  { transform: translate(-5px, 6px); }
+  70%  { transform: translate(6px, -3px); }
+  90%  { transform: translate(-3px, 2px); }
+  100% { transform: translate(0, 0); }
+}
+
+.completion-overlay.is-anchored-shaking {
+  animation: completion-anchored-shake 500ms cubic-bezier(0.15, 0.7, 0.35, 1);
+}
+@keyframes completion-anchored-shake {
+  0%   { transform: translate(0, 0); }
+  6%   { transform: translate(-13px, 7px); }
+  12%  { transform: translate(15px, -10px); }
+  20%  { transform: translate(-12px, 12px); }
+  30%  { transform: translate(13px, -6px); }
+  42%  { transform: translate(-9px, 8px); }
+  55%  { transform: translate(8px, -9px); }
+  70%  { transform: translate(-5px, 4px); }
+  85%  { transform: translate(3px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Emblem stage — floats free of layout at orb center */
+.completion-emblem-stage {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 50px);
+  width: 180px;
+  height: 180px;
+  margin-left: -90px;
+  margin-top: -90px;
+  opacity: 0;
+  transform: scale(0);
+  pointer-events: none;
+  z-index: 6;
+  will-change: transform, opacity, filter;
+  filter: drop-shadow(0 0 0 rgba(229, 197, 116, 0));
+}
+.completion-emblem-stage.is-impacting {
+  animation: completion-emblem-impact-clean 900ms cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+.completion-emblem-stage.is-locked {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+}
+.completion-emblem-svg { width: 100%; height: 100%; display: block; }
+.completion-emblem-stage.is-crash-pulsing {
+  animation: completion-emblem-crash-pulse 600ms cubic-bezier(0.2, 0.7, 0.4, 1);
+}
+@keyframes completion-emblem-crash-pulse {
+  0%   { filter: drop-shadow(0 0 22px rgba(229, 197, 116, 0.5)); }
+  20%  { filter: drop-shadow(0 0 60px rgba(255, 245, 200, 1)); }
+  100% { filter: drop-shadow(0 0 22px rgba(229, 197, 116, 0.5)); }
+}
+@keyframes completion-emblem-impact-clean {
+  0%   { opacity: 0; transform: scale(0); filter: drop-shadow(0 0 0 rgba(229, 197, 116, 0)); }
+  35%  { opacity: 1; transform: scale(1.25); filter: drop-shadow(0 0 40px rgba(255, 245, 200, 1)); }
+  60%  { transform: scale(0.92); filter: drop-shadow(0 0 28px rgba(255, 229, 160, 0.85)); }
+  100% { opacity: 1; transform: scale(1.0); filter: drop-shadow(0 0 22px rgba(229, 197, 116, 0.5)); }
+}
+
+/* Text stack — separate absolute container below emblem */
+.completion-text-stack {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 30px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+  width: max-content;
+  max-width: 90vw;
+  z-index: 7;
+}
+.completion-title-spacer {
+  height: 8px;
+}
+
+/* Text elements — GPU-friendly opacity + translateY only, no filter:blur */
 .completion-eyebrow {
   font-family: 'Cinzel', serif;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.5em;
   text-transform: uppercase;
-  color: rgba(229, 197, 116, 0.55);
-  margin-bottom: 24px;
-  opacity: 0;
-  animation: completion-fade-in 1.2s ease-out 0.4s forwards;
-}
-.completion-title {
-  font-family: 'Cinzel Decorative', 'Cinzel', serif;
-  font-weight: 700;
-  font-size: 42px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--gold-bright);
-  margin: 0 0 28px;
-  text-shadow: 0 0 30px rgba(229, 197, 116, 0.5);
-  opacity: 0;
-  animation: completion-fade-in 1.2s ease-out 0.8s forwards;
-}
-.completion-rank-emblem {
-  width: 80px; height: 80px;
+  color: rgba(216, 210, 192, 0.55);
   margin-bottom: 28px;
   opacity: 0;
-  animation: completion-fade-in 1.2s ease-out 1.4s forwards, completion-emblem-pulse 3s ease-in-out 1.4s infinite;
+  transform: translateY(12px);
+  will-change: opacity, transform;
 }
-.completion-rank-emblem svg { width: 100%; height: 100%; }
-@keyframes completion-emblem-pulse {
-  0%, 100% { filter: drop-shadow(0 0 12px rgba(229, 197, 116, 0.5)); }
-  50% { filter: drop-shadow(0 0 24px rgba(229, 197, 116, 0.85)); }
+.completion-eyebrow.is-revealing {
+  animation: completion-text-reveal 1.4s cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
+}
+.completion-title {
+  display: block;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 0 28px;
+  opacity: 0;
+  transform: translateY(-200px) scale(1.1);
+  will-change: opacity, transform;
+}
+.completion-title.is-slamming {
+  animation: completion-title-slam 600ms cubic-bezier(0.5, 0.0, 0.2, 1.0) forwards;
+}
+@keyframes completion-title-slam {
+  0%   { opacity: 0; transform: translateY(-280px) scale(1.15); }
+  60%  { opacity: 1; transform: translateY(0) scale(1.0); }
+  72%  { transform: translateY(8px) scale(0.96); }
+  85%  { transform: translateY(-3px) scale(1.02); }
+  100% { transform: translateY(0) scale(1.0); }
+}
+
+.completion-rank-up.is-landed {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1.0) !important;
+}
+.completion-title.is-landed {
+  opacity: 1 !important;
+  transform: translateY(0) scale(1.0) !important;
+}
+
+.completion-rank-up {
+  display: block;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 0 20px;
+  opacity: 0;
+  transform: translateY(-180px) scale(1.1);
+  will-change: opacity, transform;
+}
+.completion-rank-up.is-slamming {
+  animation: completion-rank-up-slam 500ms cubic-bezier(0.5, 0.0, 0.2, 1.0) forwards;
+}
+@keyframes completion-rank-up-slam {
+  0%   { opacity: 0; transform: translateY(-220px) scale(1.1); }
+  65%  { opacity: 1; transform: translateY(0) scale(1.0); }
+  78%  { transform: translateY(5px) scale(0.97); }
+  90%  { transform: translateY(-2px) scale(1.01); }
+  100% { transform: translateY(0) scale(1.0); }
+}
+.completion-rank-up-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.completion-title-svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 .completion-line {
   font-family: 'Crimson Pro', serif;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 300;
   font-style: italic;
-  color: rgba(216, 210, 192, 0.82);
+  color: rgba(216, 210, 192, 0.7);
   max-width: 540px;
   line-height: 1.6;
-  margin-bottom: 36px;
   opacity: 0;
-  animation: completion-fade-in 1.2s ease-out 2s forwards;
+  transform: translateY(10px);
+  will-change: opacity, transform;
 }
-.completion-continue {
-  font-family: 'Cinzel', serif;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--ink-deep);
-  background: var(--gold);
-  border: none;
-  padding: 14px 32px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: all 0.25s;
-  box-shadow: 0 0 20px rgba(229, 197, 116, 0.35);
+.completion-line.is-revealing {
+  animation: completion-text-reveal 1.4s cubic-bezier(0.3, 0.7, 0.3, 1) forwards;
+}
+
+/* Anchored — carved stone substance.
+   Cool bone-gray, beveled relief via layered text-shadow,
+   subtle mineral grain via background-clip text noise overlay. */
+[data-rank-text="anchored"] .completion-eyebrow {
+  color: rgba(212, 208, 192, 0.7);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08),
+    0 -1px 0 rgba(0, 0, 0, 0.5);
+}
+
+[data-rank-text="anchored"] .completion-line {
+  color: rgba(212, 208, 192, 0.78);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Future ranks: [data-rank-text="imbued"] = gold leaf,
+   [data-rank-text="radiant"] = fire, etc. */
+@keyframes completion-text-reveal {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Light burst — full-overlay radial gold flash at impact moment */
+.completion-light-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at center,
+    rgba(255, 245, 200, 0.95) 0%,
+    rgba(255, 229, 160, 0.55) 12%,
+    rgba(229, 197, 116, 0.25) 30%,
+    rgba(229, 197, 116, 0.0) 60%);
   opacity: 0;
-  animation: completion-fade-in 1.2s ease-out 2.6s forwards;
+  z-index: 2;
+  mix-blend-mode: screen;
 }
-.completion-continue:hover {
-  background: var(--gold-bright);
-  box-shadow: 0 0 30px rgba(255, 229, 160, 0.6);
+.completion-light-burst.is-firing {
+  animation: completion-light-burst-anim 600ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
 }
-@keyframes completion-fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+@keyframes completion-light-burst-anim {
+  0%   { opacity: 0; transform: scale(0.4); }
+  18%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(2.2); }
 }
+
+/* Particle container — sits behind emblem, holds the burst motes */
+.completion-particle-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  overflow: visible;
+}
+.completion-burst-mote {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(255, 245, 200, 1) 0%,
+    rgba(255, 229, 160, 0.85) 50%,
+    rgba(229, 197, 116, 0) 100%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  filter: drop-shadow(0 0 6px rgba(229, 197, 116, 0.8));
+}
+
 
 /* ============================================
    APOTHEOSIS — temporary peak state for armillary
@@ -2293,6 +2586,73 @@ body.entry-active .dev-panel {
       <feGaussianBlur in="SourceGraphic" stdDeviation="0.6"/>
       <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1.7 0"/>
     </filter>
+  <radialGradient id="rank-aware-void" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#1a0d3a"/>
+    <stop offset="60%" stop-color="#0a0820"/>
+    <stop offset="100%" stop-color="#050313"/>
+  </radialGradient>
+  <radialGradient id="rank-anchored-lunar" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#f0f5ff"/>
+    <stop offset="55%" stop-color="#c8d6e8"/>
+    <stop offset="100%" stop-color="#8896aa"/>
+  </radialGradient>
+  <radialGradient id="rank-imbued-solar" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#fff5cc"/>
+    <stop offset="50%" stop-color="#f0d272"/>
+    <stop offset="100%" stop-color="#b8902a"/>
+  </radialGradient>
+  <radialGradient id="rank-radiant-rubedo" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#ffe5b0"/>
+    <stop offset="40%" stop-color="#ff6644"/>
+    <stop offset="100%" stop-color="#8a1a18"/>
+  </radialGradient>
+  <linearGradient id="rank-sovereign-pavonis-1" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#5e3aa8"/>
+    <stop offset="25%" stop-color="#2868c8"/>
+    <stop offset="50%" stop-color="#1a9c88"/>
+    <stop offset="75%" stop-color="#e0a830"/>
+    <stop offset="100%" stop-color="#c83838"/>
+  </linearGradient>
+  <linearGradient id="rank-sovereign-pavonis-2" x1="100%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#6a4a3a" stop-opacity="0.6"/>
+    <stop offset="50%" stop-color="#fff5cc" stop-opacity="0.0"/>
+    <stop offset="100%" stop-color="#3a2848" stop-opacity="0.6"/>
+  </linearGradient>
+
+  <!-- Stone-substance filter for Anchored rank title.
+       Fractal noise grain + displacement + warm specular lighting from
+       upper-left, composited together for a carved-stone surface look. -->
+  <filter id="rank-stone-grain" x="-5%" y="-15%" width="110%" height="130%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.2" numOctaves="3" seed="7" result="noise"/>
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="0.7" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+    <feSpecularLighting in="noise" surfaceScale="2.5" specularConstant="0.95" specularExponent="32" lighting-color="#f8edd0" result="spec">
+      <feDistantLight azimuth="130" elevation="58"/>
+    </feSpecularLighting>
+    <feComposite in="spec" in2="displaced" operator="in" result="specMasked"/>
+    <feComposite in="displaced" in2="specMasked" operator="arithmetic" k1="0" k2="1" k3="0.4" k4="0"/>
+  </filter>
+
+  <!-- Stone-fill gradient: top highlight, mid mass, deep base -->
+  <linearGradient id="rank-stone-fill" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#f2ecd4"/>
+    <stop offset="22%" stop-color="#dad3bd"/>
+    <stop offset="55%" stop-color="#b0aa97"/>
+    <stop offset="100%" stop-color="#6e6a5f"/>
+  </linearGradient>
+
+  <radialGradient id="completion-void-iridescent" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#0d0a18" stop-opacity="0"/>
+    <stop offset="40%" stop-color="#1a1238" stop-opacity="0.55"/>
+    <stop offset="70%" stop-color="#0e1438" stop-opacity="0.7"/>
+    <stop offset="100%" stop-color="#050313" stop-opacity="0.4"/>
+  </radialGradient>
+  <linearGradient id="completion-void-pavonis" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1a0e3a"/>
+    <stop offset="25%" stop-color="#0c1a40"/>
+    <stop offset="50%" stop-color="#082828"/>
+    <stop offset="75%" stop-color="#3a2a10"/>
+    <stop offset="100%" stop-color="#3a0e14"/>
+  </linearGradient>
   </defs>
 
   <!-- ========================================================
@@ -2403,6 +2763,104 @@ body.entry-active .dev-panel {
         <line x1="0" y1="-6" x2="0" y2="28" stroke-width="3.0" stroke-dasharray="2,5"/>
         <circle cx="0" cy="28" r="3" fill="#1a0e0a" stroke="none"/>
       </g>
+    </g>
+  </symbol>
+
+  <!-- ========================================================
+       RANK EMBLEMS — five-stage progression with alchemical
+       interior palettes. Render via <use href="#rank-X"/>.
+       Aware (nigredo) - Anchored (albedo) - Imbued (citrinitas)
+       - Radiant (rubedo) - Sovereign (cauda pavonis).
+       ======================================================== -->
+
+  <!-- AWARE — Nigredo. Open eye-aperture, cosmic void interior.
+       The user has begun to see what was always there. -->
+  <symbol id="rank-aware" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574" fill="none">
+        <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
+      </g>
+      <circle cx="0" cy="0" r="36" fill="#0a0820"/>
+      <circle cx="0" cy="0" r="34" fill="none" stroke="#3a1a6a" stroke-width="1.5" opacity="0.7"/>
+      <circle cx="0" cy="0" r="32" fill="url(#rank-aware-void)"/>
+      <circle cx="0" cy="0" r="8" fill="#000"/>
+    </g>
+  </symbol>
+
+  <!-- ANCHORED — Albedo. Cross of foundation, lunar silver-white interior.
+       The user is set into the ground. -->
+  <symbol id="rank-anchored" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574" fill="none">
+        <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
+      </g>
+      <circle cx="0" cy="0" r="60" fill="url(#rank-anchored-lunar)" opacity="0.92"/>
+      <g stroke="#2a3548" stroke-linecap="round" fill="none">
+        <line x1="0" y1="-44" x2="0" y2="44" stroke-width="5.4"/>
+        <line x1="-44" y1="20" x2="44" y2="20" stroke-width="5.0"/>
+      </g>
+      <circle cx="0" cy="20" r="5" fill="#2a3548"/>
+    </g>
+  </symbol>
+
+  <!-- IMBUED — Citrinitas. Sealed vesica vessel, pale solar gold interior.
+       Capacity now held inside the boundary. -->
+  <symbol id="rank-imbued" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574" fill="none">
+        <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
+      </g>
+      <path d="M -28 -42 Q -44 0 -28 42 Q 0 56 28 42 Q 44 0 28 -42 Q 0 -56 -28 -42 Z"
+            fill="url(#rank-imbued-solar)" stroke="#a87018" stroke-width="3.2"/>
+      <line x1="0" y1="-30" x2="0" y2="30" stroke="#7a4e10" stroke-width="3.0"/>
+      <circle cx="0" cy="0" r="9" fill="#7a4e10"/>
+    </g>
+  </symbol>
+
+  <!-- RADIANT — Rubedo. Vessel ruptures, fire-red core, eight rays cutting
+       through outward. The substance breaks into emission. -->
+  <symbol id="rank-radiant" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574" fill="none">
+        <circle cx="0" cy="0" r="80" stroke-width="2.0"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.4"/>
+      </g>
+      <g stroke="#c8341a" stroke-linecap="round" fill="none">
+        <line x1="0" y1="-92" x2="0" y2="-30" stroke-width="5.4"/>
+        <line x1="0" y1="92" x2="0" y2="30" stroke-width="5.4"/>
+        <line x1="-92" y1="0" x2="-30" y2="0" stroke-width="5.4"/>
+        <line x1="92" y1="0" x2="30" y2="0" stroke-width="5.4"/>
+        <line x1="-58" y1="-58" x2="-22" y2="-22" stroke-width="3.0"/>
+        <line x1="58" y1="-58" x2="22" y2="-22" stroke-width="3.0"/>
+        <line x1="-58" y1="58" x2="-22" y2="22" stroke-width="3.0"/>
+        <line x1="58" y1="58" x2="22" y2="22" stroke-width="3.0"/>
+      </g>
+      <circle cx="0" cy="0" r="22" fill="url(#rank-radiant-rubedo)"/>
+      <circle cx="0" cy="0" r="22" fill="none" stroke="#8a1a18" stroke-width="2"/>
+      <circle cx="0" cy="0" r="6" fill="#fff5cc" opacity="0.9"/>
+    </g>
+  </symbol>
+
+  <!-- SOVEREIGN — Cauda Pavonis. World-axis staff, iridescent peacock core,
+       doubled outer rim, sealed inner ring. The integrated apex. -->
+  <symbol id="rank-sovereign" viewBox="0 0 200 200">
+    <g transform="translate(100,100)" stroke-linecap="round" stroke-linejoin="round">
+      <g filter="url(#glyph-ink-bleed)" stroke="#e5c574" fill="none">
+        <circle cx="0" cy="0" r="80" stroke-width="2.4"/>
+        <circle cx="0" cy="0" r="74" stroke-width="1.0" opacity="0.85"/>
+        <circle cx="0" cy="0" r="78" stroke-width="0.6" opacity="0.5"/>
+      </g>
+      <circle cx="0" cy="0" r="56" fill="url(#rank-sovereign-pavonis-1)" opacity="0.92"/>
+      <circle cx="0" cy="0" r="56" fill="url(#rank-sovereign-pavonis-2)"/>
+      <circle cx="0" cy="0" r="36" fill="none" stroke="#fff5cc" stroke-width="3.0"/>
+      <circle cx="0" cy="0" r="24" fill="#0a0820"/>
+      <line x1="-18" y1="0" x2="18" y2="0" stroke="#fff5cc" stroke-width="3.0" stroke-linecap="round"/>
+      <line x1="0" y1="-92" x2="0" y2="92" stroke="#fff5cc" stroke-width="4.0" stroke-linecap="round"/>
+      <circle cx="0" cy="-92" r="4.5" fill="#fff5cc"/>
+      <circle cx="0" cy="92" r="4.5" fill="#fff5cc"/>
     </g>
   </symbol>
 
@@ -3257,20 +3715,34 @@ body.entry-active .dev-panel {
 
 <!-- Completion / rank-up overlay -->
 <div class="completion-overlay" id="completion-overlay">
-  <div class="completion-eyebrow" id="completion-eyebrow">The Foundation Is Set</div>
-  <h1 class="completion-title" id="completion-title">Anchored</h1>
-  <div class="completion-rank-emblem" id="completion-rank-emblem">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#c08850" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="9.5"/>
-      <circle cx="12" cy="12" r="7.5" opacity="0.4"/>
-      <line x1="12" y1="5" x2="12" y2="19" stroke-width="1.5"/>
-      <line x1="6" y1="8.5" x2="18" y2="15.5" stroke-width="1.5"/>
-      <line x1="6" y1="15.5" x2="18" y2="8.5" stroke-width="1.5"/>
-      <circle cx="12" cy="12" r="1.6" fill="#c08850" stroke="none"/>
-    </svg>
+  <div class="completion-overlay-stack">
+    <div class="completion-orb" id="completion-orb"></div>
+    <div class="completion-light-burst" id="completion-light-burst"></div>
+    <div class="completion-particle-burst" id="completion-particle-burst"></div>
+    <div class="completion-dust-cloud" id="completion-dust-cloud"></div>
+    <div class="completion-emblem-stage" id="completion-emblem-stage">
+      <svg class="completion-emblem-svg" viewBox="0 0 200 200"><use href="#rank-anchored" id="completion-rank-emblem-use"/></svg>
+    </div>
+    <div class="completion-text-stack" data-rank-text="anchored">
+      <div class="completion-rank-up" id="completion-rank-up">
+        <svg class="completion-rank-up-svg" viewBox="0 0 1300 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <text class="rank-up-text rank-up-shadow-deep" x="650" y="140" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="100" letter-spacing="18" fill="#000" opacity="0.95" transform="translate(6, 6)">RANK UP</text>
+          <text class="rank-up-text rank-up-shadow-mid" x="650" y="140" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="100" letter-spacing="18" fill="#1a1612" opacity="0.7" transform="translate(3, 3)">RANK UP</text>
+          <text class="rank-up-text rank-up-face" x="650" y="140" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="100" letter-spacing="18" fill="url(#rank-stone-fill)" filter="url(#rank-stone-grain)">RANK UP</text>
+          <text class="rank-up-text rank-up-highlight" x="650" y="140" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="100" letter-spacing="18" fill="#fff8e8" opacity="0.18" transform="translate(-1, -1)">RANK UP</text>
+        </svg>
+      </div>
+      <div class="completion-title" id="completion-title">
+        <svg class="completion-title-svg" viewBox="0 0 1500 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+          <text class="rank-title-text rank-title-shadow-deep" x="750" y="220" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="200" letter-spacing="26" fill="#000" opacity="0.95" transform="translate(10, 10)">ANCHORED</text>
+          <text class="rank-title-text rank-title-shadow-mid" x="750" y="220" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="200" letter-spacing="26" fill="#1a1612" opacity="0.7" transform="translate(6, 6)">ANCHORED</text>
+          <text class="rank-title-text rank-title-face" x="750" y="220" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="200" letter-spacing="26" fill="url(#rank-stone-fill)" filter="url(#rank-stone-grain)">ANCHORED</text>
+          <text class="rank-title-text rank-title-highlight" x="750" y="220" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="900" font-size="200" letter-spacing="26" fill="#fff8e8" opacity="0.18" transform="translate(-2, -2)">ANCHORED</text>
+        </svg>
+      </div>
+      <div class="completion-line" id="completion-line">The trio is complete. The path awaits.</div>
+    </div>
   </div>
-  <div class="completion-line" id="completion-line">The trio is complete. The path awaits.</div>
-  <button class="completion-continue" id="completion-continue">Continue &rarr;</button>
 </div>
 
 <!-- Post-rank-up video overlay (ported from pregame) -->
@@ -5542,26 +6014,179 @@ function ceremonyBeat2_settling() {
 }
 
 function ceremonyBeat3_rankUpOverlay() {
-  // Update rank text + emblem in overlay (already Bronze in default markup)
-  document.getElementById('completion-eyebrow').textContent = 'The Foundation Is Set';
-  document.getElementById('completion-title').textContent = 'Anchored';
+  const rankSlug = userState.currentRank || 'anchored';
+  const rankCap = rankSlug.charAt(0).toUpperCase() + rankSlug.slice(1);
+
+  document.querySelectorAll('#completion-rank-up .rank-up-text').forEach(el => { el.textContent = 'RANK UP'; });
+  document.querySelectorAll('#completion-title .rank-title-text').forEach(el => { el.textContent = rankCap.toUpperCase(); });
   document.getElementById('completion-line').textContent = 'The trio is complete. The path awaits.';
+  document.getElementById('completion-rank-emblem-use').setAttribute('href', '#rank-' + rankSlug);
+  const textStack = document.querySelector('.completion-text-stack');
+  if (textStack) textStack.setAttribute('data-rank-text', rankSlug);
 
   const overlay = document.getElementById('completion-overlay');
-  overlay.classList.add('is-open');
+  const orb = document.getElementById('completion-orb');
+  const lightBurst = document.getElementById('completion-light-burst');
+  const particleBurst = document.getElementById('completion-particle-burst');
+  const emblemStage = document.getElementById('completion-emblem-stage');
 
-  // Wire continue button (one-shot)
-  const continueBtn = document.getElementById('completion-continue');
-  const onContinue = () => {
-    continueBtn.removeEventListener('click', onContinue);
+  // Reset all animation state. Clone-and-replace forces fresh animation
+  // on text elements (forwards-state from previous run cleared).
+  ['completion-rank-up', 'completion-title', 'completion-line'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const clone = el.cloneNode(true);
+      el.parentNode.replaceChild(clone, el);
+    }
+  });
+  // Re-set textContent on the clones
+  const rankUpContainer = document.getElementById('completion-rank-up');
+  if (rankUpContainer) {
+    rankUpContainer.querySelectorAll('.rank-up-text').forEach(el => { el.textContent = 'RANK UP'; });
+  }
+  document.querySelectorAll('#completion-title .rank-title-text').forEach(el => { el.textContent = rankCap.toUpperCase(); });
+  document.getElementById('completion-line').textContent = 'The trio is complete. The path awaits.';
+
+  // Reset class state on non-text elements
+  orb.classList.remove('is-growing', 'is-exploding');
+  lightBurst.classList.remove('is-firing');
+  emblemStage.classList.remove('is-impacting', 'is-crash-pulsing', 'is-locked');
+  overlay.classList.remove('is-impact-shaking');
+  document.body.classList.remove('is-orb-shake');
+  particleBurst.innerHTML = '';
+  const rankUp = document.getElementById('completion-rank-up');
+  if (rankUp) rankUp.classList.remove('is-slamming', 'is-landed');
+  const titleEl = document.getElementById('completion-title');
+  if (titleEl) titleEl.classList.remove('is-slamming', 'is-landed');
+  overlay.classList.remove('is-rank-up-shaking', 'is-anchored-shaking');
+  const dust = document.getElementById('completion-dust-cloud');
+  if (dust) dust.classList.remove('is-bursting');
+
+  // Beat 0 — overlay opens, orb starts growing, world starts shaking
+  overlay.classList.add('is-open');
+  void orb.offsetWidth;
+  orb.classList.add('is-growing');
+  document.body.classList.add('is-orb-shake');
+
+  // Beat 1 — IMPACT at t=2800
+  setTimeout(() => {
+    orb.classList.remove('is-growing');
+    document.body.classList.remove('is-orb-shake');
+    void orb.offsetWidth;
+    orb.classList.add('is-exploding');
+    lightBurst.classList.add('is-firing');
+    spawnRankBurstParticles(particleBurst, 24);
+
+    // Emblem emerges 150ms after orb detonates
+    setTimeout(() => {
+      emblemStage.classList.add('is-impacting');
+    }, 150);
+    // Lock emblem visible state after impact animation completes
+    setTimeout(() => {
+      emblemStage.classList.add('is-locked');
+    }, 1050);
+  }, 2800);
+
+  // RANK UP slams in at t=4600. Animation 500ms, land at 65% = t=4925.
+  setTimeout(() => {
+    const rankUp = document.getElementById('completion-rank-up');
+    if (rankUp) rankUp.classList.add('is-slamming');
+  }, 4200);
+
+  // Shake + motes at exact land moment (t=4925).
+  setTimeout(() => {
+    overlay.classList.add('is-rank-up-shaking');
+    spawnRankBurstParticles(particleBurst, 14);
+    setTimeout(() => overlay.classList.remove('is-rank-up-shaking'), 380);
+  }, 4525);
+
+  // Lock RANK UP visible after animation completes.
+  setTimeout(() => {
+    const rankUp = document.getElementById('completion-rank-up');
+    if (rankUp) rankUp.classList.add('is-landed');
+  }, 4700);
+
+  // ANCHORED slams in at t=5800. Animation 600ms, land at 60% = t=6160.
+  setTimeout(() => {
+    const titleEl = document.getElementById('completion-title');
+    if (titleEl) titleEl.classList.add('is-slamming');
+  }, 5400);
+
+  // Shake + dust + motes at exact land moment (t=6160).
+  setTimeout(() => {
+    overlay.classList.add('is-anchored-shaking');
+    spawnRankBurstParticles(particleBurst, 28);
+    const dust = document.getElementById('completion-dust-cloud');
+    if (dust) {
+      dust.classList.remove('is-bursting');
+      void dust.offsetWidth;
+      dust.classList.add('is-bursting');
+    }
+    // Emblem pulses with the crash, binding the two halves of the ceremony
+    emblemStage.classList.remove('is-crash-pulsing');
+    void emblemStage.offsetWidth;
+    emblemStage.classList.add('is-crash-pulsing');
+    setTimeout(() => overlay.classList.remove('is-anchored-shaking'), 540);
+  }, 5760);
+
+  // Lock ANCHORED visible after animation completes.
+  setTimeout(() => {
+    const titleEl = document.getElementById('completion-title');
+    if (titleEl) titleEl.classList.add('is-landed');
+  }, 6000);
+
+  // Invocation reveals at t=7200
+  setTimeout(() => {
+    document.getElementById('completion-line').classList.add('is-revealing');
+  }, 6800);
+
+  // Auto-advance at t=8700
+  setTimeout(() => {
     overlay.classList.remove('is-open');
-    updateFrameMetrics();  // pool/rank visual update
+    updateFrameMetrics();
     setTimeout(() => {
       ceremonyBeat4_calendarWakes();
     }, 800);
-  };
-  continueBtn.addEventListener('click', onContinue);
+  }, 8300);
 }
+
+// Spawn N gold motes radiating outward from center.
+// Each mote travels along a unique angle, dies at ~75% viewport radius.
+function spawnRankBurstParticles(container, count) {
+  const radius = Math.max(window.innerWidth, window.innerHeight) * 0.45;
+  for (let i = 0; i < count; i++) {
+    const baseAngle = (i / count) * Math.PI * 2;
+    const angle = baseAngle + (Math.random() - 0.5) * 0.3;
+    const distance = radius * (0.65 + Math.random() * 0.35);
+    const dx = Math.cos(angle) * distance;
+    const dy = Math.sin(angle) * distance;
+    const duration = 900 + Math.random() * 400;
+
+    const mote = document.createElement('div');
+    mote.className = 'completion-burst-mote';
+    container.appendChild(mote);
+
+    // Animate via Web Animations API for clean per-mote timing
+    mote.animate(
+      [
+        { transform: 'translate(-50%, -50%) scale(0.4)', opacity: 0 },
+        { transform: 'translate(-50%, -50%) scale(1.0)', opacity: 1, offset: 0.1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.3)`, opacity: 0 }
+      ],
+      {
+        duration: duration,
+        easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)',
+        fill: 'forwards'
+      }
+    );
+
+    // Clean up DOM after animation
+    setTimeout(() => {
+      if (mote.parentNode) mote.parentNode.removeChild(mote);
+    }, duration + 100);
+  }
+}
+
 
 function ceremonyBeat4_calendarWakes() {
   // Wave illuminates the scrubber's locked names left to right
@@ -5958,6 +6583,14 @@ function devTriggerBronze() {
   renderConstellation(userState.currentPageIndex);
   fireAnchoredCeremony();
 }
+function devTriggerRankReveal() {
+  // Simulate the Aware -> Anchored transition.
+  // Real ceremony does this in fireAnchoredCeremony before opening
+  // the overlay. Future dev tooling will let operator specify which
+  // transition to test.
+  userState.currentRank = 'anchored';
+  ceremonyBeat3_rankUpOverlay();
+}
 function devSimulateDive() {
   // Clear the dive-done flag and re-run the arrival
   try { localStorage.removeItem('ga_atheneum_first_dive_done'); } catch (e) {}
@@ -5978,6 +6611,7 @@ window.atheneum = {
   devCompletePage,
   devReset,
   devTriggerBronze,
+  devTriggerRankReveal,
   devSimulateDive,
   devClearVideo,
   devReplayWelcome,
@@ -6043,6 +6677,7 @@ init();
   <div class="dev-panel-section">
     <div class="dev-panel-section-label">Ceremony</div>
     <button class="dev-panel-btn" id="dev-trigger-bronze">Trigger Anchored ceremony</button>
+    <button class="dev-panel-btn" id="dev-trigger-rank-reveal">Trigger rank reveal only</button>
     <button class="dev-panel-btn" id="dev-simulate-dive">Simulate dive arrival</button>
     <button class="dev-panel-btn" id="dev-replay-welcome">Replay welcome &amp; tutorial</button>
     <button class="dev-panel-btn" id="dev-clear-video">Clear video-seen flag</button>
@@ -6113,6 +6748,10 @@ init();
     e.stopPropagation();
     deactivate();
     window.atheneum.devTriggerBronze();
+  });
+  document.getElementById('dev-trigger-rank-reveal').addEventListener('click', (e) => {
+    e.stopPropagation();
+    window.atheneum.devTriggerRankReveal();
   });
   document.getElementById('dev-simulate-dive').addEventListener('click', (e) => {
     e.stopPropagation();
