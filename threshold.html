@@ -3,6 +3,52 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-05-03 | realms_unlock_ceremony | md5:cbf8cd2d | shipped
+       threshold: Atlas.initCeremony added; mount() gated by realms_unlocked flag;
+       ceremony CSS (ceremony-text, ceremony-fade-in, scriptorium-unsealing keyframes)
+       injected via injectStyles. Six-beat runRealmsUnlockCeremony: blackout fade,
+       paper dims to 0.6, beats reveal text/chambers/cosmos/stars/Scriptorium unseal
+       over 48s, completeRealmsUnlockCeremony sets flag, mounts trigger, starts
+       annotations, cleans URL. Init call gated: ceremony|unlocked|redirect.
+       atheneum: Tangerine font added, bridge CSS+JS added, fireAdvanceArrowHint
+       chains to runRealmsUnlockBridge after 2s post-hint. md5(atheneum):0acf47d8
+
+     2026-05-03 | atlas_annotations_collision_avoidance | md5:708b9ddd | shipped
+       Added getExclusionRects() (CHAMBERS + COSMIC_OBJECTS → viewport-% rects
+       with 3% margin) and noteCollides() (phrase AABB vs exclusion rects, 8px/char
+       width estimate, 28px height). fireAnnotation now filters validNotes →
+       safeNotes; silently skips cycle if all collide. No MAKERS_NOTES or
+       spawnAnnotation changes.
+
+     2026-05-03 | atlas_annotations_perchar_stagger | md5:30a4d709 | shipped
+       Replaced mask-image fade system with per-character span staggering.
+       4 CSS rules: .atlas-annotation (no opacity/mask), .atlas-annotation-char
+       (opacity:0, 250ms ease-in transition), .is-written (opacity:0.72),
+       .is-erasing (opacity:0, 350ms ease-out transition). spawnAnnotation splits
+       text into spans, spaces use \\u00a0, schedules write (60ms stagger) and
+       erase (50ms stagger) per-char. Lifecycle ~5.4s for 30-char phrase.
+
+     2026-05-03 | atlas_annotations_fade_in_gradient_fix | md5:2492d297 | shipped
+       Mask gradient on .atlas-annotation flipped: opaque-left/transparent-right
+       → transparent-left/opaque-right. atlasAnnotationAppear keyframes expanded
+       to assert full mask shorthand in both from/to (matches atlasAnnotationErase
+       pattern). Fade-in now hides text at spawn (0% pos = transparent over text)
+       and reveals L→R (slides to 100%). Fade-out unchanged.
+
+     2026-05-03 | atlas_annotations_directional_fades | md5:3ebbee6d | shipped
+       Type-on writing removed. Symmetric mask-image fades: fade-in L→R 1.2s
+       ease-out (atlasAnnotationAppear), hold 2.5s, fade-out L→R 2.5s ease-in
+       (atlasAnnotationErase with full mask props in keyframes). Default mask
+       state hides text on spawn; void offsetWidth reflow before class add.
+       DOM removal 3700ms + 2700ms after spawn = 6400ms total lifecycle.
+
+     2026-05-03 | atlas_annotations_tangerine_fade | md5:899b7a3e | shipped
+       Font swapped Caveat → Tangerine 22px italic weight 700. Fade-out replaced:
+       uniform opacity:0 transition → left-to-right mask-image erase via
+       atlasAnnotationErase @keyframes (mask-size 400%, position slides 100%→0%).
+       Hold shortened 5s → 1.5s. Fade extended 2.2s → 2.5s. Tangerine added to
+       Google Fonts import (Caveat retained).
+
      2026-05-03 | atlas_annotations_anchor_fix | md5:ac8861e0 | shipped
        Text anchor changed: .atlas-annotation gains transform-origin:left center.
        spawnAnnotation inline transform changed from translate(-50%,-50%)rotate()
@@ -148,7 +194,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Threshold · Gamer Ascension</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;500;600&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400;500;600&family=Tangerine:wght@400;700&family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@400;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <!-- Animation library for living rift (Session 9 upgrade) — GSAP only.
      tsParticles was attempted but could not be made to render particles
      reliably in this rendering context. The SVG-based CSS embers remain
@@ -1702,6 +1748,10 @@ function devBackToStart(){
       injectStyles();
       mount();
     },
+    initCeremony: function(){
+      injectStyles();
+      runRealmsUnlockCeremony();
+    },
     open: function(){ openAtlas(); },
     close: function(){ closeAtlas(); }
   };
@@ -1773,11 +1823,14 @@ function devBackToStart(){
       '.atlas-astrolabe{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}',
 
       '.atlas-annotation-stage{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5.4;overflow:hidden}',
-      '.atlas-annotation{position:absolute;font-family:\'Caveat\',cursive;font-style:italic;font-weight:500;' +
-        'font-size:15px;color:#1a1815;opacity:0.72;line-height:1.1;text-align:left;white-space:nowrap;' +
+      '.atlas-annotation{position:absolute;font-family:\'Tangerine\',cursive;font-style:italic;font-weight:700;' +
+        'font-size:22px;color:#1a1815;line-height:1.1;text-align:left;white-space:nowrap;' +
         'pointer-events:none;letter-spacing:0.01em;text-shadow:0 0 0.4px rgba(26,24,21,0.3);' +
-        'transform-origin:left center;transition:opacity 2s ease-out}',
-      '.atlas-annotation-fading{opacity:0}',
+        'transform-origin:left center}',
+      '.atlas-annotation-char{display:inline-block;opacity:0;' +
+        'transition:opacity 250ms cubic-bezier(0.2,0.8,0.4,1.0)}',
+      '.atlas-annotation-char.is-written{opacity:0.72}',
+      '.atlas-annotation-char.is-erasing{opacity:0;transition:opacity 350ms cubic-bezier(0.4,0,0.6,1)}',
 
 
       '.atlas-cosmic{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:4}',
@@ -1907,12 +1960,26 @@ function devBackToStart(){
       '@media(min-width:681px){',
         '.atlas-chambers-mobile{display:none}',
         '.atlas-chambers-desktop{display:block;position:absolute;inset:0}',
-      '}'
+      '}',
+
+      '.ceremony-text{position:absolute;font-family:\'Tangerine\',cursive;font-style:italic;font-weight:700;' +
+        'font-size:32px;color:#1a1815;opacity:0.85;white-space:nowrap;pointer-events:none;z-index:50}',
+      '.ceremony-text .char{display:inline-block;opacity:0;transition:opacity 250ms cubic-bezier(0.2,0.8,0.4,1.0)}',
+      '.ceremony-text .char.is-written{opacity:1}',
+      '.ceremony-text.is-fading .char{opacity:0;transition:opacity 350ms cubic-bezier(0.4,0,0.6,1)}',
+      '.atlas-chamber.ceremony-fade-in,.atlas-cosmic.ceremony-fade-in{animation:ceremonyFadeIn 1.5s ease-out forwards}',
+      '@keyframes ceremonyFadeIn{from{opacity:0}to{opacity:1}}',
+      '.atlas-chamber.scriptorium-unsealing{animation:scriptoriumUnsealFlash 2.5s ease-out forwards}',
+      '@keyframes scriptoriumUnsealFlash{' +
+        '0%{filter:drop-shadow(0 0 0 rgba(180,140,220,0))}' +
+        '40%{filter:drop-shadow(0 0 36px rgba(180,140,220,0.85))}' +
+        '100%{filter:drop-shadow(0 0 12px rgba(180,140,220,0.25))}}'
     ].join('');
     document.head.appendChild(style);
   }
 
   function mount(){
+    if(localStorage.getItem('realms_unlocked') !== 'true') return;
     triggerBtn = document.createElement('button');
     triggerBtn.className = 'atlas-trigger';
     triggerBtn.setAttribute('aria-label','Open the Atlas');
@@ -2371,6 +2438,49 @@ function devBackToStart(){
     return true;
   }
 
+  function getExclusionRects(){
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var MARGIN = 3;
+    var rects = [];
+    function pushRect(item){
+      var halfW = (item.scale / 2) / vw * 100;
+      var halfH = (item.scale / 2) / vh * 100;
+      rects.push({
+        left:   item.x - halfW - MARGIN,
+        right:  item.x + halfW + MARGIN,
+        top:    item.y - halfH - MARGIN,
+        bottom: item.y + halfH + MARGIN
+      });
+    }
+    CHAMBERS.forEach(pushRect);
+    COSMIC_OBJECTS.forEach(pushRect);
+    return rects;
+  }
+
+  function noteCollides(note, exclusionRects){
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var CHAR_WIDTH_PX  = 8;
+    var PHRASE_HEIGHT_PX = 28;
+    var widthPct  = (note.text.length * CHAR_WIDTH_PX) / vw * 100;
+    var heightPct = PHRASE_HEIGHT_PX / vh * 100;
+    var phraseRect = {
+      left:   note.x,
+      right:  note.x + widthPct,
+      top:    note.y - heightPct / 2,
+      bottom: note.y + heightPct / 2
+    };
+    for(var i = 0; i < exclusionRects.length; i++){
+      var ex = exclusionRects[i];
+      if(phraseRect.left < ex.right && phraseRect.right > ex.left &&
+         phraseRect.top  < ex.bottom && phraseRect.bottom > ex.top){
+        return true;
+      }
+    }
+    return false;
+  }
+
   function fireAnnotation(){
     if(!overlayEl || !overlayEl.classList.contains('active')) return;
     var stage = overlayEl.querySelector('.atlas-annotation-stage');
@@ -2379,7 +2489,12 @@ function devBackToStart(){
       return isContextValid(note.context) && i !== lastNoteIndex;
     });
     if(validNotes.length === 0) return;
-    var note = validNotes[Math.floor(Math.random() * validNotes.length)];
+    var exclusionRects = getExclusionRects();
+    var safeNotes = validNotes.filter(function(note){
+      return !noteCollides(note, exclusionRects);
+    });
+    if(safeNotes.length === 0) return;
+    var note = safeNotes[Math.floor(Math.random() * safeNotes.length)];
     lastNoteIndex = MAKERS_NOTES.indexOf(note);
     spawnAnnotation(stage, note);
   }
@@ -2389,25 +2504,48 @@ function devBackToStart(){
     el.className = 'atlas-annotation';
     el.style.left = note.x + '%';
     el.style.top = note.y + '%';
-    el.textContent = '';
     var rotation = (Math.random() - 0.5) * 4;
     el.style.transform = 'translateY(-50%) rotate(' + rotation + 'deg)';
+
+    var chars = note.text.split('');
+    var spans = [];
+    for(var i = 0; i < chars.length; i++){
+      var span = document.createElement('span');
+      span.className = 'atlas-annotation-char';
+      span.textContent = (chars[i] === ' ') ? '\u00a0' : chars[i];
+      el.appendChild(span);
+      spans.push(span);
+    }
+
     stage.appendChild(el);
-    var i = 0;
-    var typeInterval = setInterval(function(){
-      if(i < note.text.length){
-        el.textContent = note.text.substring(0, i + 1);
-        i++;
-      } else {
-        clearInterval(typeInterval);
-        setTimeout(function(){
-          el.classList.add('atlas-annotation-fading');
-          setTimeout(function(){
-            if(el.parentNode) el.parentNode.removeChild(el);
-          }, 2200);
-        }, 5000);
-      }
-    }, 55);
+    void el.offsetWidth; // commit opacity:0 state for all spans before transitions
+
+    var WRITE_STAGGER  = 60;
+    var WRITE_DURATION = 250;
+    var HOLD_AFTER_LAST = 1500;
+    var ERASE_STAGGER  = 50;
+    var ERASE_DURATION = 350;
+    var REMOVAL_BUFFER = 100;
+
+    var lastIdx        = spans.length - 1;
+    var writeFinishes  = (lastIdx * WRITE_STAGGER) + WRITE_DURATION;
+    var eraseStarts    = writeFinishes + HOLD_AFTER_LAST;
+    var eraseFinishes  = eraseStarts + (lastIdx * ERASE_STAGGER) + ERASE_DURATION;
+
+    spans.forEach(function(span, i){
+      setTimeout(function(){ span.classList.add('is-written'); }, i * WRITE_STAGGER);
+    });
+
+    spans.forEach(function(span, i){
+      setTimeout(function(){
+        span.classList.remove('is-written');
+        span.classList.add('is-erasing');
+      }, eraseStarts + (i * ERASE_STAGGER));
+    });
+
+    setTimeout(function(){
+      if(el.parentNode) el.parentNode.removeChild(el);
+    }, eraseFinishes + REMOVAL_BUFFER);
   }
 
   function openAtlas(){
@@ -2430,6 +2568,184 @@ function devBackToStart(){
     stopAnnotationScheduler();
   }
 
+  // ============================================================
+  // REALMS UNLOCK CEREMONY
+  // Six-beat progressive revelation triggered by ?ceremony=realms_unlock
+  // ============================================================
+
+  function runRealmsUnlockCeremony(){
+    buildOverlay();
+    overlayEl.classList.add('active');
+    isOpen = true;
+    document.body.style.overflow = 'hidden';
+
+    var blackoutEl = document.createElement('div');
+    blackoutEl.style.cssText = 'position:fixed;inset:0;background:#000;z-index:99998;opacity:1;transition:opacity 2s ease-in-out;pointer-events:none';
+    document.body.appendChild(blackoutEl);
+
+    var paper = overlayEl.querySelector('#atlasPaper');
+    paper.querySelectorAll(
+      '.atlas-chambers-desktop,.atlas-chambers-mobile,' +
+      '.atlas-cosmic,.atlas-star,.atlas-title,.atlas-compass,' +
+      '.atlas-maker,.atlas-paths,.atlas-astrolabe,' +
+      '.atlas-annotation-stage,.atlas-cosmic-drift,.atlas-paper-dust'
+    ).forEach(function(el){ el.style.opacity = '0'; });
+    paper.style.cssText += ';opacity:0;transition:opacity 2s ease-in-out';
+
+    setTimeout(function(){
+      blackoutEl.style.opacity = '0';
+      paper.style.opacity = '0.6';
+    }, 600);
+
+    setTimeout(function(){
+      if(blackoutEl.parentNode) blackoutEl.parentNode.removeChild(blackoutEl);
+    }, 3000);
+
+    scheduleCeremonyBeat1();
+    scheduleCeremonyBeat2();
+    scheduleCeremonyBeat3();
+    scheduleCeremonyBeat4();
+    scheduleCeremonyBeat5();
+    scheduleCeremonyBeat6();
+  }
+
+  function spawnCeremonyText(text, x, y){
+    var paper = overlayEl.querySelector('#atlasPaper');
+    var el = document.createElement('div');
+    el.className = 'ceremony-text';
+    el.style.left = x + '%';
+    el.style.top = y + '%';
+    el.style.transform = 'translate(-50%,-50%)';
+    text.split('').forEach(function(ch){
+      var span = document.createElement('span');
+      span.className = 'char';
+      span.textContent = (ch === ' ') ? '\u00a0' : ch;
+      el.appendChild(span);
+    });
+    paper.appendChild(el);
+    void el.offsetWidth;
+    var spans = el.querySelectorAll('.char');
+    spans.forEach(function(span, i){
+      setTimeout(function(){ span.classList.add('is-written'); }, i * 60);
+    });
+    return { el: el, writeDuration: ((spans.length - 1) * 60) + 250 };
+  }
+
+  function fadeOutCeremonyText(textObj, holdMs){
+    setTimeout(function(){
+      textObj.el.classList.add('is-fading');
+      setTimeout(function(){
+        if(textObj.el.parentNode) textObj.el.parentNode.removeChild(textObj.el);
+      }, 600);
+    }, holdMs);
+  }
+
+  function ceremonyRevealEl(el){
+    el.style.opacity = '';
+    el.classList.add('ceremony-fade-in');
+  }
+
+  function scheduleCeremonyBeat1(){
+    setTimeout(function(){
+      var t = spawnCeremonyText('here is the world.', 50, 18);
+      fadeOutCeremonyText(t, t.writeDuration + 2500);
+    }, 2500);
+  }
+
+  function scheduleCeremonyBeat2(){
+    setTimeout(function(){
+      var el = overlayEl.querySelector('[data-chamber-id="atheneum"]');
+      if(el) ceremonyRevealEl(el);
+    }, 8000);
+    setTimeout(function(){
+      var t = spawnCeremonyText('you are here.', 50, 65);
+      fadeOutCeremonyText(t, t.writeDuration + 2500);
+    }, 9500);
+  }
+
+  function scheduleCeremonyBeat3(){
+    setTimeout(function(){
+      var t = spawnCeremonyText('and these are your siblings.', 50, 18);
+      fadeOutCeremonyText(t, t.writeDuration + 5500);
+    }, 14000);
+    ['threshold','scriptorium','arcanium','agora'].forEach(function(id, i){
+      setTimeout(function(){
+        var el = overlayEl.querySelector('[data-chamber-id="' + id + '"]');
+        if(el) ceremonyRevealEl(el);
+      }, 16000 + (i * 1500));
+    });
+  }
+
+  function scheduleCeremonyBeat4(){
+    setTimeout(function(){
+      var t = spawnCeremonyText('the void between them is not empty.', 50, 88);
+      fadeOutCeremonyText(t, t.writeDuration + 3500);
+    }, 24000);
+    setTimeout(function(){
+      overlayEl.querySelectorAll('[data-cosmic-id]').forEach(function(el, i){
+        setTimeout(function(){ ceremonyRevealEl(el); }, i * 800);
+      });
+    }, 25500);
+    setTimeout(function(){
+      overlayEl.querySelectorAll('.atlas-star').forEach(function(el, i){
+        setTimeout(function(){ el.style.opacity = ''; }, i * 30);
+      });
+    }, 28000);
+  }
+
+  function scheduleCeremonyBeat5(){
+    setTimeout(function(){
+      var t = spawnCeremonyText('one of them is opening for you now.', 50, 88);
+      fadeOutCeremonyText(t, t.writeDuration + 3000);
+    }, 33000);
+    setTimeout(function(){
+      var scrip = overlayEl.querySelector('[data-chamber-id="scriptorium"]');
+      if(scrip) scrip.classList.add('scriptorium-unsealing');
+      var scripData = CHAMBERS.find(function(c){ return c.id === 'scriptorium'; });
+      if(scripData) scripData.status = 'open';
+      setTimeout(function(){ reRenderChamber('scriptorium'); }, 1500);
+    }, 35000);
+  }
+
+  function scheduleCeremonyBeat6(){
+    setTimeout(function(){
+      var t = spawnCeremonyText('the others will open in their time.', 50, 18);
+      fadeOutCeremonyText(t, t.writeDuration + 4000);
+    }, 40000);
+    setTimeout(function(){
+      completeRealmsUnlockCeremony();
+    }, 48000);
+  }
+
+  function reRenderChamber(chamberId){
+    overlayEl.querySelectorAll('[data-chamber-id="' + chamberId + '"]').forEach(function(el){
+      el.classList.remove('sealed');
+      el.classList.add('open');
+      var aura = el.querySelector('.atlas-chamber-aura');
+      if(aura) aura.classList.remove('atlas-chamber-aura-hidden');
+    });
+  }
+
+  function completeRealmsUnlockCeremony(){
+    localStorage.setItem('realms_unlocked', 'true');
+    var paper = overlayEl.querySelector('#atlasPaper');
+    if(paper){
+      paper.style.transition = 'opacity 1.5s ease-out';
+      paper.style.opacity = '1';
+    }
+    overlayEl.querySelectorAll(
+      '.atlas-title,.atlas-compass,.atlas-maker,.atlas-paths,.atlas-astrolabe'
+    ).forEach(function(el){ el.style.opacity = ''; });
+    mount();
+    isOpen = true;
+    if(triggerBtn) triggerBtn.classList.add('open');
+    overlayEl.setAttribute('aria-hidden','false');
+    startAnnotationScheduler();
+    if(window.history && window.history.replaceState){
+      window.history.replaceState({}, '', '/threshold.html');
+    }
+  }
+
 })();
 
 </script>
@@ -2437,8 +2753,14 @@ function devBackToStart(){
   // Initialize the persistent chamber nav — compass icon top-left.
   // Marks the Threshold as the current chamber.
   window.addEventListener("load", function(){
-    if(typeof Atlas !== 'undefined' && typeof Atlas.init === 'function'){
+    if(typeof Atlas === 'undefined') return;
+    var urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.get('ceremony') === 'realms_unlock'){
+      Atlas.initCeremony();
+    } else if(localStorage.getItem('realms_unlocked') === 'true'){
       Atlas.init({ current: 'threshold' });
+    } else {
+      window.location.href = '/atheneum.html';
     }
   });
 </script>

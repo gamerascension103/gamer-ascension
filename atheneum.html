@@ -45,7 +45,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cinzel+Decorative:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,400&family=Tangerine:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -2716,6 +2716,76 @@ body.entry-active .dev-panel {
 }
 .armillary-ring {
   transition: opacity 1200ms ease-out;
+}
+
+/* ============================================================
+   REALMS UNLOCK BRIDGE
+   ============================================================ */
+.realms-unlock-dim-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0);
+  pointer-events:none;
+  z-index:9000;
+  transition:background 1.5s ease-out;
+}
+.realms-unlock-dim-overlay.is-active{
+  background:rgba(0,0,0,0.55);
+  pointer-events:auto;
+}
+.realms-unlock-bridge{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:48px;
+  z-index:9100;
+  pointer-events:none;
+}
+.realms-unlock-prose{
+  font-family:'Tangerine',cursive;font-style:italic;font-weight:700;
+  font-size:36px;color:#ebe2cf;opacity:0.85;
+  text-align:center;max-width:80vw;
+  margin:0;line-height:1.2;letter-spacing:0.01em;
+  text-shadow:0 0 12px rgba(0,0,0,0.6);
+}
+.realms-unlock-prose .char{
+  display:inline-block;
+  opacity:0;
+  transition:opacity 250ms cubic-bezier(0.2,0.8,0.4,1.0);
+}
+.realms-unlock-prose .char.is-written{opacity:1;}
+.realms-unlock-cta{
+  pointer-events:auto;
+  background:transparent;
+  border:1px solid rgba(201,168,76,0.4);
+  color:#f0ece4;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:14px;letter-spacing:0.05em;
+  padding:12px 28px;
+  cursor:pointer;
+  opacity:0;
+  transition:opacity 1s ease-out,border-color 0.3s ease,background-color 0.3s ease;
+}
+.realms-unlock-cta.is-visible{opacity:1;}
+.realms-unlock-cta:hover{
+  border-color:rgba(201,168,76,0.85);
+  background:rgba(201,168,76,0.08);
+}
+.realms-unlock-cta .cta-arrow{
+  display:inline-block;
+  margin-left:8px;
+  transition:transform 0.3s ease;
+}
+.realms-unlock-cta:hover .cta-arrow{transform:translateX(4px);}
+.realms-unlock-fade-to-black{
+  position:fixed;inset:0;
+  background:#000;
+  z-index:99999;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 1.2s ease-in-out;
+}
+.realms-unlock-fade-to-black.is-active{
+  opacity:1;
+  pointer-events:auto;
 }
 
 </style>
@@ -6618,6 +6688,7 @@ function fireAdvanceArrowHint() {
   setTimeout(() => {
     arrow.classList.remove('is-hinting');
     ceremonyInProgress = false;
+    setTimeout(runRealmsUnlockBridge, 2000);
   }, 6000);
 }
 
@@ -7031,6 +7102,76 @@ window.atheneum = {
   userState: () => userState,
   CONSTELLATIONS: () => CONSTELLATIONS
 };
+
+// ============================================================
+// REALMS UNLOCK BRIDGE
+// Fires once after the Anchored ceremony completes (first time).
+// Dims Atheneum, writes "the world remembers you now." in Tangerine,
+// presents "Open the Atlas" CTA, fades to black, navigates to
+// threshold.html?ceremony=realms_unlock.
+// ============================================================
+
+function shouldShowRealmsUnlockBridge() {
+  return !localStorage.getItem('realms_unlocked') &&
+         userState.anchoredCeremonyFired;
+}
+
+function runRealmsUnlockBridge() {
+  if (!shouldShowRealmsUnlockBridge()) return;
+
+  var dim = document.createElement('div');
+  dim.className = 'realms-unlock-dim-overlay';
+  document.body.appendChild(dim);
+
+  var bridge = document.createElement('div');
+  bridge.className = 'realms-unlock-bridge';
+
+  var prose = document.createElement('p');
+  prose.className = 'realms-unlock-prose';
+  var text = 'the world remembers you now.';
+  text.split('').forEach(function(ch) {
+    var span = document.createElement('span');
+    span.className = 'char';
+    span.textContent = (ch === ' ') ? '\u00a0' : ch;
+    prose.appendChild(span);
+  });
+
+  var cta = document.createElement('button');
+  cta.className = 'realms-unlock-cta';
+  cta.innerHTML = 'Open the Atlas <span class="cta-arrow">\u2192</span>';
+
+  bridge.appendChild(prose);
+  bridge.appendChild(cta);
+  document.body.appendChild(bridge);
+
+  void dim.offsetWidth;
+  dim.classList.add('is-active');
+
+  var WRITE_STAGGER = 60;
+  var spans = prose.querySelectorAll('.char');
+  setTimeout(function() {
+    spans.forEach(function(span, i) {
+      setTimeout(function() { span.classList.add('is-written'); }, i * WRITE_STAGGER);
+    });
+  }, 800);
+
+  var writeFinishesAt = 800 + ((spans.length - 1) * WRITE_STAGGER) + 250;
+  setTimeout(function() {
+    cta.classList.add('is-visible');
+  }, writeFinishesAt + 1500);
+
+  cta.addEventListener('click', function() {
+    cta.disabled = true;
+    var fade = document.createElement('div');
+    fade.className = 'realms-unlock-fade-to-black';
+    document.body.appendChild(fade);
+    void fade.offsetWidth;
+    fade.classList.add('is-active');
+    setTimeout(function() {
+      window.location.href = '/threshold.html?ceremony=realms_unlock';
+    }, 1200);
+  });
+}
 
 // ============================================================
 // INIT
