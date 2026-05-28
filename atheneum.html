@@ -3,6 +3,8 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-05-28 | returning_to_atlas | evermark routes realms-unlocked returners to /atheneum.html?atlas=1; atheneum opens Atlas on that param. First-timers + not-unlocked returners unchanged. | shipped
+
      2026-05-27 | landing_showcase_general | index.html updated — roster showcase (hero card + staggered cascade), founder rebuilt as full-figure feature with summit ascension, hero subhead centered | shipped
 
      2026-05-27 | landing_proof_imagery | index.html replaced with updated landing page — hero transform, DM carousel + lightbox, 5 transformation cards, coach portrait; images served from live host, no repo assets added | shipped
@@ -11321,9 +11323,21 @@ init();
 <script src="assets/js/atlas.js"></script>
 <script>
 window.addEventListener('load', function(){
-  if(typeof Atlas !== 'undefined'){
-    Atlas.init({ current: 'atheneum' });
-  }
+  if(typeof Atlas === 'undefined') return;
+  Atlas.init({ current: 'atheneum' });
+
+  // Returning realms-unlocked visitors arrive with ?atlas=1 — open the Atlas
+  // immediately as their home base. (mount() already no-ops if not unlocked.)
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if(params.get('atlas') === '1' && localStorage.getItem('realms_unlocked') === 'true'){
+      Atlas.open();
+      // clean the param so a refresh doesn't force the Atlas again
+      var url = new URL(window.location.href);
+      url.searchParams.delete('atlas');
+      window.history.replaceState({}, document.title, url.pathname + (url.search || '') + url.hash);
+    }
+  } catch(e){}
 });
 </script>
 <script src="assets/js/dev_tools.js"></script>

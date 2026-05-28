@@ -189,10 +189,16 @@
   var NEXT_PAGE = '/threshold.html';
   var SEEN_FLAG = 'ga_evermark_intro_seen';
 
-  // Returning user — skip straight to threshold.
+  // Returning user — decide destination.
   try {
     if(localStorage.getItem(SEEN_FLAG) === '1'){
-      window.location.replace(NEXT_PAGE);
+      if(localStorage.getItem('realms_unlocked') === 'true'){
+        // Realms unlocked → straight to the Atlas (home base / chamber picker).
+        window.location.replace('/atheneum.html?atlas=1');
+      } else {
+        // Intro seen but realms not yet unlocked → existing path.
+        window.location.replace(NEXT_PAGE);
+      }
     }
   } catch(e){ /* no localStorage, continue with video */ }
 
