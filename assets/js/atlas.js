@@ -40,7 +40,12 @@
 
   function applyPersistedState(){
     try {
-      if(localStorage.getItem(SCRIPTORIUM_FLAG) === 'true'){
+      // ga_scriptorium_unsealed is written by the ceremony going forward.
+      // realms_unlocked is the fallback for users who completed the ceremony
+      // before that flag existed — both imply the Scriptorium is open.
+      var scripUnsealed = localStorage.getItem(SCRIPTORIUM_FLAG) === 'true' ||
+                          localStorage.getItem('realms_unlocked') === 'true';
+      if(scripUnsealed){
         var scrip = CHAMBERS.find(function(c){ return c.id === 'scriptorium'; });
         if(scrip) scrip.status = 'open';
         // ensure the atheneum<->scriptorium path exists exactly once
