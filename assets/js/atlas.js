@@ -1,5 +1,9 @@
 ﻿// ============================================================
 // BUILD LOG (atlas.js) — most recent first
+// scriptorium_persist | ga_scriptorium_unsealed flag persists Scriptorium open
+//   state + atheneum-scriptorium path; applyPersistedState() reconciles CHAMBERS
+//   on init so returning users see it unsealed. realms_unlocked also accepted
+//   as fallback for users pre-dating the flag.
 // atlas_scriptorium_unseal_moment | replaced 1.5s ambient drop-shadow with
 //   three-stage moment: charge 700ms (focusing-dim + violet aura builds) →
 //   break 500ms (flash overlay burst at Scriptorium position) → open 1200ms

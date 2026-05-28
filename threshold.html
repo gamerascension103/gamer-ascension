@@ -3,6 +3,12 @@
      BUILD LOG â€” most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-05-27 | remove_nav_js | shipped
+       removed vestigial nav.js includes repo-wide; Atlas (atlas.js) is sole chamber nav
+       and remains gated behind realms_unlocked. nav.js file retained, unloaded.
+       pregame.html: removed <script src="nav.js"> + Nav.init() block.
+       scriptorium.html: removed inlined nav.js IIFE + Nav.init() call in load handler.
+
      2026-05-03 | realms_unlock_ceremony | md5:cbf8cd2d | shipped
        threshold: Atlas.initCeremony added; mount() gated by realms_unlocked flag;
        ceremony CSS (ceremony-text, ceremony-fade-in, scriptorium-unsealing keyframes)
