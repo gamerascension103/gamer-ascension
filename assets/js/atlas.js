@@ -36,6 +36,23 @@
     { from: 'atheneum', to: 'threshold' }
   ];
 
+  var SCRIPTORIUM_FLAG = 'ga_scriptorium_unsealed';
+
+  function applyPersistedState(){
+    try {
+      if(localStorage.getItem(SCRIPTORIUM_FLAG) === 'true'){
+        var scrip = CHAMBERS.find(function(c){ return c.id === 'scriptorium'; });
+        if(scrip) scrip.status = 'open';
+        // ensure the atheneum<->scriptorium path exists exactly once
+        var hasPath = CHAMBER_PATHS.some(function(p){
+          return (p.from === 'atheneum' && p.to === 'scriptorium') ||
+                 (p.from === 'scriptorium' && p.to === 'atheneum');
+        });
+        if(!hasPath) CHAMBER_PATHS.push({ from: 'atheneum', to: 'scriptorium' });
+      }
+    } catch(e){}
+  }
+
   // Cosmic objects â€” atmospheric assets populating the void between chambers.
   // Not navigable. Each asset is rendered as an <img> with onerror hiding it
   // if the file is missing, so operators can ship the map even before all
@@ -87,10 +104,12 @@
     init: function(config){
       config = config || {};
       currentChamberId = config.current || null;
+      applyPersistedState();
       injectStyles();
       mount();
     },
     initCeremony: function(){
+      applyPersistedState();
       injectStyles();
       runRealmsUnlockCeremony();
     },
@@ -1112,6 +1131,7 @@
       if(scrip) scrip.classList.add('scriptorium-unsealing');
       var scripData = CHAMBERS.find(function(c){ return c.id === 'scriptorium'; });
       if(scripData) scripData.status = 'open';
+      try { localStorage.setItem('ga_scriptorium_unsealed', 'true'); } catch(e){}
       setTimeout(function(){ reRenderChamber('scriptorium'); }, 1500);
     }, 35000);
   }
@@ -1216,6 +1236,7 @@
       void flash.offsetWidth;
       flash.classList.add('is-firing');
       scripData.status = 'open';
+      try { localStorage.setItem('ga_scriptorium_unsealed', 'true'); } catch(e){}
       setTimeout(function(){
         if(flash.parentNode) flash.parentNode.removeChild(flash);
       }, 600);
