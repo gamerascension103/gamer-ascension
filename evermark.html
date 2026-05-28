@@ -278,6 +278,15 @@
   // Safety: if the YouTube API takes too long, the Skip button is
   // always available for the user to bypass the intro.
 </script>
+<script src="assets/js/atlas.js"></script>
+<script>
+window.addEventListener('load', function(){
+  if(typeof Atlas !== 'undefined'){
+    Atlas.init({});
+  }
+});
+</script>
+<script src="assets/js/dev_tools.js"></script>
 
 </body>
 </html>

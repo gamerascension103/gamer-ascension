@@ -419,9 +419,12 @@ body.horizon-collapsing .starfield{
 
 
 /* ===== DEV PANEL â€” always-visible reset button (bottom-left) ===== */
+/* Production gate: hidden unless body has .dev-enabled (ga_dev flag). */
+.dev-panel { display: none; }
+body.dev-enabled .dev-panel { display: flex; }
 .dev-panel{
   position:fixed;bottom:10px;left:10px;z-index:9990;
-  display:flex;align-items:center;gap:6px;
+  align-items:center;gap:6px;
   background:rgba(8,8,20,0.75);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   border:1px solid rgba(192,57,43,0.35);border-radius:3px;
   padding:5px 8px;
@@ -1631,13 +1634,28 @@ function triggerBigAbsorb(){
 </script>
 
 <!-- DEV PANEL â€” reset localStorage to replay the arrival sequence -->
-<div class="dev-panel" title="Development tools">
+<div class="dev-panel" id="dev-panel" title="Development tools">
+  <div class="dev-panel-collapsed-label">Dev</div>
   <span class="dev-panel-label">DEV</span>
   <button class="dev-reset-btn" onclick="devResetThreshold()" title="Clear threshold flags and reload this page â€” see the rift arrival again">Reset</button>
   <button class="dev-reset-btn" onclick="devBackToStart()" title="Clear ALL localStorage and return to the Evermark intro video (full first-time experience)">Back to Start</button>
 </div>
 
 <script>
+// --- Production gate -------------------------------------------------
+// ?dev=1 enables (and persists) dev tools; ?dev=0 disables.
+(function(){
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('dev') === '1') localStorage.setItem('ga_dev', '1');
+    if (params.get('dev') === '0') localStorage.removeItem('ga_dev');
+  } catch (e) {}
+  try {
+    if (localStorage.getItem('ga_dev') === '1') document.body.classList.add('dev-enabled');
+  } catch (e) {}
+})();
+// --------------------------------------------------------------------
+
 function devResetThreshold(){
   try {
     localStorage.removeItem('ga_journey_v1');

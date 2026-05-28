@@ -3,6 +3,30 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-05-27 | dev_panel_gate | dev tools gated behind ga_dev flag, collapsed-pill default, applied to atheneum + threshold | shipped
+
+     2026-05-06 | modules_brief_6_cleanup | md5:(unlogged) | shipped
+       Final brief in module wiring sequence. Retrieval prep video
+       card scaffolded: RETRIEVAL_PREP_VIDEOS config (placeholder
+       URLs), buildRetrievalPrepCard, toggleRetrievalPrep, full CSS,
+       wired into openLessonAtStage for retrieval stages. Empty URL
+       = no card renders, retrieval flow unchanged. START HERE micro
+       indicator ported: DOM mounted above microTreeOverlay, JS
+       updateStartHereMicroIndicator + dismissStartHereMicro, called
+       from openMicroTreePanel and dismissed in goToSubunit /
+       goToRetrieval / goToModuleComplete. Color sourced from
+       imbuement palette via getModulePalette. Persists at
+       ga_microtree_first_seen. Guide dialogue stubs added —
+       triggerFirstRetrievalGuide and triggerFirstUnitCompleteGuide
+       as no-ops. Submit/stage-complete paths fire them with one-shot
+       guards (ga_first_retrieval_guide_seen and
+       ga_first_unit_complete_guide_seen written even though no
+       visible Guide). When Guide system lands later, replace stub
+       bodies with real invocations; existing users won't re-fire.
+       Dev panel: devCompleteAllRetrievals added per module.
+       devReset extended with three Brief 6 keys. Brief 6 of 6 —
+       module wiring sequence complete.
+
      2026-05-06 | modules_brief_5_vessel_pour | md5:(unlogged) | shipped
        Module vessel + pour ceremony ported from pregame 2026-04-25.
        SVG vessel injected at top of each module's content (between
@@ -1927,6 +1951,145 @@ html, body {
   .module-vessel-progress { font-size: 11px; }
 }
 
+/* =============================================================
+   RETRIEVAL PREP CARD (Brief 6)
+   Optional summary video shown above the retrieval frame.
+============================================================ */
+
+.retrieval-prep-card {
+  margin: 0 0 32px 0;
+  padding: 20px 22px 18px;
+  background: rgba(8, 6, 18, 0.6);
+  border: 1px solid rgba(216, 200, 170, 0.18);
+  border-radius: 6px;
+  position: relative;
+  transition: border-color 0.25s, background 0.25s;
+}
+.retrieval-prep-card:hover { border-color: rgba(216, 200, 170, 0.32); }
+.retrieval-prep-card.open {
+  background: rgba(8, 6, 18, 0.78);
+  border-color: rgba(201, 168, 76, 0.35);
+}
+.retrieval-prep-eyebrow {
+  font-family: 'Cinzel', serif;
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  color: rgba(201, 168, 76, 0.6);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.retrieval-prep-title {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: rgba(240, 236, 228, 0.92);
+  margin-bottom: 10px;
+}
+.retrieval-prep-warn {
+  font-family: 'Crimson Pro', 'Crimson Text', serif;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(216, 200, 170, 0.62);
+  font-style: italic;
+  margin-bottom: 14px;
+}
+.retrieval-prep-toggle {
+  background: transparent;
+  border: 1px solid rgba(216, 200, 170, 0.28);
+  color: rgba(216, 200, 170, 0.78);
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 9px 18px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.retrieval-prep-toggle:hover {
+  border-color: rgba(216, 200, 170, 0.5);
+  color: #f0ece4;
+  background: rgba(216, 200, 170, 0.04);
+}
+.retrieval-prep-toggle-icon {
+  font-size: 10px;
+  line-height: 1;
+  transition: transform 0.25s;
+}
+.retrieval-prep-card.open .retrieval-prep-toggle-icon {
+  transform: rotate(180deg);
+}
+.retrieval-prep-video {
+  display: none;
+  margin-top: 18px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 9 / 16;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.retrieval-prep-card.open .retrieval-prep-video { display: block; }
+.retrieval-prep-video iframe {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
+/* =============================================================
+   START HERE MICRO INDICATOR (Brief 6)
+============================================================ */
+
+.start-here-indicator {
+  position: fixed;
+  z-index: 200;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  color: var(--start-here-color, #d8b8ff);
+  animation: start-here-bounce 1.4s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px var(--start-here-glow, rgba(216, 184, 255, 0.55)));
+}
+.start-here-indicator.visible { display: flex; }
+.start-here-text {
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-shadow: 0 0 14px var(--start-here-glow, rgba(216, 184, 255, 0.7));
+  background: rgba(8, 6, 18, 0.78);
+  border: 1px solid currentColor;
+  border-radius: 14px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+.start-here-arrow {
+  width: 22px;
+  height: 18px;
+  display: block;
+}
+@keyframes start-here-bounce {
+  0%, 100% { transform: translate(-50%, -100%); }
+  50%      { transform: translate(-50%, calc(-100% - 12px)); }
+}
+.start-here-micro { z-index: 260; }
+
+@media (max-width: 680px) {
+  .start-here-text { font-size: 11px; letter-spacing: 0.18em; padding: 5px 11px; }
+  .start-here-arrow { width: 18px; height: 14px; }
+}
+
 .subunit-title {
   margin-top: 8px;
   margin-bottom: 24px;
@@ -3383,6 +3546,39 @@ body.entry-active .dev-panel {
    DEV PANEL — pinned right edge, transparent at rest, solid when active
    Toggle by clicking the strip. Floats above all UI but below modals.
    ============================================ */
+/* Production gate: panel is hidden unless body has .dev-enabled.
+   Set by the ga_dev localStorage flag at load. */
+.dev-panel { display: none; }
+body.dev-enabled .dev-panel { display: block; }
+
+/* Collapsed pill — default shown state when dev is enabled.
+   Small tab in the bottom-right; tap to expand to full panel. */
+body.dev-enabled .dev-panel.is-collapsed {
+  width: auto;
+  top: auto;
+  bottom: 16px;
+  right: 16px;
+  transform: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  opacity: 0.5;
+}
+body.dev-enabled .dev-panel.is-collapsed:hover { opacity: 0.9; }
+/* Hide everything except a label when collapsed */
+body.dev-enabled .dev-panel.is-collapsed > *:not(.dev-panel-collapsed-label) { display: none; }
+.dev-panel-collapsed-label { display: none; }
+body.dev-enabled .dev-panel.is-collapsed .dev-panel-collapsed-label {
+  display: block;
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: rgba(229, 197, 116, 0.7);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* When expanded again, restore the original fixed-right layout
+   (the existing .dev-panel rules already define this). */
+
 .dev-panel {
   position: fixed;
   top: 50%;
@@ -5151,6 +5347,16 @@ body.entry-active .dev-panel {
   </div>
 </div>
 
+<!-- START HERE micro indicator (Brief 6). Positioned dynamically by
+     updateStartHereMicroIndicator. Visible only on first-ever panel
+     open; dismissed on first node click. -->
+<div id="startHereMicro" class="start-here-indicator start-here-micro" aria-hidden="true">
+  <span class="start-here-text">START HERE</span>
+  <svg class="start-here-arrow" viewBox="0 0 18 14" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M9 13 L1 1 L17 1 Z" fill="currentColor"/>
+  </svg>
+</div>
+
 <!-- Micro-tree overlay — opens when user clicks a primordial glyph.
      Shows the sub-unit chain with current/done/locked states. Click a
      node to drop into that sub-unit's lesson view. Brief 3 of module
@@ -6538,6 +6744,94 @@ var SUBUNIT_CHAINS = {
   ]
 };
 
+// =============================================================
+// RETRIEVAL PREP VIDEOS (Brief 6)
+// Optional summary clips that appear above the retrieval frame.
+// One per gate per module (gate 0 = unit 1's retrieval, gate 1 =
+// unit 2's). Empty string = no card renders for that gate.
+//
+// Production: each video should be a short summary of the unit's
+// content — recap, not new material. The card is opt-in (collapsed
+// by default) and copy explicitly warns that watching makes the
+// retrieval easier (and therefore less effective). Operators who
+// want desirable difficulty leave the URLs empty.
+// =============================================================
+
+var RETRIEVAL_PREP_VIDEOS = {
+  gap: {
+    0: '', // Gap Unit 1 summary — fill with YouTube embed URL when produced
+    1: ''  // Gap Unit 2 summary
+  },
+  engine: {
+    0: '',
+    1: ''
+  },
+  interpreter: {
+    0: '',
+    1: ''
+  }
+};
+
+// Returns HTML for the optional video card. Empty string when no URL is
+// configured — card simply doesn't render and the retrieval flow is
+// unchanged.
+function buildRetrievalPrepCard(moduleId, retrievalStage){
+  var gateIdx = (retrievalStage === 1) ? 0 : 1;
+  var url = RETRIEVAL_PREP_VIDEOS[moduleId] && RETRIEVAL_PREP_VIDEOS[moduleId][gateIdx];
+  if(!url) return '';
+
+  var cardId = 'retPrep_' + moduleId + '_g' + gateIdx;
+
+  var html = '';
+  html += '<div class="retrieval-prep-card" id="' + cardId + '">';
+  html += '<div class="retrieval-prep-eyebrow">Optional</div>';
+  html += '<div class="retrieval-prep-title">Watch a summary first</div>';
+  html += '<div class="retrieval-prep-warn">';
+  html += 'Watching may make these prompts easier, which means they will teach you less. The test that is hard is the test that works.';
+  html += '</div>';
+  html += '<button class="retrieval-prep-toggle" type="button" onclick="toggleRetrievalPrep(\'' + cardId + '\')">';
+  html += '<span class="retrieval-prep-toggle-label">Watch summary</span>';
+  html += '<span class="retrieval-prep-toggle-icon">\u25be</span>';
+  html += '</button>';
+  html += '<div class="retrieval-prep-video" data-src="' + url + '"></div>';
+  html += '</div>';
+  return html;
+}
+
+// Lazy-instantiate the iframe on first expand, remove on collapse to
+// stop playback.
+function toggleRetrievalPrep(cardId){
+  var card = document.getElementById(cardId);
+  if(!card) return;
+  var videoBox = card.querySelector('.retrieval-prep-video');
+  var toggle = card.querySelector('.retrieval-prep-toggle');
+  var label = toggle && toggle.querySelector('.retrieval-prep-toggle-label');
+  var isOpen = card.classList.contains('open');
+  if(isOpen){
+    card.classList.remove('open');
+    if(label) label.textContent = 'Watch summary';
+    var existingIframe = videoBox.querySelector('iframe');
+    if(existingIframe) existingIframe.remove();
+  } else {
+    card.classList.add('open');
+    if(label) label.textContent = 'Hide summary';
+    if(!videoBox.querySelector('iframe')){
+      var src = videoBox.getAttribute('data-src');
+      if(src){
+        var iframe = document.createElement('iframe');
+        iframe.setAttribute('src', src);
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('title', 'Module summary');
+        videoBox.appendChild(iframe);
+      }
+    }
+  }
+}
+
+window.toggleRetrievalPrep = toggleRetrievalPrep;
+
 function isSubunitComplete(subunitId){
   return localStorage.getItem('ga_subunit_' + subunitId + '_complete') === '1';
 }
@@ -7051,12 +7345,17 @@ function openMicroTreePanel(moduleId){
   overlay.classList.add('open');
   activeMicroTreeModule = moduleId;
   attachMicroTreeHovers();
+  // Brief 6: show START HERE indicator above first non-locked node.
+  updateStartHereMicroIndicator(moduleId);
 }
 
 function closeMicroTreePanel(){
   var overlay = document.getElementById('microTreeOverlay');
   if(overlay) overlay.classList.remove('open');
   activeMicroTreeModule = null;
+  // Brief 6: hide START HERE indicator when panel closes.
+  var startHere = document.getElementById('startHereMicro');
+  if(startHere) startHere.classList.remove('visible');
 }
 
 function attachMicroTreeHovers(){
@@ -7079,7 +7378,61 @@ function attachMicroTreeHovers(){
 
 window.closeMicroTreePanel = closeMicroTreePanel;
 
+// =============================================================
+// START HERE MICRO INDICATOR (Brief 6)
+// Positions above the first non-disabled hit button in the micro-tree
+// panel. Color matches the module's imbuement palette. Dismissed on
+// any node click; persists at ga_microtree_first_seen=1.
+// =============================================================
+
+function updateStartHereMicroIndicator(moduleId){
+  var indicator = document.getElementById('startHereMicro');
+  if(!indicator) return;
+
+  var dismissed = localStorage.getItem('ga_microtree_first_seen') === '1';
+  if(dismissed){
+    indicator.classList.remove('visible');
+    return;
+  }
+
+  // Find the first hit button in current state.
+  var firstCurrent = document.querySelector('#microTreePanel .micro-tree-hit:not(:disabled)');
+  if(!firstCurrent){
+    indicator.classList.remove('visible');
+    return;
+  }
+
+  // Wait one frame for the panel to lay out before measuring.
+  requestAnimationFrame(function(){
+    var rect = firstCurrent.getBoundingClientRect();
+    if(rect.width === 0){
+      indicator.classList.remove('visible');
+      return;
+    }
+    var centerX = rect.left + rect.width / 2;
+    var topY = rect.top - 6;
+
+    indicator.style.left = Math.round(centerX) + 'px';
+    indicator.style.top = Math.round(topY) + 'px';
+
+    // Source color from the module's imbuement palette.
+    var palette = (typeof getModulePalette === 'function') ? getModulePalette(moduleId) : null;
+    if(palette){
+      indicator.style.setProperty('--start-here-color', palette.pulseStroke || '#d8b8ff');
+      indicator.style.setProperty('--start-here-glow', palette.bright + '0.55)');
+    }
+    indicator.classList.add('visible');
+  });
+}
+
+function dismissStartHereMicro(){
+  localStorage.setItem('ga_microtree_first_seen', '1');
+  var el = document.getElementById('startHereMicro');
+  if(el) el.classList.remove('visible');
+}
+
 function goToSubunit(moduleId, subunitIdx){
+  dismissStartHereMicro(); // Brief 6
   var chain = SUBUNIT_CHAINS[moduleId];
   if(!chain || subunitIdx < 0 || subunitIdx >= chain.length) return;
   var overlay = document.getElementById('microTreeOverlay');
@@ -7088,6 +7441,7 @@ function goToSubunit(moduleId, subunitIdx){
 }
 
 function goToRetrieval(moduleId, gateIdx){
+  dismissStartHereMicro(); // Brief 6
   var lesson = LESSONS[moduleId];
   if(!lesson) return;
   var overlay = document.getElementById('microTreeOverlay');
@@ -7097,6 +7451,7 @@ function goToRetrieval(moduleId, gateIdx){
 }
 
 function goToModuleComplete(moduleId){
+  dismissStartHereMicro(); // Brief 6
   var lesson = LESSONS[moduleId];
   if(!lesson) return;
   var overlay = document.getElementById('microTreeOverlay');
@@ -7124,6 +7479,24 @@ function openLessonAtStage(moduleId, stageIdx){
   stages.forEach(function(s, i){
     s.style.display = (i === stageIdx) ? '' : 'none';
   });
+
+  // Brief 6: inject the optional prep card on retrieval stages.
+  // No-op when no URL is configured (returns empty string).
+  if(SUBUNIT_CHAINS[moduleId] && (stageIdx === 1 || stageIdx === 3)){
+    var visibleStage = stages[stageIdx];
+    var frame = visibleStage ? visibleStage.querySelector('.retrieval-frame') : null;
+    if(frame){
+      var existing = frame.querySelector('.retrieval-prep-card');
+      if(existing) existing.remove();
+      var cardHtml = buildRetrievalPrepCard(moduleId, stageIdx);
+      if(cardHtml){
+        var temp = document.createElement('div');
+        temp.innerHTML = cardHtml;
+        frame.insertBefore(temp.firstElementChild, frame.firstChild);
+      }
+    }
+  }
+
   restoreRetrievalState(moduleId);
   updateModuleProgressDots(moduleId, stageIdx, lesson.stages.length);
   refreshEssenceCounter();
@@ -8930,6 +9303,30 @@ function checkRetrievalLength(promptId){
   }
 }
 
+// =============================================================
+// GUIDE DIALOGUE STUBS (Brief 6)
+// The Guide system isn't built in atheneum yet. These stubs let the
+// module wiring code call into the Guide without throwing. When the
+// Guide system lands later, these stubs become the real wiring sites
+// — replace the function bodies with the actual Guide invocations.
+// =============================================================
+
+function triggerFirstRetrievalGuide(){
+  // Wire to actual Guide system when available. For now: no-op.
+  // Original intent: on first ever retrieval submission across any
+  // module, the Guide appears with a brief encouragement about why
+  // retrieval practice works (the desirable difficulty principle).
+  // Guard: localStorage.ga_first_retrieval_guide_seen = '1' after fire.
+}
+
+function triggerFirstUnitCompleteGuide(){
+  // Wire to actual Guide system when available. For now: no-op.
+  // Original intent: on first ever unit completion (both prompts of a
+  // retrieval submitted), the Guide appears with a brief reflection
+  // prompt or transition to Unit 2.
+  // Guard: localStorage.ga_first_unit_complete_guide_seen = '1' after fire.
+}
+
 function submitRetrieval(promptId){
   var textarea = document.getElementById('ret-' + promptId);
   var btn = document.getElementById('sub-' + promptId);
@@ -8965,6 +9362,12 @@ function submitRetrieval(promptId){
   if(currentLessonId){
     updateModuleVessel(currentLessonId, 0);
     rippleModuleVessel();
+  }
+
+  // Brief 6: fire first-retrieval Guide once (stub for now).
+  if(localStorage.getItem('ga_first_retrieval_guide_seen') !== '1'){
+    triggerFirstRetrievalGuide();
+    localStorage.setItem('ga_first_retrieval_guide_seen', '1');
   }
 
   checkStageCompletion();
@@ -9061,6 +9464,12 @@ function checkStageCompletion(){
     var stageName = visibleStage.getAttribute('data-stage');
     var footer = document.getElementById(stageName + '-footer');
     if(footer) footer.style.display = '';
+
+    // Brief 6: fire first-unit-complete Guide once (stub for now).
+    if(localStorage.getItem('ga_first_unit_complete_guide_seen') !== '1'){
+      triggerFirstUnitCompleteGuide();
+      localStorage.setItem('ga_first_unit_complete_guide_seen', '1');
+    }
   }
 }
 
@@ -10469,6 +10878,9 @@ function devReset() {
     ['gap','engine','interpreter'].forEach(function(mod){
       localStorage.removeItem('ga_module_imbuement_' + mod);
     });
+    localStorage.removeItem('ga_microtree_first_seen');           // Brief 6
+    localStorage.removeItem('ga_first_retrieval_guide_seen');     // Brief 6
+    localStorage.removeItem('ga_first_unit_complete_guide_seen'); // Brief 6
   } catch (e) {}
   userState = Object.assign({}, DEFAULT_STATE);
   saveState();
@@ -10520,6 +10932,44 @@ function devWipeAll() {
   console.log('[dev] Wiping all entry-experience flags and userState. Reloading.');
   devReset();
 }
+
+// Fast-forward a module to "ready to complete" state. Marks all sub-units
+// done and all retrievals submitted (with a marker payload), sets imbuement
+// to 1.0. Use from dev panel during pour-ceremony / conduit-ceremony testing.
+function devCompleteAllRetrievals(moduleId){
+  var lesson = LESSONS[moduleId];
+  var chain = SUBUNIT_CHAINS[moduleId];
+  if(!lesson || !chain){
+    console.warn('devCompleteAllRetrievals: unknown module', moduleId);
+    return;
+  }
+
+  // Mark all sub-units done.
+  chain.forEach(function(sub){
+    markSubunitComplete(sub.id);
+  });
+
+  // Mark all retrievals submitted. Discover prompt IDs from content HTML.
+  var temp = document.createElement('div');
+  temp.innerHTML = lesson.content;
+  var prompts = temp.querySelectorAll('[data-prompt-id]');
+  prompts.forEach(function(p){
+    var pid = p.getAttribute('data-prompt-id');
+    localStorage.setItem('ga_retrieval_' + pid, '[dev] auto-completed');
+    localStorage.setItem('ga_retrieval_' + pid + '_submitted', '1');
+  });
+
+  // Set imbuement to full so panel/macro-tree reflects the right color.
+  setImbuement(moduleId, 1);
+
+  // Re-render macro-tree so the surface reflects the change.
+  if(typeof renderPrimordialPalettes === 'function'){
+    renderPrimordialPalettes();
+  }
+
+  console.log('devCompleteAllRetrievals: ' + moduleId + ' fast-forwarded to mega.');
+}
+
 window.atheneum = {
   devUnlockAll,
   devCompletePage,
@@ -10530,6 +10980,7 @@ window.atheneum = {
   devSimulateDive,
   devClearVideo,
   devReplayWelcome,
+  devCompleteAllRetrievals,  // Brief 6
   userState: () => userState,
   CONSTELLATIONS: () => CONSTELLATIONS
 };
@@ -10694,6 +11145,7 @@ init();
      Click the × or outside to dismiss.
      ============================================================ -->
 <div class="dev-panel" id="dev-panel">
+  <div class="dev-panel-collapsed-label">Dev</div>
   <div class="dev-panel-header">
     <div class="dev-panel-title">Dev Tools</div>
     <button class="dev-panel-close" id="dev-panel-close" aria-label="Close">&times;</button>
@@ -10723,6 +11175,13 @@ init();
   </div>
 
   <div class="dev-panel-section">
+    <div class="dev-panel-section-label">Module fast-forward</div>
+    <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('gap')">Fast-forward Gap</button>
+    <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('engine')">Fast-forward Engine</button>
+    <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('interpreter')">Fast-forward Interpreter</button>
+  </div>
+
+  <div class="dev-panel-section">
     <div class="dev-panel-section-label">Reset</div>
     <button class="dev-panel-btn is-warn" id="dev-reset">Wipe all state &amp; reload</button>
   </div>
@@ -10736,6 +11195,18 @@ init();
 // All buttons hook into window.atheneum.* dev functions.
 // ============================================================
 (function(){
+  // --- Production gate -------------------------------------------------
+  // ?dev=1 enables (and persists) dev tools; ?dev=0 disables.
+  // Visibility is driven by the persisted ga_dev flag so it survives
+  // navigation into lessons during a dev session.
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('dev') === '1') localStorage.setItem('ga_dev', '1');
+    if (params.get('dev') === '0') localStorage.removeItem('ga_dev');
+  } catch (e) {}
+  const devEnabled = (() => { try { return localStorage.getItem('ga_dev') === '1'; } catch (e) { return false; } })();
+  if (devEnabled) document.body.classList.add('dev-enabled');
+  // --------------------------------------------------------------------
   const panel = document.getElementById('dev-panel');
   const closeBtn = document.getElementById('dev-panel-close');
 
@@ -10747,9 +11218,18 @@ init();
     panel.classList.remove('is-active');
   }
 
+  if (devEnabled) panel.classList.add('is-collapsed');
+
   // Click on the panel body (when inactive) opens it. Once active,
   // clicks on buttons/inputs are normal — they don't deactivate.
   panel.addEventListener('click', (e) => {
+    // Collapsed pill → expand to full panel
+    if (panel.classList.contains('is-collapsed')) {
+      panel.classList.remove('is-collapsed');
+      activate();
+      e.stopPropagation();
+      return;
+    }
     if (!panel.classList.contains('is-active')) {
       activate();
       e.stopPropagation();
@@ -10760,6 +11240,7 @@ init();
   closeBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     deactivate();
+    panel.classList.add('is-collapsed');
   });
 
   // Click outside the panel deactivates

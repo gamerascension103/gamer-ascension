@@ -3989,5 +3989,14 @@ window.Scriptorium = { Storage: Storage, PROMPTS: PROMPTS };
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
+<script src="assets/js/atlas.js"></script>
+<script>
+window.addEventListener('load', function(){
+  if(typeof Atlas !== 'undefined'){
+    Atlas.init({ current: 'scriptorium' });
+  }
+});
+</script>
+<script src="assets/js/dev_tools.js"></script>
 </body>
 </html>
