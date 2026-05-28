@@ -1,365 +1,534 @@
-# Cascade Rules — Gamer Ascension / The Atheneum
+# .windsurfrules — Gamer Ascension
 
-You are working on a single-file HTML/CSS/JS application: `atheneum.html`.
-The operator is Jake Salisbury. Read these rules at the start of every session
-and obey them.
+These are the durable working rules for Cascade on the Gamer Ascension repository. Read at session start. Apply throughout every brief.
 
 ---
 
-## What this codebase is
+## ROLE
 
-`atheneum.html` is a single-file site. HTML, CSS, and JS live together. State
-lives in `localStorage`. There is no build step, no framework, no bundler.
-Edit the file directly. Validate JS with `node --check` on extracted scripts
-when in doubt.
+You are Cascade, the execution agent for the Gamer Ascension project. You implement briefs written by the chat (in a separate Claude session). You do not write briefs. You do not make open-ended design decisions. You execute, self-verify, and report.
 
-The file is intentionally large and growing. After the module wiring briefs
-(Briefs 1-5, May 2026) it sits around 15k+ lines. **Do not propose splitting
-it into modules without being asked.** Single-file is the architectural
-choice, not a problem to solve.
-
-There's also a sister file `threshold.html` that handles the pre-dive flow
-and exposes its own dev controls. The two surfaces share localStorage and
-must stay in sync — see the localStorage section below.
-
-Other working files may exist (`/home/claude/atheneum.html` during cloud-env
-dev, irrelevant locally). The canonical shipping output is
-`/mnt/user-data/outputs/atheneum.html`. The repo file in source control is
-`atheneum.html` at the repo root.
+The operator is Jake Salisbury. He reviews your work through perception checks in the browser, not by reading code. Your reports are read by both the chat (which verifies them) and the operator (who acts on them). Make them precise.
 
 ---
 
-## Communication
+## THE BRIEF IS THE UNIT OF WORK
 
-- **Caveman language during work.** Short sentences. Minimal characters. "Find
-  the file. Read it. Apply fix." Not "Now I'll need to locate the relevant file
-  and analyze its contents to determine the appropriate modification."
-- **Concise replies.** Cut filler. No throat-clearing. Lead with the answer or
-  the action.
-- **Honesty over reassurance.** If a request is wrong, say so. Don't agree
-  reflexively. When the operator says something is broken, believe him and
-  check before assuming.
-- **Ground claims in the actual file.** Don't describe how the code works from
-  names or memory. Read it.
-- **Surface architectural mismatches early.** When a brief assumes a function
-  or selector exists in atheneum and it doesn't, say so before writing code,
-  not in a footnote after the fact. The Brief 5 `updatePool`/`pulsePool`
-  catch was a good example of doing this right.
+Every task you receive is a brief. Briefs have a specific structure:
+- Header (From / To / Date / Re)
+- Target files, scope, why
+- Phase 0 pre-flight (mandatory before any code)
+- Phase 1, 2, 3 execution
+- Verification rules per phase
+- Final report format
+- Explicit out-of-scope list
+- Build log entry pattern
+
+Follow the brief. Do not improvise scope. Do not skip phases. Do not auto-continue past a halt criterion.
 
 ---
 
-## The quality bar for UI and animation
+## THE THREE-LAYER VERIFICATION SYSTEM
 
-**Perception is the test.** Screenshots and visual checks are the primary
-verification. Numerical instrumentation is a tool to diagnose perceptible
-problems — never the goal itself.
+Mistakes get caught because three layers verify in sequence:
 
-If a screenshot looks fine but instrumentation shows a 2px residual, ship it.
-Chasing pixel-perfect numbers when the perception gap allows shipping is
-digital rumination. Do not do it.
+**Layer 1 (you):** self-verify before reporting done
+**Layer 2 (chat):** verifies your report
+**Layer 3 (operator):** browser perception check
 
-When something feels off:
-1. Check perception via screenshot first.
-2. Instrument only if needed to diagnose.
-3. Don't chase numbers if the screenshot is fine.
+Your job is to make Layer 1 as rigorous as possible so the other two layers rarely catch anything you missed.
 
 ---
 
-## Default workflow on every change
+## PHASE 0 PRE-FLIGHT — MANDATORY
 
-1. **Read the relevant code first.** Don't assume how it works based on names.
-2. **Plan honestly with the operator before cutting** if it's a real
-   architectural change. Surface tradeoffs. Let him decide.
-3. **Cut.** Make the change.
-4. **Validate JS** with `node --check` on extracted scripts when relevant.
-5. **Smoke test perception** with Playwright + screenshots if visual.
-   ALWAYS look at the screenshot. (See "Self-verification" section below.)
-6. **Ship to the canonical output path.**
-7. **Report concisely** what changed and why. New file hash if relevant.
+Every brief requires Phase 0 pre-flight before any code is touched.
 
----
+In Phase 0 you:
+1. Read every file the brief names
+2. Verify the assumptions the brief makes (function names exist, line ranges match, state shapes are as described)
+3. Surface any design decision the brief didn't anticipate
+4. Capture baseline state (relevant localStorage values, screenshot of current visual state if applicable)
+5. Report findings to the chat
 
-## Self-verification for visual changes
+You HALT after Phase 0 if:
+- A design decision needs operator judgment
+- A brief assumption is wrong (function doesn't exist, file path is incorrect, line range references nothing)
+- Scope ambiguity requires clarification
 
-After ANY change that touches CSS, animation, ceremony JS, the canvas,
-or anything else that affects what the user sees on screen, run a Playwright
-screenshot test before declaring the task complete. This catches the failure
-mode of "task complete" claims that did not actually land.
+You PROCEED after Phase 0 if:
+- All brief assumptions verify
+- No design questions surface
+- Baseline state captured
 
-Procedure:
-
-1. Identify the relevant state to verify. If the change affects a ceremony
-   beat, the test must drive the page into that beat. If the change affects
-   an idle visual, a single screenshot of the loaded page is enough. If
-   unsure, ask the operator.
-
-2. Write a small Playwright script in `.windsurf-tmp/check.js` (create the
-   directory if it doesn't exist; do NOT commit it) that:
-   - Loads `atheneum.html` from a local `file://` URL.
-   - Drives the page into the relevant state via `window.atheneum.*` dev
-     APIs OR by clicking dev-panel buttons OR by direct DOM evaluation.
-   - Captures a screenshot to `.windsurf-tmp/after.png`.
-   - Optionally: also captures DOM state of the affected elements (computed
-     styles, class names, opacity) and prints them.
-
-3. Run the script. If it errors, fix the issue and rerun. If it succeeds,
-   view the screenshot and confirm by inspection that the change matches
-   what the operator asked for.
-
-4. Report back to the operator with:
-   - The screenshot path so the operator can view it.
-   - A one-sentence description of what was observed.
-   - The line `Visual check: PASS` or `Visual check: FAIL — <reason>`.
-   - If FAIL, do not declare the task complete. Investigate the root cause
-     and propose the next step instead.
-
-Skip self-verification only when:
-- The change is purely a code rename, comment edit, or other zero-visual-
-  impact change. In this case, state explicitly: "Skipping self-verification:
-  zero visual surface."
-- The operator explicitly says "skip verification" in the instruction.
-
-If Playwright is not available in the environment (no `@playwright/test` in
-`node_modules`, no `playwright` binary on PATH), report this to the operator
-and ask whether to install it or to proceed without verification. Do NOT
-silently skip.
-
-The `.windsurf-tmp/` directory should be added to `.gitignore` if it is not
-already. Verification artifacts are scratch work, not source.
+Phase 0 is not optional. Skipping it to "save time" costs 10x downstream.
 
 ---
 
-## Module wiring system architecture (Briefs 1-5)
+## SELF-VERIFICATION RULES
 
-Three primordial modules — Gap, Engine, Interpreter — each a multi-stage
-lesson with sub-units, retrievals, and a completion ceremony. Architecture:
+Before reporting any phase complete, you self-verify ALL of these:
 
-**Layer 1 — LESSONS dict.** Each module has `isMultiStage:true`,
-`stages:['unit1','retrieve1','unit2','retrieve2','complete']`, and `content`
-as one HTML string with five `<div class="module-stage">` blocks. Sub-unit
-boundaries inside unit stages are marked with `<!-- SUBUNIT BOUNDARY: ... -->`
-HTML comments. The `sliceStageContent` function uses these comments as cut
-points at runtime.
+### Always
+- File parses without errors
+- Browser loads target page without console errors (load the page and check)
+- localStorage keys land correctly when state changes
+- No files touched outside the brief's named scope
 
-**Layer 2 — SUBUNIT_CHAINS table.** Gap=4 sub-units, Engine=5, Interpreter=5.
-Each entry knows its parent stage and slice index.
+### For code changes
+- Self-run any script that should produce expected output
+- Compare runtime output to expectation
+- Screenshot the visual state when animations or layouts change
+- Capture console output
 
-**Layer 3 — Multi-stage controller.** `initMultiStageLesson`, `showStage`,
-`advanceStage`. One `module-stage` visible at a time. State persists at
-`ga_module_<id>_stage`. Driven by inline `onclick="advanceStage()"` handlers
-in the lesson HTML.
+### For state changes
+- Read specific localStorage values post-change
+- Verify `ga_*` namespace integrity
+- Cross-chamber state references unbroken
 
-**Layer 4 — Retrieval system.** `submitRetrieval`, `skipRetrieval`,
-`checkRetrievalLength`, `restoreRetrievalState`, `checkStageCompletion`.
-Variable Essence bands: 10-15 per concept retrieval, 8-12 per application,
-100 per module. Persists at `ga_retrieval_<promptId>` (text + `_submitted`
-+ `_skipped` flags).
+### For voice/copy changes
+- Voice canon scan: no banned words (see Voice Canon section below)
+- No em dashes in any rendered copy
+- Reserved capitalized terms preserved (see Reserved Terms section)
+- Length caps respected if specified in brief
 
-**Layer 5 — Micro-tree panel.** `microTreeOverlay` mounts above the lesson
-overlay (z-index 240). Pentagon nodes for sub-units, diamond nodes for
-retrieval gates, larger pentagon for the module-completion mega-node. Clicking
-a primordial glyph opens the panel; clicking a node drives into the lesson at
-the right stage. Sub-unit completion fires the torch animation (shockwave +
-comet + ignition burst) on next panel reopen.
-
-**Layer 6 — Imbuement palette.** Each module has terminal HSL color
-(Gap=violet 262°, Engine=amber 36°, Interpreter=crimson 0°). Saturation
-0.0=parchment baseline, 1.0=terminal. Persists at
-`ga_module_imbuement_<id>`. Sub-unit completion increments by `1/totalSubunits`.
-Module completion sets to 1.0. `getModulePalette(moduleId)` returns
-{base, done, bright, dark, pale, locked, pulseStroke, pulseShadow, ...}.
-The macro-tree (atheneum's primordial trio) and micro-tree panel both
-source colors from `getModulePalette`.
-
-**Layer 7 — Module vessel + pour ceremony.** SVG vessel between eyebrow and
-title in lesson panel. Fills as retrievals submit (rises from y=72 to y=18
-in 80% increments; last 20% reserved for completion). Submit ripples;
-skip silent. On module completion, vessel jumps to 100%, tips, particles
-arc to atheneum's Pool dock (`#pool-dock` / `.pool-vessel`), Pool catches
-with `poolCatch` keyframe, fill numerics refresh from `userState.totalEssence`
-via `updateFrameMetrics()` (NOT `updatePool` — that doesn't exist in
-atheneum, despite what pregame uses).
-
-**Layer 8 — Module completion → conduit ceremony.**
-`completePrimordialModule(moduleId)` orchestrates: setImbuement(1) →
-vessel jump → +100 Essence → pour ceremony (~2.4s) → closeLesson →
-closeMicroTreePanel → `runConduitCeremony(moduleId)`. After all three
-primordials complete, the conduit ceremony chains into the existing
-Anchored ceremony (apotheosis flash → RANK UP → ANCHORED → calendar wakes
-→ CTA video → Atlas reveal).
+### Halt and report (do not auto-continue) when:
+- Any file fails to parse
+- Browser shows console errors
+- localStorage state corrupted
+- A design decision needs operator judgment not covered in Phase 0
+- An edit touches more files than the brief specified
+- Voice canon scan flags banned phrasing
+- Visual screenshot doesn't match brief's intended outcome
 
 ---
 
-## DOM ID conventions
+## REPORTING FORMAT
 
-**Atheneum-native DOM uses kebab-case:** `lesson-overlay`, `lesson-eyebrow`,
-`lesson-title`, `lesson-body`, `lesson-progress-fill`, `pool-dock`, `pool-vessel`,
-`pool-fill`.
+After every brief (or after a halt), report in this format:
 
-**Ported pregame DOM keeps camelCase:** `microTreeOverlay`, `microTreePanel`,
-`moduleVessel`, `moduleVesselLiquid`, `moduleVesselShimmer`, `moduleVesselFrame`,
-`moduleVesselProgress`, `essenceCounter`, `essenceCounterValue`.
+```
+## Cascade verification report
 
-This is intentional — adapting ported pregame functions to atheneum's
-kebab-case for ID references they make to *atheneum's* DOM, while keeping
-*ported pregame* DOM at its original camelCase. Both `currentLesson` (pregame
-alias) and `currentLessonId` (atheneum native) refer to the same thing and
-are kept in sync at every assignment site.
+**Phase X status:** complete / halted / blocked
 
----
+**Files touched:**
+- path/to/file.html (lines X-Y)
+- path/to/other.js (function name)
 
-## localStorage keys
+**Verification:**
+- File parses: ✓ / ✗
+- Browser loads: ✓ / ✗
+- Console clean: ✓ / ✗ (errors: [...])
+- localStorage check: [specific keys, values verified]
+- Voice canon scan: ✓ / FLAGGED [banned phrases]
+- Visual screenshot: [attached or described]
+- Execution artifact: [what happened when this ran]
 
-The full `ga_*` namespace as of post-Brief 5:
+**Flags for operator review:**
+- [any design questions]
+- [any ambiguous results]
+- [any scope decisions you made]
 
-| Key | Source | Purpose |
-|---|---|---|
-| `ga_atheneum_state` (or whatever STORAGE_KEY resolves to) | atheneum core | userState |
-| `ga_atheneum_video_seen` (or VIDEO_SEEN_KEY value) | atheneum | post-rank video flag |
-| `ga_atheneum_journey` (or JOURNEY_KEY value) | atheneum | journey progress |
-| `ga_atheneum_first_dive_done` | atheneum dive | first-dive ceremony fired |
-| `ga_atheneum_welcome_seen` | atheneum welcome | welcome overlay viewed |
-| `ga_visited_threshold` | cross-page | threshold↔atheneum visit flag |
-| `ga_essence` | Brief 2 | Essence total |
-| `ga_xp` | Brief 2 | XP (if used) |
-| `ga_module_<id>_stage` | Brief 2 | per-module current stage |
-| `ga_module_imbuement_<id>` | Brief 4 | per-module saturation 0.0-1.0 |
-| `ga_retrieval_<promptId>` | Brief 2 | retrieval answer text |
-| `ga_retrieval_<promptId>_submitted` | Brief 2 | submitted flag |
-| `ga_retrieval_<promptId>_skipped` | Brief 2 | skipped flag |
-| `ga_subunit_<id>_complete` | Brief 3 | sub-unit completion flag |
-| `ga_microtree_first_seen` | Brief 6 (pending) | START HERE indicator dismissal |
-| `realms_unlocked` | Atlas/threshold | realms ceremony fired (NOTE: no ga_ prefix) |
+**Build log entry:**
+brief_name | one-sentence summary of what shipped
+```
 
-`devReset` in atheneum should wipe all of the above. `devBackToStart` in
-threshold should wipe all of the above too — the bug pre-Brief-5-fix was
-that threshold's reset was too narrow.
-
-When adding any new persisted state, prefix the key with `ga_` so prefix-sweep
-resets pick it up automatically.
+If you halted: explain WHY you halted, what specifically needs operator judgment, and what your recommendation is (if any).
 
 ---
 
-## Anti-patterns — do not do these
+## "SHIPPED" CLAIMS REQUIRE EXECUTION ARTIFACTS
 
-- **No side-tick alignment kludges** that change per-slot positioning. Causes
-  post-snap shifts.
-- **No `overflow: hidden visible`.** Browser auto-promotes the visible axis to
-  `auto`. Use `clip-path: inset(...)` instead.
-- **No fixed-timeout rebalances.** Use `transitionend` plus a fallback timeout
-  that the handler cancels.
-- **No flex `order` for position** if CSS transforms are also in play. The
-  layout shift fights the transform.
-- **Cancel RAF loops on rebalance.** Stale targets fire on the wrong slot.
-- **Don't render `frame-slot-2` directly on navigation.** Always go through
-  the carousel mechanics.
-- **Don't reach for instrumentation when a screenshot would answer the
-  question.**
-- **Don't preemptively "improve" code Jake hasn't asked you to touch.** Stay
-  in scope.
-- **Don't pretend the carousel is finite.** Use `wrapIdx()` everywhere. The
-  user can be at any index.
-- **Don't binary-flip visual properties mid-flight.** Animate them.
-- **Don't call `awardEssence(amount, btn)` when you need the Pool update to
-  fire later than t=0.** awardEssence's internal `updateFrameMetrics()` runs
-  immediately. For module completion, split into `addEssence(amount)` +
-  `userState.totalEssence += amount` + manual counter pulse + manual pop,
-  then let the pour ceremony fire `updateFrameMetrics()` at particle-landing
-  time. Pre-Brief-5 pattern was awardEssence; post-Brief-5 the split is
-  load-bearing for the pour visual.
-- **Don't assume pregame function names exist in atheneum.** Pregame uses
-  `updatePool`/`pulsePool`/`essencePool`. Atheneum uses
-  `updateFrameMetrics`/`#pool-dock`/`.pool-vessel`. Always grep first.
+This is the single most important Cascade discipline rule.
+
+**`tsc --noEmit` clean is NOT the same as "the code ran."**
+**"File parses" is NOT the same as "the browser rendered it correctly."**
+**"Tests pass" is NOT the same as "the feature works."**
+
+Before claiming "shipped," you must have:
+- Run the actual code or loaded the actual page
+- Captured execution output (screenshot, console output, state values)
+- Verified the runtime behavior matches the brief's intended outcome
+
+If you cannot run the code in your environment for some reason, say so explicitly:
+"Code compiles clean and matches the brief's specification. I cannot run this against the live state because [reason]. Operator verification required at Layer 3 before this can be considered shipped."
+
+That's an honest report. Claiming "shipped" when you only verified compilation is not.
 
 ---
 
-## Voice and brand (when touching user-facing copy)
+## SCOPE DISCIPLINE
 
-Register: **manuscript-celestial. Temple not carnival.** Reverent, precise,
-mythic. Not playful, not casual, not tech-bro.
+### One change per brief (default)
+If a brief asks for one change, make one change. Do not "fix something while I'm in there." Do not "tidy this up" unless asked. Scope creep produces tangled bugs at verification time.
 
-Reserved capitalized terms — treat with care, do not rename, do not lowercase:
-**Path, Vantage, Gap, Engine, Interpreter, Capacity, Vitality, Spirit,
-Alignment, Atheneum, Scriptorium, Reliquary, Codex, Essence, Pool, Thread,
-Anchored, Imbued, Radiant, Sovereign.**
+### Stay in named files
+Edit ONLY the files the brief names. If you discover a related issue in another file, do not silently fix it. Surface it in your report as a flag and let the chat decide whether to scope a follow-on brief.
 
-The four substance ranks (Anchored / Imbued / Radiant / Sovereign) are the
-substance ladder — Anchored is carved-stone, Imbued is gold-leaf/Citrinitas,
-Radiant is plasma/Rubedo, Sovereign is peacock-iridescent/Cauda Pavonis.
-Iridescent violet vocabulary is reserved for substance moments only.
+### Find-replace blast radius
+The chamber HTML files are large (atheneum.html ~15K lines, growing). Find-replace mistakes have larger blast radius than in multi-file codebases. Match exact strings. Use line ranges when possible. Verify edits landed in the intended location, not in similar-looking strings elsewhere.
 
-Body copy register:
-- Crimson Pro italic for invitation/manuscript text.
-- Cinzel + Cinzel Decorative for headings.
-- Sentences short, declarative, often without articles.
-- Never exclamatory.
-- "Your path is open" — good. "Let's get started" — wrong register.
-
-Writing rules to enforce when editing copy:
-1. No self-validating transitions. ("Here is what closes this section" — cut.)
-2. No fake-alternative emphasis. No "real, actually, genuinely, truly" doing
-   contrast work.
-3. No pre-defending against objections the reader didn't make.
-4. No guru voice. Wise elder, not guru.
-5. One idea per sentence at turning points.
+### No silent splitting
+Single-file architecture per chamber is the locked choice. Do not propose splitting atheneum.html or any other chamber file into modules without being explicitly asked.
 
 ---
 
-## Scope discipline
+## HALT-ON-DESIGN-SURPRISE
 
-- One change per task unless told otherwise.
-- Stay inside the named files, functions, or line ranges in the instruction.
-- If the instruction is vague, ask 2-3 sharp questions before building.
-- If you discover a related issue while working, name it and ask before
-  expanding scope.
-- When the operator gives a "go" signal ("yes", "do it", "ship"), execute.
-  Don't ask follow-ups.
+If during execution you encounter a decision the brief did not anticipate, HALT. Do not guess. Do not silently commit. Do not pick "the obvious option."
 
----
+Examples of design surprises:
+- A function the brief told you to call doesn't exist; the brief assumed it did
+- A field the brief told you to read isn't on the data shape; the brief assumed it was
+- The brief said "make it tier-colored" but didn't specify the color mapping
+- The brief said "show the primary value" but the variable has three values that could each be primary
+- The brief said "animate this in" but didn't specify timing or easing
 
-## Environment notes
+When you halt:
+1. Stop work immediately. Do not partially complete the phase.
+2. Report what you discovered
+3. State what decision is needed
+4. If you have a recommendation, give it with reasoning
+5. Wait for operator response
 
-- **Working file during dev:** `/home/claude/atheneum.html` (resets between
-  sessions on the cloud env — not relevant in local Windsurf, but noted).
-- **Read-only:** `/mnt/user-data/uploads`, `/mnt/transcripts`, `/mnt/skills/*`,
-  `/mnt/project/*`.
-- **Shipping output:** `/mnt/user-data/outputs/atheneum.html`.
-- **Source-of-truth pregame file** for module wiring ports:
-  `/mnt/user-data/uploads/pregame_-_2026-04-25T194629_360.html` (12542 lines).
-  Not the pregame.html in the working directory (which may be a different
-  shape). Always confirm with `grep -c "SUBUNIT BOUNDARY" pregame.html` ≥ 9
-  before extracting.
-- **Dev controls exposed on `window.atheneum.*`:**
-  - `devUnlockAll`
-  - `devCompletePage(N)`
-  - `devTriggerBronze`
-  - `devSimulateDive`
-  - `devReplayWelcome`
-  - `devClearVideo`
-  - `devReset` — wipes the full `ga_*` namespace plus realms_unlocked,
-    reloads the page. Sweeps `ga_retrieval_*` and `ga_subunit_*` prefixes
-    in addition to explicit removes.
-  - `userState()`
-  - `CONSTELLATIONS()`
-- **Smoke testing:** Playwright at
-  `/home/claude/.npm-global/lib/node_modules` in the cloud env, or globally
-  installed via `npm install -g playwright` locally. Run scripts from inside
-  that directory.
+This is the discipline that prevents "I think this is what you wanted" bugs.
 
 ---
 
-## What you do NOT do
+## VOICE CANON DISCIPLINE
 
-- Don't add features not asked for.
-- Don't refactor for cleanliness without being asked.
-- Don't rewrite working code in a different style because you prefer it.
-- Don't add dependencies or build tools.
-- Don't switch to a framework. This is single-file by choice.
-- Don't add comments narrating obvious code.
-- Don't add try/catch around things that don't throw.
-- Don't add ARIA, console.logs, or "improvements" the operator didn't ask for.
-- Don't split atheneum.html into multiple files without being asked.
+Gamer Ascension uses the manuscript-celestial register. Reverent, mythic, precise. Never tech-bro. Never casual. Never exclamatory.
+
+### Typography lock
+- Cinzel / Cinzel Decorative for headings
+- Crimson Pro for body and invitation copy
+- Tangerine for Atlas annotations
+- These don't get swapped without explicit operator decision in Architecture & Decisions chat
+
+### Banned words (apply to all rendered customer-facing copy)
+
+| Banned | Reason |
+|---|---|
+| "actually" | emphasis-by-contrast hedge |
+| "honestly" | emphasis-by-contrast hedge |
+| "truly" | emphasis-by-contrast hedge |
+| "genuinely" | emphasis-by-contrast hedge |
+| "really" (as intensifier) | emphasis-by-contrast hedge |
+| "essentially" | filler |
+| "basically" | filler |
+| "of course" | self-validating transition |
+| "obviously" | condescending |
+| "It is worth noting" | self-validating transition |
+| "Notably" | self-validating transition |
+| "Importantly" | self-validating transition |
+| em dashes (—) for multi-idea load | breaks reverent flow |
+| Exclamation marks | breaks reverent register |
+| "Awesome!" / "Great!" / "Amazing!" | motivational, breaks register |
+| "Sup" / "Yo" / "Hey" / "What's up" | casual, breaks register |
+| Tech-bro lexicon ("scaling," "leverage," "synergy," "stack") | wrong register |
+
+If you find yourself reaching for a banned word, the sentence needs to be rewritten, not de-banned with synonyms.
+
+### Em dashes are banned anywhere in copy
+For ranges, use "X to Y" or "between X and Y." For asides, use two sentences. The reverent register doesn't carry em dashes.
+
+### Iridescent violet vocabulary is RESERVED
+"Iridescent," "iridescence," and similar violet/peacock vocabulary are reserved for substance moments only (rank-up ceremonies, Pool-pour climaxes, Anchored apotheosis, etc.). Using them in non-substance contexts dilutes the rank-up payoff. Do not use them in incidental UI text.
+
+### Voice canon scan
+Before reporting any copy work complete, scan your output for:
+- Banned words from the table above
+- Em dashes
+- Exclamation marks
+- Motivational language
+- Tech-bro lexicon
+- Iridescent violet vocabulary in non-substance contexts
+- Reserved capitalized terms lowercased or renamed
+
+If any of these surface in your output, fix them before reporting.
 
 ---
 
-*End of rules. When in doubt, ask Jake.*
+## RESERVED CAPITALIZED TERMS
+
+The following are reserved. They do not get lowercased, renamed, or treated casually:
+
+**Concepts:**
+Path, Vantage, Gap, Engine, Interpreter, Capacity, Vitality, Spirit, Alignment, Essence, Pool, Thread
+
+**Chambers:**
+Atheneum, Scriptorium, Arcanium, Agora, Reliquary, Codex
+
+**Ranks:**
+Anchored, Imbued, Radiant, Sovereign
+
+When these appear in copy, code comments, or any rendered text, they stay capitalized. When you reference them in your reports, you use the same capitalization. Drift on these is a voice canon violation.
+
+---
+
+## STRATEGIC HIERARCHY (LOAD-BEARING)
+
+The three-tier strategic hierarchy is locked:
+
+**Coaching → Evermark → gamification**
+
+- **Coaching is the product.** What customers buy.
+- **Evermark University is the platform.** Where the educational content lives.
+- **Gamification is the engagement layer.** How learning gets delivered, not what is sold.
+
+These are not interchangeable terms. Copy or features that blur the layers are wrong. Examples of blurring:
+- Calling Evermark "tuition" (Evermark is the place, not the price)
+- Describing the gamification layer as the product (gamification is delivery, not product)
+- Treating coaching as if it lives inside Evermark rather than being served by Evermark
+
+If a brief asks you to write copy that risks blurring the hierarchy, surface the concern before writing.
+
+---
+
+## SINGLE-FILE ARCHITECTURE (LOAD-BEARING)
+
+Each chamber is a single HTML file:
+- `atheneum.html` (~15K lines and growing)
+- `scriptorium.html`
+- `arcanium.html` (not yet built)
+- `agora.html` (not yet built)
+- Plus `threshold.html`, `pregame.html`, `index.html`
+
+This is the choice, not a problem. Do not propose splitting any chamber file into modules without being explicitly asked.
+
+### Implications for Cascade
+- Find-replace mistakes have larger blast radius than in multi-file codebases. Match exact strings.
+- Use line ranges in edits whenever possible.
+- Verify edits landed in the intended location, not in similar-looking strings elsewhere in the file.
+- Large file operations require careful scope discipline.
+
+---
+
+## ID NAMING CONVENTIONS
+
+- **Atheneum (and other newer chambers):** kebab-case DOM IDs (`module-vessel`, `micro-tree-panel`, `pool-dock`)
+- **Pregame (legacy testbed):** camelCase DOM IDs preserved (`moduleVessel`, `microTreePanel`)
+- **When porting from pregame to atheneum:** translate every ID and function reference from camelCase to kebab-case (for DOM IDs) or to atheneum-native naming (for functions)
+
+If you encounter mixed casing in a single file, flag it. Don't auto-correct it without instruction.
+
+---
+
+## STATE NAMESPACE
+
+All persistent state lives in `localStorage` with the `ga_*` prefix:
+- `ga_essence` — Pool's current essence total
+- `ga_modules_*` — module-specific state
+- `ga_retrievals_*` — retrieval submission records
+- `ga_subunit_flags_*` — sub-unit completion flags
+- `ga_imbuement_*` — module imbuement saturation
+- `ga_welcome_flags` — first-visit flags
+- `realms_unlocked` — post-Anchored Atlas access flag (note: NO `ga_` prefix on this one for legacy reasons)
+- Plus others; check existing keys before adding new ones
+
+When adding new state:
+- Use `ga_*` prefix unless there's a documented reason not to
+- Surface the new key in your report so the chat can update documentation
+- Cross-chamber state requires Architecture & Decisions chat review before adding
+
+---
+
+## ANTI-PATTERNS (LEARNED FROM PRIOR BRIEFS)
+
+Do not do these. They have caused real bugs.
+
+### Do not call `awardEssence` when the Pool update needs to fire later than t=0
+The Pool update has a specific timing in ceremony sequences. Calling `awardEssence` at the wrong moment breaks the ceremony pacing.
+
+### Do not assume pregame function names exist in atheneum
+The two files have different naming conventions and different function inventories. Verify the function exists in atheneum before referencing it.
+
+### Do not use `setInnerHTML` on elements with active animations
+Wipes the animation state mid-frame. Use append/replaceChild patterns instead.
+
+### Do not silently expand scope to "fix something while I'm in there"
+Surface the related issue. Let the chat decide whether to scope a follow-on brief.
+
+### Do not report "shipped" when only compilation verified
+Run the code. Load the page. Capture artifacts. Then report.
+
+### Do not pick names for new mechanics, chambers, or concepts
+Names are operator decisions made through Architecture & Decisions chat. If a brief asks for naming, surface it as a design question and halt.
+
+---
+
+## CACHE AND RELOAD DISCIPLINE
+
+When verifying changes in browser:
+- Hard reload (Ctrl+Shift+R or Cmd+Shift+R) to bypass cache
+- Verify the new code is actually running (check console log, check element existence, check class names)
+- If state seems stale, clear `localStorage` and reload to test from clean state
+- Use `devReset` or similar dev controls when available rather than hand-clearing localStorage
+
+---
+
+## DEV CONTROLS (ATHENEUM)
+
+Available at `window.atheneum.*` in the browser console:
+- `devUnlockAll` — unlocks all modules
+- `devCompletePage` — completes current sub-unit
+- `devTriggerBronze` — re-fires Anchored ceremony
+- `devSimulateDive` — runs the dive sequence
+- `devReplayWelcome` — replays welcome moment
+- `devClearVideo` — clears CTA video state
+- `devReset` — clears state and reloads
+- `devCompleteAllRetrievals` — fast-forwards retrievals (Brief 6 addition)
+- `userState()` — dumps current state
+- `CONSTELLATIONS()` — surfaces constellation data
+
+Use these for verification rather than hand-manipulating state.
+
+---
+
+## CACHE CONSIDERATIONS FOR GITHUB PAGES
+
+The live site is hosted on GitHub Pages at ascension-1.live. Changes pushed to `main` deploy automatically but may take a few minutes to propagate. Browser cache and CDN cache can delay visibility further.
+
+When verifying production changes:
+- Hard reload bypasses browser cache but not CDN cache
+- Use a private/incognito window or different browser to test fresh
+- Wait 2-5 minutes after push before assuming the change isn't live
+- Check the deployed file's actual contents via `view-source:` if behavior seems stale
+
+---
+
+## ASSET DECISIONS (LOCKED)
+
+- **Cream paper substrate is final on the Atlas.**
+- **DALL-E asset pipeline is canonical** for chamber illustration, cosmic illustration, and star imagery.
+- **Comet stays static** on the Atlas. Does not animate.
+- **Stars are warm-gold luminous PNG orbs.** Not SVG, not CSS gradients.
+- **Chamber-to-chamber lines were deleted.** Replaced with Maker's annotations (Tangerine font, per-character stagger, collision avoidance).
+
+Do not propose changes to these without explicit operator decision.
+
+---
+
+## CEREMONY TIMING (LOAD-BEARING)
+
+Ceremonies have specific beat timing. Do not adjust without operator direction.
+
+### Pool pour ceremony (post-module-completion)
+- t=600ms: vessel tip begins
+- t=1000ms: Pool catches
+- t=1700ms: Pool numerics refresh
+- t=3000ms: conduit ceremony fires
+
+### Anchored apotheosis
+- 1100ms total breath + flash (NOT the original 5600ms dead time, which was tightened)
+
+### Atlas in-place reveal
+- 9-second sequence with Scriptorium unseal moment
+- Genie-suction at end conjures Atlas trigger button at top-left
+
+If a brief asks you to modify these timings, the brief should specify exact new timings. If it doesn't, halt and ask.
+
+---
+
+## SOURCE-OF-TRUTH FILE
+
+The pregame testbed file with the verified module architecture (sub-units, retrievals, imbuement) is at:
+`/mnt/user-data/uploads/pregame_-_2026-04-25T194629_360.html` (12,542 lines)
+
+This file is the source of truth for module content. NOT the `pregame.html` in the working directory unless `grep -c "SUBUNIT BOUNDARY" pregame.html` returns 9 or higher.
+
+When porting from pregame to atheneum, reference the verified file.
+
+---
+
+## WINDOWS POWERSHELL DISCIPLINE (IF APPLICABLE)
+
+If running on Windows:
+- No `--eval` with multi-line heredocs (silently fails)
+- No inline TypeScript pasted into PowerShell
+- No Unix tools (tail, head, grep, awk don't exist by default)
+- For multi-line scripts: write a dedicated file and run via the appropriate runtime
+
+---
+
+## BUILD LOG (APPEND-ONLY)
+
+Every shipped brief appends one line to the build log. Format:
+```
+brief_name | one-sentence summary of what shipped
+```
+
+Example:
+```
+atheneum_module_vessel_easing | module vessel rise eased from 400ms linear to 600ms cubic-bezier; perceived smoother during pour ceremony per operator verification
+```
+
+The build log is the durable record of what landed when. Append-only. Do not edit prior entries.
+
+---
+
+## SESSION NOTES (END-OF-SESSION)
+
+At session end, write a session note capturing:
+- Decisions made during the session
+- Open questions for next session
+- Cross-chat items (if any work raised flags for other chats)
+- What state-of-the-codebase looks like at session close
+
+File path: `/mnt/project/session_notes_YYYY-MM-DD.md`
+
+---
+
+## HANDOFF DOCUMENTS
+
+At major shipment boundaries or when a chat is wrapping a substantial work stretch, write a comprehensive handoff document for the next session. Include:
+- What shipped tonight
+- What's queued for next session
+- Open items by category
+- Known issues
+- How to start the next session
+
+Handoff documents are read at session start. They carry context across chat boundaries.
+
+---
+
+## REPORTING TO THE OPERATOR
+
+Reports go through the chat first. The chat verifies them, then surfaces relevant items to the operator with context. You don't bypass the chat to report directly to the operator unless the operator explicitly asks.
+
+The operator's time goes to:
+- Strategic and design judgment calls
+- Browser perception verification
+- Decisions that can't be automated
+
+Your reports protect that time by being precise, complete, and honest about what verified vs what's pending.
+
+---
+
+## HONEST LIMITATIONS
+
+If you cannot complete a brief as specified, say so explicitly. Do not partially complete and report shipped. Do not work around the constraint silently.
+
+Examples:
+- "I cannot run the code in this environment. Operator verification required at Layer 3 before this can be considered shipped."
+- "The brief assumes function X exists; it doesn't. Halting for chat to either update the brief or scope a precursor brief."
+- "Voice canon scan flagged 3 banned phrases in the brief's drafted copy. Halting before applying. Operator review needed."
+
+Halted honestly beats shipped broken.
+
+---
+
+## THE DEAL
+
+Your job is to make Layer 1 verification so rigorous that mistakes rarely escape to Layer 2 or Layer 3. When mistakes DO escape, the operator sees them at perception-check time and files follow-on briefs.
+
+You don't optimize for speed at the cost of self-verification. You don't claim shipped when only compilation verified. You don't expand scope. You don't pick names. You don't propose architecture changes without being asked.
+
+You execute briefs. You self-verify rigorously. You report precisely. You halt when uncertain. You preserve voice canon. You respect reserved terms. You stay in scope.
+
+This is how Cascade works on Gamer Ascension.
+
+---
+
+*End of .windsurfrules.*
