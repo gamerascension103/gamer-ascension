@@ -3,6 +3,8 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-05-28 | mobile_macro_polish | Narrow-viewport breakpoint added at max-width:420px. Five-rule CSS-only fix for stacked mobile clutter on macro page: canvas-stage decoupled from viewport-center positioning to clear brand header at short heights; slot title shrunk to 11px/0.32em and tightened; constellation-frame scaled to 0.48 with bottom margin claw to fit 380px viewport; non-active scrubber tick names suppressed (slot 2 only); scrubber lifted from bottom:86px to bottom:118px to clear pool-dock and foundational-dock. Tablet/desktop layouts unchanged. | shipped
+
      2026-05-28 | em_integrate | Energy Management (Week 1, curriculum tier) integrated into atheneum.html as 4 meta-nodes + 2 retrievals, mirroring primordial micro-tree pattern. Verdigris palette hue:177/sat:46/light:31. No summary video / Guide / codex per v1 scope. Anchored-gated via existing unlockedThroughPage. Stage 7 regression: all 9 checks pending operator Layer 3 browser walk.
 
      2026-05-28 | scriptorium_persist | ga_scriptorium_unsealed flag persists Scriptorium open state + atheneum-scriptorium path; applyPersistedState() reconciles CHAMBERS on init so returning users see it unsealed | shipped
@@ -4037,6 +4039,56 @@ body.dev-enabled .dev-panel.is-collapsed .dev-panel-collapsed-label {
 .realms-unlock-fade-to-black.is-active{
   opacity:1;
   pointer-events:auto;
+}
+
+@media (max-width: 420px) {
+  /* (a) Decouple canvas-stage from viewport-center vertical positioning.
+     On short viewports this prevents the slot title from crowding the
+     brand header. 72px clears the brand+phase corners (which end at y≈55). */
+  .canvas-stage {
+    top: 72px;
+    transform: translate(-50%, 0);
+  }
+
+  /* (b) Shrink slot title and tighten its container so it sits closer
+     to the constellation. Matches brand text size (11px) for visual parity. */
+  .canvas-slot .constellation-title {
+    margin-bottom: 4px;
+    height: 24px;
+  }
+  .constellation-title-text {
+    font-size: 11px;
+    letter-spacing: 0.32em;
+  }
+
+  /* (c) Scale the entire constellation composition to fit the viewport.
+     720px frame * 0.48 = ~346px visual width, fits within 380px viewport.
+     The layout box stays 720×480 so the un-scaled bottom half would waste
+     ~250px of vertical space; margin-bottom claws that back. */
+  .canvas-slot .constellation-frame {
+    transform: scale(0.48);
+    transform-origin: top center;
+    margin-bottom: -250px;
+  }
+
+  /* (d) Suppress non-active scrubber tick names. Slot 2 is always the
+     geometric center (the active page). Adjacent labels overlap by
+     20–62px on a 380px viewport and have no clean fit. Dots and arrows
+     remain visible for wayfinding. */
+  .scrubber-tick:not([data-slot="2"]) .scrubber-tick-name {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  /* (e) Lift scrubber off the docks so '0 ESSENCE' and 'FOUNDATIONAL'
+     readouts aren't crowded from above. Docks are at bottom:32px; the
+     scrubber lifts from bottom:86px to bottom:118px (and arrows track). */
+  .scrubber {
+    bottom: 118px;
+  }
+  .scrubber-arrow {
+    bottom: 134px;
+  }
 }
 
 </style>
