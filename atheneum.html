@@ -3,6 +3,8 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-05-28 | em_integrate | Energy Management (Week 1, curriculum tier) integrated into atheneum.html as 4 meta-nodes + 2 retrievals, mirroring primordial micro-tree pattern. Verdigris palette hue:177/sat:46/light:31. No summary video / Guide / codex per v1 scope. Anchored-gated via existing unlockedThroughPage. Stage 7 regression: all 9 checks pending operator Layer 3 browser walk.
+
      2026-05-28 | scriptorium_persist | ga_scriptorium_unsealed flag persists Scriptorium open state + atheneum-scriptorium path; applyPersistedState() reconciles CHAMBERS on init so returning users see it unsealed | shipped
 
      2026-05-28 | returning_to_atlas | evermark routes realms-unlocked returners to /atheneum.html?atlas=1; atheneum opens Atlas on that param. First-timers + not-unlocked returners unchanged. | shipped
@@ -5686,6 +5688,7 @@ const LESSONS = {
     title: 'The Gap',
     isMultiStage: true,
     stages: ['unit1', 'retrieve1', 'unit2', 'retrieve2', 'complete'],
+    tier: 'pregame',
     content: `<div class="module-stage-container" data-module="gap">
 
 <div class="module-vessel-frame" id="moduleVesselFrame">
@@ -6007,6 +6010,7 @@ const LESSONS = {
     title: 'The Engine',
     isMultiStage: true,
     stages: ['unit1', 'retrieve1', 'unit2', 'retrieve2', 'complete'],
+    tier: 'pregame',
     content: `<div class="module-stage-container" data-module="engine">
 
 <div class="module-vessel-frame" id="moduleVesselFrame">
@@ -6335,6 +6339,7 @@ const LESSONS = {
     title: 'The Interpreter',
     isMultiStage: true,
     stages: ['unit1', 'retrieve1', 'unit2', 'retrieve2', 'complete'],
+    tier: 'pregame',
     content: `<div class="module-stage-container" data-module="interpreter">
 
 <div class="module-vessel-frame" id="moduleVesselFrame">
@@ -6717,6 +6722,253 @@ const LESSONS = {
 </div>
 
 </div>`
+  },
+  energy: {
+    eyebrow: 'Week 1',
+    title: 'Energy Management',
+    tier: 'curriculum',
+    week: 1,
+    isMultiStage: true,
+    stages: ['unit1', 'retrieve1', 'unit2', 'retrieve2', 'complete'],
+    content: `<div class="module-stage-container" data-module="energy">
+
+<div class="module-vessel-frame" id="moduleVesselFrame">
+  <svg class="module-vessel" id="moduleVessel" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="modVesselLiquidGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f5eecc" stop-opacity=".95"/>
+        <stop offset="40%" stop-color="#e5c574" stop-opacity=".92"/>
+        <stop offset="100%" stop-color="#b58a2f" stop-opacity=".85"/>
+      </linearGradient>
+      <linearGradient id="modVesselShimmer" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#fff4c8" stop-opacity="0"/>
+        <stop offset="50%" stop-color="#fff4c8" stop-opacity=".4"/>
+        <stop offset="100%" stop-color="#fff4c8" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="modVesselInterior">
+        <path d="M 18 20 Q 18 34, 14 44 Q 12 54, 16 64 Q 20 70, 30 70 Q 40 70, 44 64 Q 48 54, 46 44 Q 42 34, 42 20 Z"/>
+      </clipPath>
+    </defs>
+    <g class="module-vessel-body">
+      <ellipse cx="30" cy="16" rx="10" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <path d="M 18 22 Q 10 24, 10 34 Q 10 40, 14 42" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M 42 22 Q 50 24, 50 34 Q 50 40, 46 42" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      <path d="M 20 16 L 20 20 Q 20 32, 16 42 Q 13 52, 16 62 Q 20 72, 30 72 Q 40 72, 44 62 Q 47 52, 44 42 Q 40 32, 40 20 L 40 16" fill="rgba(10,10,20,.4)" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="18" y1="32" x2="42" y2="32" stroke="currentColor" stroke-width=".8" opacity=".5"/>
+    </g>
+    <g clip-path="url(#modVesselInterior)">
+      <rect id="moduleVesselLiquid" x="0" y="72" width="60" height="60" fill="url(#modVesselLiquidGrad)" class="module-vessel-liquid"/>
+      <rect id="moduleVesselShimmer" x="0" y="72" width="60" height="6" fill="url(#modVesselShimmer)" class="module-vessel-shimmer"/>
+    </g>
+  </svg>
+  <div class="module-vessel-label">
+    <span class="module-vessel-eyebrow">Week 1</span>
+    <span class="module-vessel-title">Energy Management</span>
+    <span class="module-vessel-progress" id="moduleVesselProgress">Empty. Begin Unit 1.</span>
+  </div>
+</div>
+
+<!-- ============ STAGE: UNIT 1 ============ -->
+<div class="module-stage" data-stage="unit1" data-stage-index="0">
+  <div class="stage-eyebrow">Unit 1 of 2</div>
+  <div class="stage-title">The Law Underneath</div>
+
+  <p class="lc-body">Pause for a second and notice what your body is doing without your permission. The chair pressing back into you. The shallow rise of your ribs. The temperature of your hands. Whatever you weigh right now, your body is, in this exact second, deciding what to do with the breakfast you ate three hours ago. You did not pick the procedure. You were not consulted. The decision is being made by machinery that has been making the same decision in human bodies for at least two hundred thousand years.</p>
+
+  <p class="lc-body">For most of the nineteenth century, the most respected scientific minds in Europe were certain that this machinery, the machinery that runs you, operated by rules that the rest of the universe did not have to follow.</p>
+
+  <p class="lc-body">The argument had a name. It was called <em>vitalism</em>, and it held that living things contained a special force, a <em>vital force</em>, <em>Lebenskraft</em> in the German, which made them fundamentally different from rocks, fires, engines, anything else made of matter. Justus von Liebig, the most influential chemist of his generation, wrote in 1842 that &ldquo;a certain quantity of vital force must be spent&rdquo; to keep the human body in order. Johannes M&uuml;ller, whose physiology textbook taught medicine to most of nineteenth-century Europe, argued that living organisms possessed a life-energy &ldquo;for which physical laws could never fully account.&rdquo; Louis Pasteur, after he was done with the germs, ran experiments he believed proved fermentation itself was a <em>vital action</em>, irreducible to chemistry.</p>
+
+  <p class="lc-body">These were not cranks. These were the most serious thinkers about life who had ever existed. And they all believed, deeply, that human bodies were exempt from physics.</p>
+
+  <!-- ====== SUBUNIT BOUNDARY: em-su1 ends here / em-su2 begins ====== -->
+  <div class="stage-divider"></div>
+
+  <p class="lc-body">A younger generation of physiologists disagreed. In 1842, the same year as Liebig&rsquo;s vital-force paper, a German physician named Hermann von Helmholtz, still in his early twenties, working out of a military hospital, wrote a thirty-page essay arguing that energy could not be created or destroyed, only converted from one form to another, and that this rule had to apply inside a living body the same way it applied to a steam engine. He could not yet prove it in a human. He just could not see, physically, how the law could have an exception.</p>
+
+  <p class="lc-body">Helmholtz spent the rest of his life trying to nail it down. He measured the heat of muscle contractions. He timed nerve impulses. He built instruments that did not exist before he built them. Other people joined the fight. Carl Ludwig, Emil du Bois-Reymond, Ernst Br&uuml;cke. A generation of physiologists who had taken an oath, the way young men sometimes do, that they would force their field onto a chemical and physical footing or die trying. They got partway. The bodies of small animals seemed to obey the rules. The bodies of insects, frogs, dogs. But the holdouts had a refuge that could not be assaulted: whatever was true of a frog, the <em>human</em> body was something more. The dispute outlasted Helmholtz. It outlasted Liebig. It outlasted everyone in that first generation.</p>
+
+  <p class="lc-body">It ended in the basement of a building called Judd Hall, at Wesleyan University, in the winter of 1895.</p>
+
+  <p class="lc-body">The building is still there. So is the room. A chemistry professor named Wilbur Atwater, by then in his early fifties, had spent the previous three years building a sealed copper chamber large enough for a man to live inside, eating, sleeping, exercising, sitting still. The chamber was a respiration calorimeter. It had been used, until that point, for measuring the energy of explosives and combustion engines. Atwater had spent something on the order of three hundred thousand inflation-adjusted dollars per year of U.S. Department of Agriculture money to use it on a human being instead.</p>
+
+  <p class="lc-body">Through an airlock he passed in precisely weighed servings of Hamburg steak, milk, and mashed potatoes. The chamber tracked everything that came out: the carbon dioxide the man exhaled, the heat his skin gave off, the water he lost, the work his body did. The experiments ran for days at a time. The subjects, graduate students paid for the privilege, slept inside it, exercised inside it, sat for hours inside it doing arithmetic. Atwater and his collaborators ran the chamber for over a decade. Five hundred experiments.</p>
+
+  <p class="lc-body">The numbers balanced. Every time. Every calorie the man took in could be accounted for as work, as heat, or as storage. There was no vital force. There was no missing energy. There was no special biology. The human body, it turned out, obeyed the same rule that governed an engine. Wesleyan&rsquo;s own archive of his papers states it flatly: <em>Atwater&rsquo;s work verified that humans are subject to the law of thermodynamics, something that was disputed by scientists in the late 1800s until his experiments yielded definitive proof.</em></p>
+
+  <p class="lc-body">The argument was over. It had taken half a century and several thousand pages of physiology, and it ended with a man in a basement copper box eating mashed potatoes for science.</p>
+
+  <p class="lc-body">Then a strange thing happened. Or rather, did not happen.</p>
+
+  <p class="lc-body">The finding never reached you.</p>
+
+  <p class="lc-body">A century and a quarter has passed since the door of that chamber closed for the first time, and the popular conversation about food and the human body still proceeds, almost entirely, as if vitalism won. Every diet sold in the last hundred years has assumed, somewhere in its premises, that the rules are different for <em>your</em> body. That something about your metabolism, your willpower, your biochemistry, your unique constitution makes the law negotiable. That the next plan, the next protocol, the next discipline will be the one that exempts you. None of them can. The law is not exempt-able. Atwater closed that door, and it has not opened since.</p>
+
+  <p class="lc-body">What that means about you is the part nobody handed you with the instructions. Every diet you have ever quit, every weight you have lost and regained, every collapse in the kitchen at night, every promise broken to yourself the next morning. Those were not personal failures. They were the law operating, in a body that has no idea the rules around it have changed, run by a person who was never told the rules existed.</p>
+
+  <p class="lc-body">You inherited a body that is excellent at one thing above all others: holding the surplus through the winter. Every human alive is descended from people for whom that excellence was the entire margin between living and dying. The machinery is not broken. It is doing its job, perfectly, in a season that does not end.</p>
+
+  <p class="lc-body"><strong>Your body is doing exactly what it was built to do. The problem was never the machine. It was the conditions the machine is now running in.</strong></p>
+
+  <p class="lc-body">The math of all this is simple, and you do not need to carry it. How much energy is in a thing, how much your body spends in a day, those are numbers, and numbers can be looked up. They are not where any of this is decided. The decisions are where it is decided. The decisions are what we are here to build.</p>
+</div>
+<!-- ============ STAGE: UNIT 1 RETRIEVAL ============ -->
+<div class="module-stage retrieval-stage" data-stage="retrieve1" data-stage-index="1" style="display:none">
+  <div class="retrieval-frame">
+    <div class="retrieval-eyebrow">Before you move on &mdash; Retrieval</div>
+    <div class="retrieval-instruction">Two short questions before you continue. Even a few sentences makes the concept stick.</div>
+
+    <div class="retrieval-prompt" data-prompt-id="energy-u1-p1" data-prompt-type="concept">
+      <div class="retrieval-question-num">1</div>
+      <div class="retrieval-question-text">This unit walked through a hundred-year dispute and the experiment that settled it. The argument was about whether your body, specifically a human body, was subject to the same physical laws as everything else in the universe.<br><br>In your own words: what did Atwater prove, and what did the people who refused to believe him think was true instead?</div>
+      <textarea class="retrieval-textarea" id="ret-energy-u1-p1" placeholder="Write from memory. Even a sentence or two is enough." oninput="checkRetrievalLength('energy-u1-p1')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-energy-u1-p1" onclick="submitRetrieval('energy-u1-p1')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-energy-u1-p1">20 characters to submit</span>
+      </div>
+      <div class="retrieval-skip-row">
+        <a href="#" class="retrieval-skip-link" onclick="event.preventDefault();skipRetrieval('energy-u1-p1')">I&rsquo;d rather just see the answer this time</a>
+      </div>
+      <div class="retrieval-reveal" id="reveal-energy-u1-p1" style="display:none">
+        <div class="retrieval-reveal-label">Here&rsquo;s one way to put it</div>
+        <div class="retrieval-reveal-text">Atwater proved the human body obeys the law of conservation of energy. Calories in are spent or stored, with no exception. His opponents believed in vitalism, the idea that life contained a special force exempt from physics. He settled it with about five hundred experiments in a sealed chamber in the basement of Judd Hall. The law has not had a real challenge since.</div>
+      </div>
+    </div>
+
+    <div class="retrieval-prompt" data-prompt-id="energy-u1-p2" data-prompt-type="application">
+      <div class="retrieval-question-num">2</div>
+      <div class="retrieval-question-text">The unit reframed something most people have spent years calling a personal failing. The reframe was that a body holding onto energy in an environment of abundance is not a defect. It is the system doing the job it was built for.<br><br>Think of one moment in your own history where you treated a body that was doing its job as evidence of personal failure. What did you call it at the time? What would you call it now?</div>
+      <textarea class="retrieval-textarea" id="ret-energy-u1-p2" placeholder="Your own moment. Specifics matter more than polish." oninput="checkRetrievalLength('energy-u1-p2')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-energy-u1-p2" onclick="submitRetrieval('energy-u1-p2')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-energy-u1-p2">20 characters to submit</span>
+      </div>
+      <div class="retrieval-skip-row">
+        <a href="#" class="retrieval-skip-link" onclick="event.preventDefault();skipRetrieval('energy-u1-p2')">Not today. Let me come back to this one.</a>
+      </div>
+      <div class="retrieval-reveal" id="reveal-energy-u1-p2" style="display:none">
+        <div class="retrieval-reveal-label">Here&rsquo;s one way to put it</div>
+        <div class="retrieval-reveal-text">What you used to call a failure of will, you now have a more accurate name for. A body doing its work, in conditions it was never built for. The naming is the first piece of the skill.</div>
+      </div>
+    </div>
+
+    <div class="retrieval-stage-footer" id="retrieve1-footer" style="display:none">
+      <button class="stage-continue-btn" onclick="advanceStage()">Continue to Unit 2 &rarr;</button>
+    </div>
+  </div>
+</div>
+<!-- ============ STAGE: UNIT 2 ============ -->
+<div class="module-stage" data-stage="unit2" data-stage-index="2" style="display:none">
+  <div class="stage-eyebrow">Unit 2 of 2</div>
+  <div class="stage-title">The Conditions</div>
+
+  <p class="lc-body">There is a vocabulary used inside the modern food industry that almost no consumer has ever heard. <em>Bliss point.</em> <em>Mouth feel.</em> <em>Cravability.</em> <em>Snackability.</em> <em>Moreishness.</em> These are not slang. They are technical terms. Thousands of people have spent thirty-year careers using them, engineering them, measuring them, optimizing them, selling them back to you in a yellow bag.</p>
+
+  <p class="lc-body">You have eaten the products of that vocabulary your entire life. You have never heard the words. That is not an accident.</p>
+
+  <p class="lc-body">Unit 1 ended on a sentence: <em>the machinery is not broken; it is doing its job, perfectly, in a season that does not end.</em> This unit is about the season. About who made it, and how, and what they knew while they were making it, and why your ancient storage system has been operating, for the last fifty years, inside an environment that was deliberately and systematically built to exploit it.</p>
+
+  <p class="lc-body">The story of that environment has a beginning, and the beginning is a man and a number.</p>
+
+  <p class="lc-body">In 1971, a research psychologist named Howard Moskowitz set up a laboratory at the U.S. Army&rsquo;s Pioneering Research Laboratory in Natick, Massachusetts. He had a doctorate in experimental psychology from Harvard and a strong undergraduate background in mathematics, and the Army had a problem. Soldiers in the field were not eating their rations. The rations were nutritionally adequate. They were, by every chemical measure, food. But the men were not finishing them, were losing weight, were performing worse, and the Army wanted to know why.</p>
+
+  <p class="lc-body">Moskowitz approached the problem with a method he had been refining for years. He took the same food and made it dozens of times, varying one ingredient at a time, sweetness, saltiness, texture, across an entire range of concentrations. He served each version to tasters. He recorded how much they liked it. Then he plotted the results, and out of the plot came a curve he had not expected.</p>
+
+  <p class="lc-body">The curve was a bell. People did not like a flavor more the more of it you gave them. They liked it more, and then more, and then, past a certain point, less. And the peak of the curve, the precise amount of any one ingredient at which appeal hit its maximum, was sharp, narrow, and exactly identifiable.</p>
+
+  <p class="lc-body">Moskowitz named the peak. He called it the <em>bliss point</em>.</p>
+
+  <p class="lc-body">The bliss point was not theoretical. It was a measurable number, specific to each ingredient, and reproducible across thousands of subjects. Moskowitz, in his own published account, described the principle: as the sensory intensity of a thing, say sweetness, increases, people first say they like the product more. Eventually, at a middle level, they like it the most. That is the optimum. After it, they like it less.</p>
+
+  <p class="lc-body">Find the optimum. Hold it. Sell it.</p>
+
+  <p class="lc-body">By the late 1970s Moskowitz had left the Army and gone into private practice. By the 1980s he was consulting for Campbell, Pepsi, Kraft, Frito-Lay, General Foods. He worked on Prego pasta sauce, on Diet Pepsi, on V8, on Dr Pepper, on dozens of products that are still on the shelves you walk past every week. For a single Dr Pepper line extension, he made fifty-nine variations of sweetness, tested them on three thousand consumers across the country, ran the regression analysis, and located the peak. The soda was engineered to land, on average, at the exact apex of the bell curve of human pleasantness response to sugar. That is the drink that went on the shelf.</p>
+
+  <p class="lc-body">Moskowitz was not hiding what he did. In a 2010 interview at the Harvard Club, conducted by the journalist Michael Moss for what became Moss&rsquo;s Pulitzer-recognized investigation <em>Salt, Sugar, Fat,</em> Moskowitz was asked, plainly, about the ethics of the work. He said: <em>&ldquo;There&rsquo;s no moral issue for me. I did the best science I could.&rdquo;</em> He was telling the truth. The science was excellent. The ethics he was leaving to other people.</p>
+
+  <p class="lc-body">Other people did not show up.</p>
+
+  <!-- ====== SUBUNIT BOUNDARY: em-su3 ends here / em-su4 begins ====== -->
+  <div class="stage-divider"></div>
+
+  <p class="lc-body">By the 1990s every major processed food company had its own Moskowitzes, or had hired his firm directly. The same regression analysis, applied to salt for crackers and chips. The same applied to fat for cheese and ice cream. Moss reports that food industry scientists now have <em>internal terminology</em> for the suite of techniques. The language is open inside the industry, never communicated outside it. They engineer for <em>snackability</em>, the property that makes a person reach for one more. For <em>moreishness</em>, the absence of a satiation signal where one would normally appear. For the <em>vanishing caloric density</em> of certain snack foods, where the food melts in your mouth in a way that fails to register, to the brain, as a complete eating event. The brain is supposed to receive a signal that says: you have eaten, you are done. Engineered foods are tuned to suppress that signal.</p>
+
+  <p class="lc-body">This is not a conspiracy. It is a profession. People earn livings doing it. They publish papers. They give presentations at industry conferences. The work is performed openly, in laboratories that are funded by the companies whose products you buy, by people with advanced degrees, using mathematics that is taught in graduate programs.</p>
+
+  <p class="lc-body">And the result of that work, accumulated across fifty years and applied to the entire interior of every grocery store in the developed world, is the environment your body is now trying to operate inside.</p>
+
+  <p class="lc-body">Recall what Unit 1 established. Your body is a champion at one task: holding the surplus through scarcity. It is descended from people who survived because they could store energy when energy appeared, and resist spending it when it did not. The system runs on signals. Sweetness once meant ripe fruit, available briefly, valuable. Saltiness meant a rare mineral, worth seeking. Fat meant calorie-dense food, worth eating to satiation. The signals were honest because the food was honest. There were no bliss points in the woods. There were only foods that contained what they contained, and a body that knew, by long evolutionary practice, when to stop.</p>
+
+  <p class="lc-body">The modern food environment broke every one of those signals. The sweetness is no longer attached to fruit; it is attached to a soda engineered for fifty-nine variations of sweetness across three thousand tasters. The fat is no longer attached to whole food; it is engineered for the specific mouth feel that suppresses the brain&rsquo;s satiation signal. The saltiness is no longer at the level a body would seek; it is at the level a regression analysis determined would maximize cravability. The food in front of you, in the default case, is no longer food. It is a measured tool, tuned by experts, optimized to bypass the very machinery your body uses to know when to stop.</p>
+
+  <p class="lc-body">This is the season that does not end.</p>
+
+  <p class="lc-body">You were never going to discipline your way through this. Nobody was. The men and women who collapsed in the kitchen at night for the last fifty years were not weak. They were targets of a multi-decade engineering effort that had located, with mathematical precision, the exact place where their stop signal lived, and had been spending decades making products that aimed <em>just past it</em>.</p>
+
+  <p class="lc-body"><strong>The body is not failing. The food is not food.</strong></p>
+
+  <p class="lc-body">Knowing this is the entire shift. Not because knowing changes the engineering. The engineering will continue, the products will continue, the shelves will continue. Knowing changes what you walk through them as. Before this unit, you walked through a grocery store as a person trying to make good choices in a neutral environment. After this unit, you walk through it as a person making decisions inside a designed system, with named techniques, deployed against named signals in your own body, by people who were paid for fifty years to do exactly that.</p>
+
+  <p class="lc-body">The decisions you make from here are different decisions. Not because the food is different. Because you are no longer pretending the field is level.</p>
+</div>
+<!-- ============ STAGE: UNIT 2 RETRIEVAL ============ -->
+<div class="module-stage retrieval-stage" data-stage="retrieve2" data-stage-index="3" style="display:none">
+  <div class="retrieval-frame">
+    <div class="retrieval-eyebrow">Before you finish &mdash; Retrieval</div>
+    <div class="retrieval-instruction">Two short questions. The unit you just read was built to land here.</div>
+
+    <div class="retrieval-prompt" data-prompt-id="energy-u2-p1" data-prompt-type="concept">
+      <div class="retrieval-question-num">1</div>
+      <div class="retrieval-question-text">This unit walked through how the modern food environment was deliberately engineered. Named scientists, using documented methods, over the last fifty years, building products designed to bypass the satiation signals in the body Unit 1 described. The work has its own vocabulary that almost nobody outside the industry has ever heard.<br><br>In your own words: what is the <em>bliss point</em>, and what does it mean that products in the grocery store are engineered around it?</div>
+      <textarea class="retrieval-textarea" id="ret-energy-u2-p1" placeholder="Write from memory. Even a sentence or two is enough." oninput="checkRetrievalLength('energy-u2-p1')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-energy-u2-p1" onclick="submitRetrieval('energy-u2-p1')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-energy-u2-p1">20 characters to submit</span>
+      </div>
+      <div class="retrieval-skip-row">
+        <a href="#" class="retrieval-skip-link" onclick="event.preventDefault();skipRetrieval('energy-u2-p1')">I&rsquo;d rather just see the answer this time</a>
+      </div>
+      <div class="retrieval-reveal" id="reveal-energy-u2-p1" style="display:none">
+        <div class="retrieval-reveal-label">Here&rsquo;s one way to put it</div>
+        <div class="retrieval-reveal-text">The bliss point is the precise concentration of an ingredient (sugar, salt, fat) at which human pleasantness response peaks before turning back down. It is a measurable, reproducible number, located by regression analysis across thousands of tasters. Products are engineered to land at that peak. The food on the shelf is not what you would have made; it is what the curve said would sell most.</div>
+      </div>
+    </div>
+
+    <div class="retrieval-prompt" data-prompt-id="energy-u2-p2" data-prompt-type="application">
+      <div class="retrieval-question-num">2</div>
+      <div class="retrieval-question-text">Unit 1 established that the body holding onto energy is the system doing its job. Unit 2 established that the food environment was built, on purpose, to defeat the signals that tell that system when to stop.<br><br>Think of one moment when you ate past the point you meant to, not as evidence of weak willpower but as a signal that the engineering was working as designed. What product was it? What about the product, now that you know the language, makes sense?</div>
+      <textarea class="retrieval-textarea" id="ret-energy-u2-p2" placeholder="Your own moment. Specifics matter more than polish." oninput="checkRetrievalLength('energy-u2-p2')"></textarea>
+      <div class="retrieval-submit-row">
+        <button class="retrieval-submit-btn" id="sub-energy-u2-p2" onclick="submitRetrieval('energy-u2-p2')" disabled>Submit</button>
+        <span class="retrieval-char-hint" id="hint-energy-u2-p2">20 characters to submit</span>
+      </div>
+      <div class="retrieval-skip-row">
+        <a href="#" class="retrieval-skip-link" onclick="event.preventDefault();skipRetrieval('energy-u2-p2')">Not today. Let me come back to this one.</a>
+      </div>
+      <div class="retrieval-reveal" id="reveal-energy-u2-p2" style="display:none">
+        <div class="retrieval-reveal-label">Here&rsquo;s one way to put it</div>
+        <div class="retrieval-reveal-text">You did not fail the food. The food was engineered to defeat the signal in your body that tells you when to stop. Naming the engineering is not an excuse. It is the first piece of a real decision.</div>
+      </div>
+    </div>
+
+    <div class="retrieval-stage-footer" id="retrieve2-footer" style="display:none">
+      <button class="stage-continue-btn" onclick="advanceStage()">Complete Module &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STAGE: MODULE COMPLETE ============ -->
+<div class="module-stage complete-stage" data-stage="complete" data-stage-index="4" style="display:none">
+  <div class="complete-frame">
+    <div class="complete-rune">&#9830;</div>
+    <div class="complete-title">Week 1 Complete</div>
+    <div class="complete-subtitle">Energy Management</div>
+    <div class="complete-body">You know the law and the conditions. The machinery was never broken. The decisions are what we are here to build.</div>
+    <button class="complete-close-btn" onclick="completeModuleEnergy()">Return to the map</button>
+  </div>
+</div>
+
+</div>`
   }
 };
 
@@ -6751,6 +7003,14 @@ var SUBUNIT_CHAINS = {
     { id: 'interp-su4', title: 'Wanting and liking',      stage: 2, slice: 1 },
     { id: 'interp-su5', title: 'The cost, and the choice', stage: 2, slice: 2 }
     // retrieval gate (stage 3)
+  ],
+  energy: [
+    { id: 'em-su1', title: 'Vitalism',       stage: 0, slice: 0 },
+    { id: 'em-su2', title: 'Atwater',        stage: 0, slice: 1 },
+    // retrieval gate (stage 1)
+    { id: 'em-su3', title: 'Moskowitz',      stage: 2, slice: 0 },
+    { id: 'em-su4', title: 'The conditions', stage: 2, slice: 1 }
+    // retrieval gate (stage 3)
   ]
 };
 
@@ -6777,6 +7037,10 @@ var RETRIEVAL_PREP_VIDEOS = {
     1: ''
   },
   interpreter: {
+    0: '',
+    1: ''
+  },
+  energy: {
     0: '',
     1: ''
   }
@@ -6860,7 +7124,8 @@ function markSubunitComplete(subunitId){
 var MODULE_IMBUEMENT_PALETTES = {
   gap:        { hue: 262, satTarget: 48, lightTarget: 60 },
   engine:     { hue:  36, satTarget: 64, lightTarget: 54 },
-  interpreter:{ hue:   0, satTarget: 52, lightTarget: 42 }
+  interpreter:{ hue:   0, satTarget: 52, lightTarget: 42 },
+  energy:     { hue: 177, satTarget: 46, lightTarget: 31 }
 };
 
 var IMBUEMENT_BASELINE = { hue: 42, sat: 30, light: 84 };
@@ -9619,6 +9884,7 @@ function closeLesson() {
 function completeModuleGap(){ completePrimordialModule('gap'); }
 function completeModuleEngine(){ completePrimordialModule('engine'); }
 function completeModuleInterpreter(){ completePrimordialModule('interpreter'); }
+function completeModuleEnergy(){ completePrimordialModule('energy'); }
 
 // =============================================================
 // THE POUR SEQUENCE (Brief 5)
@@ -9727,6 +9993,7 @@ function completePrimordialModule(moduleId){
 window.completeModuleGap = completeModuleGap;
 window.completeModuleEngine = completeModuleEngine;
 window.completeModuleInterpreter = completeModuleInterpreter;
+window.completeModuleEnergy = completeModuleEnergy;
 
 function wireLessonHandlers() {
   document.getElementById('lesson-back').addEventListener('click', closeLesson);
@@ -11189,6 +11456,7 @@ init();
     <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('gap')">Fast-forward Gap</button>
     <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('engine')">Fast-forward Engine</button>
     <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('interpreter')">Fast-forward Interpreter</button>
+    <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('energy')">Fast-forward Energy</button>
   </div>
 
   <div class="dev-panel-section">
