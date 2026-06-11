@@ -3,6 +3,8 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-06-10 | atmosphere_illumination_layer | Additive visual elevation layer inserted before </body> (style + script, ids ga-maxout-style / ga-maxout-script): twinkle starfield, sparkles, meteors, nebula depth, engraved great circles + corner scales, gold-leaf dust, candle-breath light, armillary zodiac/sunburst backdrop + stage-3 essence indraw, imbued-primordial substance auras, scrubber lit-tick ripple, title/vignette breathing, Essence astrolabe dial replacing flask visual (Pool box + pour targeting preserved), living micro-tree chain (link flow, done ember, current beacon, torch wake), illuminated module prose (drop cap, title rule, divider gems, heading marks, prose entrance, progress gem). Also fixed latent bug: pool-dock div lacked id="pool-dock" so performEssencePour + .catching flare never fired; id added to markup. All animations respect prefers-reduced-motion; chart elements suppressed at max-width:420px. A&D to record: Pool representation now instrument-not-container; drop cap added to module typography. | shipped
+
      2026-05-28 | mobile_macro_polish | Narrow-viewport breakpoint added at max-width:420px. Five-rule CSS-only fix for stacked mobile clutter on macro page: canvas-stage decoupled from viewport-center positioning to clear brand header at short heights; slot title shrunk to 11px/0.32em and tightened; constellation-frame scaled to 0.48 with bottom margin claw to fit 380px viewport; non-active scrubber tick names suppressed (slot 2 only); scrubber lifted from bottom:86px to bottom:118px to clear pool-dock and foundational-dock. Tablet/desktop layouts unchanged. | shipped
 
      2026-05-28 | em_integrate | Energy Management (Week 1, curriculum tier) integrated into atheneum.html as 4 meta-nodes + 2 retrievals, mirroring primordial micro-tree pattern. Verdigris palette hue:177/sat:46/light:31. No summary video / Guide / codex per v1 scope. Anchored-gated via existing unlockedThroughPage. Stage 7 regression: all 9 checks pending operator Layer 3 browser walk.
@@ -5336,7 +5338,7 @@ body.dev-enabled .dev-panel.is-collapsed .dev-panel-collapsed-label {
   </div>
 
   <!-- Pool vessel + rank (bottom-left) -->
-  <div class="pool-dock">
+  <div class="pool-dock" id="pool-dock">
     <div class="pool-vessel">
       <svg viewBox="0 0 56 80">
         <defs>
@@ -11663,6 +11665,418 @@ window.addEventListener('load', function(){
 });
 </script>
 <script src="assets/js/dev_tools.js"></script>
+
+<!-- ============================================================
+     ATMOSPHERE & ILLUMINATION LAYER (shipped 2026-06-10)
+     Fully additive. No existing rule or function is modified.
+     Remove this single block to restore prior behavior exactly.
+     Contents: sky (twinkle stars, sparkles, meteors, nebula depth),
+     scribe's chart (great circles, corner scales, gold-leaf dust,
+     candle-breath), armillary backdrop (zodiac + sunburst) and
+     stage-3 essence indraw, imbued-primordial substance auras,
+     scrubber tick ripple, title and vignette breathing, Essence
+     astrolabe dial (replaces flask visual; Pool box preserved),
+     living micro-tree chain (link flow, done ember, current beacon,
+     torch wake), illuminated module prose (drop cap, title rule,
+     divider gems, heading marks, prose entrance, progress gem).
+     ============================================================ -->
+<style id="ga-maxout-style">
+/* --- sky: twinkling stars, sparkles, meteors, nebula depth --- */
+.ga-max-star { position: absolute; border-radius: 50%; background: #efe8d2; pointer-events: none;
+  animation: ga-max-twinkle var(--dur) var(--del) ease-in-out infinite; }
+.ga-max-star.gold { background: #e5c574; }
+@keyframes ga-max-twinkle { 0%, 100% { opacity: var(--lo); } 50% { opacity: var(--hi); } }
+.ga-max-sparkle { position: absolute; width: 13px; height: 13px; pointer-events: none;
+  animation: ga-max-sparkle-breathe 8s var(--del) ease-in-out infinite; }
+.ga-max-sparkle::before, .ga-max-sparkle::after { content: ''; position: absolute; background: #f0e8cf; }
+.ga-max-sparkle::before { left: 50%; top: 0; width: 0.75px; height: 100%; }
+.ga-max-sparkle::after { top: 50%; left: 0; height: 0.75px; width: 100%; }
+@keyframes ga-max-sparkle-breathe { 0%, 100% { opacity: 0.12; transform: scale(0.75); }
+  50% { opacity: 0.55; transform: scale(1.05); } }
+.ga-max-meteor { position: absolute; width: 120px; height: 1px; pointer-events: none; opacity: 0;
+  background: linear-gradient(90deg, rgba(255,250,230,0.9), rgba(229,197,116,0.4), transparent);
+  border-radius: 1px; animation: ga-max-meteor-pass var(--dur) var(--del) linear infinite; }
+@keyframes ga-max-meteor-pass {
+  0%    { opacity: 0; transform: rotate(-26deg) translateX(0); }
+  0.8%  { opacity: 0.75; }
+  3.2%  { opacity: 0; transform: rotate(-26deg) translateX(-360px); }
+  100%  { opacity: 0; transform: rotate(-26deg) translateX(-360px); } }
+.ga-max-nebula { position: absolute; pointer-events: none; border-radius: 50%; filter: blur(2px);
+  animation: ga-max-nebula-drift var(--dur) ease-in-out infinite alternate; }
+@keyframes ga-max-nebula-drift {
+  from { transform: translate(0, 0) scale(1); opacity: var(--lo); }
+  to   { transform: translate(var(--dx), var(--dy)) scale(1.08); opacity: var(--hi); } }
+
+/* --- vignette breathes very slowly --- */
+.center-vignette { animation: ga-max-vignette-breathe 14s ease-in-out infinite; }
+@keyframes ga-max-vignette-breathe { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+
+/* --- page titles: soft luminous breathing --- */
+.constellation-title-text { animation: ga-max-title-breathe 10s ease-in-out infinite; }
+@keyframes ga-max-title-breathe {
+  0%, 100% { text-shadow: 0 0 14px rgba(232,222,198,0.18); }
+  50%      { text-shadow: 0 0 22px rgba(232,222,198,0.34), 0 0 48px rgba(229,197,116,0.12); } }
+
+/* --- primordial sphere: engraved zodiac + faint sunburst behind it --- */
+.armillary-primordial::before { content: ''; position: absolute; inset: -72px; border-radius: 50%;
+  pointer-events: none; z-index: 0;
+  background: repeating-conic-gradient(from 0deg, rgba(229,197,116,0.05) 0deg 1.1deg, transparent 1.1deg 12deg);
+  -webkit-mask-image: radial-gradient(circle, transparent 40%, #000 46%, #000 64%, transparent 72%);
+          mask-image: radial-gradient(circle, transparent 40%, #000 46%, #000 64%, transparent 72%);
+  animation: ga-max-spin 170s linear infinite; }
+.armillary-primordial::after { content: ''; position: absolute; inset: -56px; border-radius: 50%;
+  pointer-events: none; z-index: 0;
+  border: 2px dotted rgba(216,210,192,0.10);
+  animation: ga-max-spin 250s linear infinite reverse; }
+@keyframes ga-max-spin { to { transform: rotate(360deg); } }
+
+/* --- completed sphere draws essence inward: contracting rings --- */
+.armillary-primordial[data-stage="3"] .primordial-halo::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  border: 1px solid rgba(229,197,116,0.4); pointer-events: none;
+  animation: ga-max-indraw 9s ease-in infinite; }
+@keyframes ga-max-indraw {
+  0%   { transform: scale(1.22); opacity: 0; }
+  18%  { opacity: 0.4; }
+  100% { transform: scale(0.3); opacity: 0; } }
+
+/* --- imbued primordial glyphs: slow substance aura --- */
+.glyph-position.state-lit.pillar-primordial::before {
+  content: ''; position: absolute; inset: -9px; border-radius: 50%;
+  border: 1.5px dotted rgba(200,120,216,0.28); pointer-events: none;
+  animation: ga-max-spin 80s linear infinite; }
+
+/* --- scrubber: lit tick sends a slow ripple --- */
+.scrubber-tick-dot { position: relative; }
+.scrubber-tick-dot::after { content: ''; position: absolute; inset: -3px; border-radius: 50%;
+  border: 0.75px solid var(--gold-bright, #e5c574); pointer-events: none;
+  animation: ga-max-ripple 4.5s ease-out infinite; }
+@keyframes ga-max-ripple {
+  0%   { transform: scale(0.55); opacity: calc(var(--lit, 0) * 0.8); }
+  70%  { transform: scale(2.5); opacity: 0; }
+  100% { transform: scale(2.5); opacity: 0; } }
+
+/* --- the scribe's chart: engraved great circles across the field --- */
+.ga-max-arc { position: absolute; border-radius: 50%; pointer-events: none;
+  border: 0.75px solid rgba(216,210,192,0.05); }
+.ga-max-arc.gold { border-color: rgba(229,197,116,0.045); }
+.ga-max-arc.dotted { border-style: dotted; border-width: 1.5px; border-color: rgba(216,210,192,0.06); }
+
+/* --- chart marginalia: graduated quarter-scales in opposing corners --- */
+.ga-max-corner-scale { position: absolute; border-radius: 50%; pointer-events: none;
+  border: 2px dotted rgba(216,210,192,0.07); }
+.ga-max-corner-scale::after { content: ''; position: absolute; inset: 14px; border-radius: 50%;
+  border: 0.5px solid rgba(229,197,116,0.06); }
+
+/* --- gold-leaf dust: sparse motes drifting through the reading light --- */
+.ga-max-dust { position: absolute; border-radius: 50%; background: #e5c574; filter: blur(0.4px);
+  opacity: 0; pointer-events: none;
+  animation: ga-max-dust-drift var(--dur) var(--del) linear infinite; }
+@keyframes ga-max-dust-drift {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  12%  { opacity: var(--peak); }
+  85%  { opacity: calc(var(--peak) * 0.45); }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+
+/* --- candle-breath: the room's warm light, swaying imperceptibly --- */
+.ga-max-candle { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 60% 50% at 50% 46%, rgba(229,197,116,0.045), transparent 70%);
+  animation: ga-max-candle-sway 19s ease-in-out infinite; }
+@keyframes ga-max-candle-sway {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.85; }
+  33%      { transform: translate(6px, -4px) scale(1.015); opacity: 1; }
+  66%      { transform: translate(-5px, 3px) scale(0.995); opacity: 0.9; } }
+
+/* --- Essence astrolabe: the Pool as instrument, not container --- */
+.pool-vessel svg { opacity: 0; } /* keeps the 56x80 box for pour targeting; hides the flask */
+.ga-max-essdial { position: absolute; inset: 0; pointer-events: none;
+  display: flex; align-items: center; justify-content: center; }
+.ga-max-essdial::before { content: ''; position: absolute; left: 50%; top: 50%;
+  width: 74px; height: 74px; margin: -37px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(229,197,116,0.13), transparent 68%);
+  animation: ga-max-essdial-breathe 8s ease-in-out infinite; }
+@keyframes ga-max-essdial-breathe { 0%, 100% { opacity: 0.7; } 50% { opacity: 1; } }
+.ga-max-essdial-rete { position: relative; width: 52px; height: 52px; border-radius: 50%;
+  border: 2px dotted rgba(229,197,116,0.5);
+  animation: ga-max-spin 70s linear infinite;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease; }
+.ga-max-essdial-fine { position: absolute; inset: 6px; border-radius: 50%;
+  border: 0.5px solid rgba(216,210,192,0.28);
+  animation: ga-max-spin 115s linear infinite reverse; }
+.ga-max-essdial-fine::before { content: ''; position: absolute; top: -1px; left: 50%;
+  width: 3px; height: 3px; margin-left: -1.5px; border-radius: 50%;
+  background: rgba(229,197,116,0.7); }
+.ga-max-essdial-index { position: absolute; left: 50%; top: 7px; width: 6px; height: 6px;
+  margin-left: -3px; transform: rotate(45deg);
+  border: 0.75px solid #e5c574; background: rgba(13,10,30,0.9);
+  box-shadow: 0 0 5px rgba(229,197,116,0.45); }
+.ga-max-essdial-mark { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px;
+  margin: -11px; }
+.ga-max-essdial-mark svg { width: 100%; height: 100%; display: block; }
+.ga-max-essdial-kernel { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px;
+  margin: -2.5px; border-radius: 50%; background: #fffbe9;
+  box-shadow: 0 0 6px rgba(255,251,233,0.9), 0 0 14px rgba(229,197,116,0.6);
+  animation: ga-max-essdial-kernel 7s ease-in-out infinite;
+  transition: transform 0.4s ease, box-shadow 0.4s ease; }
+@keyframes ga-max-essdial-kernel {
+  0%, 100% { box-shadow: 0 0 5px rgba(255,251,233,0.8), 0 0 12px rgba(229,197,116,0.5); }
+  50%      { box-shadow: 0 0 8px rgba(255,251,233,1), 0 0 20px rgba(229,197,116,0.8); } }
+
+/* the instrument answers the pour */
+#pool-dock.catching .ga-max-essdial-rete,
+.pool-dock.catching .ga-max-essdial-rete {
+  border-color: rgba(255,235,170,0.95);
+  box-shadow: 0 0 18px rgba(229,197,116,0.55), inset 0 0 10px rgba(229,197,116,0.25); }
+#pool-dock.catching .ga-max-essdial-kernel,
+.pool-dock.catching .ga-max-essdial-kernel {
+  transform: scale(1.6);
+  box-shadow: 0 0 12px rgba(255,251,233,1), 0 0 28px rgba(229,197,116,0.95); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-max-essdial::before, .ga-max-essdial-rete, .ga-max-essdial-fine,
+  .ga-max-essdial-kernel { animation: none !important; }
+}
+
+/* --- the living chain: essence flows along completed links --- */
+.micro-tree-chain-svg line[stroke^="var"] {
+  stroke-dasharray: 3 6;
+  animation: ga-max-link-flow 2.8s linear infinite;
+  filter: drop-shadow(0 0 3px var(--mt-bright-soft, rgba(201,168,76,0.4))); }
+@keyframes ga-max-link-flow { to { stroke-dashoffset: -63; } }
+
+/* completed nodes: halos breathe, shapes carry a slow ember shimmer */
+.mt-done-halo { transform-box: fill-box; transform-origin: center;
+  animation: ga-max-done-breathe 6.5s ease-in-out infinite; }
+@keyframes ga-max-done-breathe {
+  0%, 100% { opacity: 0.28; transform: scale(1); }
+  50%      { opacity: 0.5;  transform: scale(1.07); } }
+.micro-tree-chain-svg path.mt-shape[fill^="var"]:not(.hovered) {
+  animation: ga-max-done-ember 7s ease-in-out infinite; }
+.micro-tree-chain-svg g.mt-shape:not(.hovered) rect[fill^="var"] {
+  animation: ga-max-done-ember 7s 1.4s ease-in-out infinite; }
+@keyframes ga-max-done-ember {
+  0%, 100% { filter: drop-shadow(0 0 2px var(--mt-bright-soft, rgba(201,168,76,0.3))); }
+  50%      { filter: drop-shadow(0 0 7px var(--mt-pulse-shadow, rgba(201,168,76,0.6))); } }
+
+/* the current node is a beacon: slow lighthouse swell beneath the pulse halo */
+.micro-tree-chain-svg path.mt-shape[stroke^="var(--mt-pulse"]:not(.hovered) {
+  animation: ga-max-beacon 3.6s ease-in-out infinite; }
+.micro-tree-chain-svg g.mt-shape:not(.hovered) rect[stroke^="var(--mt-pulse"] {
+  animation: ga-max-beacon 3.6s ease-in-out infinite; }
+@keyframes ga-max-beacon {
+  0%, 100% { filter: drop-shadow(0 0 3px var(--mt-pulse-shadow, rgba(233,213,255,0.4))); }
+  50%      { filter: drop-shadow(0 0 10px var(--mt-pulse-shadow, rgba(233,213,255,0.85)))
+                     drop-shadow(0 0 22px var(--mt-bright-soft, rgba(201,168,76,0.35))); } }
+
+/* torch moment: the traveling spark leaves a luminous wake, the burst rings glow */
+.mt-torch-comet circle:first-child {
+  filter: drop-shadow(0 0 6px var(--mt-pulse-stroke, #e9d5ff))
+          drop-shadow(0 0 14px var(--mt-base, #c9a84c)); }
+.mt-torch-comet circle:last-of-type {
+  filter: blur(2.5px) drop-shadow(0 0 10px var(--mt-base, #c9a84c)); }
+.mt-torch-shockwave { filter: drop-shadow(0 0 8px var(--mt-base, #c9a84c)); }
+.mt-ignite-burst { filter: drop-shadow(0 0 9px var(--mt-pulse-stroke, #e9d5ff)); }
+
+/* the panel as folio: hairline gilded inner border + warm crown light */
+.micro-tree-panel::before { content: ''; position: absolute; inset: 9px;
+  border: 0.5px solid rgba(201,168,76,0.22); pointer-events: none; border-radius: inherit; }
+.micro-tree-panel::after { content: ''; position: absolute; left: 50%; top: 0;
+  width: 420px; height: 150px; transform: translateX(-50%); pointer-events: none;
+  background: radial-gradient(ellipse at top, rgba(229,197,116,0.06), transparent 70%); }
+
+/* --- the illuminated section: manuscript prose treatment --- */
+.module-stage:not(.retrieval-stage) > p.lc-body:first-of-type::first-letter {
+  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+  font-size: 54px; line-height: 0.78; font-weight: 700;
+  color: var(--gold-bright, #e5c574);
+  float: left; margin: 7px 12px 0 0;
+  text-shadow: 0 0 16px rgba(229,197,116,0.4), 0 0 36px rgba(229,197,116,0.15); }
+.stage-divider { position: relative; overflow: visible; }
+.stage-divider::after { content: ''; position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 7px; margin: -3.5px; transform: rotate(45deg);
+  border: 0.75px solid rgba(201,168,76,0.7); background: var(--ink-deep, #0d0a1e);
+  box-shadow: 0 0 8px rgba(229,197,116,0.25); }
+.lc-section-heading { position: relative; padding-left: 16px; }
+.lc-section-heading::before { content: ''; position: absolute; left: 0; top: 0.32em;
+  width: 7px; height: 7px; transform: rotate(45deg);
+  background: rgba(201,168,76,0.55); }
+.lesson-title::after { content: ''; display: block; width: 190px; height: 1px;
+  margin: 20px auto 0;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.75) 35%,
+    rgba(229,197,116,0.95) 50%, rgba(201,168,76,0.75) 65%, transparent); }
+.lesson-container::before { content: ''; position: absolute; left: 50%; top: 0;
+  width: 580px; height: 280px; transform: translateX(-50%); pointer-events: none;
+  background: radial-gradient(ellipse at top, rgba(229,197,116,0.05), transparent 70%); }
+.lesson-body p { animation: ga-max-prose-in 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.lesson-body p:nth-of-type(1) { animation-delay: 0.05s; }
+.lesson-body p:nth-of-type(2) { animation-delay: 0.13s; }
+.lesson-body p:nth-of-type(3) { animation-delay: 0.21s; }
+.lesson-body p:nth-of-type(4) { animation-delay: 0.29s; }
+.lesson-body p:nth-of-type(5) { animation-delay: 0.37s; }
+.lesson-body p:nth-of-type(6) { animation-delay: 0.45s; }
+.lesson-body p:nth-of-type(n+7) { animation-delay: 0.52s; }
+@keyframes ga-max-prose-in {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: translateY(0); } }
+
+/* the progress line carries a gem at its leading edge */
+.lesson-progress-fill { overflow: visible; }
+.lesson-progress-fill::after { content: ''; position: absolute; right: -3.5px; top: 50%;
+  width: 7px; height: 7px; margin-top: -3.5px; transform: rotate(45deg);
+  background: var(--gold-bright, #e5c574);
+  box-shadow: 0 0 8px rgba(229,197,116,0.85), 0 0 18px rgba(229,197,116,0.4); }
+
+@media (prefers-reduced-motion: reduce) {
+  .micro-tree-chain-svg line[stroke^="var"], .mt-done-halo,
+  .micro-tree-chain-svg path.mt-shape[fill^="var"]:not(.hovered),
+  .micro-tree-chain-svg g.mt-shape:not(.hovered) rect[fill^="var"],
+  .micro-tree-chain-svg path.mt-shape[stroke^="var(--mt-pulse"]:not(.hovered),
+  .micro-tree-chain-svg g.mt-shape:not(.hovered) rect[stroke^="var(--mt-pulse"],
+  .lesson-body p { animation: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-max-dust, .ga-max-candle { animation: none !important; }
+}
+@media (max-width: 420px) {
+  .ga-max-arc, .ga-max-corner-scale { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-max-star, .ga-max-sparkle, .ga-max-meteor, .ga-max-nebula,
+  .center-vignette, .constellation-title-text,
+  .armillary-primordial::before, .armillary-primordial::after,
+  .armillary-primordial[data-stage="3"] .primordial-halo::after,
+  .glyph-position.state-lit.pillar-primordial::before,
+  .scrubber-tick-dot::after { animation: none !important; }
+}
+@media (max-width: 420px) {
+  .ga-max-nebula { display: none; }
+}
+</style>
+<script id="ga-maxout-script">
+(function () {
+  var field = document.querySelector('.starfield');
+  if (!field) return;
+
+  /* nebula depth: two faint violet masses drifting on long cycles */
+  var nebulae = [
+    { x: '8%',  y: '12%', w: 520, h: 380, c: 'rgba(64,48,120,0.16)', dx: '40px',  dy: '24px',  dur: '120s', lo: 0.5, hi: 0.85 },
+    { x: '62%', y: '52%', w: 620, h: 420, c: 'rgba(46,32,92,0.14)',  dx: '-50px', dy: '-20px', dur: '150s', lo: 0.45, hi: 0.8 }
+  ];
+  nebulae.forEach(function (n) {
+    var d = document.createElement('div');
+    d.className = 'ga-max-nebula';
+    d.style.cssText = 'left:' + n.x + ';top:' + n.y + ';width:' + n.w + 'px;height:' + n.h + 'px;' +
+      'background:radial-gradient(ellipse, ' + n.c + ', transparent 70%);' +
+      '--dx:' + n.dx + ';--dy:' + n.dy + ';--dur:' + n.dur + ';--lo:' + n.lo + ';--hi:' + n.hi + ';';
+    field.appendChild(d);
+  });
+
+  /* individually twinkling stars over the drifting base field */
+  for (var i = 0; i < 46; i++) {
+    var s = document.createElement('div');
+    s.className = 'ga-max-star' + (Math.random() < 0.3 ? ' gold' : '');
+    var size = (0.8 + Math.random() * 1.4).toFixed(1);
+    s.style.cssText = 'left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 100).toFixed(1) + '%;' +
+      'width:' + size + 'px;height:' + size + 'px;' +
+      '--lo:' + (0.05 + Math.random() * 0.12).toFixed(2) + ';--hi:' + (0.35 + Math.random() * 0.5).toFixed(2) + ';' +
+      '--dur:' + (4 + Math.random() * 8).toFixed(1) + 's;--del:' + (Math.random() * 9).toFixed(1) + 's;';
+    field.appendChild(s);
+  }
+
+  /* a few four-point sparkles at the margins */
+  var sparkles = [[12, 16], [86, 14], [9, 74], [90, 70]];
+  sparkles.forEach(function (p, idx) {
+    var sp = document.createElement('div');
+    sp.className = 'ga-max-sparkle';
+    sp.style.cssText = 'left:' + p[0] + '%;top:' + p[1] + '%;--del:' + (idx * 2.1) + 's;';
+    field.appendChild(sp);
+  });
+
+  /* engraved great circles sweeping the chart */
+  var arcs = [
+    { w: 1900, h: 1250, left: '-22%', top: '-48%', rot: -13, cls: '' },
+    { w: 2300, h: 1700, left: '24%',  top: '14%',  rot: 8,   cls: ' gold' },
+    { w: 1500, h: 1500, left: '56%',  top: '-58%', rot: 0,   cls: ' dotted' }
+  ];
+  arcs.forEach(function (a) {
+    var d = document.createElement('div');
+    d.className = 'ga-max-arc' + a.cls;
+    d.style.cssText = 'width:' + a.w + 'px;height:' + a.h + 'px;left:' + a.left + ';top:' + a.top + ';' +
+      'transform:rotate(' + a.rot + 'deg);';
+    field.appendChild(d);
+  });
+
+  /* graduated quarter-scales in opposing corners — chart marginalia */
+  var sc1 = document.createElement('div');
+  sc1.className = 'ga-max-corner-scale';
+  sc1.style.cssText = 'width:240px;height:240px;left:-120px;bottom:-120px;';
+  field.appendChild(sc1);
+  var sc2 = document.createElement('div');
+  sc2.className = 'ga-max-corner-scale';
+  sc2.style.cssText = 'width:240px;height:240px;right:-120px;top:-120px;';
+  field.appendChild(sc2);
+
+  /* gold-leaf dust drifting through the reading light */
+  for (var k = 0; k < 9; k++) {
+    var du = document.createElement('div');
+    du.className = 'ga-max-dust';
+    var dsize = (1.1 + Math.random() * 1.1).toFixed(1);
+    du.style.cssText = 'left:' + (5 + Math.random() * 90).toFixed(1) + '%;top:' + (Math.random() * 70).toFixed(1) + '%;' +
+      'width:' + dsize + 'px;height:' + dsize + 'px;' +
+      '--dx:' + (40 + Math.random() * 110).toFixed(0) + 'px;--dy:' + (80 + Math.random() * 130).toFixed(0) + 'px;' +
+      '--dur:' + (40 + Math.random() * 38).toFixed(0) + 's;--del:' + (Math.random() * 30).toFixed(0) + 's;' +
+      '--peak:' + (0.22 + Math.random() * 0.28).toFixed(2) + ';';
+    field.appendChild(du);
+  }
+
+  /* candle-breath layer above the vignette */
+  var vg = document.querySelector('.center-vignette');
+  if (vg && vg.parentNode) {
+    var candle = document.createElement('div');
+    candle.className = 'ga-max-candle';
+    vg.parentNode.insertBefore(candle, vg.nextSibling);
+  }
+
+  /* Essence astrolabe: replace the flask with a measuring instrument.
+     Also restores pour targeting: performEssencePour() looks up
+     getElementById('pool-dock') but no element carries that id in the
+     base file, so the ceremony was silently no-opping. Setting it here
+     revives the particle arc and the catching flare. */
+  var dock = document.querySelector('.pool-dock');
+  if (dock && !document.getElementById('pool-dock')) dock.id = 'pool-dock';
+  var vessel = document.querySelector('.pool-vessel');
+  if (vessel) {
+    var dial = document.createElement('div');
+    dial.className = 'ga-max-essdial';
+    dial.innerHTML =
+      '<div class="ga-max-essdial-rete"><div class="ga-max-essdial-fine"></div></div>' +
+      '<div class="ga-max-essdial-index"></div>' +
+      '<div class="ga-max-essdial-mark">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="#e5c574" stroke-width="1.1" stroke-linecap="round">' +
+          '<line x1="12" y1="4" x2="12" y2="20"/>' +
+          '<line x1="5" y1="8" x2="19" y2="16"/>' +
+          '<line x1="19" y1="8" x2="5" y2="16"/>' +
+        '</svg>' +
+      '</div>' +
+      '<div class="ga-max-essdial-kernel"></div>';
+    vessel.appendChild(dial);
+  }
+
+  /* two rare meteors on long offset cycles */
+  var meteors = [
+    { x: '70%', y: '10%', dur: '53s', del: '11s' },
+    { x: '30%', y: '6%',  dur: '67s', del: '37s' }
+  ];
+  meteors.forEach(function (m) {
+    var mt = document.createElement('div');
+    mt.className = 'ga-max-meteor';
+    mt.style.cssText = 'left:' + m.x + ';top:' + m.y + ';--dur:' + m.dur + ';--del:' + m.del + ';';
+    field.appendChild(mt);
+  });
+})();
+</script>
 
 </body>
 </html>
