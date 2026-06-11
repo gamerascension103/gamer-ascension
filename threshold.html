@@ -3,6 +3,8 @@
      BUILD LOG â€” most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-06-10 | gargantua_renderer | Event-horizon renderer upgraded to a physically-read black hole: disk inclined to 0.22 with inner-biased 520-particle plasma + 100 gas blobs (tuned down from 680/130 for FPS), far side double-imaged into a lensing arch over the shadow (plus faint secondary under-arch), doppler beaming on the approaching limb with white-core overdraw, occlusion-correct near-side crossing (canvas z-index 2 over the SVG core, far-side culling in code), 110-star background sky deflected d'=d+K/d with tangential smears near the hole, canvas photon ring with doppler hotspot, infall geometry matched to the inclined plane with behind-shadow occlusion. All birth/idle/hover/pull-through hooks (coreOpacity, rotationSpeed, timeScale) unchanged and driving the new renderer. | shipped
+
      2026-05-27 | remove_nav_js | shipped
        removed vestigial nav.js includes repo-wide; Atlas (atlas.js) is sole chamber nav
        and remains gated behind realms_unlocked. nav.js file retained, unloaded.
@@ -270,7 +272,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg-deep);font-family:'DM 
    so wide-orbit particles don't clip. JS maintains devicePixelRatio-correct
    sizing and handles all rendering. */
 .horizon-canvas{
-  position:absolute;inset:0;
+  position:absolute;inset:0;z-index:2;
   display:block;width:100%;height:100%;
 }
 
@@ -846,9 +848,24 @@ function startCanvasRenderer(){
   sizeCanvas();
   window.addEventListener('resize', sizeCanvas);
 
-  // Seed the disk with particles â€” all orbits initialized with random phase
-  for(var i = 0; i < 180; i++){
+  // Seed the disk - 520 particles for a continuous plasma (each far-side
+  // particle draws up to twice via the lensing arch).
+  for(var i = 0; i < 520; i++){
     HORIZON_STATE.particles.push(createDiskParticle());
+  }
+  // Gaseous base haze: large soft blobs riding the same orbits.
+  for(var g = 0; g < 100; g++){
+    var gp = createDiskParticle();
+    gp.gas = true;
+    gp.size = 4.5 + Math.random() * 5;
+    gp.opacity = 0.045 + Math.random() * 0.06;
+    gp.under = false;
+    HORIZON_STATE.particles.push(gp);
+  }
+  // Lensed background sky
+  HORIZON_STATE.skyStars = [];
+  for(var s = 0; s < 110; s++){
+    HORIZON_STATE.skyStars.push(createSkyStar());
   }
 
   // Start the draw loop
@@ -875,41 +892,57 @@ function sizeCanvas(){
 }
 
 // Create one disk particle with a random orbit and phase.
-// The orbital radius determines its speed (inner = faster), simulating
-// Keplerian motion in a simplified form.
-// Base velocity is tuned so inner particles complete a full orbit in ~15s
-// and outer particles take ~40s â€” slow, cinematic, still feels alive.
+// Gargantua pass: the disk is strongly inclined (global FLAT in the
+// renderer), color-graded by temperature from white-hot inner edge to deep
+// amber rim, radially biased toward the inner edge, and every far-side
+// particle is double-imaged by the lensing arch in the draw loop.
+// Per-particle flatten removed in favor of the shared inclination.
 function createDiskParticle(){
-  var r = HORIZON_STATE.diskInnerRadius + Math.random() * (HORIZON_STATE.diskOuterRadius - HORIZON_STATE.diskInnerRadius);
+  var r = HORIZON_STATE.diskInnerRadius + Math.pow(Math.random(), 1.7) * (HORIZON_STATE.diskOuterRadius - HORIZON_STATE.diskInnerRadius);
   var innerFraction = (r - HORIZON_STATE.diskInnerRadius) / (HORIZON_STATE.diskOuterRadius - HORIZON_STATE.diskInnerRadius);
-  // Angular velocity scales inversely with sqrt(r). At the inner edge, a full
-  // orbit takes ~15s. 2Ï€ rad / (15s Ã— 60fps) â‰ˆ 0.007 rad/frame at inner edge.
   var baseAngVel = 0.007 / Math.sqrt(r / HORIZON_STATE.diskInnerRadius);
-  var colorRoll = Math.random();
-  // Color grading: inner disk hotter (white/gold), outer cooler (gold/violet)
+  // Temperature gradient: white-hot inner edge, gold midfield, deep amber
+  // rim. No violet in the disk; the plasma is gold.
   var color;
-  if(innerFraction < 0.2){
-    color = Math.random() < 0.5 ? '#fff7dd' : '#f5eecc';
-  } else if(innerFraction < 0.55){
-    color = Math.random() < 0.6 ? '#f5eecc' : '#e5c574';
+  if(innerFraction < 0.16){
+    color = Math.random() < 0.6 ? '#fff9e8' : '#ffeec2';
+  } else if(innerFraction < 0.42){
+    color = Math.random() < 0.6 ? '#ffe9b0' : '#f0d28a';
+  } else if(innerFraction < 0.72){
+    color = Math.random() < 0.65 ? '#e5c574' : '#d4ab58';
   } else {
-    color = colorRoll < 0.4 ? '#e5c574' : (colorRoll < 0.75 ? '#c9a84c' : '#9d8bff');
+    color = Math.random() < 0.6 ? '#c9a84c' : '#a87f3c';
   }
   return {
     r: r,
     baseR: r,
     angle: Math.random() * Math.PI * 2,
-    angVel: baseAngVel * (0.8 + Math.random() * 0.4),
-    size: 0.6 + Math.random() * 1.6 + (1 - innerFraction) * 0.3,
-    // Vertical flatten factor â€” makes the disk elliptical (viewed at slight angle)
-    // 1 = perfect circle; < 1 = flattened top-to-bottom
-    flatten: 0.78 + Math.random() * 0.08,
-    opacity: 0.4 + Math.random() * 0.55,
+    angVel: baseAngVel * (0.85 + Math.random() * 0.3),
+    size: 0.7 + Math.random() * 1.3 + (1 - innerFraction) * 0.3,
+    opacity: 0.38 + Math.random() * 0.5,
     color: color,
-    // Wobble so particles don't orbit perfectly â€” slight radial oscillation
+    // Half the far-side particles also cast the faint secondary
+    // under-image hugging the shadow's lower rim.
+    under: Math.random() < 0.5,
     wobblePhase: Math.random() * Math.PI * 2,
-    wobbleAmp: 1 + Math.random() * 3,
+    wobbleAmp: 0.8 + Math.random() * 2.2,
     wobbleSpeed: 0.02 + Math.random() * 0.03
+  };
+}
+
+// Static background sky for gravitational lensing: each star is deflected
+// away from the shadow per frame (d' = d + K/d), which empties a dark moat
+// around the hole and crowds light against the photon ring. Stars whose
+// sightline crosses the shadow are simply gone.
+function createSkyStar(){
+  return {
+    nx: Math.random(),
+    ny: Math.random(),
+    size: 0.5 + Math.random() * 1.1,
+    alpha: 0.12 + Math.random() * 0.5,
+    twPhase: Math.random() * Math.PI * 2,
+    twSpeed: 0.008 + Math.random() * 0.02,
+    gold: Math.random() < 0.25
   };
 }
 
@@ -948,28 +981,111 @@ function drawFrame(now){
   // Clear canvas each frame (transparent â€” starfield shows through)
   ctx.clearRect(0, 0, HORIZON_STATE.width, HORIZON_STATE.height);
 
-  // --- ACCRETION DISK ---
-  ctx.globalCompositeOperation = 'screen';  // additive blending = brighter overlaps
+  // Gargantua geometry constants
+  var FLAT = 0.22;                                  // disk inclination (near edge-on)
+  var shadowR = HORIZON_STATE.horizonRadius;        // the black shadow
+  var lensInner = shadowR + 8;                      // arch hugs just outside the ring
+  var DOPPLER = 0.75;                               // beaming strength; left limb approaches
 
+  ctx.globalCompositeOperation = 'screen';
+
+  // --- LENSED SKY ---
+  if(HORIZON_STATE.skyStars){
+    var K = shadowR * shadowR * 0.35;
+    for(var si = 0; si < HORIZON_STATE.skyStars.length; si++){
+      var st = HORIZON_STATE.skyStars[si];
+      st.twPhase += st.twSpeed * dt;
+      var sx0 = st.nx * HORIZON_STATE.width;
+      var sy0 = st.ny * HORIZON_STATE.height;
+      var dxs = sx0 - cx, dys = sy0 - cy;
+      var d0 = Math.sqrt(dxs * dxs + dys * dys) || 1;
+      if(d0 < shadowR * 1.02) continue;             // swallowed by the shadow
+      var defl = K / d0;
+      var d1 = d0 + defl;
+      var ux = dxs / d0, uy = dys / d0;
+      var sx = cx + ux * d1, sy = cy + uy * d1;
+      var twinkle = 0.65 + 0.35 * Math.sin(st.twPhase);
+      var a = st.alpha * twinkle * HORIZON_STATE.coreOpacity;
+      var smear = Math.min(10, Math.max(0, (defl - 8) * 1.2));
+      if(smear > 2){
+        var tx = -uy, ty = ux;
+        ctx.strokeStyle = 'rgba(240,236,228,' + (a * 0.8).toFixed(3) + ')';
+        ctx.lineWidth = st.size * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(sx - tx * smear, sy - ty * smear);
+        ctx.lineTo(sx + tx * smear, sy + ty * smear);
+        ctx.stroke();
+      } else {
+        drawGlowPoint(ctx, sx, sy, st.size, a, st.gold ? '#e5c574' : '#f0ece4');
+      }
+    }
+  }
+
+  // --- ACCRETION DISK, double-imaged ---
   for(var i = 0; i < HORIZON_STATE.particles.length; i++){
     var p = HORIZON_STATE.particles[i];
-    // Advance orbit
     p.angle += p.angVel * HORIZON_STATE.rotationSpeed * dt;
     p.wobblePhase += p.wobbleSpeed * dt;
     var currentR = p.baseR + Math.sin(p.wobblePhase) * p.wobbleAmp;
 
-    // Elliptical projection â€” looks like disk viewed at slight angle
-    var x = cx + Math.cos(p.angle) * currentR;
-    var y = cy + Math.sin(p.angle) * currentR * p.flatten;
+    var ca = Math.cos(p.angle), sa = Math.sin(p.angle);
 
-    // Fade particles that are "behind" the black hole (slightly lower opacity
-    // when on the far side of the orbit, simulating light not making it around)
-    var depthFactor = 0.7 + 0.3 * (Math.sin(p.angle) * p.flatten > 0 ? 1 : 0.6);
+    // Doppler beaming: the approaching limb blazes, the receding limb dims
+    var beam = 1 + DOPPLER * (-ca);
+    if(beam < 0.3) beam = 0.3; if(beam > 1.85) beam = 1.85;
 
-    // Particles very near inner edge glow brighter (hottest part of disk)
-    var innerGlow = currentR < HORIZON_STATE.diskInnerRadius + 30 ? 1.4 : 1;
+    var innerGlow = currentR < HORIZON_STATE.diskInnerRadius + 30 ? 1.35 : 1;
+    var baseA = p.opacity * HORIZON_STATE.coreOpacity * beam;
 
-    drawGlowPoint(ctx, x, y, p.size * innerGlow, p.opacity * depthFactor * HORIZON_STATE.coreOpacity, p.color);
+    if(sa >= 0){
+      // NEAR SIDE - crosses in front of the shadow
+      var x = cx + ca * currentR;
+      var y = cy + sa * currentR * FLAT;
+      drawGlowPoint(ctx, x, y, p.size * innerGlow, baseA, p.color);
+      if(!p.gas && beam > 1.35){
+        drawGlowPoint(ctx, x, y, p.size * 0.55, (beam - 1.3) * 0.8 * baseA, '#ffffff');
+      }
+    } else {
+      // FAR SIDE - direct image only where it clears the shadow
+      var fx = cx + ca * currentR;
+      var fy = cy + sa * currentR * FLAT;
+      var fd = Math.sqrt((fx - cx) * (fx - cx) + (fy - cy) * (fy - cy));
+      if(fd > shadowR + 2){
+        drawGlowPoint(ctx, fx, fy, p.size * innerGlow * 0.9, baseA * 0.8, p.color);
+      }
+      // PRIMARY LENSED IMAGE - the far disk bent into the arch over the hole
+      var lr = lensInner + (currentR - HORIZON_STATE.diskInnerRadius) * 0.30;
+      var lx = cx + ca * lr;
+      var ly = cy - Math.abs(sa) * lr * 0.97;
+      drawGlowPoint(ctx, lx, ly, p.size * (p.gas ? 0.9 : 1.0), baseA * 0.95, p.color);
+      if(!p.gas && beam > 1.35){
+        drawGlowPoint(ctx, lx, ly, p.size * 0.45, (beam - 1.3) * 0.7 * baseA, '#ffffff');
+      }
+      // SECONDARY IMAGE - faint counter-arch hugging the shadow's lower rim
+      if(p.under){
+        var ur = lensInner + (currentR - HORIZON_STATE.diskInnerRadius) * 0.10;
+        var uxp = cx + ca * ur;
+        var uyp = cy + Math.abs(sa) * ur * 0.9;
+        drawGlowPoint(ctx, uxp, uyp, p.size * 0.6, baseA * 0.3, p.color);
+      }
+    }
+  }
+
+  // --- PHOTON RING (canvas) ---
+  // Crisp lensed-light ring at the shadow's edge, hotter on the approaching
+  // limb. Drawn on canvas so it composes with the disk correctly.
+  var ringA = HORIZON_STATE.coreOpacity;
+  if(ringA > 0.02){
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(245,238,204,' + (0.12 * ringA).toFixed(3) + ')';
+    ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(cx, cy, shadowR + 4, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,247,221,' + (0.55 * ringA).toFixed(3) + ')';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.arc(cx, cy, shadowR + 4, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.5 * ringA).toFixed(3) + ')';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.arc(cx, cy, shadowR + 4, Math.PI * 0.72, Math.PI * 1.28); ctx.stroke();
   }
 
   // --- INFALL PARTICLES ---
@@ -980,20 +1096,25 @@ function drawFrame(now){
     ip.inwardSpeed *= Math.pow(ip.accel, dt);
 
     var ix = cx + Math.cos(ip.angle) * ip.r;
-    var iy = cy + Math.sin(ip.angle) * ip.r * 0.82;
+    var iy = cy + Math.sin(ip.angle) * ip.r * 0.22;
+    // Hide the segment passing behind the shadow (far side, inside the disc)
+    var ihid = Math.sin(ip.angle) < 0 &&
+      Math.sqrt((ix - cx) * (ix - cx) + (iy - cy) * (iy - cy)) < HORIZON_STATE.horizonRadius + 2;
 
-    // Add to trail
-    ip.trail.push({x: ix, y: iy, opacity: ip.opacity});
-    if(ip.trail.length > 14) ip.trail.shift();
+    if(!ihid){
+      // Add to trail
+      ip.trail.push({x: ix, y: iy, opacity: ip.opacity});
+      if(ip.trail.length > 14) ip.trail.shift();
 
-    // Draw trail
-    for(var t = 0; t < ip.trail.length; t++){
-      var trailAlpha = (t / ip.trail.length) * ip.trail[t].opacity * 0.6;
-      drawGlowPoint(ctx, ip.trail[t].x, ip.trail[t].y, ip.size * (t / ip.trail.length) * 0.9, trailAlpha, ip.color);
+      // Draw trail
+      for(var t = 0; t < ip.trail.length; t++){
+        var trailAlpha = (t / ip.trail.length) * ip.trail[t].opacity * 0.6;
+        drawGlowPoint(ctx, ip.trail[t].x, ip.trail[t].y, ip.size * (t / ip.trail.length) * 0.9, trailAlpha, ip.color);
+      }
+
+      // Draw head
+      drawGlowPoint(ctx, ix, iy, ip.size, ip.opacity, ip.color);
     }
-
-    // Draw head
-    drawGlowPoint(ctx, ix, iy, ip.size, ip.opacity, ip.color);
 
     // Crossing the photon ring = consumption
     if(ip.r < HORIZON_STATE.horizonRadius + 6 && !ip.consumed){
