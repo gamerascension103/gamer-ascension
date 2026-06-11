@@ -3,6 +3,8 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-06-10 | glimpse_mode | ?glimpse=1 boots a stateless anchored-Foundation showcase: loadState returns in-memory showcase state, saveState no-ops, welcome gate skipped (initAtheneumEntry early-return), getImbuement + migrateImbuement glimpse-guarded reads-only so no localStorage write occurs. localStorage.length verified 0 after passive boot. Built for the landing-page sandboxed iframe embed (sandbox=allow-scripts + pointer-events shield) so visitors see the live Atheneum without consuming their real first-arrival ceremony. | shipped
+
      2026-06-10 | atmosphere_illumination_layer | Additive visual elevation layer inserted before </body> (style + script, ids ga-maxout-style / ga-maxout-script): twinkle starfield, sparkles, meteors, nebula depth, engraved great circles + corner scales, gold-leaf dust, candle-breath light, armillary zodiac/sunburst backdrop + stage-3 essence indraw, imbued-primordial substance auras, scrubber lit-tick ripple, title/vignette breathing, Essence astrolabe dial replacing flask visual (Pool box + pour targeting preserved), living micro-tree chain (link flow, done ember, current beacon, torch wake), illuminated module prose (drop cap, title rule, divider gems, heading marks, prose entrance, progress gem). Also fixed latent bug: pool-dock div lacked id="pool-dock" so performEssencePour + .catching flare never fired; id added to markup. All animations respect prefers-reduced-motion; chart elements suppressed at max-width:420px. A&D to record: Pool representation now instrument-not-container; drop cap added to module typography. | shipped
 
      2026-05-28 | mobile_macro_polish | Narrow-viewport breakpoint added at max-width:420px. Five-rule CSS-only fix for stacked mobile clutter on macro page: canvas-stage decoupled from viewport-center positioning to clear brand header at short heights; slot title shrunk to 11px/0.32em and tightened; constellation-frame scaled to 0.48 with bottom margin claw to fit 380px viewport; non-active scrubber tick names suppressed (slot 2 only); scrubber lifted from bottom:86px to bottom:118px to clear pool-dock and foundational-dock. Tablet/desktop layouts unchanged. | shipped
@@ -7185,6 +7187,9 @@ var MODULE_IMBUEMENT_PALETTES = {
 var IMBUEMENT_BASELINE = { hue: 42, sat: 30, light: 84 };
 
 function getImbuement(moduleId){
+  if(GLIMPSE_MODE){
+    return (userState.completedSkills && userState.completedSkills[moduleId]) ? 1.0 : 0.0;
+  }
   var stored = localStorage.getItem('ga_module_imbuement_' + moduleId);
   if(stored !== null){
     var v = parseFloat(stored);
@@ -7963,6 +7968,9 @@ function sliceStageContent(stageElement, sliceIdx){
 // ============================================================
 // USER STATE — what the user has accomplished
 // ============================================================
+var GLIMPSE_MODE = false;
+try { GLIMPSE_MODE = new URLSearchParams(location.search).has('glimpse'); } catch (e) {}
+
 const STORAGE_KEY = 'atheneum.userState.v1';
 const DEFAULT_STATE = {
   currentPageIndex: 0,        // which page is active
@@ -7976,6 +7984,15 @@ const DEFAULT_STATE = {
 let userState = loadState();
 
 function loadState() {
+  if (GLIMPSE_MODE) {
+    return Object.assign({}, DEFAULT_STATE, {
+      completedSkills: { gap: true, engine: true, interpreter: true },
+      totalEssence: 350,
+      currentRank: 'anchored',
+      unlockedThroughPage: 15,
+      anchoredCeremonyFired: true
+    });
+  }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return Object.assign({}, DEFAULT_STATE, JSON.parse(raw));
@@ -7984,6 +8001,7 @@ function loadState() {
 }
 
 function saveState() {
+  if (GLIMPSE_MODE) return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userState));
   } catch (e) {}
@@ -10917,6 +10935,7 @@ const WELCOME_SEEN_KEY = JOURNEY_KEY;
 const FIRST_DIVE_DONE_KEY = JOURNEY_KEY;
 
 function initAtheneumEntry() {
+  if (GLIMPSE_MODE) return;
   let seen = false;
   try { seen = localStorage.getItem(WELCOME_SEEN_KEY) === '1'; } catch (e) {}
 
@@ -11402,6 +11421,7 @@ function runRealmsUnlockBridge() {
 // ============================================================
 
 function migrateImbuement() {
+  if (GLIMPSE_MODE) return;
   // For users who completed modules before imbuement keys existed:
   // back-fill saturation 1.0. For users with partial sub-unit progress:
   // compute saturation from completed sub-unit count.
@@ -11647,6 +11667,7 @@ init();
 <script src="assets/js/atlas.js"></script>
 <script>
 window.addEventListener('load', function(){
+  if(GLIMPSE_MODE) return;
   if(typeof Atlas === 'undefined') return;
   Atlas.init({ current: 'atheneum' });
 

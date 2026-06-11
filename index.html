@@ -542,6 +542,32 @@
     .roster-rise{opacity:1;transform:none}
     .hero .eyebrow,.hero-title,.hero-sub,.hero-cta-wrap,.scroll-hint{opacity:1!important}
   }
+
+  /* ---- Threshold glimpse: a sandboxed live Atheneum as the conversion target ---- */
+  .glimpse-caption{
+    display:block;margin:0 auto 22px;max-width:520px;
+    font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.28em;
+    text-transform:uppercase;color:var(--text-faint);font-style:normal;
+  }
+  .glimpse { position: relative; width: 100%; max-width: 880px; margin: 0 auto;
+    aspect-ratio: 16 / 9; max-height: 560px;
+    border: 1px solid rgba(201,168,76,0.5); overflow: hidden; cursor: pointer;
+    box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 30px rgba(229,197,116,0.08); }
+  .glimpse::before { content: ''; position: absolute; inset: 7px;
+    border: 0.5px solid rgba(201,168,76,0.25); pointer-events: none; z-index: 3; }
+  .glimpse iframe { position: absolute; top: 0; left: 0; width: 200%; height: 200%;
+    transform: scale(0.5); transform-origin: top left; border: 0; pointer-events: none; }
+  .glimpse a.shield { position: absolute; inset: 0; z-index: 4; display: flex;
+    align-items: flex-end; justify-content: center; padding-bottom: 34px;
+    background: linear-gradient(180deg, transparent 55%, rgba(9,7,20,0.55) 100%);
+    text-decoration: none; }
+  .glimpse a.shield .pill { font-family: 'Cinzel', serif; font-size: 12px;
+    letter-spacing: 0.34em; text-indent: 0.34em; color: #e5c574;
+    border: 1px solid rgba(201,168,76,0.7); padding: 14px 30px 13px;
+    background: rgba(13,10,30,0.75);
+    transition: box-shadow 0.5s ease, border-color 0.5s ease; }
+  .glimpse:hover a.shield .pill { border-color: #e5c574;
+    box-shadow: 0 0 22px rgba(229,197,116,0.35); }
 </style>
 </head>
 <body>
@@ -737,7 +763,16 @@
     <h2 class="reveal">Stop admiring heroes.<br>Start becoming one.</h2>
     <p class="invitation reveal">The first part of the journey is open to everyone, free. Step in, and see what it feels like to be met by a system built for the way you think.</p>
     <div class="reveal">
-      <a class="cta" href="/evermark.html">Begin free <span class="arrow" aria-hidden="true">→</span></a>
+      <p class="glimpse-caption">This is not a screenshot. The Atheneum is open right now.</p>
+      <div class="glimpse">
+        <iframe src="https://ascension-1.live/atheneum.html?glimpse=1"
+                sandbox="allow-scripts"
+                loading="lazy"
+                title="The Atheneum, live"></iframe>
+        <a class="shield" href="/evermark.html">
+          <span class="pill">BEGIN FREE &rarr;</span>
+        </a>
+      </div>
       <span class="cta-note">No account · No card · Start in seconds</span>
     </div>
   </div>
@@ -899,5 +934,129 @@
   })();
 </script>
 
+<!-- ============================================================
+     LANDING ATMOSPHERE LAYER (shipped 2026-06-10)
+     Fully additive; continuous with the Atheneum's scribe's-chart
+     layer so the landing and the app read as one world. Contents:
+     twinkling stars + sparkles + rare meteor, engraved great
+     circles + corner quarter-scales, candle-breath warm light,
+     founder-quote drop cap, pillar-tag diamonds.
+     Remove this single block to restore prior behavior exactly.
+     ============================================================ -->
+<style id="ga-max-landing-style">
+.ga-max-sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+.ga-max-star { position: absolute; border-radius: 50%; background: #efe8d2;
+  animation: ga-max-twinkle var(--dur) var(--del) ease-in-out infinite; }
+.ga-max-star.gold { background: #e5c574; }
+@keyframes ga-max-twinkle { 0%, 100% { opacity: var(--lo); } 50% { opacity: var(--hi); } }
+.ga-max-sparkle { position: absolute; width: 13px; height: 13px;
+  animation: ga-max-sparkle-breathe 8s var(--del) ease-in-out infinite; }
+.ga-max-sparkle::before, .ga-max-sparkle::after { content: ''; position: absolute; background: #f0e8cf; }
+.ga-max-sparkle::before { left: 50%; top: 0; width: 0.75px; height: 100%; }
+.ga-max-sparkle::after { top: 50%; left: 0; height: 0.75px; width: 100%; }
+@keyframes ga-max-sparkle-breathe { 0%, 100% { opacity: 0.1; transform: scale(0.75); }
+  50% { opacity: 0.5; transform: scale(1.05); } }
+.ga-max-meteor { position: absolute; width: 120px; height: 1px; opacity: 0;
+  background: linear-gradient(90deg, rgba(255,250,230,0.85), rgba(229,197,116,0.4), transparent);
+  animation: ga-max-meteor-pass var(--dur) var(--del) linear infinite; }
+@keyframes ga-max-meteor-pass {
+  0%   { opacity: 0; transform: rotate(-26deg) translateX(0); }
+  0.8% { opacity: 0.7; }
+  3.2% { opacity: 0; transform: rotate(-26deg) translateX(-360px); }
+  100% { opacity: 0; transform: rotate(-26deg) translateX(-360px); } }
+.ga-max-arc { position: absolute; border-radius: 50%;
+  border: 0.75px solid rgba(216,210,192,0.05); }
+.ga-max-arc.gold { border-color: rgba(229,197,116,0.045); }
+.ga-max-arc.dotted { border-style: dotted; border-width: 1.5px; border-color: rgba(216,210,192,0.06); }
+.ga-max-corner-scale { position: absolute; border-radius: 50%;
+  border: 2px dotted rgba(216,210,192,0.06); }
+.ga-max-corner-scale::after { content: ''; position: absolute; inset: 14px; border-radius: 50%;
+  border: 0.5px solid rgba(229,197,116,0.05); }
+.ga-max-candle { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: radial-gradient(ellipse 62% 46% at 50% 38%, rgba(229,197,116,0.04), transparent 70%);
+  animation: ga-max-candle-sway 19s ease-in-out infinite; }
+@keyframes ga-max-candle-sway {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.85; }
+  33%      { transform: translate(6px, -4px) scale(1.015); opacity: 1; }
+  66%      { transform: translate(-5px, 3px) scale(0.995); opacity: 0.9; } }
+
+/* founder's words open like a folio */
+.maker blockquote::first-letter {
+  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+  font-size: 50px; line-height: 0.78; font-weight: 700;
+  color: var(--gold-bright, #e5c574);
+  float: left; margin: 6px 11px 0 0;
+  text-shadow: 0 0 16px rgba(229,197,116,0.35); }
+
+/* pillar tags carry their mark */
+.pillar-tag { position: relative; padding-left: 16px; }
+.pillar-tag::before { content: ''; position: absolute; left: 0; top: 0.32em;
+  width: 7px; height: 7px; transform: rotate(45deg);
+  background: currentColor; opacity: 0.85;
+  box-shadow: 0 0 8px currentColor; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ga-max-star, .ga-max-sparkle, .ga-max-meteor, .ga-max-candle { animation: none !important; }
+}
+@media (max-width: 640px) {
+  .ga-max-arc, .ga-max-corner-scale { display: none; }
+}
+</style>
+<script id="ga-max-landing-script">
+(function () {
+  var sky = document.createElement('div');
+  sky.className = 'ga-max-sky';
+  document.body.appendChild(sky);
+
+  var arcs = [
+    { w: 1900, h: 1250, left: '-24%', top: '-50%', rot: -13, cls: '' },
+    { w: 2300, h: 1700, left: '26%',  top: '20%',  rot: 8,   cls: ' gold' },
+    { w: 1500, h: 1500, left: '58%',  top: '-56%', rot: 0,   cls: ' dotted' }
+  ];
+  arcs.forEach(function (a) {
+    var d = document.createElement('div');
+    d.className = 'ga-max-arc' + a.cls;
+    d.style.cssText = 'width:' + a.w + 'px;height:' + a.h + 'px;left:' + a.left + ';top:' + a.top + ';' +
+      'transform:rotate(' + a.rot + 'deg);';
+    sky.appendChild(d);
+  });
+
+  var sc1 = document.createElement('div');
+  sc1.className = 'ga-max-corner-scale';
+  sc1.style.cssText = 'width:240px;height:240px;left:-120px;bottom:-120px;';
+  sky.appendChild(sc1);
+  var sc2 = document.createElement('div');
+  sc2.className = 'ga-max-corner-scale';
+  sc2.style.cssText = 'width:240px;height:240px;right:-120px;top:-120px;';
+  sky.appendChild(sc2);
+
+  for (var i = 0; i < 40; i++) {
+    var s = document.createElement('div');
+    s.className = 'ga-max-star' + (Math.random() < 0.3 ? ' gold' : '');
+    var size = (0.8 + Math.random() * 1.4).toFixed(1);
+    s.style.cssText = 'left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 100).toFixed(1) + '%;' +
+      'width:' + size + 'px;height:' + size + 'px;' +
+      '--lo:' + (0.05 + Math.random() * 0.1).toFixed(2) + ';--hi:' + (0.3 + Math.random() * 0.45).toFixed(2) + ';' +
+      '--dur:' + (4 + Math.random() * 8).toFixed(1) + 's;--del:' + (Math.random() * 9).toFixed(1) + 's;';
+    sky.appendChild(s);
+  }
+
+  [[14, 14], [85, 12], [10, 72], [88, 68]].forEach(function (p, idx) {
+    var sp = document.createElement('div');
+    sp.className = 'ga-max-sparkle';
+    sp.style.cssText = 'left:' + p[0] + '%;top:' + p[1] + '%;--del:' + (idx * 2.2) + 's;';
+    sky.appendChild(sp);
+  });
+
+  var mt = document.createElement('div');
+  mt.className = 'ga-max-meteor';
+  mt.style.cssText = 'left:72%;top:9%;--dur:59s;--del:17s;';
+  sky.appendChild(mt);
+
+  var candle = document.createElement('div');
+  candle.className = 'ga-max-candle';
+  document.body.appendChild(candle);
+})();
+</script>
 </body>
 </html>
