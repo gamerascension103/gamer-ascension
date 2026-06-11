@@ -3,6 +3,8 @@
      BUILD LOG — most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-06-11 | maxout_layer_v2_perf_tier | Atmosphere layer upgraded to v2 with an in-file performance tier: phones/small touch devices (ga-lite via matchMedia) get reduced particle counts, no blurred nebulae/giant arcs/meteors, static armillary backdrop, no animated text-shadow, and micro-tree glow via static filters + composited opacity beacon instead of animated SVG filters (the mobile flicker root cause). Desktop tier unchanged. | shipped
+
      2026-06-10 | glimpse_mode | ?glimpse=1 boots a stateless anchored-Foundation showcase: loadState returns in-memory showcase state, saveState no-ops, welcome gate skipped (initAtheneumEntry early-return), getImbuement + migrateImbuement glimpse-guarded reads-only so no localStorage write occurs. localStorage.length verified 0 after passive boot. Built for the landing-page sandboxed iframe embed (sandbox=allow-scripts + pointer-events shield) so visitors see the live Atheneum without consuming their real first-arrival ceremony. | shipped
 
      2026-06-10 | atmosphere_illumination_layer | Additive visual elevation layer inserted before </body> (style + script, ids ga-maxout-style / ga-maxout-script): twinkle starfield, sparkles, meteors, nebula depth, engraved great circles + corner scales, gold-leaf dust, candle-breath light, armillary zodiac/sunburst backdrop + stage-3 essence indraw, imbued-primordial substance auras, scrubber lit-tick ripple, title/vignette breathing, Essence astrolabe dial replacing flask visual (Pool box + pour targeting preserved), living micro-tree chain (link flow, done ember, current beacon, torch wake), illuminated module prose (drop cap, title rule, divider gems, heading marks, prose entrance, progress gem). Also fixed latent bug: pool-dock div lacked id="pool-dock" so performEssencePour + .catching flare never fired; id added to markup. All animations respect prefers-reduced-motion; chart elements suppressed at max-width:420px. A&D to record: Pool representation now instrument-not-container; drop cap added to module typography. | shipped
@@ -11688,18 +11690,16 @@ window.addEventListener('load', function(){
 <script src="assets/js/dev_tools.js"></script>
 
 <!-- ============================================================
-     ATMOSPHERE & ILLUMINATION LAYER (shipped 2026-06-10)
+     ATMOSPHERE & ILLUMINATION LAYER (v2, 2026-06-11)
      Fully additive. No existing rule or function is modified.
      Remove this single block to restore prior behavior exactly.
-     Contents: sky (twinkle stars, sparkles, meteors, nebula depth),
-     scribe's chart (great circles, corner scales, gold-leaf dust,
-     candle-breath), armillary backdrop (zodiac + sunburst) and
-     stage-3 essence indraw, imbued-primordial substance auras,
-     scrubber tick ripple, title and vignette breathing, Essence
-     astrolabe dial (replaces flask visual; Pool box preserved),
-     living micro-tree chain (link flow, done ember, current beacon,
-     torch wake), illuminated module prose (drop cap, title rule,
-     divider gems, heading marks, prose entrance, progress gem).
+     v2 adds the performance tier: phones / small touch devices
+     (GA_LITE) get the same look via cheaper techniques: no blurred
+     nebulae or giant arc layers, no animated text-shadow or SVG
+     filter animations, reduced particle counts. Desktop unchanged.
+     Contents otherwise as v1: sky, scribe's chart, armillary
+     backdrop + indraw, substance auras, scrubber ripple, Essence
+     astrolabe, living micro-tree chain, illuminated module prose.
      ============================================================ -->
 <style id="ga-maxout-style">
 /* --- sky: twinkling stars, sparkles, meteors, nebula depth --- */
@@ -11974,17 +11974,48 @@ window.addEventListener('load', function(){
 @media (max-width: 420px) {
   .ga-max-nebula { display: none; }
 }
+
+/* --- LITE TIER (phones / small touch devices) ---
+   Repaint-heavy techniques replaced with composited or static equivalents.
+   The look survives; the per-frame cost does not. */
+.ga-lite .constellation-title-text { animation: none; }
+.ga-lite .center-vignette { animation: none; }
+.ga-lite .ga-max-candle { animation: none; }
+.ga-lite .armillary-primordial::before,
+.ga-lite .armillary-primordial::after { animation: none; }
+/* link flow keeps its dash current but drops the per-frame filter */
+.ga-lite .micro-tree-chain-svg line[stroke^="var"] { filter: none; }
+/* done shapes: static glow instead of animated filter */
+.ga-lite .micro-tree-chain-svg path.mt-shape[fill^="var"]:not(.hovered),
+.ga-lite .micro-tree-chain-svg g.mt-shape:not(.hovered) rect[fill^="var"] {
+  animation: none;
+  filter: drop-shadow(0 0 4px var(--mt-bright-soft, rgba(201,168,76,0.45))); }
+/* current node: opacity beacon (composited) instead of filter beacon */
+.ga-lite .micro-tree-chain-svg path.mt-shape[stroke^="var(--mt-pulse"]:not(.hovered),
+.ga-lite .micro-tree-chain-svg g.mt-shape:not(.hovered) rect[stroke^="var(--mt-pulse"] {
+  animation: ga-max-beacon-lite 3.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px var(--mt-pulse-shadow, rgba(233,213,255,0.55))); }
+@keyframes ga-max-beacon-lite {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; } }
 </style>
 <script id="ga-maxout-script">
 (function () {
   var field = document.querySelector('.starfield');
   if (!field) return;
 
+  // Performance tier: phones and small touch devices get the lite layer.
+  // Same beauty, cheaper techniques: no blurred nebulae, no giant arc
+  // layers, no animated text-shadow/filters, fewer particles.
+  var GA_LITE = window.matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches;
+  if (GA_LITE) document.documentElement.classList.add('ga-lite');
+
   /* nebula depth: two faint violet masses drifting on long cycles */
   var nebulae = [
     { x: '8%',  y: '12%', w: 520, h: 380, c: 'rgba(64,48,120,0.16)', dx: '40px',  dy: '24px',  dur: '120s', lo: 0.5, hi: 0.85 },
     { x: '62%', y: '52%', w: 620, h: 420, c: 'rgba(46,32,92,0.14)',  dx: '-50px', dy: '-20px', dur: '150s', lo: 0.45, hi: 0.8 }
   ];
+  if (GA_LITE) nebulae = [];
   nebulae.forEach(function (n) {
     var d = document.createElement('div');
     d.className = 'ga-max-nebula';
@@ -11995,7 +12026,8 @@ window.addEventListener('load', function(){
   });
 
   /* individually twinkling stars over the drifting base field */
-  for (var i = 0; i < 46; i++) {
+  var STAR_N = GA_LITE ? 18 : 46;
+  for (var i = 0; i < STAR_N; i++) {
     var s = document.createElement('div');
     s.className = 'ga-max-star' + (Math.random() < 0.3 ? ' gold' : '');
     var size = (0.8 + Math.random() * 1.4).toFixed(1);
@@ -12007,7 +12039,7 @@ window.addEventListener('load', function(){
   }
 
   /* a few four-point sparkles at the margins */
-  var sparkles = [[12, 16], [86, 14], [9, 74], [90, 70]];
+  var sparkles = GA_LITE ? [[12, 16], [88, 70]] : [[12, 16], [86, 14], [9, 74], [90, 70]];
   sparkles.forEach(function (p, idx) {
     var sp = document.createElement('div');
     sp.className = 'ga-max-sparkle';
@@ -12021,6 +12053,7 @@ window.addEventListener('load', function(){
     { w: 2300, h: 1700, left: '24%',  top: '14%',  rot: 8,   cls: ' gold' },
     { w: 1500, h: 1500, left: '56%',  top: '-58%', rot: 0,   cls: ' dotted' }
   ];
+  if (GA_LITE) arcs = [];
   arcs.forEach(function (a) {
     var d = document.createElement('div');
     d.className = 'ga-max-arc' + a.cls;
@@ -12030,6 +12063,7 @@ window.addEventListener('load', function(){
   });
 
   /* graduated quarter-scales in opposing corners — chart marginalia */
+  if (!GA_LITE) {
   var sc1 = document.createElement('div');
   sc1.className = 'ga-max-corner-scale';
   sc1.style.cssText = 'width:240px;height:240px;left:-120px;bottom:-120px;';
@@ -12038,9 +12072,11 @@ window.addEventListener('load', function(){
   sc2.className = 'ga-max-corner-scale';
   sc2.style.cssText = 'width:240px;height:240px;right:-120px;top:-120px;';
   field.appendChild(sc2);
+  }
 
   /* gold-leaf dust drifting through the reading light */
-  for (var k = 0; k < 9; k++) {
+  var DUST_N = GA_LITE ? 4 : 9;
+  for (var k = 0; k < DUST_N; k++) {
     var du = document.createElement('div');
     du.className = 'ga-max-dust';
     var dsize = (1.1 + Math.random() * 1.1).toFixed(1);
@@ -12090,6 +12126,7 @@ window.addEventListener('load', function(){
     { x: '70%', y: '10%', dur: '53s', del: '11s' },
     { x: '30%', y: '6%',  dur: '67s', del: '37s' }
   ];
+  if (GA_LITE) meteors = [];
   meteors.forEach(function (m) {
     var mt = document.createElement('div');
     mt.className = 'ga-max-meteor';

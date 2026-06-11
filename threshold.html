@@ -3,6 +3,8 @@
      BUILD LOG â€” most recent first, ~10 entries max
      For Claude (claude.ai) orientation at session start.
      ====================================================================
+     2026-06-11 | gargantua_perf_tier | drawGlowPoint rewritten to sprite-cached drawImage (was up to ~1600 gradient allocations/frame), DPR capped (1.25 lite / 2 full), lite tier (GA_PERF_LITE) runs 260+60 particles and 60 sky stars with white-core and secondary-arch passes skipped. Full tier restored to 680+130. Visual composition unchanged on both tiers. | shipped
+
      2026-06-10 | gargantua_renderer | Event-horizon renderer upgraded to a physically-read black hole: disk inclined to 0.22 with inner-biased 520-particle plasma + 100 gas blobs (tuned down from 680/130 for FPS), far side double-imaged into a lensing arch over the shadow (plus faint secondary under-arch), doppler beaming on the approaching limb with white-core overdraw, occlusion-correct near-side crossing (canvas z-index 2 over the SVG core, far-side culling in code), 110-star background sky deflected d'=d+K/d with tangential smears near the hole, canvas photon ring with doppler hotspot, infall geometry matched to the inclined plane with behind-shadow occlusion. All birth/idle/hover/pull-through hooks (coreOpacity, rotationSpeed, timeScale) unchanged and driving the new renderer. | shipped
 
      2026-05-27 | remove_nav_js | shipped
@@ -814,6 +816,7 @@ function initEventHorizon(){
 //     triggering a brightness flash on consumption.
 // Both systems share the canvas and draw loop for efficiency.
 
+window.GA_PERF_LITE = window.matchMedia('(max-width: 820px), (pointer: coarse) and (max-width: 1100px)').matches;
 var HORIZON_STATE = {
   canvas: null,
   ctx: null,
@@ -848,13 +851,15 @@ function startCanvasRenderer(){
   sizeCanvas();
   window.addEventListener('resize', sizeCanvas);
 
-  // Seed the disk - 520 particles for a continuous plasma (each far-side
-  // particle draws up to twice via the lensing arch).
-  for(var i = 0; i < 520; i++){
+  // Seed the disk - 680 full / 260 lite (each far-side particle draws up
+  // to twice via the lensing arch).
+  var DISK_N = window.GA_PERF_LITE ? 260 : 680;
+  for(var i = 0; i < DISK_N; i++){
     HORIZON_STATE.particles.push(createDiskParticle());
   }
   // Gaseous base haze: large soft blobs riding the same orbits.
-  for(var g = 0; g < 100; g++){
+  var GAS_N = window.GA_PERF_LITE ? 60 : 130;
+  for(var g = 0; g < GAS_N; g++){
     var gp = createDiskParticle();
     gp.gas = true;
     gp.size = 4.5 + Math.random() * 5;
@@ -864,7 +869,8 @@ function startCanvasRenderer(){
   }
   // Lensed background sky
   HORIZON_STATE.skyStars = [];
-  for(var s = 0; s < 110; s++){
+  var SKY_N = window.GA_PERF_LITE ? 60 : 110;
+  for(var s = 0; s < SKY_N; s++){
     HORIZON_STATE.skyStars.push(createSkyStar());
   }
 
@@ -877,7 +883,8 @@ function startCanvasRenderer(){
 function sizeCanvas(){
   var c = HORIZON_STATE.canvas;
   if(!c) return;
-  HORIZON_STATE.dpr = window.devicePixelRatio || 1;
+  // Cap DPR: a 3x phone otherwise pushes 9x the pixels through the renderer.
+  HORIZON_STATE.dpr = Math.min(window.devicePixelRatio || 1, window.GA_PERF_LITE ? 1.25 : 2);
   var w = window.innerWidth;
   var h = window.innerHeight;
   c.width  = Math.floor(w * HORIZON_STATE.dpr);
@@ -1042,7 +1049,7 @@ function drawFrame(now){
       var x = cx + ca * currentR;
       var y = cy + sa * currentR * FLAT;
       drawGlowPoint(ctx, x, y, p.size * innerGlow, baseA, p.color);
-      if(!p.gas && beam > 1.35){
+      if(!p.gas && beam > 1.35 && !window.GA_PERF_LITE){
         drawGlowPoint(ctx, x, y, p.size * 0.55, (beam - 1.3) * 0.8 * baseA, '#ffffff');
       }
     } else {
@@ -1058,11 +1065,11 @@ function drawFrame(now){
       var lx = cx + ca * lr;
       var ly = cy - Math.abs(sa) * lr * 0.97;
       drawGlowPoint(ctx, lx, ly, p.size * (p.gas ? 0.9 : 1.0), baseA * 0.95, p.color);
-      if(!p.gas && beam > 1.35){
+      if(!p.gas && beam > 1.35 && !window.GA_PERF_LITE){
         drawGlowPoint(ctx, lx, ly, p.size * 0.45, (beam - 1.3) * 0.7 * baseA, '#ffffff');
       }
       // SECONDARY IMAGE - faint counter-arch hugging the shadow's lower rim
-      if(p.under){
+      if(p.under && !window.GA_PERF_LITE){
         var ur = lensInner + (currentR - HORIZON_STATE.diskInnerRadius) * 0.10;
         var uxp = cx + ca * ur;
         var uyp = cy + Math.abs(sa) * ur * 0.9;
@@ -1160,20 +1167,32 @@ function drawFrame(now){
 // rather than a hard circle so particles look like light sources, not pixels.
 function drawGlowPoint(ctx, x, y, size, opacity, color){
   if(opacity <= 0.02 || size <= 0.05) return;
-  // Parse color into r,g,b once (quick hex parse)
-  var hex = color;
-  if(hex[0] === '#') hex = hex.slice(1);
-  var r = parseInt(hex.substr(0, 2), 16);
-  var g = parseInt(hex.substr(2, 2), 16);
-  var b = parseInt(hex.substr(4, 2), 16);
-  var grad = ctx.createRadialGradient(x, y, 0, x, y, size * 3);
-  grad.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ',' + opacity + ')');
-  grad.addColorStop(0.4, 'rgba(' + r + ',' + g + ',' + b + ',' + (opacity * 0.5) + ')');
-  grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.arc(x, y, size * 3, 0, Math.PI * 2);
-  ctx.fill();
+  // Sprite cache: one pre-rendered 64px glow per color, drawn via drawImage.
+  // Replaces a per-call createRadialGradient (the old path allocated up to
+  // ~1600 gradients per frame at full disk density).
+  var cache = drawGlowPoint._cache || (drawGlowPoint._cache = {});
+  var sp = cache[color];
+  if(!sp){
+    sp = document.createElement('canvas');
+    sp.width = 64; sp.height = 64;
+    var sctx = sp.getContext('2d');
+    var hex = color[0] === '#' ? color.slice(1) : color;
+    var r = parseInt(hex.substr(0, 2), 16);
+    var g = parseInt(hex.substr(2, 2), 16);
+    var b = parseInt(hex.substr(4, 2), 16);
+    var grad = sctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ',1)');
+    grad.addColorStop(0.4, 'rgba(' + r + ',' + g + ',' + b + ',0.5)');
+    grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
+    sctx.fillStyle = grad;
+    sctx.fillRect(0, 0, 64, 64);
+    cache[color] = sp;
+  }
+  var rad = size * 3;
+  var prev = ctx.globalAlpha;
+  ctx.globalAlpha = Math.min(1, opacity);
+  ctx.drawImage(sp, x - rad, y - rad, rad * 2, rad * 2);
+  ctx.globalAlpha = prev;
 }
 
 // ============================================================================
