@@ -132,6 +132,7 @@ If you halted: explain WHY, what specifically needs operator judgment, and your 
 ## SCOPE DISCIPLINE
 
 - **One change per brief (default).** Do not "fix something while I'm in there."
+- **One lesson per integration (the Module 1 scar).** Curriculum lesson integrations into `atheneum.html` are strictly one lesson per brief and one commit per lesson. Never batch multiple lessons into a single integration pass, however efficient it looks. This rule was learned from the Module 1 → Training integration regression; batching cost more than it ever saved.
 - **Stay in named files.** If you find a related issue elsewhere, surface it as a flag; do not silently fix it.
 - **Find-replace blast radius.** The chamber files are large; find-replace mistakes have a big blast radius. Match exact strings, use line ranges, and verify edits landed in the intended location, not in similar-looking strings elsewhere.
 - **No silent splitting.** Single-file-per-chamber is the locked choice. Do not propose splitting `atheneum.html` or any chamber file into modules without being explicitly asked.
@@ -210,12 +211,13 @@ Implications: find-replace mistakes have a large blast radius (match exact strin
 
 Persistent state lives in `localStorage` with the `ga_*` prefix:
 
+- `atheneum.userState.v1` — the primary Atheneum state object (currentPageIndex, completedSkills, totalEssence, currentRank, unlockedThroughPage, anchoredCeremonyFired). The load-bearing key; most other keys orbit it. No `ga_` prefix; predates the convention.
 - `ga_essence` — Pool's current essence total
-- `ga_modules_*` — module-specific state
-- `ga_retrievals_*` — retrieval submission records
-- `ga_subunit_flags_*` — sub-unit completion flags
-- `ga_imbuement_*` — module imbuement saturation
-- `ga_welcome_flags` — first-visit flags
+- `ga_module_{id}_stage` — module stage progression
+- `ga_retrieval_{id}` / `ga_retrieval_{id}_submitted` / `ga_retrieval_{id}_skipped` — retrieval text and submission records
+- `ga_subunit_{id}_complete` — sub-unit completion flags
+- `ga_module_imbuement_{id}` — module imbuement saturation
+- `ga_journey_v1` — welcome/journey flag (canonical first-visit state)
 - `realms_unlocked` — post-Anchored Atlas access flag (NO `ga_` prefix, legacy reason)
 - `ga_scriptorium_unsealed` — Scriptorium open state
 - Plus others; check existing keys before adding new ones.
