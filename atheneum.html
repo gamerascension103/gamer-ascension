@@ -7305,6 +7305,14 @@ var SUBUNIT_CHAINS = {
     { id: 'faith-su3', title: 'Borrowed belief',      stage: 2, slice: 0 },
     { id: 'faith-su4', title: 'Faith, not optimism',  stage: 2, slice: 1 }
     // retrieval gate (stage 3)
+  ],
+  reflection: [
+    { id: 'reflection-su1', title: 'The two arrivals',          stage: 0, slice: 0 },
+    { id: 'reflection-su2', title: 'The loop',                  stage: 0, slice: 1 },
+    // retrieval gate (stage 1)
+    { id: 'reflection-su3', title: 'Ask what, not why',         stage: 2, slice: 0 },
+    { id: 'reflection-su4', title: 'The clock and the receipt', stage: 2, slice: 1 }
+    // retrieval gate (stage 3)
   ]
 };
 
@@ -7339,6 +7347,10 @@ var RETRIEVAL_PREP_VIDEOS = {
     1: ''
   },
   faith: {
+    0: '',
+    1: ''
+  },
+  reflection: {
     0: '',
     1: ''
   }
@@ -7424,7 +7436,8 @@ var MODULE_IMBUEMENT_PALETTES = {
   engine:     { hue:  36, satTarget: 64, lightTarget: 54 },
   interpreter:{ hue:   0, satTarget: 52, lightTarget: 42 },
   energy:     { hue: 177, satTarget: 46, lightTarget: 31 },
-  faith:      { hue: 232, satTarget: 38, lightTarget: 50 }
+  faith:      { hue: 232, satTarget: 38, lightTarget: 50 },
+  reflection: { hue: 210, satTarget: 22, lightTarget: 56 }
 };
 
 var IMBUEMENT_BASELINE = { hue: 42, sat: 30, light: 84 };
@@ -10201,6 +10214,7 @@ function completeModuleEngine(){ completePrimordialModule('engine'); }
 function completeModuleInterpreter(){ completePrimordialModule('interpreter'); }
 function completeModuleEnergy(){ completePrimordialModule('energy'); }
 function completeModuleFaith(){ completePrimordialModule('faith'); }
+function completeModuleReflection(){ completePrimordialModule('reflection'); }
 
 // =============================================================
 // THE POUR SEQUENCE (Brief 5)
@@ -10311,6 +10325,7 @@ window.completeModuleEngine = completeModuleEngine;
 window.completeModuleInterpreter = completeModuleInterpreter;
 window.completeModuleEnergy = completeModuleEnergy;
 window.completeModuleFaith = completeModuleFaith;
+window.completeModuleReflection = completeModuleReflection;
 
 function wireLessonHandlers() {
   document.getElementById('lesson-back').addEventListener('click', closeLesson);
@@ -11459,7 +11474,7 @@ function devReset() {
     // Brief 2 — wipe module + retrieval + Essence state.
     localStorage.removeItem('ga_essence');
     localStorage.removeItem('ga_xp');
-    ['gap', 'engine', 'interpreter', 'energy', 'faith'].forEach(function(mod){
+    ['gap', 'engine', 'interpreter', 'energy', 'faith', 'reflection'].forEach(function(mod){
       localStorage.removeItem('ga_module_' + mod + '_stage');
     });
     var retrievalKeys = [];
@@ -11470,7 +11485,7 @@ function devReset() {
       }
     }
     retrievalKeys.forEach(function(k){ localStorage.removeItem(k); });
-    ['gap','engine','interpreter','energy','faith'].forEach(function(mod){
+    ['gap','engine','interpreter','energy','faith','reflection'].forEach(function(mod){
       localStorage.removeItem('ga_module_imbuement_' + mod);
     });
     localStorage.removeItem('ga_microtree_first_seen');           // Brief 6
@@ -11777,6 +11792,7 @@ init();
     <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('interpreter')">Fast-forward Interpreter</button>
     <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('energy')">Fast-forward Energy</button>
     <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('faith')">Fast-forward Faith</button>
+    <button class="dev-panel-btn" type="button" onclick="window.atheneum.devCompleteAllRetrievals('reflection')">Fast-forward Reflection</button>
   </div>
 
   <div class="dev-panel-section">
