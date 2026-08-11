@@ -49,6 +49,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .sec-body{font-size:16px;color:var(--tdim);max-width:600px;line-height:1.75}
 .btn{display:inline-flex;align-items:center;gap:10px;background:var(--red);color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:15px 30px;border-radius:3px;text-decoration:none;transition:background .2s,transform .15s;letter-spacing:.01em}
 .btn:hover{background:#a93226;transform:translateY(-2px)}
+.btn-ghost{display:inline-flex;align-items:center;gap:10px;background:transparent;border:1px solid var(--border2);color:var(--tdim);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;padding:14px 28px;border-radius:3px;text-decoration:none;transition:border-color .2s,color .2s,transform .15s;letter-spacing:.01em}
+.btn-ghost:hover{border-color:rgba(201,168,76,.45);color:var(--text);transform:translateY(-2px)}
 
 /* HERO */
 .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 24px 80px;overflow:hidden}
@@ -64,6 +66,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .hero-sub{font-size:clamp(15px,2vw,18px);font-weight:300;color:var(--tdim);max-width:560px;line-height:1.65;margin-bottom:52px;animation:fadeUp .7s ease forwards .35s;opacity:0}
 .hero-layout{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start}
 .hero-reasons{animation:fadeUp .7s ease forwards .5s;opacity:0}
+.hero-copy{animation:fadeUp .7s ease forwards .5s;opacity:0;align-self:center}
 .rl{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--tmuted);margin-bottom:28px}
 .reasons-heading{margin-bottom:32px}
 .rh-eyebrow{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:8px}
@@ -332,30 +335,22 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
   <div class="hero-glow"></div>
   <div class="hero-glow2"></div>
   <div class="hero-inner">
-    <div class="hero-ey"><div class="hero-eydot"></div>Unpopular opinion</div>
-    <h1 class="hero-h1">Gamers make<span class="hero-acc">better athletes</span>than almost everyone.</h1>
-    <p class="hero-sub">10 years of coaching. 300+ clients transformed. And one pattern that changed everything I thought I knew about who builds the best physiques.</p>
+    <h1 class="hero-h1">Big in your head.<br>Average in the mirror.<span class="hero-acc">There's a reason.</span></h1>
     <div class="hero-layout">
-      <div class="hero-reasons">
-        <div class="reasons-heading">
-          <div class="rh-title">4 core reasons gamers are just <span>better</span> at it.</div>
-          <div class="rh-line"></div>
-        </div>
-        <div class="reason"><div class="rnum">01</div><div><div class="rt">Gamers carry bigger fuel.</div><div class="rb">A lifetime of studying heroes creates a gap between who you are and who you know you could become. That pain makes gamers unreasonably consistent, more than people who just want to look better.</div></div></div>
-        <div class="reason"><div class="rnum">02</div><div><div class="rt">Gamers already know how to grind.</div><div class="rb">Farming loot for hours with no immediate payoff? That's delayed gratification. In fitness, delayed gratification is the only thing that separates people who transform from people who don't.</div></div></div>
-        <div class="reason"><div class="rnum">03</div><div><div class="rt">Gamers understand progression systems.</div><div class="rb">Skills build on each other over time. You don't become OP in a week. Gamers already know this, which makes them patient enough to go the distance when everyone else quits.</div></div></div>
-        <div class="reason"><div class="rnum">04</div><div><div class="rt">Gamers love understanding the mechanics.</div><div class="rb">They don't just want the result, they want to understand the system behind it. The people who enjoy the process never stop.</div></div></div>
+      <div class="hero-copy">
+        <p class="hero-sub">16-week, 1-on-1 coaching for men 30 to 50 who want to be built like a bear, not a beach model. You didn't fail the programs. The programs were never built for you.</p>
         <div class="hero-cta-row">
           <a href="https://calendly.com/straincoaching/insightcall" class="btn">Book the 15-Minute Call →</a>
-          <div class="btn-note">Free 15-min call.<br>No pressure. Just see if it fits.</div>
+          <a href="#curriculum" class="btn-ghost">See the system free →</a>
         </div>
+        <div class="btn-note" style="margin-top:20px">Free 15 minutes. No pressure either way.</div>
       </div>
       <div class="hero-proof">
         <div class="trans-tags"><span class="ttag before">Before</span><span class="ttag after">After</span></div>
         <img src="https://gamerascension103.github.io/gamer-ascension/heroascentionmainphoto.jpg" alt="Gamer Ascension transformation" class="trans-img"/>
         <div class="trans-cap">
           <div class="trans-cap-text">"This is what happens when a gamer finally gets a system built for the way his brain works."</div>
-          <div class="trans-cap-name">, Gamer Ascension client</div>
+          <div class="trans-cap-name">Gamer Ascension client</div>
         </div>
       </div>
     </div>
@@ -369,7 +364,7 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
 </section>
 
 <!-- SKILL TREE SECTION -->
-<section class="skilltree-section">
+<section class="skilltree-section" id="curriculum">
   <div class="skilltree-bg"></div>
   <div class="container">
     <div class="skilltree-header">
