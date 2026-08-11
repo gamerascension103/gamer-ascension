@@ -66,6 +66,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .claim{background:var(--bg2);padding:26px 28px;border-left:2px solid rgba(192,57,43,.55)}
 .claim-h{font-size:15px;font-weight:500;color:var(--text);margin-bottom:8px}
 .claim-b{font-size:15px;font-weight:300;color:var(--tdim);line-height:1.75}
+.stack-head{font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:48px 0 20px}
+.stack-list{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+.stack-item{background:var(--bg2);padding:26px 28px}
+.stack-h{font-size:15px;font-weight:500;color:var(--text);margin-bottom:8px}
+.stack-b{font-size:14px;font-weight:300;color:var(--tdim);line-height:1.7}
+.price-box{margin-top:36px;text-align:center;background:var(--bg2);border:1px solid rgba(201,168,76,.2);border-radius:4px;padding:38px 28px}
+.price-main{font-family:'Bebas Neue',sans-serif;font-size:clamp(30px,3.6vw,44px);line-height:1.05;color:var(--text);letter-spacing:.02em}
+.price-alt{font-size:15px;font-weight:300;color:var(--tdim);margin-top:12px}
+.price-alt span{color:var(--gold)}
+@media(max-width:900px){.stack-list{grid-template-columns:1fr}}
 
 /* HERO */
 .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 24px 80px;overflow:hidden}
@@ -450,6 +460,115 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
   </div>
 </section>
 
+<!-- SECTION 5: THE MISSING PIECE -->
+<section class="belief-section">
+  <div class="container">
+    <div class="belief-inner">
+      <div class="eyebrow"><div class="edot"></div>Why not another free program</div>
+      <h2 class="belief-title">Information was never your problem.</h2>
+      <div class="belief-body">
+        <p>You have more training knowledge than most personal trainers. You've read the threads, watched the videos, run the spreadsheets. If information built muscle, you'd be huge already.</p>
+        <p>What you were missing: capacity, accountability, and belief. A plan built for your body and your life instead of a template. A coach who reviews your week, every week, and adjusts before a dead plan wastes a month. A direct line when you need an answer at 9pm. And on the days you can't believe this will work, you borrow my belief until your own evidence replaces it. That's the job.</p>
+      </div>
+    </div>
+    <div class="stack-head">The stack, 16 weeks, 1-on-1</div>
+    <div class="stack-list">
+      <div class="stack-item"><div class="stack-h">Custom training program.</div><div class="stack-b">Built around your body, your schedule, your starting point. Every session has a purpose.</div></div>
+      <div class="stack-item"><div class="stack-h">Nutrition without restriction.</div><div class="stack-b">Structure built around your life. Nobody takes your food away.</div></div>
+      <div class="stack-item"><div class="stack-h">Weekly formal check-ins.</div><div class="stack-b">I review your data, your training, and your head, in depth, every week. Not a copy-paste message.</div></div>
+      <div class="stack-item"><div class="stack-h">Direct daily messaging.</div><div class="stack-b">A straight line to me, any day.</div></div>
+      <div class="stack-item"><div class="stack-h">Progress dashboard.</div><div class="stack-b">Sleep, weight, training, habits, all in one place. No guessing.</div></div>
+      <div class="stack-item"><div class="stack-h">The Atheneum.</div><div class="stack-b">29 skills across three pillars: Vitality, Spirit, Alignment. The system that makes the change permanent instead of a phase.</div></div>
+    </div>
+    <div class="price-box">
+      <div class="price-main">$400 per month for 16 weeks</div>
+      <div class="price-alt">Or $1,400 paid in full, <span>which saves you $200</span>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PROGRAM SCREENSHOTS -->
+<section class="program-section">
+  <div class="container">
+    <div class="eyebrow"><div class="edot"></div>The program</div>
+    <h2 class="sec-title">What's inside Gamer Ascension.</h2>
+    <p class="sec-body">A 16-week, fully custom, 1-on-1 coaching program. No templates. No guesswork. Here's what it looks like inside.</p>
+    <div class="screenshots-grid">
+
+      <div class="screenshot-card featured">
+        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/CoachingSoftwarepic.jpg" alt="Coaching software dashboard" class="sc-img"/></div>
+        <div class="sc-body">
+          <div class="sc-label">Coaching Software</div>
+          <div class="sc-title">Your full progress dashboard, all in one place</div>
+          <div class="sc-desc">Track sleep, steps, body weight, caloric intake, workout compliance, and weekly habits in real time. No guessing. No spreadsheets. Just clarity on exactly how you're progressing.</div>
+        </div>
+      </div>
+
+      <div class="screenshot-card">
+        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Customprogrampic.jpg" alt="Custom training program" class="sc-img"/></div>
+        <div class="sc-body">
+          <div class="sc-label">Custom Training Program</div>
+          <div class="sc-title">Built specifically for you, not a template</div>
+          <div class="sc-desc">Every session has a clear purpose, exercise progression, sets, reps, and rest times. Built around your body, your goals, and your starting point.</div>
+        </div>
+      </div>
+
+      <div class="screenshot-card">
+        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Nutritionplanpic.jpg" alt="Custom nutrition plan" class="sc-img"/></div>
+        <div class="sc-body">
+          <div class="sc-label">Custom Nutrition Plan</div>
+          <div class="sc-title">Structured eating built around your life</div>
+          <div class="sc-desc">Precise macros, meal timing, and food choices tailored to your training days and rest days. Structure without restriction.</div>
+        </div>
+      </div>
+
+      <div class="screenshot-card">
+        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Checkconvopic.jpg" alt="Weekly check-in" class="sc-img"/></div>
+        <div class="sc-body">
+          <div class="sc-label">Weekly Formal Check-Ins</div>
+          <div class="sc-title">This is what real coaching looks like</div>
+          <div class="sc-desc">Every week I review your data, your mindset, and your next action plan in depth. This is not a copy-paste message. This is a mentor who reads what you send.</div>
+        </div>
+      </div>
+
+      <div class="screenshot-card">
+        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/DMsupport.jpg" alt="Direct messaging support" class="sc-img"/></div>
+        <div class="sc-body">
+          <div class="sc-label">Direct Daily Messaging</div>
+          <div class="sc-title">A direct line to me, every day</div>
+          <div class="sc-desc">You're never grinding alone. Message any time. Celebrate wins, troubleshoot problems, ask questions. I'm here.</div>
+        </div>
+      </div>
+
+      <div class="screenshot-card">
+        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/EducationLibrarypic.jpg" alt="Education library" class="sc-img"/></div>
+        <div class="sc-body">
+          <div class="sc-label">Exclusive Education Library</div>
+          <div class="sc-title">The science, explained in gamer language</div>
+          <div class="sc-desc">Pre-game briefings, module-based learning, gamer-framed explanations of training science, mental health, and identity development. Built by me. Passed to you.</div>
+        </div>
+      </div>
+
+      <div class="screenshot-card">
+        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Mindsetcoachingpic.jpg" alt="Mindset coaching" class="sc-img"/></div>
+        <div class="sc-body">
+          <div class="sc-label">Mindset & Habit Coaching</div>
+          <div class="sc-title">CBT frameworks built into the program</div>
+          <div class="sc-desc">Core belief systems, thought reconstruction, behavioral frameworks. This is the layer that makes the physical transformation permanent instead of temporary.</div>
+        </div>
+      </div>
+
+      <div class="screenshot-card" style="display:flex;align-items:center;justify-content:center;background:var(--red-dim);border:1px solid rgba(192,57,43,.2)">
+        <div style="text-align:center;padding:32px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);margin-bottom:12px">Ready to begin?</div>
+          <a href="https://calendly.com/straincoaching/insightcall" class="btn">Book the 15-Minute Call →</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- SKILL TREE SECTION -->
 <section class="skilltree-section" id="curriculum">
   <div class="skilltree-bg"></div>
@@ -681,88 +800,6 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
       <div class="stat-card-wrap cta-card" style="display:flex;align-items:center;justify-content:center;background:var(--bg1);border:1px solid rgba(201,168,76,.1);border-radius:4px;min-height:200px;padding:32px;text-align:center"><div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);margin-bottom:12px;line-height:1.1">Your transformation<br>starts here.</div><a href="https://calendly.com/straincoaching/insightcall" class="btn" style="font-size:13px;padding:12px 24px">Book the 15-Minute Call →</a></div></div>
     </div>
     <p class="transforms-disc">Transformations happened over various timeframes. Everyone starts at a different point. What stays consistent is the system and the progression.</p>
-  </div>
-</section>
-
-<!-- PROGRAM SCREENSHOTS -->
-<section class="program-section">
-  <div class="container">
-    <div class="eyebrow"><div class="edot"></div>The program</div>
-    <h2 class="sec-title">What's inside Gamer Ascension.</h2>
-    <p class="sec-body">A 16-week, fully custom, 1-on-1 coaching program. No templates. No guesswork. Here's what it looks like inside.</p>
-    <div class="screenshots-grid">
-
-      <div class="screenshot-card featured">
-        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/CoachingSoftwarepic.jpg" alt="Coaching software dashboard" class="sc-img"/></div>
-        <div class="sc-body">
-          <div class="sc-label">Coaching Software</div>
-          <div class="sc-title">Your full progress dashboard, all in one place</div>
-          <div class="sc-desc">Track sleep, steps, body weight, caloric intake, workout compliance, and weekly habits in real time. No guessing. No spreadsheets. Just clarity on exactly how you're progressing.</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card">
-        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Customprogrampic.jpg" alt="Custom training program" class="sc-img"/></div>
-        <div class="sc-body">
-          <div class="sc-label">Custom Training Program</div>
-          <div class="sc-title">Built specifically for you, not a template</div>
-          <div class="sc-desc">Every session has a clear purpose, exercise progression, sets, reps, and rest times. Built around your body, your goals, and your starting point.</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card">
-        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Nutritionplanpic.jpg" alt="Custom nutrition plan" class="sc-img"/></div>
-        <div class="sc-body">
-          <div class="sc-label">Custom Nutrition Plan</div>
-          <div class="sc-title">Structured eating built around your life</div>
-          <div class="sc-desc">Precise macros, meal timing, and food choices tailored to your training days and rest days. Structure without restriction.</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card">
-        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Checkconvopic.jpg" alt="Weekly check-in" class="sc-img"/></div>
-        <div class="sc-body">
-          <div class="sc-label">Weekly Formal Check-Ins</div>
-          <div class="sc-title">This is what real coaching looks like</div>
-          <div class="sc-desc">Every week I review your data, your mindset, and your next action plan in depth. This is not a copy-paste message. This is a mentor who reads what you send.</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card">
-        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/DMsupport.jpg" alt="Direct messaging support" class="sc-img"/></div>
-        <div class="sc-body">
-          <div class="sc-label">Direct Daily Messaging</div>
-          <div class="sc-title">A direct line to me, every day</div>
-          <div class="sc-desc">You're never grinding alone. Message any time. Celebrate wins, troubleshoot problems, ask questions. I'm here.</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card">
-        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/EducationLibrarypic.jpg" alt="Education library" class="sc-img"/></div>
-        <div class="sc-body">
-          <div class="sc-label">Exclusive Education Library</div>
-          <div class="sc-title">The science, explained in gamer language</div>
-          <div class="sc-desc">Pre-game briefings, module-based learning, gamer-framed explanations of training science, mental health, and identity development. Built by me. Passed to you.</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card">
-        <div class="sc-img-wrap"><img src="https://gamerascension103.github.io/gamer-ascension/Mindsetcoachingpic.jpg" alt="Mindset coaching" class="sc-img"/></div>
-        <div class="sc-body">
-          <div class="sc-label">Mindset & Habit Coaching</div>
-          <div class="sc-title">CBT frameworks built into the program</div>
-          <div class="sc-desc">Core belief systems, thought reconstruction, behavioral frameworks. This is the layer that makes the physical transformation permanent instead of temporary.</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card" style="display:flex;align-items:center;justify-content:center;background:var(--red-dim);border:1px solid rgba(192,57,43,.2)">
-        <div style="text-align:center;padding:32px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);margin-bottom:12px">Ready to begin?</div>
-          <a href="https://calendly.com/straincoaching/insightcall" class="btn">Book the 15-Minute Call →</a>
-        </div>
-      </div>
-
-    </div>
   </div>
 </section>
 
