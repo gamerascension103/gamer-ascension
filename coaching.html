@@ -265,10 +265,10 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 
 /* COACH SECTION */
 .coach-section{padding:100px 0}
-.coach-layout{display:grid;grid-template-columns:1fr 1.6fr;gap:72px;align-items:center}
+.coach-layout{display:grid;grid-template-columns:1fr 1.2fr;gap:56px;align-items:center}
 .coach-img-wrap{position:relative}
 .coach-img{width:100%;border-radius:4px;display:block;filter:contrast(1.05) saturate(.9)}
-.coach-img-badge{position:absolute;bottom:20px;left:20px;background:rgba(10,10,10,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;padding:12px 16px;backdrop-filter:blur(8px)}
+.coach-img-badge{display:inline-block;margin-top:14px;background:rgba(10,10,10,.9);border:1px solid rgba(201,168,76,.3);border-radius:3px;padding:12px 16px}
 .coach-badge-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--text);letter-spacing:.03em}
 .coach-badge-title{font-size:11px;font-weight:300;color:var(--gold);letter-spacing:.06em}
 .coach-content{}
@@ -742,7 +742,8 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
   <div class="container">
     <div class="coach-layout">
       <div class="coach-img-wrap">
-        <img src="https://gamerascension103.github.io/gamer-ascension/coachstrainpic2.jpg" alt="Jake Salisbury, Founder of Gamer Ascension" class="coach-img"/>
+        <div class="trans-tags"><span class="ttag before">Before</span><span class="ttag after">After</span></div>
+        <img src="coachtransformation.jpg" alt="Jake Salisbury, before and after his own transformation" class="coach-img"/>
         <div class="coach-img-badge">
           <div class="coach-badge-name">Jake Salisbury</div>
           <div class="coach-badge-title">Founder · Gamer Ascension</div>
