@@ -52,6 +52,21 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .btn-ghost{display:inline-flex;align-items:center;gap:10px;background:transparent;border:1px solid var(--border2);color:var(--tdim);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;padding:14px 28px;border-radius:3px;text-decoration:none;transition:border-color .2s,color .2s,transform .15s;letter-spacing:.01em}
 .btn-ghost:hover{border-color:rgba(201,168,76,.45);color:var(--text);transform:translateY(-2px)}
 
+/* BELIEF SECTIONS */
+.belief-section{padding:100px 0}
+.belief-section.alt{background:var(--bg1)}
+.belief-inner{max-width:760px}
+.belief-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(30px,3.8vw,48px);line-height:1.05;letter-spacing:.015em;margin-bottom:30px}
+.belief-title span{color:var(--red)}
+.belief-body p{font-size:17px;font-weight:300;color:var(--tdim);line-height:1.8;margin-bottom:22px}
+.belief-body p:last-child{margin-bottom:0}
+.belief-body strong{color:var(--text);font-weight:500}
+.belief-punch{margin-top:34px;padding:22px 26px;border-left:2px solid var(--red);background:rgba(255,255,255,.025);border-radius:0 3px 3px 0;font-size:17px;font-weight:400;color:var(--text);line-height:1.7}
+.claim-list{display:grid;gap:2px;margin:34px 0}
+.claim{background:var(--bg2);padding:26px 28px;border-left:2px solid rgba(192,57,43,.55)}
+.claim-h{font-size:15px;font-weight:500;color:var(--text);margin-bottom:8px}
+.claim-b{font-size:15px;font-weight:300;color:var(--tdim);line-height:1.75}
+
 /* HERO */
 .hero{position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 24px 80px;overflow:hidden}
 .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:52px 52px;z-index:0}
@@ -359,6 +374,21 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
       <div><div class="snum">10</div><div class="slbl">Years coaching</div></div>
       <div><div class="snum">16</div><div class="slbl">Week program</div></div>
       <div><div class="snum">100%</div><div class="slbl">Money back guarantee</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 1: THE IDEAL -->
+<section class="belief-section">
+  <div class="container">
+    <div class="belief-inner">
+      <div class="eyebrow"><div class="edot"></div>The picture in your head</div>
+      <h2 class="belief-title">You've known what a powerful man looks like since you were a kid.</h2>
+      <div class="belief-body">
+        <p>Every story you've ever loved put him in front of you. The barbarian. The Space Marine. The god of war. Thousands of hours of games and fiction didn't give you a fantasy. They gave you a blueprint: thick, powerful, unmistakable. A frame that fills a doorway.</p>
+        <p>And underneath it, something simpler. You want to look in the mirror and be impressed with what you see. You want to feel safe in your own body. That was never vanity, and it was never childish. It's the oldest want a man has.</p>
+      </div>
+      <div class="belief-punch">Most men bury it. You just haven't found the way to it. There's a difference.</div>
     </div>
   </div>
 </section>
