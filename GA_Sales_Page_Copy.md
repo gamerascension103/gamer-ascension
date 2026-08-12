@@ -4,18 +4,21 @@
 
 ---
 
-## HERO — [Belief 1 + 2 hook]
+## HERO — [Belief 1 roll call + Belief 2 subhead] (FINAL — Jake-authored)
 
-**Headline:**
-# Big in your head. Average in the mirror. There's a reason.
+**Headline stack (lines 1–3 white, line 4 red):**
+# STEAM IS YOUR LIBRARY OF CHOICE.
+# DISCORD IS YOUR SOCIAL LIFE.
+# YOU KNOW WHAT A D20 IS.
+# ...AND YOU'VE ALWAYS WANTED TO BE BUILT LIKE A FUCKIN BEAR.
 
 **Subhead:**
-16-week, 1-on-1 coaching for men 30 to 50 who want to be built like a bear, not a beach model. You didn't fail the programs. The programs were never built for you.
+You didn't fail the programs. The programs were never built for you. 16-week, 1-on-1 coaching for men 30 to 50 who want mass, not abs.
 
 **Primary CTA:** `Book the 15-Minute Call →`
 **Secondary CTA:** `See the system free →` (anchors to Atheneum embed)
 
-*Implementation: keep the before/after visual. Replace all "Start My Character Build" CTAs sitewide.*
+*Implementation notes: keep the before/after visual. Replace all "Start My Character Build" CTAs sitewide. If the four lines render line-by-line (staggered fade), the turn lands harder; verify by perception, not timing values. The red line is the confession line, always. Clean variant for any channel that requires it: "...AND YOU'VE ALWAYS WANTED TO BE BUILT LIKE A BEAR. A BIG ONE." Do not use the clean variant on the primary page.*
 
 ---
 

@@ -87,12 +87,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .hero-ey{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:24px;animation:fadeUp .6s ease forwards .1s;opacity:0}
 .hero-eydot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:blink 2s ease infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.hero-h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(56px,9vw,108px);line-height:.92;letter-spacing:.01em;margin-bottom:24px;animation:fadeUp .7s ease forwards .2s;opacity:0}
+.hero-h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(30px,4.6vw,62px);line-height:1.02;letter-spacing:.015em;margin-bottom:34px}
+.hero-h1 .hl{display:block;opacity:0;animation:fadeUp .6s ease forwards;animation-delay:var(--d)}
+.hero-h1 .hl-turn{color:var(--red);animation-duration:.9s}
 .hero-acc{color:var(--red);display:block}
-.hero-sub{font-size:clamp(15px,2vw,18px);font-weight:300;color:var(--tdim);max-width:560px;line-height:1.65;margin-bottom:52px;animation:fadeUp .7s ease forwards .35s;opacity:0}
+.hero-sub{font-size:clamp(15px,2vw,18px);font-weight:300;color:var(--tdim);max-width:560px;line-height:1.65;margin-bottom:52px}
 .hero-layout{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start}
 .hero-reasons{animation:fadeUp .7s ease forwards .5s;opacity:0}
-.hero-copy{animation:fadeUp .7s ease forwards .5s;opacity:0;align-self:center}
+.hero-copy{animation:fadeUp .7s ease forwards 1.95s;opacity:0;align-self:center}
 .rl{font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--tmuted);margin-bottom:28px}
 .reasons-heading{margin-bottom:32px}
 .rh-eyebrow{font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:10px;display:flex;align-items:center;gap:8px}
@@ -105,7 +107,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .rnum{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;color:rgba(192,57,43,.25);min-width:38px;padding-top:1px}
 .rt{font-size:14px;font-weight:500;color:var(--text);margin-bottom:5px}
 .rb{font-size:13px;font-weight:300;color:var(--tdim);line-height:1.65}
-.hero-proof{animation:fadeUp .7s ease forwards .65s;opacity:0}
+.hero-proof{animation:fadeUp .7s ease forwards 1.75s;opacity:0}
 .trans-tags{display:flex;justify-content:space-between;margin-bottom:10px}
 .ttag{font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:4px 12px;border-radius:2px}
 .ttag.before{background:rgba(255,255,255,.05);color:var(--tmuted)}
@@ -114,9 +116,9 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:14px 32px;display:fl
 .trans-cap{margin-top:16px;padding:16px 18px;background:rgba(255,255,255,.03);border-left:2px solid var(--red);border-radius:0 3px 3px 0}
 .trans-cap-text{font-size:13px;font-weight:300;color:var(--tdim);line-height:1.6;font-style:italic}
 .trans-cap-name{font-size:10px;font-weight:500;color:var(--tmuted);margin-top:8px;letter-spacing:.06em;text-transform:uppercase}
-.hero-cta-row{margin-top:40px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;animation:fadeUp .7s ease forwards .8s;opacity:0}
+.hero-cta-row{margin-top:40px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
 .btn-note{font-size:12px;font-weight:300;color:var(--tmuted);line-height:1.5}
-.hero-stats{margin-top:60px;padding-top:40px;border-top:1px solid var(--border);display:flex;gap:48px;flex-wrap:wrap;animation:fadeUp .7s ease forwards .95s;opacity:0}
+.hero-stats{margin-top:60px;padding-top:40px;border-top:1px solid var(--border);display:flex;gap:48px;flex-wrap:wrap;animation:fadeUp .7s ease forwards 2.35s;opacity:0}
 .snum{font-family:'Bebas Neue',sans-serif;font-size:44px;line-height:1;color:var(--text);margin-bottom:3px}
 .slbl{font-size:11px;font-weight:300;color:var(--tmuted);letter-spacing:.04em}
 @keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
@@ -340,7 +342,7 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
   .hero{padding:100px 20px 60px}
   .stat-cards-grid{grid-template-columns:1fr}
   .stat-cards-bottom{grid-template-columns:1fr}
-  .hero-h1{font-size:52px}
+  .hero-h1{font-size:38px}
   .proof-grid{grid-template-columns:1fr}
   .coach-stats{gap:20px}
 }
@@ -361,10 +363,15 @@ footer{padding:32px 24px;border-top:1px solid var(--border);display:flex;align-i
   <div class="hero-glow"></div>
   <div class="hero-glow2"></div>
   <div class="hero-inner">
-    <h1 class="hero-h1">Big in your head.<br>Average in the mirror.<span class="hero-acc">There's a reason.</span></h1>
+    <h1 class="hero-h1">
+      <span class="hl" style="--d:.15s">STEAM IS YOUR LIBRARY OF CHOICE.</span>
+      <span class="hl" style="--d:.45s">DISCORD IS YOUR SOCIAL LIFE.</span>
+      <span class="hl" style="--d:.75s">YOU KNOW WHAT A D20 IS.</span>
+      <span class="hl hl-turn" style="--d:1.35s">...AND YOU'VE ALWAYS WANTED TO BE BUILT LIKE A FUCKIN BEAR.</span>
+    </h1>
     <div class="hero-layout">
       <div class="hero-copy">
-        <p class="hero-sub">16-week, 1-on-1 coaching for men 30 to 50 who want to be built like a bear, not a beach model. You didn't fail the programs. The programs were never built for you.</p>
+        <p class="hero-sub">You didn't fail the programs. The programs were never built for you. 16-week, 1-on-1 coaching for men 30 to 50 who want mass, not abs.</p>
         <div class="hero-cta-row">
           <a href="https://calendly.com/straincoaching/insightcall" class="btn">Book the 15-Minute Call →</a>
           <a href="#curriculum" class="btn-ghost">See the system free →</a>
