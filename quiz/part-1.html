@@ -308,7 +308,7 @@ button { font: inherit; color: inherit; }
       <p class="asterism" aria-hidden="true">⁂</p>
       <h1 id="done-title" tabindex="-1"></h1>
       <p class="lede" id="done-lede"></p>
-      <button class="btn" id="restart" type="button">Start over</button>
+      <button class="btn" id="restart" type="button">New questions</button>
       <a class="library-link" id="library" href="#">Back to the library</a>
     </div>
   </section>
@@ -318,17 +318,23 @@ button { font: inherit; color: inherit; }
 /* ==========================================================
    CONTENT
    Swap this object to make a new Part. Nothing else changes.
+   Each round shows roundSize questions drawn from the pool below.
+   Every round covers every lesson. New questions draws the ones
+   not yet seen this visit. Nothing is remembered after the page
+   closes. Keep at least two questions per lesson.
    Four options per question, exactly one correct: true.
-   Order is authored: the tempting wrong answer comes first.
-   Do not shuffle.
+   Option order is authored: the tempting wrong answer comes first.
+   Do not shuffle options.
    ========================================================== */
 const QUIZ = {
   part: "Part 1",
   title: "The Rules of a Set",
   standfirst: "Six questions. Nothing is scored and nothing is saved.",
   backUrl: "https://app.notion.com/p/319e8afba9ad80dfb8ffecdf73faa21f",
+  roundSize: 6,
   questions: [
     {
+      lesson: "Warm-up sets",
       q: "You do four climbing warm-up sets of eight on bench, and the last one leaves you breathing hard. Your first working set feels heavier than usual. What went wrong?",
       options: [
         { text: "Nothing. A harder warm-up means you are more ready for the heavy set.", correct: false,
@@ -342,6 +348,21 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Warm-up sets",
+      q: "You are about to squat your working weight. Why not skip the warm-up sets and save your energy for the sets that count?",
+      options: [
+        { text: "Good plan. Warm-ups only burn energy you need later.", correct: false,
+          why: "Easy warm-up sets cost almost nothing when they are done right. What they buy you is blood flow, joints ready for load, a rehearsed movement and a feel for heavier weight. Your first working set is usually the heaviest thing you do all day." },
+        { text: "Warm-ups only matter for older lifters.", correct: false,
+          why: "Anyone moving a heavy load benefits from arriving prepared. Joints, connective tissue and your nervous system all need a few climbing sets before the big one, at any age." },
+        { text: "Warm-ups prepare your body for heavy load. They lower injury risk and make the working sets better.", correct: true,
+          why: "Warm-ups prepare the movement. Working sets create the stimulus. Two or three easy sets that climb toward your working weight get your muscles and nervous system ready for high force without leaving you tired." },
+        { text: "Use your first working set as the warm-up.", correct: false,
+          why: "A working set is hard by design. Using one to warm up spends effort you need later and carries fatigue into the sets that are meant to drive growth." }
+      ]
+    },
+    {
+      lesson: "Effective reps",
       q: "Your set of twelve moved at exactly the same speed from the first rep to the last. What does that tell you?",
       options: [
         { text: "Your technique was excellent and consistent.", correct: false,
@@ -355,6 +376,35 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Effective reps",
+      q: "Two lifters do leg extensions. One does 20 easy reps and stops feeling fresh. The other does 10 reps, and the last three slow down. Who likely got more growth out of the set?",
+      options: [
+        { text: "The first lifter. Twenty reps is twice the work.", correct: false,
+          why: "Rep count is not the growth signal. Reps that never slow down are handled by your small, fatigue-resistant motor units. The reps that grow muscle are the hard ones at the end, and this set never reached them." },
+        { text: "The second lifter. The slow final reps are where the growth happens.", correct: true,
+          why: "As fatigue builds, your body has to call on its largest motor units, and the reps slow down even while you push just as hard. Those final reps put the most mechanical tension on the fibers that grow. They are your effective reps." },
+        { text: "Both the same. A rep is a rep.", correct: false,
+          why: "Reps are not equal. The first reps of a set produce a small signal. The last hard reps near failure produce most of it." },
+        { text: "Neither. Growth only comes from heavy sets of 5 reps or fewer.", correct: false,
+          why: "Muscle grows across a wide range of loads, roughly 30 to 85% of your one-rep max. Lighter loads work when the set gets close to failure. They just take more reps to reach the effective zone." }
+      ]
+    },
+    {
+      lesson: "Effective reps",
+      q: "You switch from heavy sets of 6 reps to lighter sets of 15. What changes about your effective reps?",
+      options: [
+        { text: "Lighter weight means you lose your effective reps.", correct: false,
+          why: "Effective reps happen across a wide range of loads. A lighter weight still gets you there if the set goes close to failure. It just takes longer." },
+        { text: "You get more of them, because there are more reps.", correct: false,
+          why: "The extra reps are mostly easy ones at the start of the set. The growth-driving reps still come from the final hard stretch, however long the set is." },
+        { text: "Nothing changes. They start from the first rep either way.", correct: false,
+          why: "That only holds for heavy loads, where your largest motor units are needed from rep one. With lighter loads, fatigue has to build up before they join in." },
+        { text: "They still happen, but later in the set, so you have to push close to failure to reach them.", correct: true,
+          why: "With a lighter weight your body starts with its small motor units and only calls on the large ones as fatigue builds. Stop a set of 15 early and you skip the effective reps entirely." }
+      ]
+    },
+    {
+      lesson: "Proximity to failure",
       q: "You stop a set of leg extensions when you think you have one rep left. You rest 20 seconds, try again, and get four more clean reps. What does that tell you?",
       options: [
         { text: "The rest recharged the muscle, so the extra reps do not count.", correct: false,
@@ -368,6 +418,7 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Proximity to failure",
       q: "You want as much growth as possible, so you plan to take every set of squats all the way to failure. What is the problem with that plan?",
       options: [
         { text: "There is none. Closer to failure always means more growth.", correct: false,
@@ -381,6 +432,21 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Proximity to failure",
+      q: "Your program asks for 2 reps in reserve. You finish 10 reps and believe you could have done 12. How did you do?",
+      options: [
+        { text: "You missed. 2 reps in reserve means doing 2 fewer reps than the program lists.", correct: false,
+          why: "Reps in reserve has nothing to do with the number on the program. It counts how many more reps you could have done before failure." },
+        { text: "Too easy. Any set that stops short of failure is wasted.", correct: false,
+          why: "Most productive training happens just before failure, not at it. On big compound lifts, 1 to 2 reps in reserve is the target because it builds strong tension without piling up fatigue." },
+        { text: "Right on target. You stopped with about two reps still in the tank.", correct: true,
+          why: "Ten done, twelve possible, two in reserve. At that point the last reps should feel difficult and your rep speed should be slowing slightly. That is the effort your program asked for." },
+        { text: "Too hard. Two in reserve should feel comfortable.", correct: false,
+          why: "At 2 reps in reserve the final reps feel difficult and you have to focus to finish. Comfortable is closer to 5 or more in reserve, which is warm-up territory." }
+      ]
+    },
+    {
+      lesson: "Tempo",
       q: "A friend tells you to lower every rep over six seconds, because more time under tension means more growth. What does the evidence say?",
       options: [
         { text: "Your friend is right. Longer sets give the muscle more reason to grow.", correct: false,
@@ -394,6 +460,21 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Tempo",
+      q: "On bench press you let the bar drop to your chest and bounce it back up. Why does that matter?",
+      options: [
+        { text: "It does not. The bar still moved the full distance.", correct: false,
+          why: "The bar moved, but gravity did the lowering and the bounce did the start. The muscle skipped the part of the rep where much of the growth signal lives." },
+        { text: "It only matters once you are an advanced lifter.", correct: false,
+          why: "It matters most at the start, while your habits are forming. Bouncing now also makes your log meaningless, because you are not comparing the same movement week to week." },
+        { text: "Fast reps build explosive strength, so keep bouncing.", correct: false,
+          why: "Lifting with intent is good. Dropping and bouncing is not intent. It is momentum, and it hands the load to your joints at the stretched position, where most injuries happen." },
+        { text: "Gravity is doing the lowering, and the bounce loads your joints. Lower the bar over 2 to 3 seconds.", correct: true,
+          why: "Lower with control, lift with intent. A controlled lowering keeps tension on your chest, protects your shoulders at the bottom, and makes every rep comparable to last week." }
+      ]
+    },
+    {
+      lesson: "Good form",
       q: "Near the end of a hard set of curls, your torso starts swinging to get the weight up. What should you do?",
       options: [
         { text: "Keep going. The last reps are the ones that build muscle.", correct: false,
@@ -404,6 +485,20 @@ const QUIZ = {
           why: "That is a separate technique for another day. The rule here is simpler. When control is gone, the set is over." },
         { text: "End the set. You have reached technical failure.", correct: true,
           why: "Technical failure is the point where the exercise can no longer be done with controlled, stable technique. Swinging, bouncing, lost joint stability and a shrinking range of motion are the signs. Stop there." }
+      ]
+    },
+    {
+      lesson: "Good form",
+      q: "Near the end of a hard set of leg press, your hips shift slightly and the last rep is slower. Should you stop?",
+      options: [
+        { text: "Yes. Any change in form means the set is unsafe.", correct: false,
+          why: "Small shifts near the end of a hard set are normal. Stopping at the first sign of struggle means stopping right before your effective reps." },
+        { text: "Not yet. Small shifts near failure are normal while the movement stays controlled and stable.", correct: true,
+          why: "The test is control, not perfection. As long as the target muscle is doing the work and your joints stay stable, the rep counts. Stop when the weight moves erratically, your range shrinks, or stability goes." },
+        { text: "Yes, and use a lighter weight from now on.", correct: false,
+          why: "A slow last rep is a sign the set was hard enough, not that the weight is wrong. Nothing here calls for going lighter." },
+        { text: "Keep going until the weight will not move at all, whatever it looks like.", correct: false,
+          why: "Leg press is a compound lift, which belongs around 1 to 2 reps in reserve. Grinding past control on it adds fatigue and injury risk for little extra growth." }
       ]
     }
   ]
@@ -427,7 +522,44 @@ const QUIZ = {
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const fadeMs = () => (reduceMotion.matches ? 0 : 200);
-  const total = QUIZ.questions.length;
+  // Question pool and round drawing. Memory-free: state lives only
+  // in this page and resets when it closes.
+  const POOL = QUIZ.questions.map((q, i) => Object.assign({ id: i }, q));
+  const LESSONS = [...new Set(POOL.map((q) => q.lesson))];
+  const total = Math.min(QUIZ.roundSize || 6, POOL.length);
+  let seen = new Set();   // pool ids shown since the pool last refilled
+  let round = [];         // the questions in the current round, in course order
+
+  function shuffle(list) {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  }
+
+  // One question from every lesson first, then fill the rest from the
+  // lessons with the most unseen questions left, so the next round can
+  // still cover every lesson.
+  function drawRound() {
+    let avail = POOL.filter((q) => !seen.has(q.id));
+    if (avail.length < total) { seen = new Set(); avail = POOL.slice(); }
+    const byLesson = new Map(LESSONS.map((l) => [l, shuffle(avail.filter((q) => q.lesson === l))]));
+    const picked = [];
+    shuffle(LESSONS.slice()).forEach((l) => {
+      const bucket = byLesson.get(l);
+      if (bucket.length && picked.length < total) picked.push(bucket.shift());
+    });
+    while (picked.length < total) {
+      const open = LESSONS.filter((l) => byLesson.get(l).length);
+      if (!open.length) break;
+      const most = Math.max(...open.map((l) => byLesson.get(l).length));
+      const from = shuffle(open.filter((l) => byLesson.get(l).length === most))[0];
+      picked.push(byLesson.get(from).shift());
+    }
+    picked.forEach((q) => seen.add(q.id));
+    return picked.sort((a, b) => LESSONS.indexOf(a.lesson) - LESSONS.indexOf(b.lesson) || a.id - b.id);
+  }
   const WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];
 
   // In-memory state only.
@@ -437,14 +569,15 @@ const QUIZ = {
 
   function reset() {
     index = 0;
-    answers = QUIZ.questions.map(() => ({ picked: null, checked: false }));
+    round = drawRound();
+    answers = round.map(() => ({ picked: null, checked: false }));
   }
 
   function correctIndex(q) { return q.options.findIndex((o) => o.correct); }
 
   /* ---------- Render one question ---------- */
   function renderQuestion(focusQuestion) {
-    const q = QUIZ.questions[index];
+    const q = round[index];
     const a = answers[index];
     const answer = correctIndex(q);
 
@@ -556,7 +689,7 @@ const QUIZ = {
 
   /* ---------- Drawer ---------- */
   function showDrawer(announce) {
-    const q = QUIZ.questions[index];
+    const q = round[index];
     const a = answers[index];
     const right = q.options[a.picked].correct;
 

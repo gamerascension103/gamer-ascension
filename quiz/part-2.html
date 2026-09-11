@@ -308,7 +308,7 @@ button { font: inherit; color: inherit; }
       <p class="asterism" aria-hidden="true">⁂</p>
       <h1 id="done-title" tabindex="-1"></h1>
       <p class="lede" id="done-lede"></p>
-      <button class="btn" id="restart" type="button">Start over</button>
+      <button class="btn" id="restart" type="button">New questions</button>
       <a class="library-link" id="library" href="#">Back to the library</a>
     </div>
   </section>
@@ -318,17 +318,23 @@ button { font: inherit; color: inherit; }
 /* ==========================================================
    CONTENT
    Swap this object to make a new Part. Nothing else changes.
+   Each round shows roundSize questions drawn from the pool below.
+   Every round covers every lesson. New questions draws the ones
+   not yet seen this visit. Nothing is remembered after the page
+   closes. Keep at least two questions per lesson.
    Four options per question, exactly one correct: true.
-   Order is authored: the tempting wrong answer comes first.
-   Do not shuffle.
+   Option order is authored: the tempting wrong answer comes first.
+   Do not shuffle options.
    ========================================================== */
 const QUIZ = {
   part: "Part 2",
   title: "The Rules of a Program",
   standfirst: "Six questions. Nothing is scored and nothing is saved.",
   backUrl: "https://app.notion.com/p/319e8afba9ad80dfb8ffecdf73faa21f",
+  roundSize: 6,
   questions: [
     {
+      lesson: "Progressive overload",
       q: "Your program says 3 sets of 8 to 12. This session you got 12, 12 and 11 at 100 lb. What do you do next session?",
       options: [
         { text: "Add weight. Two of the three sets hit 12.", correct: false,
@@ -342,6 +348,7 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Progressive overload",
       q: "Last week you got 10 reps on a row. This week you got 12, but only by heaving with your lower back and cutting the range short. Did you progress?",
       options: [
         { text: "Yes. Twelve is more than ten.", correct: false,
@@ -355,6 +362,7 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Progressive overload",
       q: "Your leg press has been stuck at the same reps for three sessions. You are already doing four sets, each taken all the way to failure. What is the most likely fix?",
       options: [
         { text: "Add a fifth set and push harder.", correct: false,
@@ -368,6 +376,35 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Progressive overload",
+      q: "You hit 12 reps on every set of dumbbell curls, so you jump from 25 lb to 35 lb. Now you only get 6 reps. What happened?",
+      options: [
+        { text: "Nothing. Fewer reps at a heavier weight is still progress.", correct: false,
+          why: "A heavier weight is only progress if you stay inside your rep range. Six reps is below the bottom of 8 to 12, so the jump overshot." },
+        { text: "You needed longer rest before the heavier sets.", correct: false,
+          why: "Rest helps every set, but it will not turn 6 reps into 8. The size of the jump is the problem." },
+        { text: "The jump was too big. Small lifts should go up 2.5 to 5 lb.", correct: true,
+          why: "A good jump drops your reps back to the bottom of the range, not below it. For upper body and isolation work that means 2.5 to 5 lb. If you land below the range, go back and add reps instead." },
+        { text: "Curls do not respond to progressive overload.", correct: false,
+          why: "Every muscle responds to rising demand. Small muscles just need smaller jumps." }
+      ]
+    },
+    {
+      lesson: "Progressive overload",
+      q: "For your first three months you added weight almost every week. Now it only goes up every few weeks. What is happening?",
+      options: [
+        { text: "Your program has stopped working and needs replacing.", correct: false,
+          why: "A slowdown around months two to four is expected with any program. Replacing it throws away the progress system that got you here." },
+        { text: "You are not trying hard enough anymore.", correct: false,
+          why: "Your effort may be exactly the same. The weekly jumps came from a phase that ends for everyone, whatever they do." },
+        { text: "Add a set to every exercise to bring back the fast progress.", correct: false,
+          why: "Adding sets mostly adds fatigue, and fatigue hides progress. It will not bring the early pace back." },
+        { text: "Your newbie gains are ending. Slower progress, driven more by reps, is normal from here.", correct: true,
+          why: "Early on, your nervous system is learning to use muscle you already have, so weight climbs fast. That is the tutorial finishing, not failure. From here, progress comes mostly from adding reps within your range." }
+      ]
+    },
+    {
+      lesson: "Rest periods",
       q: "You rest 45 seconds between sets of squats because you want the workout to feel intense. Your reps drop every set. What is going on?",
       options: [
         { text: "The short rest makes each set harder, so it grows more muscle.", correct: false,
@@ -381,6 +418,7 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Rest periods",
       q: "Your program pairs curls with triceps pushdowns as a superset. What does that mean for your rest?",
       options: [
         { text: "Go through every round with no rest. That is the point of a superset.", correct: false,
@@ -394,6 +432,35 @@ const QUIZ = {
       ]
     },
     {
+      lesson: "Rest periods",
+      q: "Between sets of lateral raises you wait the same 4 minutes you rest for squats. Is that a problem?",
+      options: [
+        { text: "Yes. Long rest kills the pump, and the pump is what grows muscle.", correct: false,
+          why: "The pump and the burn are metabolic fatigue, not the growth signal. Resting too long is a much smaller problem than resting too little." },
+        { text: "Not a big one, but small muscles recover fast. 1 to 2 minutes is enough for isolation work.", correct: true,
+          why: "Isolation lifts use small muscles that recover their force quickly. One to two minutes gets you back to full effort. Four minutes costs time, not results." },
+        { text: "No. Every exercise needs the same 4 minutes.", correct: false,
+          why: "Rest depends on the exercise. Heavy compounds need 2 to 4 minutes because they tax large muscles and your whole body. Small muscles need far less." },
+        { text: "Yes. Isolation lifts should have no rest at all.", correct: false,
+          why: "Every working set needs enough rest to be done with full effort. Skipping rest makes the next set fail early from leftover fatigue." }
+      ]
+    },
+    {
+      lesson: "Rest periods",
+      q: "You forgot to start your rest timer. How do you know you are ready for your next heavy set?",
+      options: [
+        { text: "When the burn in the muscle fades, go.", correct: false,
+          why: "The burn clears quickly, long before the muscle can produce full force again. Going on that signal starts the set early." },
+        { text: "Always go after 60 seconds to keep the intensity up.", correct: false,
+          why: "Sixty seconds is too short for heavy lifts. You will hit failure early because the muscle is still tired from the last set." },
+        { text: "When your breathing is back to near normal and you could give the next set full effort.", correct: true,
+          why: "This is the breathing test. Heavy leg work can leave you breathing hard for more than two minutes, and that is the signal to keep waiting. Never start a set you cannot give full effort to." },
+        { text: "Wait at least 6 minutes to be safe.", correct: false,
+          why: "Past a few minutes you gain very little and lose focus. Slightly too long beats slightly too short, but a timer is what keeps rest from drifting." }
+      ]
+    },
+    {
+      lesson: "Your program in Trainerize",
       q: "You miss a whole week of training. What is the right way back?",
       options: [
         { text: "Add extra sessions this week to make up the lost work.", correct: false,
@@ -404,6 +471,34 @@ const QUIZ = {
           why: "Expect the first session back to feel heavier. A small drop gets you back inside your rep range, and your numbers return quickly." },
         { text: "Train at your old weights no matter what the reps look like.", correct: false,
           why: "Your old weights may push you below the rep range or into broken form. The log only helps you if the sets in it are honest." }
+      ]
+    },
+    {
+      lesson: "Your program in Trainerize",
+      q: "You only have 30 minutes today for a 60-minute session. What do you do?",
+      options: [
+        { text: "Skip today and do the full session tomorrow.", correct: false,
+          why: "Half a session done well beats skipping. Skipping also pushes the whole week back a day." },
+        { text: "Rush every exercise with shorter rest so it all fits.", correct: false,
+          why: "Cutting rest makes every set fail early, so you get fewer effective reps from all of it. Half a session done well beats a whole session done badly." },
+        { text: "Do the isolation work first, since it is quicker.", correct: false,
+          why: "Isolation work is the part to drop when time is short. Your compound lifts carry the most value, so they go first." },
+        { text: "Do your compound lifts first, and drop isolation work if you run out of time.", correct: true,
+          why: "Compounds do the most work for the time. Get them done properly, and let the isolation work go if the clock runs out." }
+      ]
+    },
+    {
+      lesson: "Your program in Trainerize",
+      q: "Your leg press felt like zero reps in reserve today, and your left knee was cranky. What do you log?",
+      options: [
+        { text: "Just the weight and reps. The numbers tell the story.", correct: false,
+          why: "The numbers say what happened, not why. A log with no comments tells your coach everything was perfect, and it never is." },
+        { text: "Weight, reps, and a short comment such as: felt like 0 RIR, left knee cranky.", correct: true,
+          why: "Weight and reps are the minimum. A short comment when something was off is how your coach knows to adjust the program. If it was pain rather than soreness, stop that exercise and message your coach." },
+        { text: "Nothing. A bad day would mess up your log.", correct: false,
+          why: "Your log is your save file. Skip a day of it and next session has no honest baseline to beat." },
+        { text: "Only the comment, since the numbers were off.", correct: false,
+          why: "The numbers still matter. Next session is compared against them, bad day or not." }
       ]
     }
   ]
@@ -427,7 +522,44 @@ const QUIZ = {
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const fadeMs = () => (reduceMotion.matches ? 0 : 200);
-  const total = QUIZ.questions.length;
+  // Question pool and round drawing. Memory-free: state lives only
+  // in this page and resets when it closes.
+  const POOL = QUIZ.questions.map((q, i) => Object.assign({ id: i }, q));
+  const LESSONS = [...new Set(POOL.map((q) => q.lesson))];
+  const total = Math.min(QUIZ.roundSize || 6, POOL.length);
+  let seen = new Set();   // pool ids shown since the pool last refilled
+  let round = [];         // the questions in the current round, in course order
+
+  function shuffle(list) {
+    for (let i = list.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [list[i], list[j]] = [list[j], list[i]];
+    }
+    return list;
+  }
+
+  // One question from every lesson first, then fill the rest from the
+  // lessons with the most unseen questions left, so the next round can
+  // still cover every lesson.
+  function drawRound() {
+    let avail = POOL.filter((q) => !seen.has(q.id));
+    if (avail.length < total) { seen = new Set(); avail = POOL.slice(); }
+    const byLesson = new Map(LESSONS.map((l) => [l, shuffle(avail.filter((q) => q.lesson === l))]));
+    const picked = [];
+    shuffle(LESSONS.slice()).forEach((l) => {
+      const bucket = byLesson.get(l);
+      if (bucket.length && picked.length < total) picked.push(bucket.shift());
+    });
+    while (picked.length < total) {
+      const open = LESSONS.filter((l) => byLesson.get(l).length);
+      if (!open.length) break;
+      const most = Math.max(...open.map((l) => byLesson.get(l).length));
+      const from = shuffle(open.filter((l) => byLesson.get(l).length === most))[0];
+      picked.push(byLesson.get(from).shift());
+    }
+    picked.forEach((q) => seen.add(q.id));
+    return picked.sort((a, b) => LESSONS.indexOf(a.lesson) - LESSONS.indexOf(b.lesson) || a.id - b.id);
+  }
   const WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];
 
   // In-memory state only.
@@ -437,14 +569,15 @@ const QUIZ = {
 
   function reset() {
     index = 0;
-    answers = QUIZ.questions.map(() => ({ picked: null, checked: false }));
+    round = drawRound();
+    answers = round.map(() => ({ picked: null, checked: false }));
   }
 
   function correctIndex(q) { return q.options.findIndex((o) => o.correct); }
 
   /* ---------- Render one question ---------- */
   function renderQuestion(focusQuestion) {
-    const q = QUIZ.questions[index];
+    const q = round[index];
     const a = answers[index];
     const answer = correctIndex(q);
 
@@ -556,7 +689,7 @@ const QUIZ = {
 
   /* ---------- Drawer ---------- */
   function showDrawer(announce) {
-    const q = QUIZ.questions[index];
+    const q = round[index];
     const a = answers[index];
     const right = q.options[a.picked].correct;
 
