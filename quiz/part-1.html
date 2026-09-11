@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Part 1 · The Rules of a Set · Gamer Ascension</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   Gamer Ascension · Quiz Engine
+   Manuscript register: parchment, ink, rubric, printed gold.
+   No storage, no network after fonts. State dies on refresh.
+   ========================================================== */
+:root {
+  --paper:    #EFE6D2;  /* ground */
+  --paper-2:  #E7DCC4;  /* raised surface: drawer, selected row */
+  --ink:      #1F1C17;  /* body text */
+  --gold:     #9A7328;  /* fills, rules, diamonds, focus ring */
+  --gold-ink: #7A5A1E;  /* gold used as text or behind text; #9A7328 fails 4.5:1 there */
+  --rubric:   #8E3A2C;  /* incorrect, emphasis ink */
+  --muted:    #5A513F;  /* secondary text. Do not lighten: 6.3:1 on paper */
+  --rule:     #D3C6AA;  /* hairlines */
+
+  --wash-gold: rgba(154, 115, 40, .17);
+  --hatch: repeating-linear-gradient(45deg, transparent 0 5px, rgba(142, 58, 44, .30) 5px 6px);
+
+  --display: "Cinzel", "Trajan Pro", Georgia, "Times New Roman", serif;
+  --body: "Crimson Pro", Georgia, "Times New Roman", serif;
+
+  --gutter: 20px;
+  --measure: 40rem;
+  --tap: 56px;
+  --t-drawer: 280ms;
+  --t-fade: 200ms;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 19px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- Frame ---------- */
+.app {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.column {
+  width: 100%;
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding-inline: var(--gutter);
+}
+
+/* ---------- Header: back, progress rule, count ---------- */
+.bar { flex: none; padding-top: 12px; }
+.bar .column { display: flex; align-items: center; gap: 12px; min-height: 44px; }
+.back {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 44px; min-width: 44px;
+  margin-left: -8px; padding: 0 8px;
+  background: none; border: 0; border-radius: 2px;
+  font-family: var(--display); font-size: .74rem; letter-spacing: .08em;
+  color: var(--muted); cursor: pointer;
+}
+.back[hidden] { display: inline-flex !important; visibility: hidden; }
+.back:hover { color: var(--ink); }
+.progress { flex: 1; height: 3px; background: var(--rule); position: relative; }
+.progress-fill {
+  position: absolute; inset: 0 auto 0 0; width: 0;
+  background: var(--gold);
+  transition: width var(--t-fade) ease-out;
+}
+.count {
+  flex: none;
+  font-family: var(--display); font-size: .74rem; letter-spacing: .08em;
+  color: var(--muted); font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ---------- Stage: the question ---------- */
+.stage {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transition: opacity var(--t-fade) ease-out;
+}
+.stage.is-fading { opacity: 0; }
+/* Soft top edge so a question scrolled up under the header fades instead of clipping. */
+.stage {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 16px);
+}
+.stage .column { padding-top: 14px; padding-bottom: 20px; }
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-family: var(--display); font-size: .7rem; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+}
+.standfirst { margin: 0 0 14px; font-style: italic; color: var(--muted); font-size: 1rem; }
+.question {
+  margin: 10px 0 18px;
+  max-width: 62ch;
+  font-family: var(--display); font-weight: 400;
+  font-size: 1.3rem; line-height: 1.42; letter-spacing: .01em;
+  color: var(--ink);
+}
+.question:focus { outline: none; }
+
+/* ---------- Options ---------- */
+.options { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.options li { border-bottom: 1px solid var(--rule); }
+.option {
+  display: flex; align-items: flex-start; gap: 14px;
+  width: 100%; min-height: var(--tap);
+  padding: 13px 10px 13px 8px;
+  background: transparent; border: 0; border-radius: 0;
+  text-align: left; font-size: 1.05rem; line-height: 1.4;
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+.option:hover { background: rgba(231, 220, 196, .55); }
+.option[aria-pressed="true"] { background: var(--paper-2); }
+.option-text { flex: 1; padding-top: 1px; }
+
+.diamond {
+  flex: none;
+  width: 11px; height: 11px;
+  margin: 9px 3px 0 4px;
+  border: 1.5px solid var(--gold);
+  transform: rotate(45deg);
+  transition: background-color 120ms ease-out;
+}
+.option[aria-pressed="true"] .diamond { background: var(--gold); }
+
+.tag {
+  flex: none; align-self: center;
+  font-family: var(--display); font-size: .62rem; letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* Answered states */
+.is-answered .option { cursor: default; }
+.is-answered .option:hover { background: transparent; }
+.is-answered li.is-moot { display: none; }
+.option.is-correct, .is-answered .option.is-correct:hover { background: var(--wash-gold); }
+.option.is-correct .diamond { background: var(--gold); }
+.option.is-correct .tag { color: var(--gold-ink); }
+.option.is-missed, .is-answered .option.is-missed:hover {
+  background: var(--hatch), var(--paper);
+}
+.option.is-missed .diamond { background: transparent; border-color: var(--rubric); }
+.option.is-missed .option-text { color: var(--rubric); }
+.option.is-missed .tag { color: var(--rubric); }
+
+/* ---------- Footer: Check ---------- */
+.foot {
+  flex: none;
+  padding: 12px 0 calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
+}
+.btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; min-height: var(--tap);
+  padding: 0 24px;
+  border: 1.5px solid var(--gold-ink); border-radius: 2px;
+  background: var(--gold-ink); color: var(--paper);
+  font-family: var(--display); font-weight: 600; font-size: 1rem; letter-spacing: .12em;
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+.btn:hover { background: #6A4E19; }
+.btn:disabled {
+  background: transparent; color: var(--muted); border-color: var(--rule);
+  cursor: not-allowed;
+}
+.btn-quiet {
+  background: transparent; color: var(--gold-ink);
+}
+.btn-quiet:hover { background: var(--wash-gold); }
+
+/* ---------- Drawer ---------- */
+.drawer {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  z-index: 5;
+  max-height: 72%;
+  display: flex; flex-direction: column;
+  background: var(--paper-2);
+  border-top: 1px solid var(--gold);
+  box-shadow: 0 -10px 30px rgba(31, 28, 23, .10);
+  transform: translateY(105%);
+  visibility: hidden;
+  transition: transform var(--t-drawer) cubic-bezier(.2, .8, .2, 1), visibility 0s linear var(--t-drawer);
+}
+.drawer.is-open {
+  transform: translateY(0);
+  visibility: visible;
+  transition: transform var(--t-drawer) cubic-bezier(.2, .8, .2, 1), visibility 0s;
+}
+.drawer-body { overflow-y: auto; padding-top: 16px; }
+.verdict {
+  display: flex; align-items: baseline; gap: 10px;
+  margin: 0 0 6px;
+  font-family: var(--display); font-weight: 600; font-size: 1.15rem; letter-spacing: .04em;
+}
+.verdict .fleuron { font-family: var(--body); font-weight: 400; font-size: 1.3rem; line-height: 1; }
+.drawer.is-right .verdict { color: var(--gold-ink); }
+.drawer.is-wrong .verdict { color: var(--rubric); }
+.why { margin: 0 0 4px; color: var(--muted); max-width: 62ch; }
+.drawer-foot { flex: none; padding: 12px 0 calc(14px + env(safe-area-inset-bottom)); }
+
+/* ---------- Completion ---------- */
+.done {
+  flex: 1; display: flex; align-items: center; overflow-y: auto;
+  text-align: center;
+}
+.done .column { padding-top: 32px; padding-bottom: 32px; }
+.done h1:focus { outline: none; }
+.asterism { margin: 0; font-size: 2.2rem; line-height: 1; color: var(--gold); }
+.done h1 {
+  margin: 18px 0 14px;
+  font-family: var(--display); font-weight: 600; font-size: 1.45rem; letter-spacing: .05em;
+}
+.done p.lede { margin: 0 auto 28px; max-width: 26rem; color: var(--muted); }
+.done .btn { max-width: 20rem; margin: 0 auto; }
+.library-link {
+  display: inline-block; margin-top: 14px; padding: 10px 6px; min-height: 44px;
+  color: var(--gold-ink); font-size: 1rem;
+  text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 4px;
+}
+.library-link:hover { color: var(--ink); }
+
+@media (min-width: 720px) {
+  .stage .column { padding-top: 28px; }
+  .question { font-size: 1.45rem; }
+  .btn { width: auto; min-width: 12rem; margin-left: auto; margin-right: auto; }
+  .foot .btn, .drawer-foot .btn { margin: 0; margin-left: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer, .drawer.is-open, .stage, .progress-fill, .option, .diamond, .btn { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <header class="bar" id="bar">
+    <div class="column">
+      <button class="back" id="back" type="button" hidden>
+        <span aria-hidden="true">‹</span> Back<span class="sr-only"> to the previous question</span>
+      </button>
+      <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="count" id="count"></div>
+    </div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="column" id="stage-inner"></div>
+  </main>
+
+  <footer class="foot" id="foot">
+    <div class="column">
+      <button class="btn" id="check" type="button" disabled>Check</button>
+    </div>
+  </footer>
+
+  <section class="drawer" id="drawer" aria-live="polite" aria-atomic="true" aria-label="Answer">
+    <div class="drawer-body">
+      <div class="column">
+        <p class="verdict" id="verdict"></p>
+        <p class="why" id="why"></p>
+      </div>
+    </div>
+    <div class="drawer-foot">
+      <div class="column">
+        <button class="btn" id="continue" type="button">Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="done" id="done" hidden aria-labelledby="done-title">
+    <div class="column">
+      <p class="asterism" aria-hidden="true">⁂</p>
+      <h1 id="done-title" tabindex="-1"></h1>
+      <p class="lede" id="done-lede"></p>
+      <button class="btn" id="restart" type="button">Start over</button>
+      <a class="library-link" id="library" href="#">Back to the library</a>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ==========================================================
+   CONTENT
+   Swap this object to make a new Part. Nothing else changes.
+   Four options per question, exactly one correct: true.
+   Order is authored: the tempting wrong answer comes first.
+   Do not shuffle.
+   ========================================================== */
+const QUIZ = {
+  part: "Part 1",
+  title: "The Rules of a Set",
+  standfirst: "Six questions. Nothing is scored and nothing is saved.",
+  backUrl: "https://app.notion.com/p/319e8afba9ad80dfb8ffecdf73faa21f",
+  questions: [
+    {
+      q: "You do four climbing warm-up sets of eight on bench, and the last one leaves you breathing hard. Your first working set feels heavier than usual. What went wrong?",
+      options: [
+        { text: "Nothing. A harder warm-up means you are more ready for the heavy set.", correct: false,
+          why: "It feels logical, but readiness comes from blood flow, rehearsing the movement and getting a feel for heavier weight. None of that needs fatigue. Any fatigue you build here gets carried straight into the set that counts." },
+        { text: "Your working weight is set too high.", correct: false,
+          why: "It might be, but the clue is the warm-up that left you breathing hard. Fix the warm-up first. Then judge the working weight on fresh legs and lungs." },
+        { text: "The warm-ups were too heavy or too long, so you arrived tired.", correct: true,
+          why: "Warm-up sets should stay around 5 or more reps in reserve and feel easy. If one starts to feel difficult, it was too heavy or ran too many reps. Warm-ups prepare the movement. Working sets create the stimulus." },
+        { text: "You needed more warm-up sets to get fully ready.", correct: false,
+          why: "More sets means more fatigue, which is the problem you already have. Two or three easy sets that climb toward your working weight is enough." }
+      ]
+    },
+    {
+      q: "Your set of twelve moved at exactly the same speed from the first rep to the last. What does that tell you?",
+      options: [
+        { text: "Your technique was excellent and consistent.", correct: false,
+          why: "Steady speed looks like good control, and control matters. But once a muscle is working hard enough to grow, speed drops on its own even while you push just as hard. A pace that never changed means the set never got difficult." },
+        { text: "The set ended too far from failure.", correct: true,
+          why: "Rep speed slows as the muscle fatigues and has to recruit its largest motor units. Those slow, grinding reps at the end are your effective reps. If speed never dropped, you never reached them." },
+        { text: "The weight was too heavy.", correct: false,
+          why: "A weight that is too heavy slows down early, often from the first few reps. Twelve reps at an unchanging pace points the other way." },
+        { text: "You reached failure.", correct: false,
+          why: "At failure the rep stalls and you cannot finish it under control. Speed does not hold steady on the way there. It falls off sharply over the last few reps." }
+      ]
+    },
+    {
+      q: "You stop a set of leg extensions when you think you have one rep left. You rest 20 seconds, try again, and get four more clean reps. What does that tell you?",
+      options: [
+        { text: "The rest recharged the muscle, so the extra reps do not count.", correct: false,
+          why: "Twenty seconds is far too short to recover a set's worth of strength. That is why the calibration test uses it. Four more reps means those reps were already in you when you stopped." },
+        { text: "Your guess was close. You were near failure.", correct: false,
+          why: "If you had been one rep from failure, you would have managed about one more. Four more means you were a long way off." },
+        { text: "Leg extensions are a poor exercise for testing this.", correct: false,
+          why: "Leg extensions are one of the recommended exercises for this test. They are stable and safe to push hard, which is exactly what calibration needs." },
+        { text: "You stopped well short of where you thought you were.", correct: true,
+          why: "Three to five extra reps after a short rest means your sense of almost done arrives early. This is the most common gap in new lifters, and the calibration set exists to close it." }
+      ]
+    },
+    {
+      q: "You want as much growth as possible, so you plan to take every set of squats all the way to failure. What is the problem with that plan?",
+      options: [
+        { text: "There is none. Closer to failure always means more growth.", correct: false,
+          why: "Inside one set, closer to failure does mean more effective reps. Across a week it stops being true. Fatigue carries into your next sets and sessions, and a tired muscle recruits fewer of the fibers that grow." },
+        { text: "Squats create heavy fatigue, so they belong around 1 to 2 reps in reserve.", correct: true,
+          why: "Big lower-body lifts move the largest muscles and the heaviest loads. Taking them to failure regularly drives fatigue up, drags down the rest of the session and your recovery, and raises injury risk as technique breaks down. Save failure for stable isolation lifts." },
+        { text: "Failure only works with light weights, so the squats should be lighter.", correct: false,
+          why: "Lighter squats taken to failure carry the same problem. The issue is how much muscle the squat uses and how much fatigue it creates, not the weight on the bar." },
+        { text: "You should never take any exercise to failure.", correct: false,
+          why: "Stable isolation lifts like leg extensions or cable flys can be taken to 1 rep in reserve or full failure. Their fatigue stays in the target muscle instead of spreading across the whole body." }
+      ]
+    },
+    {
+      q: "A friend tells you to lower every rep over six seconds, because more time under tension means more growth. What does the evidence say?",
+      options: [
+        { text: "Your friend is right. Longer sets give the muscle more reason to grow.", correct: false,
+          why: "Time under tension was once treated as a main driver of growth. Current evidence points to mechanical tension and closeness to failure as far more important than how long a set lasts." },
+        { text: "Lower the weight as fast as possible to save energy for the lift.", correct: false,
+          why: "Dropping the weight lets gravity do the work and skips the lowering phase, where much of the growth signal lives. It also bounces you out of the stretched position, the most common place to get hurt." },
+        { text: "Very slow reps add fatigue and cut the weight you can use, without adding growth.", correct: true,
+          why: "Extremely slow reps raise fatigue, reduce your training loads and leave you fewer effective reps. Tempo is there to make every rep the same. Lower with control for 2 to 3 seconds. Lift with intent." },
+        { text: "Tempo does not matter as long as the weight goes up.", correct: false,
+          why: "Tempo keeps the work on the muscle instead of momentum, and it keeps your log honest. Ten fast, loose reps look like progress in the app and are not progress in the muscle." }
+      ]
+    },
+    {
+      q: "Near the end of a hard set of curls, your torso starts swinging to get the weight up. What should you do?",
+      options: [
+        { text: "Keep going. The last reps are the ones that build muscle.", correct: false,
+          why: "The final hard reps matter, but only while the muscle is doing the work. Once momentum takes over, tension shifts off the biceps and onto joints and connective tissue. Little extra growth, more risk." },
+        { text: "Keep going. Some change in form near failure is normal.", correct: false,
+          why: "Small shifts in body position near the end of a hard set are normal and fine. A swinging torso is not small. It is momentum replacing the muscle." },
+        { text: "Grab a lighter weight and keep going without resting.", correct: false,
+          why: "That is a separate technique for another day. The rule here is simpler. When control is gone, the set is over." },
+        { text: "End the set. You have reached technical failure.", correct: true,
+          why: "Technical failure is the point where the exercise can no longer be done with controlled, stable technique. Swinging, bouncing, lost joint stability and a shrinking range of motion are the signs. Stop there." }
+      ]
+    }
+  ]
+};
+
+/* ==========================================================
+   ENGINE
+   ========================================================== */
+(function () {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    back: $("back"), fill: $("progress-fill"), count: $("count"),
+    stage: $("stage"), inner: $("stage-inner"),
+    foot: $("foot"), check: $("check"),
+    drawer: $("drawer"), verdict: $("verdict"), why: $("why"), cont: $("continue"),
+    bar: $("bar"), done: $("done"), doneTitle: $("done-title"), doneLede: $("done-lede"),
+    restart: $("restart"), library: $("library")
+  };
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const fadeMs = () => (reduceMotion.matches ? 0 : 200);
+  const total = QUIZ.questions.length;
+  const WORDS = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];
+
+  // In-memory state only.
+  let index = 0;
+  let answers = [];   // per question: { picked: number|null, checked: boolean }
+  let optionButtons = [];
+
+  function reset() {
+    index = 0;
+    answers = QUIZ.questions.map(() => ({ picked: null, checked: false }));
+  }
+
+  function correctIndex(q) { return q.options.findIndex((o) => o.correct); }
+
+  /* ---------- Render one question ---------- */
+  function renderQuestion(focusQuestion) {
+    const q = QUIZ.questions[index];
+    const a = answers[index];
+    const answer = correctIndex(q);
+
+    el.fill.style.width = ((index + 1) / total * 100) + "%";
+    el.count.textContent = (index + 1) + " of " + total;
+    el.back.hidden = index === 0;
+
+    const frag = document.createDocumentFragment();
+
+    const eyebrow = document.createElement("p");
+    eyebrow.className = "eyebrow";
+    eyebrow.textContent = QUIZ.part + " · " + QUIZ.title;
+    frag.appendChild(eyebrow);
+
+    if (index === 0 && QUIZ.standfirst) {
+      const sf = document.createElement("p");
+      sf.className = "standfirst";
+      sf.textContent = QUIZ.standfirst;
+      frag.appendChild(sf);
+    }
+
+    const h = document.createElement("h1");
+    h.className = "question";
+    h.id = "question-text";
+    h.tabIndex = -1;
+    h.textContent = q.q;
+    frag.appendChild(h);
+
+    const list = document.createElement("ul");
+    list.className = "options";
+    list.setAttribute("aria-labelledby", "question-text");
+    if (a.checked) list.classList.add("is-answered");
+
+    optionButtons = q.options.map((opt, i) => {
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "option";
+      b.setAttribute("aria-pressed", String(a.picked === i));
+
+      const d = document.createElement("span");
+      d.className = "diamond";
+      d.setAttribute("aria-hidden", "true");
+
+      const t = document.createElement("span");
+      t.className = "option-text";
+      t.textContent = opt.text;
+
+      b.appendChild(d);
+      b.appendChild(t);
+
+      if (a.checked) {
+        b.setAttribute("aria-disabled", "true");
+        const isAnswer = i === answer;
+        const isPick = i === a.picked;
+        if (isAnswer || isPick) {
+          const tag = document.createElement("span");
+          tag.className = "tag";
+          if (isAnswer) {
+            b.classList.add("is-correct");
+            tag.textContent = isPick ? "Your answer" : "Answer";
+          } else {
+            b.classList.add("is-missed");
+            tag.textContent = "Your pick";
+          }
+          b.appendChild(tag);
+        } else {
+          li.classList.add("is-moot");
+        }
+      } else {
+        b.addEventListener("click", () => select(i));
+      }
+
+      li.appendChild(b);
+      list.appendChild(li);
+      return b;
+    });
+
+    frag.appendChild(list);
+    el.inner.replaceChildren(frag);
+    el.stage.scrollTop = 0;
+
+    if (a.checked) {
+      showDrawer(false);
+    } else {
+      hideDrawer();
+      el.check.disabled = a.picked === null;
+    }
+
+    if (focusQuestion) h.focus({ preventScroll: true });
+  }
+
+  /* ---------- Two-step commit ---------- */
+  function select(i) {
+    const a = answers[index];
+    if (a.checked) return;
+    a.picked = i;
+    optionButtons.forEach((b, j) => b.setAttribute("aria-pressed", String(j === i)));
+    el.check.disabled = false;
+  }
+
+  function check() {
+    const a = answers[index];
+    if (a.picked === null || a.checked) return;
+    a.checked = true;
+    renderQuestion(false);
+    showDrawer(true);
+  }
+
+  /* ---------- Drawer ---------- */
+  function showDrawer(announce) {
+    const q = QUIZ.questions[index];
+    const a = answers[index];
+    const right = q.options[a.picked].correct;
+
+    el.drawer.classList.toggle("is-right", right);
+    el.drawer.classList.toggle("is-wrong", !right);
+
+    const fleuron = document.createElement("span");
+    fleuron.className = "fleuron";
+    fleuron.setAttribute("aria-hidden", "true");
+    fleuron.textContent = "❦";
+    const label = document.createElement("span");
+    label.textContent = right ? "That is right." : "Not quite.";
+
+    // Clear then fill so aria-live announces the new verdict and reasoning.
+    el.verdict.replaceChildren();
+    el.why.textContent = "";
+    const fill = () => {
+      el.verdict.replaceChildren(fleuron, label);
+      el.why.textContent = q.options[a.picked].why;
+    };
+    if (announce) requestAnimationFrame(fill); else fill();
+
+    el.cont.textContent = index === total - 1 ? "Finish" : "Continue";
+    el.foot.hidden = true;
+    el.drawer.classList.add("is-open");
+    el.drawer.removeAttribute("aria-hidden");
+    el.stage.style.paddingBottom = el.drawer.offsetHeight + "px";
+
+    // Keep the chosen and correct rows in view above the drawer. On short
+    // screens the question may scroll up a little; the answer rows win.
+    requestAnimationFrame(() => {
+      el.stage.style.paddingBottom = el.drawer.offsetHeight + "px";
+      const rows = el.inner.querySelectorAll(".option.is-correct, .option.is-missed");
+      if (!rows.length) return;
+      const stageBox = el.stage.getBoundingClientRect();
+      const visibleBottom = stageBox.bottom - el.drawer.offsetHeight - 12;
+      const lastBottom = rows[rows.length - 1].getBoundingClientRect().bottom;
+      const overlap = lastBottom - visibleBottom;
+      if (overlap > 0) {
+        el.stage.scrollTo({
+          top: el.stage.scrollTop + overlap,
+          behavior: reduceMotion.matches ? "auto" : "smooth"
+        });
+      }
+    });
+
+    if (announce) {
+      // Move focus to Continue after the drawer lands so the live region is read first.
+      setTimeout(() => el.cont.focus({ preventScroll: true }), reduceMotion.matches ? 0 : 300);
+    }
+  }
+
+  function hideDrawer() {
+    el.drawer.classList.remove("is-open");
+    el.drawer.setAttribute("aria-hidden", "true");
+    el.stage.style.paddingBottom = "";
+    el.foot.hidden = false;
+  }
+
+  /* ---------- Navigation ---------- */
+  function goTo(next) {
+    const ms = fadeMs();
+    hideDrawer();
+    if (!ms) { index = next; renderQuestion(true); return; }
+    el.stage.classList.add("is-fading");
+    setTimeout(() => {
+      index = next;
+      renderQuestion(true);
+      el.stage.classList.remove("is-fading");
+    }, ms);
+  }
+
+  function next() {
+    if (index < total - 1) goTo(index + 1);
+    else finish();
+  }
+
+  function back() {
+    if (!el.done.hidden) { showQuiz(); goTo(total - 1); return; }
+    if (index > 0) goTo(index - 1);
+  }
+
+  function finish() {
+    hideDrawer();
+    el.bar.hidden = true;
+    el.stage.hidden = true;
+    el.foot.hidden = true;
+    el.done.hidden = false;
+    el.doneTitle.textContent = QUIZ.part + " complete";
+    const n = WORDS[total] || String(total);
+    el.doneLede.textContent = "You answered " + n + " questions from memory. The ones you missed are the ones worth rereading.";
+    el.doneTitle.focus({ preventScroll: true });
+  }
+
+  function showQuiz() {
+    el.done.hidden = true;
+    el.bar.hidden = false;
+    el.stage.hidden = false;
+    el.foot.hidden = false;
+  }
+
+  function restart() {
+    reset();
+    showQuiz();
+    renderQuestion(true);
+  }
+
+  /* ---------- Library link: works framed (Notion embed) and standalone ---------- */
+  el.library.href = QUIZ.backUrl;
+  let framed = false;
+  try { framed = window.self !== window.top; } catch (e) { framed = true; }
+  if (framed) { el.library.target = "_blank"; el.library.rel = "noopener"; }
+
+  /* ---------- Wire up ---------- */
+  el.check.addEventListener("click", check);
+  el.cont.addEventListener("click", next);
+  el.back.addEventListener("click", back);
+  el.restart.addEventListener("click", restart);
+
+  reset();
+  hideDrawer();
+  renderQuestion(false);
+})();
+</script>
+</body>
+</html>
