@@ -68,6 +68,20 @@ body.nofx .st{opacity:1!important;transform:none!important;position:static!impor
 #scrollhud .hudfill{position:absolute;left:0;bottom:0;height:3px;width:0%;
   background:linear-gradient(90deg,var(--molten),var(--gold));}
 #scrollhud.done{opacity:0;}
+.shot{cursor:pointer;position:relative;}
+.shot .zoom{position:absolute;top:8px;right:8px;z-index:2;width:26px;height:26px;display:flex;
+  align-items:center;justify-content:center;color:#1c1206;background:linear-gradient(180deg,#f2c46a,#c98a35);
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+  font-size:15px;font-weight:900;pointer-events:none;}
+#lb{position:fixed;inset:0;z-index:80;background:rgba(5,3,2,.92);display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:3vh 16px;}
+#lb.open{display:flex;}
+#lb video,#lb img{max-height:84vh;max-width:94vw;display:block;border:1px solid rgba(227,178,91,.5);
+  box-shadow:0 20px 90px rgba(0,0,0,.8);background:#0d0a08;}
+#lb .lbcap{color:#ded7cb;font-size:.85em;text-align:center;max-width:34em;}
+#lbx{position:absolute;top:14px;right:14px;background:linear-gradient(180deg,#f2c46a,#c98a35);color:#1c1206;
+  border:0;font-weight:900;font-size:1.1em;width:40px;height:40px;cursor:pointer;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);}
 @keyframes hudbounce{0%,100%{transform:translateY(-2px)}50%{transform:translateY(3px)}}
 @media (max-width:640px){#scrollhud{font-size:.7em;padding:8px 16px 10px;bottom:12px;gap:8px;}}
 @media (prefers-reduced-motion:reduce){#scrollhud .chev{animation:none;}}
@@ -466,6 +480,8 @@ body.nofx .cutstage{position:static;height:70vh;}
 
 <div id="scrollhud" aria-hidden="true"><span class="chev">&#9660;</span><span>Keep Scrolling</span><span class="chev">&#9660;</span><span class="hudfill" id="hudfill"></span></div>
 
+<div id="lb" role="dialog" aria-modal="true"><button id="lbx" aria-label="Close">&#10005;</button><div id="lbmedia"></div><div class="lbcap" id="lbcap"></div></div>
+
 <!-- ================= INTRO ================= -->
 <section class="pin" id="intro" data-steps="2" data-vhstep="45">
   <div class="stage">
@@ -659,28 +675,28 @@ body.nofx .cutstage{position:static;height:70vh;}
     <div class="stage"><div class="wrap" style="max-width:900px">
       <h2 class="bigprog st" data-step="0">The Bronze Ranker Program</h2>
       <div class="showcase">
-        <figure class="shot vid st" data-step="1">
+        <figure class="shot vid st" data-step="1"><span class="zoom">&#8599;</span>
           <video autoplay muted loop playsinline preload="metadata">
             <source src="app_program_vid.webm" type="video/webm">
             <source src="app_program_vid.mp4" type="video/mp4">
           </video>
           <figcaption><b>Your Training Program</b> · waiting for you in the app. Fully written already</figcaption>
         </figure>
-        <figure class="shot vid st" data-step="2">
+        <figure class="shot vid st" data-step="2"><span class="zoom">&#8599;</span>
           <video autoplay muted loop playsinline preload="metadata">
             <source src="app_challenge_vid.webm" type="video/webm">
             <source src="app_challenge_vid.mp4" type="video/mp4">
           </video>
           <figcaption><b>The Ascension Challenge</b> · the whole guild climbing the mountain. You get points for daily achievements in the app</figcaption>
         </figure>
-        <figure class="shot vid st" data-step="3">
+        <figure class="shot vid st" data-step="3"><span class="zoom">&#8599;</span>
           <video autoplay muted loop playsinline preload="metadata">
             <source src="app_library_vid.webm" type="video/webm">
             <source src="app_library_vid.mp4" type="video/mp4">
           </video>
           <figcaption><b>The Primer</b> · your free education library. Lessons and quizzes</figcaption>
         </figure>
-        <figure class="shot vid st" data-step="4">
+        <figure class="shot vid st" data-step="4"><span class="zoom">&#8599;</span>
           <video autoplay muted loop playsinline preload="metadata">
             <source src="app_chat_vid.webm" type="video/webm">
             <source src="app_chat_vid.mp4" type="video/mp4">
@@ -824,6 +840,36 @@ body.nofx .cutstage{position:static;height:70vh;}
   var ticking=false;
   addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(frame);}},{passive:true});
   addEventListener('resize',frame);
+
+  /* ---- tap-to-inspect lightbox for showcase panels ---- */
+  (function(){
+    var lb=document.getElementById('lb'),lm=document.getElementById('lbmedia'),
+        lc=document.getElementById('lbcap'),lx=document.getElementById('lbx');
+    function open(fig){
+      var v=fig.querySelector('video'),img=fig.querySelector('img'),cap=fig.querySelector('figcaption');
+      lm.innerHTML='';
+      if(v){
+        var nv=document.createElement('video');
+        nv.muted=true;nv.loop=true;nv.playsInline=true;nv.autoplay=true;nv.controls=true;
+        [].forEach.call(v.querySelectorAll('source'),function(sc){
+          var ns=document.createElement('source');ns.src=sc.src;ns.type=sc.type;nv.appendChild(ns);});
+        lm.appendChild(nv);nv.play().catch(function(){});
+      }else if(img){
+        var ni=document.createElement('img');ni.src=img.src;ni.alt=img.alt||'';lm.appendChild(ni);
+      }
+      lc.textContent=cap?cap.textContent:'';
+      lb.classList.add('open');document.documentElement.style.overflow='hidden';
+    }
+    function close(){
+      lb.classList.remove('open');lm.innerHTML='';document.documentElement.style.overflow='';
+    }
+    [].forEach.call(document.querySelectorAll('.shot'),function(f){
+      f.addEventListener('click',function(){open(f);});
+    });
+    lb.addEventListener('click',function(e){if(e.target===lb||e.target===lm)close();});
+    lx.addEventListener('click',close);
+    addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  })();
   frame();
   if(document.body.classList.contains('nofx')){
     [].slice.call(document.querySelectorAll('.st')).forEach(function(e){e.classList.add('on')});
