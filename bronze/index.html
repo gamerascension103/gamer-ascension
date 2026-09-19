@@ -319,6 +319,71 @@ body.nofx .cutstage{position:static;height:70vh;}
 .free{font-family:Cinzel,Georgia,serif;color:var(--gold);font-weight:800;font-size:1.6em;letter-spacing:.08em;}
 .why{color:var(--dim);font-size:.82em;flex-basis:100%;}
 
+/* ---------- evolution proof ---------- */
+#proof .proofhead{position:absolute;top:5vh;left:0;right:0;text-align:center;z-index:1;}
+#proof .proofhead .actword{font-size:clamp(2em,6vw,4em);}
+#evofx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;}
+.evo{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;opacity:0;pointer-events:none;z-index:2;padding-top:9vh;}
+.evoframe{position:relative;width:min(280px,54vw);aspect-ratio:2/3;cursor:pointer;pointer-events:auto;}
+.ephoto{position:absolute;inset:4.5% 7%;overflow:hidden;background:#0f0b08;
+  border:1px solid rgba(227,178,91,.16);box-shadow:0 24px 80px rgba(0,0,0,.65);}
+.ephoto::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  box-shadow:inset 0 0 46px 14px rgba(8,5,3,.65),inset 0 0 3px rgba(227,178,91,.12);}
+.ephoto img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;}
+.ephoto .ea{opacity:0;}
+.fring{position:absolute;max-width:none;object-fit:fill;pointer-events:none;z-index:4;}
+.fring.fb{left:-16.4%;top:-11.7%;width:132.5%;height:123.5%;}
+.fring.fg{left:-24.4%;top:-16.5%;width:148.5%;height:133.1%;opacity:0;filter:drop-shadow(0 0 10px rgba(255,200,100,.35));}
+#evoRow .fring{display:none;}
+#evoRow .ephoto{inset:0;border:1px solid transparent;
+  border-image:linear-gradient(135deg,rgba(196,132,84,.85),rgba(70,48,26,.4) 45%,rgba(196,132,84,.55)) 1;
+  box-shadow:0 18px 60px rgba(0,0,0,.6),0 0 0 4px rgba(14,10,7,.95),0 0 0 5px rgba(196,132,84,.35);
+  transition:box-shadow .5s ease;}
+#evoRow .ephoto::before,#evoRow .ephoto::after{content:"";position:absolute;width:14px;height:14px;z-index:3;pointer-events:none;transition:border-color .5s ease;}
+#evoRow .ephoto::before{top:4px;left:4px;border-top:2px solid #c48454;border-left:2px solid #c48454;}
+#evoRow .ephoto::after{bottom:4px;right:4px;border-bottom:2px solid #c48454;border-right:2px solid #c48454;}
+#evoRow .goldf .ephoto{
+  border-image:linear-gradient(135deg,rgba(255,215,140,.95),rgba(150,100,40,.5) 45%,rgba(255,200,110,.85)) 1;
+  box-shadow:0 18px 60px rgba(0,0,0,.6),0 0 0 4px rgba(20,14,8,.95),0 0 0 5px rgba(255,205,110,.7),0 0 34px rgba(255,190,90,.35);}
+#evoRow .goldf .ephoto::before,#evoRow .goldf .ephoto::after{border-color:var(--gold);}
+#evb{position:fixed;inset:0;z-index:85;background:rgba(5,3,2,.94);display:none;
+  align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:3vh 16px;touch-action:none;}
+#evb.open{display:flex;}
+#evb .evoframe{width:min(30vh,62vw);cursor:default;margin:9vh 0 15vh;}
+#evb .evoname{cursor:default;}
+#evb .evoname,#evb .evhint{position:relative;z-index:6;}
+#evb .evhint{color:#cfc5b4;font-size:.8em;letter-spacing:.1em;text-transform:uppercase;
+  font-family:Cinzel,Georgia,serif;}
+#evbx{position:absolute;top:14px;right:14px;background:linear-gradient(180deg,#f2c46a,#c98a35);color:#1c1206;
+  border:0;font-weight:900;font-size:1.1em;width:40px;height:40px;cursor:pointer;z-index:2;
+  clip-path:polygon(8px 0,100% 0,100% calc(100% - 8px),calc(100% - 8px) 100%,0 100%,0 8px);}
+.eflash{position:absolute;inset:-40%;z-index:3;opacity:0;pointer-events:none;
+  background:radial-gradient(circle,#fff9ec 0%,rgba(255,224,150,.95) 34%,rgba(255,190,90,.5) 55%,transparent 72%);}
+.evoname{position:relative;z-index:5;font-family:Cinzel,Georgia,serif;color:#f0e7d3;font-weight:700;letter-spacing:.1em;font-size:.95em;
+  background:linear-gradient(180deg,rgba(52,42,26,.9),rgba(14,10,8,.92));
+  border-top:1px solid rgba(227,178,91,.6);padding:6px 20px;
+  clip-path:polygon(9px 0,100% 0,calc(100% - 9px) 100%,0 100%);
+  text-shadow:0 2px 8px rgba(0,0,0,.9);}
+.evoname .elv{color:#cf8e58;}
+.evoname .elv.gold{color:var(--gold);text-shadow:0 0 14px rgba(255,205,110,.55);}
+.ephoto .es{opacity:0;}
+.evorow{display:flex;gap:1.3vw;align-items:flex-end;justify-content:center;flex-wrap:wrap;row-gap:26px;}
+.evocol{display:flex;flex-direction:column;align-items:center;gap:10px;
+  flex:0 0 min(150px,12.4vw);width:min(150px,12.4vw);}
+.evocol .evoname{white-space:nowrap;}
+#evoRow .evoframe{width:100%;}
+#evoRow .evoname{font-size:.82em;}
+.evocap{color:#cfc5b4;font-size:.85em;letter-spacing:.06em;margin:6px 0 0;text-shadow:0 2px 10px rgba(0,0,0,.95);}
+@media (max-width:640px){
+  .evoframe{width:min(230px,56vw);}
+  .evocol{flex:0 0 23vw;width:23vw;}
+  #evoRow .evoname{font-size:.56em;letter-spacing:.03em;}
+  .evorow{gap:3vw;}
+}
+body.nofx .evo{opacity:1;position:static;}
+body.nofx .evoframe .ea{opacity:1;}
+
 /* ---------- summit ---------- */
 #summit .stage{text-align:center;}
 #summit .actword{color:#fff8ea;}
@@ -358,6 +423,32 @@ body.nofx .cutstage{position:static;height:70vh;}
 .caret{display:inline-block;width:2px;height:1.15em;background:var(--gold);
   margin-left:3px;vertical-align:text-bottom;}
 @media (prefers-reduced-motion:no-preference){.caret{animation:blink 1.1s steps(1) infinite;}}
+
+/* ---------- NPC dialogue ---------- */
+.npcbox{display:flex;align-items:flex-end;max-width:780px;width:100%;margin:0 auto;gap:0;}
+.npcport{width:clamp(150px,24vw,230px);height:auto;object-fit:contain;flex:0 0 auto;
+  background:transparent;border:0;box-shadow:none;position:relative;z-index:1;
+  filter:drop-shadow(0 24px 44px rgba(0,0,0,.75));margin-right:-14px;margin-bottom:-2px;
+  transform:translateX(-40px);opacity:0;transition:transform .65s cubic-bezier(.2,.8,.25,1),opacity .5s;}
+.narr.on .npcport,.offer.on .npcport{transform:none;opacity:1;}
+.dlines{display:flex;flex-direction:column;gap:10px;width:100%;}
+.dbox{flex:1;z-index:2;position:relative;background:rgba(14,10,8,.96);border:1px solid rgba(227,178,91,.5);
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);
+  padding:44px 30px 34px;min-height:132px;display:flex;align-items:center;
+  box-shadow:0 18px 60px rgba(0,0,0,.7);}
+.dname{position:absolute;top:0;left:0;
+  background:linear-gradient(180deg,#f2c46a,#c98a35);color:#1c1206;
+  font-family:Cinzel,Georgia,serif;font-weight:800;font-size:.7em;letter-spacing:.16em;
+  padding:5px 18px;clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%);}
+.dtext{margin:0;font-size:clamp(1em,2.4vw,1.2em)!important;line-height:1.6;color:#e8e2d8;
+  text-align:left!important;text-shadow:none!important;}
+.dnext{position:absolute;right:16px;bottom:8px;color:var(--gold);font-size:.8em;pointer-events:none;}
+@media (prefers-reduced-motion:no-preference){.dnext{animation:hudbounce 1.1s ease-in-out infinite;}}
+@media (max-width:640px){
+  .npcport{width:34vw;margin-right:-10px;}
+  .dbox{padding:20px 16px 24px;min-height:100px;}
+  .dname{font-size:.6em;}
+}
 
 /* ---------- the offer (hellgate) ---------- */
 .offer{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;
@@ -480,6 +571,12 @@ body.nofx .cutstage{position:static;height:70vh;}
 
 <div id="scrollhud" aria-hidden="true"><span class="chev">&#9660;</span><span>Keep Scrolling</span><span class="chev">&#9660;</span><span class="hudfill" id="hudfill"></span></div>
 
+<div id="evb" role="dialog" aria-modal="true"><button id="evbx" aria-label="Close">&#10005;</button>
+  <div class="evoframe"><div class="ephoto"><img class="eb" src="" alt=""><img class="ea" src="" alt=""><div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+  <div class="evoname"><span id="evbn"></span> · <span class="elv">Bronze Rank</span></div>
+  <div class="evhint">&#9650; scroll to evolve &#9660;</div>
+</div>
+
 <div id="lb" role="dialog" aria-modal="true"><button id="lbx" aria-label="Close">&#10005;</button><div id="lbmedia"></div><div class="lbcap" id="lbcap"></div></div>
 
 <!-- ================= INTRO ================= -->
@@ -568,7 +665,12 @@ body.nofx .cutstage{position:static;height:70vh;}
     <div class="stage">
       <img class="bgimg" src="dropship.webp" alt="">
       <div class="veil2"></div>
-      <p class="narr"><span class="typed"></span><span class="caret"></span></p>
+      <div class="narr"><div class="npcbox">
+        <img class="npcport" src="npc_coach.webp" alt="Coach Strain in dropship armor">
+        <div class="dbox"><div class="dname">COACH STRAIN</div>
+          <p class="dtext"><span class="typed"></span><span class="caret"></span></p>
+          <span class="dnext">&#9660;</span></div>
+      </div></div>
     </div>
   </section>
 </div>
@@ -625,32 +727,85 @@ body.nofx .cutstage{position:static;height:70vh;}
     data-text="here’s a few gamers who started as a Bronze Ranker just like you">
     <div class="stage">
       <canvas class="cutfx" data-fx="comet"></canvas>
-      <p class="narr"><span class="typed"></span><span class="caret"></span></p>
+      <img class="bgimg" src="warcamp.webp" alt="" style="opacity:.55">
+      <div class="veil2"></div>
+      <div class="narr"><div class="npcbox">
+        <img class="npcport" src="npc_coach.webp" alt="Coach Strain in warchief furs">
+        <div class="dbox"><div class="dname">COACH STRAIN</div>
+          <p class="dtext"><span class="typed"></span><span class="caret"></span></p>
+          <span class="dnext">&#9660;</span></div>
+      </div></div>
     </div>
   </section>
 
   <!-- ================= ACT III proof ================= -->
-  <section class="pin" id="proof" data-steps="5" data-vhstep="70">
+  <section class="pin" id="proof" data-steps="15" data-vhstep="65">
     <div class="stage">
       <div class="proofhead">
         <p class="actkicker st" data-step="0">act ii · the evidence</p>
         <h2 class="actword st" data-step="0">PROOF</h2>
       </div>
-      <div class="deck" style="margin:0 auto">
-        <figure class="pcard st" data-step="1" style="--rest:rotate(-7deg) translate(-6%,2%)">
-          <img src="card_jt.webp" alt="JT before and after, level 12">
-          <figcaption><span>260 RT · 145 cardio</span><b>JT · Lv. 12</b></figcaption></figure>
-        <figure class="pcard st" data-step="2" style="--rest:rotate(5deg) translate(5%,-1%)">
-          <img src="card_jeff.webp" alt="Jeffrey Hein before and after, level 19">
-          <figcaption><span>380 RT · 342 cardio</span><b>Jeffrey · Lv. 19</b></figcaption></figure>
-        <figure class="pcard st" data-step="3" style="--rest:rotate(-3deg) translate(-2%,1%)">
-          <img src="card_chris.webp" alt="Chris Dunn before and after">
-          <figcaption><span>"easiest check-in yet"</span><b>Chris</b></figcaption></figure>
-        <figure class="pcard st" data-step="4" style="--rest:rotate(2deg) translate(1%,0)">
-          <img src="card_rory.webp" alt="Rory Longman before and after, level 28">
-          <figcaption><span>566 RT · 807 cardio</span><b>Rory · Lv. 28</b></figcaption></figure>
+      <canvas id="evofx" aria-hidden="true"></canvas>
+      <div class="evo" id="evoRow">
+        <div class="evorow">
+          <div class="evocol">
+            <div class="evoframe"><div class="ephoto"><img class="eb" src="evo_jt_b.webp" alt="JT before">
+              <img class="ea" src="evo_jt_a.webp" alt="JT after">
+              <div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+            <div class="evoname">JT · <span class="elv">Bronze Rank</span></div>
+          </div>
+          <div class="evocol">
+            <div class="evoframe"><div class="ephoto"><img class="eb" src="evo_jeff_b.webp" alt="Jeffrey before">
+              <img class="ea" src="evo_jeff_a.webp" alt="Jeffrey after, level 19">
+              <div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+            <div class="evoname">Jeffrey · <span class="elv">Bronze Rank</span></div>
+          </div>
+          <div class="evocol">
+            <div class="evoframe"><div class="ephoto"><img class="eb" src="evo_rory_b.webp" alt="Rory before">
+              <img class="ea" src="evo_rory_a.webp" alt="Rory after, level 28">
+              <div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+            <div class="evoname">Rory · <span class="elv">Bronze Rank</span></div>
+          </div>
+          <div class="evocol">
+            <div class="evoframe"><div class="ephoto"><img class="eb" src="evo_chris_b.webp" alt="Chris before">
+              <img class="ea" src="evo_chris_a.webp" alt="Chris after">
+              <div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+            <div class="evoname">Chris · <span class="elv">Bronze Rank</span></div>
+          </div>
+          <div class="evocol">
+            <div class="evoframe"><div class="ephoto"><img class="eb" src="evo_david_b.webp" alt="David before">
+              <img class="ea" src="evo_david_a.webp" alt="David after">
+              <div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+            <div class="evoname">David · <span class="elv">Bronze Rank</span></div>
+          </div>
+          <div class="evocol">
+            <div class="evoframe"><div class="ephoto"><img class="eb" src="evo_mel_b.webp" alt="Melissa before">
+              <img class="ea" src="evo_mel_a.webp" alt="Melissa after">
+              <div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+            <div class="evoname">Melissa · <span class="elv">Bronze Rank</span></div>
+          </div>
+          <div class="evocol">
+            <div class="evoframe"><div class="ephoto"><img class="eb" src="evo_char_b.webp" alt="Charles before">
+              <img class="ea" src="evo_char_a.webp" alt="Charles after">
+              <div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
+            <div class="evoname">Charles · <span class="elv">Bronze Rank</span></div>
+          </div>
+        </div>
+        <p class="evocap">same coach · same four stats</p>
       </div>
-      <p class="pcount"><b id="pnum">0</b> forged · same coach · same four stats</p>
+      <div class="evo" id="evoCoach">
+        <div class="evoframe">
+          <div class="ephoto">
+            <img class="es eb" src="evo_coach_s0.webp" alt="Coach Strain as a kid">
+            <img class="es" src="evo_coach_s1.webp" alt="Coach Strain as a teenager">
+            <img class="es" src="evo_coach_b.webp" alt="Coach Strain lean">
+            <img class="es ea" src="evo_coach_a.webp" alt="Coach Strain now">
+            <div class="eflash"></div></div>
+          <img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt="">
+        </div>
+        <div class="evoname">Coach Strain · <span class="elv">Bronze Rank</span></div>
+        <p class="evocap">your coach walked the same road · your turn</p>
+      </div>
     </div>
   </section>
 
@@ -662,9 +817,14 @@ body.nofx .cutstage{position:static;height:70vh;}
       <canvas class="cutfx" data-fx="sweep"></canvas>
       <div class="veil2"></div>
       <div class="offer">
-        <p class="ol1"><span class="typed"></span><span class="caret"></span></p>
+        <div class="npcbox">
+          <img class="npcport" src="npc_coach.webp" alt="Coach Strain in obsidian armor">
+          <div class="dbox"><div class="dname">COACH STRAIN</div>
+            <div class="dlines"><p class="ol1 dtext"><span class="typed"></span><span class="caret"></span></p>
+            <p class="dtext ol3 st" data-step="2">A way for you to start your own ascension — without risk.</p></div>
+            <span class="dnext">&#9660;</span></div>
+        </div>
         <h3 class="ol2 st" data-step="1">Completely FREE.</h3>
-        <p class="ol3 st" data-step="2">A way for you to start your own ascension — without risk.</p>
       </div>
     </div>
   </section>
@@ -765,7 +925,6 @@ body.nofx .cutstage{position:static;height:70vh;}
   var typing=document.getElementById('typing'),typname=document.getElementById('typname');
   var msglist=document.getElementById('msglist');
   var chatview=document.querySelector('.chatview');
-  var pnum=document.getElementById('pnum');
 
   function setScene(p,step){
     var items=[].slice.call(p.querySelectorAll('.st'));
@@ -783,7 +942,6 @@ body.nofx .cutstage{position:static;height:70vh;}
       var overflow=bottomEdge-chatview.clientHeight;
       msglist.style.transform='translateY('+(overflow>0?-overflow:0)+'px)';
     }
-    if(p.id==='proof'&&pnum){pnum.textContent=p.querySelectorAll('.pcard.on').length;}
   }
 
   /* world layer driver */
@@ -830,7 +988,7 @@ body.nofx .cutstage{position:static;height:70vh;}
         var win=+(p.dataset.typewin||0.85);
         var n=Math.round(Math.min(1,prog/win)*full.length);
         var sp=p.querySelector('.typed'),np2=p.querySelector('.narr, .offer');
-        if(np2)np2.style.opacity=prog>0.01?1:0;
+        if(np2){np2.style.opacity=prog>0.01?1:0;np2.classList.toggle('on',prog>0.01);}
         if(sp&&+sp.dataset.n!==n){sp.dataset.n=n;sp.textContent=full.slice(0,n);}
       }
       if(r.top<=0||r.bottom>=0) setScene(p,step);
@@ -840,6 +998,163 @@ body.nofx .cutstage{position:static;height:70vh;}
   var ticking=false;
   addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(frame);}},{passive:true});
   addEventListener('resize',frame);
+
+  /* ---- evolution engine: scroll-powered before/after transformations ---- */
+  (function(){
+    var proof=document.getElementById('proof'),cv=document.getElementById('evofx');
+    if(!proof||!cv)return;
+    var ex=cv.getContext('2d');
+    var rowEl=document.getElementById('evoRow');
+    var rowF=[].slice.call(rowEl.querySelectorAll('.evoframe'));
+    var rowLv=[].slice.call(rowEl.querySelectorAll('.elv'));
+    var parts=[],W=0,H=0;
+    function P(x,a,b){return Math.min(1,Math.max(0,(x-a)/(b-a)));}
+    function bell(x,c,w){var d=(x-c)/w;return Math.exp(-d*d*3);}
+    function ease(t){return 1-Math.pow(1-t,3);}
+    function back(t){var c=1.70158;t=t-1;return t*t*((c+1)*t+c)+1;}
+    function setFrame(f,imbue,flash,reveal,now){
+      var eb=f.querySelector('.eb'),ea=f.querySelector('.ea'),fl=f.querySelector('.eflash');
+      eb.style.filter='brightness('+(1+1.5*imbue*imbue)+') saturate('+(1+.6*imbue)+') sepia('+(0.35*imbue)+')';
+      var amp=3.5*imbue*(1-reveal);
+      f.style.transform=amp>0.05?('translate('+(Math.sin(now/26)*amp)+'px,'+(Math.cos(now/31)*amp*.7)+'px)'):'';
+      fl.style.opacity=flash;
+      ea.style.opacity=reveal>0?1:0;
+      if(reveal>0){var sc=1.18-.18*ease(reveal);ea.style.transform='scale('+sc+')';eb.style.opacity=0;}
+      else eb.style.opacity=1;
+      var fg=f.querySelector('.fg');if(fg)fg.style.opacity=reveal>0?ease(reveal):0;
+      var fb2=f.querySelector('.fb');if(fb2)fb2.style.opacity=1-(reveal>0?ease(reveal):0);
+      f.classList.toggle('goldf',reveal>0.5);
+    }
+    function lv(el,t){
+      var g=t>0.5;
+      el.textContent=g?'Gold Rank':'Bronze Rank';
+      el.classList.toggle('gold',g);
+    }
+    function spawn(f,rate,rect){
+      var b=f.getBoundingClientRect(),st=cv.getBoundingClientRect();
+      for(var i=0;i<rate;i++){
+        var a=Math.random()*6.283,rd=(.6+Math.random()*.9)*Math.max(b.width,b.height);
+        parts.push({cx:b.left-st.left+b.width/2,cy:b.top-st.top+b.height/2,
+          a:a,r:rd,vr:-(1.5+Math.random()*2.5),va:.02+Math.random()*.04,
+          s:.8+Math.random()*1.8,life:1});
+      }
+    }
+    function tick(now){
+      requestAnimationFrame(tick);
+      var r=proof.getBoundingClientRect(),vh=innerHeight;
+      if(r.top>vh||r.bottom<0){if(parts.length){parts.length=0;ex.clearRect(0,0,W,H);}return;}
+      var st=cv.getBoundingClientRect();
+      if(cv.width!==Math.round(st.width)||cv.height!==Math.round(st.height)){
+        cv.width=Math.round(st.width);cv.height=Math.round(st.height);}
+      W=cv.width;H=cv.height;
+      var ov=+(proof.dataset.ov||0),travel=proof.offsetHeight-vh-ov;
+      var prog=travel>0?Math.min(1,Math.max(0,(-r.top-ov)/travel)):0;
+      if(-r.top<ov)prog=0;
+      /* -------- act 1: the fighter roster (7) */
+      var rowOn=Math.min(P(prog,.05,.11),1-P(prog,.57,.61));
+      rowEl.style.opacity=rowOn;
+      rowEl.style.visibility=rowOn>0?'visible':'hidden';
+      if(rowOn>0){
+        var zig=innerWidth<640?12:28;
+        rowF.forEach(function(f,i){
+          var d=back(P(prog,.05+i*.009,.13+i*.009));
+          var base=(i%2)*zig;
+          f.parentElement.style.transform='translateY(calc('+((1-d)*-30)+'vh + '+base+'px))';
+          var im=P(prog,.15,.30),c=.34+i*.013;
+          var fl=bell(prog,c,.02),rv=P(prog,c+.005,c+.032);
+          setFrame(f,im,fl,rv,now);lv(rowLv[i],rv);
+          if(im>0&&rv<=0)spawn(f,Math.round(im*2),st);
+        });
+      }
+      /* -------- act 3 the coach: 4-stage saga */
+      var coach=document.getElementById('evoCoach');
+      if(coach){
+        var coachF=coach.querySelector('.evoframe'),coachLv=coach.querySelector('.elv');
+        var stagesI=[].slice.call(coachF.querySelectorAll('.ephoto img.es'));
+        var flEl=coachF.querySelector('.eflash'),fgC=coachF.querySelector('.fg'),fbC=coachF.querySelector('.fb');
+        var RANKS=[['Unranked','#9aa0a8'],['Bronze Rank','#cf8e58'],['Silver Rank','#ccd3dd'],['Gold Rank','']];
+        var coachOn=P(prog,.64,.69);
+        var hw=document.querySelector('#proof .proofhead .actword');
+        if(hw){var want=coachOn>0?'YOUR COACH':'PROOF';if(hw.textContent!==want)hw.textContent=want;}
+        coach.style.opacity=coachOn;
+        coach.style.visibility=coachOn>0?'visible':'hidden';
+        if(coachOn>0){
+          var c=P(prog,.66,.985);
+          coachF.style.marginTop=((1-back(P(c,0,.07)))*-40)+'vh';
+          var B=[.30,.56,.82];
+          var stage=c<B[0]?0:c<B[1]?1:c<B[2]?2:3;
+          var segS=stage===0?.07:B[stage-1], segE=stage<3?B[stage]:1.2;
+          var imS=stage<3?P(c,segS+.03,segE-.03):0;
+          var flx=Math.max(bell(c,B[0],.022),bell(c,B[1],.022),bell(c,B[2],.022));
+          stagesI.forEach(function(img,i){
+            img.style.opacity=i===stage?1:0;
+            if(i===stage)img.style.filter='brightness('+(1+1.5*imS*imS)+') saturate('+(1+.6*imS)+') sepia('+(.35*imS)+')';
+          });
+          var popS=1.14-.14*ease(P(c,.82,.90));
+          stagesI[3].style.transform='scale('+popS+')';
+          var amp=3.5*imS;
+          coachF.style.transform=amp>0.05?('translate('+(Math.sin(now/26)*amp)+'px,'+(Math.cos(now/31)*amp*.7)+'px)'):'';
+          flEl.style.opacity=flx;
+          var gold=ease(P(c,.82,.90));
+          if(fgC)fgC.style.opacity=gold;
+          if(fbC)fbC.style.opacity=1-gold;
+          coachLv.textContent=RANKS[stage][0];
+          coachLv.style.color=RANKS[stage][1];
+          coachLv.classList.toggle('gold',stage===3);
+          if(imS>0)spawn(coachF,Math.round(imS*3),st);
+        }
+      }
+      /* -------- particles */
+      ex.clearRect(0,0,W,H);
+      ex.globalCompositeOperation='lighter';
+      for(var i=parts.length-1;i>=0;i--){var p=parts[i];
+        p.r+=p.vr;p.a+=p.va;p.life-=.016;
+        if(p.life<=0||p.r<6){parts.splice(i,1);continue;}
+        var x=p.cx+Math.cos(p.a)*p.r,y=p.cy+Math.sin(p.a)*p.r*.8;
+        ex.globalAlpha=Math.min(1,p.life*1.4)*.9;
+        ex.fillStyle=Math.random()<.2?'#fff3d8':'#e3b25b';
+        ex.beginPath();ex.arc(x,y,p.s,0,6.29);ex.fill();
+      }
+      ex.globalAlpha=1;ex.globalCompositeOperation='source-over';
+      if(parts.length>900)parts.splice(0,parts.length-900);
+    }
+    if(!document.body.classList.contains('nofx'))requestAnimationFrame(tick);
+
+    /* click a fighter -> zoomed independent evolution */
+    var evb=document.getElementById('evb'),evbx=document.getElementById('evbx'),
+        evbF=evb.querySelector('.evoframe'),evbLv=evb.querySelector('.elv'),
+        evbN=document.getElementById('evbn'),evP=0,evOpen=false;
+    function evRender(now){
+      var im=P(evP,0,.55),fl=bell(evP,.62,.06),rv=P(evP,.64,.86);
+      setFrame(evbF,im,fl,rv,now||performance.now());
+      lv(evbLv,rv);
+    }
+    function evLoop(now){if(!evOpen)return;evRender(now);requestAnimationFrame(evLoop);}
+    function evbOpen(fig,name){
+      var eb=fig.querySelector('.eb'),ea=fig.querySelector('.ea');
+      evbF.querySelector('.eb').src=eb.src;evbF.querySelector('.ea').src=ea.src;
+      evbN.textContent=name;evP=0;evOpen=true;
+      evb.classList.add('open');document.documentElement.style.overflow='hidden';
+      requestAnimationFrame(evLoop);
+    }
+    function evbClose(){evOpen=false;evb.classList.remove('open');document.documentElement.style.overflow='';}
+    [].forEach.call(document.querySelectorAll('#proof .evoframe'),function(f){
+      f.addEventListener('click',function(){
+        var col=f.closest('.evocol')||f.closest('.evo');
+        var nm=col?col.querySelector('.evoname'):null;
+        var name=nm?nm.textContent.split('\u00b7')[0].trim():'';
+        evbOpen(f,name);
+      });
+    });
+    evb.addEventListener('wheel',function(e){e.preventDefault();evP=Math.min(1,Math.max(0,evP+e.deltaY*0.0007));},{passive:false});
+    var tY=null;
+    evb.addEventListener('touchstart',function(e){tY=e.touches[0].clientY;},{passive:true});
+    evb.addEventListener('touchmove',function(e){e.preventDefault();
+      if(tY!==null){evP=Math.min(1,Math.max(0,evP+(tY-e.touches[0].clientY)*0.004));tY=e.touches[0].clientY;}},{passive:false});
+    evbx.addEventListener('click',evbClose);
+    evb.addEventListener('click',function(e){if(e.target===evb)evbClose();});
+    addEventListener('keydown',function(e){if(e.key==='Escape')evbClose();});
+  })();
 
   /* ---- tap-to-inspect lightbox for showcase panels ---- */
   (function(){
@@ -876,7 +1191,7 @@ body.nofx .cutstage{position:static;height:70vh;}
     [].slice.call(document.querySelectorAll('.narrsec')).forEach(function(np){
       var ns=np.querySelector('.typed'),nr=np.querySelector('.narr, .offer');
       if(ns)ns.textContent=np.dataset.text||'';
-      if(nr)nr.style.opacity=1;});
+      if(nr){nr.style.opacity=1;nr.classList.add('on');}});
   }
 
 
