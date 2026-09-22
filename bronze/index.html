@@ -9,6 +9,12 @@
 <meta property="og:description" content="The 4 things that actually matter for muscle growth, and a free program built on them.">
 <meta property="og:image" content="https://ascension-1.live/bronze/overlook_dark.webp">
 <meta name="theme-color" content="#0b0806">
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version="2.0";n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,"script","https://connect.facebook.net/en_US/fbevents.js");
+fbq("init","1645467043111502");
+fbq("track","PageView");
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1645467043111502&ev=PageView&noscript=1"/></noscript>
 </head>
 <body>
 <title>Bronze Ranker Program</title>
@@ -218,15 +224,16 @@ body.nofx .cutstage{position:static;height:70vh;}
 /* ---------- the board forges itself, piece by piece ---------- */
 #tiers .stage{padding-top:58px;}
 @media (max-width:600px){
-  #tiers .chip{font-size:.68em;padding:3px 8px;}
-  #tiers .frow{padding:9px 10px;}
-  #tiers .fbadge{flex-basis:46px;width:46px;height:46px;}
-  #tiers .srow .fbadge{flex-basis:62px;width:62px;height:62px;}
-  #tiers .ftitle{font-size:.8em;}
-  #tiers .srow .ftitle{font-size:.95em;}
-  #tiers .srow .chip{font-size:.78em;padding:4px 10px;}
-  #tiers .frule{margin:5px 0 7px;}
-  #tiers .fake{padding:11px 12px;}
+  #tiers .stage{padding-top:34px;}
+  #tiers .chip{font-size:.62em;padding:2px 7px;}
+  #tiers .frow{padding:7px 9px;}
+  #tiers .fbadge{flex-basis:38px;width:38px;height:38px;}
+  #tiers .srow .fbadge{flex-basis:50px;width:50px;height:50px;}
+  #tiers .ftitle{font-size:.72em;}
+  #tiers .srow .ftitle{font-size:.84em;}
+  #tiers .srow .chip{font-size:.7em;padding:3px 8px;}
+  #tiers .frule{margin:4px 0 5px;}
+  #tiers .fake{padding:8px 10px;}
   #tiers .fake p{font-size:.78em;}
 }
 .frow{display:flex;gap:13px;align-items:flex-start;background:rgba(14,11,18,.72);
@@ -702,7 +709,7 @@ body.nofx .evoframe .ea{opacity:1;}
   
 
   <!-- ================= tier beats ================= -->
-  <section class="pin" id="tiers" data-steps="11" data-vhstep="45">
+  <section class="pin" id="tiers" data-steps="10" data-vhstep="45">
     <div class="stage"><div class="wrap" style="display:flex;flex-direction:column;gap:9px">
       <div class="frow srow st" data-step="0">
         <div class="fbadge st" data-step="0"><img src="badge_s.webp" alt=""></div>
@@ -736,10 +743,6 @@ body.nofx .evoframe .ea{opacity:1;}
         <div class="stamp st" data-step="9">FAKE STAT</div>
         <h3>The Scale</h3>
         <p>It weighs water, glycogen, dinner and salt before it weighs muscle or fat.</p>
-      </div>
-      <div class="sigline st" data-step="10">
-        <p class="disp">Everyone grinding the C row wonders why the S row keeps leveling.</p>
-        <small>— COACH STRAIN</small>
       </div>
     </div></div>
   </section>
@@ -910,7 +913,7 @@ body.nofx .evoframe .ea{opacity:1;}
     </div>
     <h2 class="actword st" data-step="1">ASCEND</h2>
     <div class="st" data-step="2">
-      <a class="cta" href="https://www.trainerize.me/profile/thestraincoaching/?planGUID=2e71217022634d869aeeeb9c931f1355" target="_blank" rel="noopener">JOIN THE BRONZE RANKS — FREE</a>
+      <a class="cta" id="ctamain" href="https://www.trainerize.me/profile/thestraincoaching/?planGUID=2e71217022634d869aeeeb9c931f1355" target="_blank" rel="noopener">JOIN THE BRONZE RANKS — FREE</a>
       <div class="ctanote">no card · join in 2 minutes</div>
     </div>
   </div></div>
@@ -1177,6 +1180,12 @@ body.nofx .evoframe .ea{opacity:1;}
     evbx.addEventListener('click',evbClose);
     evb.addEventListener('click',function(e){if(e.target===evb)evbClose();});
     addEventListener('keydown',function(e){if(e.key==='Escape')evbClose();});
+  })();
+
+  /* Meta pixel: JOIN click fires a Lead event when the pixel is present */
+  (function(){
+    var c=document.getElementById('ctamain');
+    if(c)c.addEventListener('click',function(){try{if(window.fbq)window.fbq('track','Lead');}catch(e){}});
   })();
 
   /* ---- tap-to-inspect lightbox for showcase panels ---- */
