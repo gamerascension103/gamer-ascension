@@ -399,6 +399,56 @@ body.nofx #campintro{display:none;}
 #evofx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;}
 @media (max-width:640px){.evoframe{width:min(230px,56vw);}}
 
+
+/* ---------- what happens when you click ---------- */
+#expect .stage{justify-content:center;gap:2.2vh;}
+#expect .bgimg{opacity:.3;filter:brightness(.75);}
+.exphead{text-align:center;z-index:2;position:relative;}
+.exphead .wpk{display:block;font-family:Cinzel,Georgia,serif;font-weight:700;letter-spacing:.3em;
+  font-size:.72em;color:var(--gold);text-transform:uppercase;margin-bottom:5px;}
+.exphead h2{font-family:Cinzel,Georgia,serif;font-weight:800;color:#f0e7d3;letter-spacing:.1em;
+  font-size:clamp(1.3em,4.2vw,2.1em);margin:0;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.95);}
+.exphead .esub{color:#cfc5b4;font-size:.88em;margin:6px 0 0;text-shadow:0 2px 10px rgba(0,0,0,.9);}
+.exprow{display:flex;gap:2.4vw;justify-content:center;align-items:flex-start;z-index:2;position:relative;
+  width:min(1000px,96vw);}
+.exp{width:min(250px,26vw);flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;position:relative;}
+.exp .ek{font-family:Cinzel,Georgia,serif;font-weight:800;font-size:.78em;letter-spacing:.14em;
+  color:var(--gold);text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,.9);}
+.exp .eimgw{position:relative;width:100%;background:#0f0b08;
+  border:1px solid rgba(227,178,91,.5);
+  box-shadow:0 16px 50px rgba(0,0,0,.65),0 0 0 4px rgba(14,10,7,.95),0 0 0 5px rgba(196,132,84,.4);}
+.exp .eimgw img{display:block;width:100%;}
+.exp .eimgw .zoom{position:absolute;top:6px;right:6px;z-index:2;width:24px;height:24px;display:flex;
+  align-items:center;justify-content:center;color:#1c1206;background:linear-gradient(180deg,#f2c46a,#c98a35);
+  clip-path:polygon(6px 0,100% 0,100% calc(100% - 6px),calc(100% - 6px) 100%,0 100%,0 6px);
+  font-size:14px;font-weight:900;pointer-events:none;}
+.exp .ecap{color:#ded7cb;font-size:.8em;text-align:center;line-height:1.4;text-shadow:0 2px 8px rgba(0,0,0,.9);}
+.exp.st.on{transform:none;}
+.expnote{z-index:2;position:relative;width:min(680px,94vw);
+  background:linear-gradient(180deg,rgba(24,17,11,.96),rgba(12,9,7,.97));
+  border:1px solid rgba(227,178,91,.55);
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+  padding:16px 20px;display:flex;gap:16px;align-items:center;}
+.expnote img{width:min(240px,34vw);border-radius:8px;flex:0 0 auto;}
+.expnote p{margin:0;color:#e8dfd0;font-size:.86em;line-height:1.5;}
+.expnote p b{color:var(--gold);}
+.expclose{z-index:2;position:relative;font-family:Cinzel,Georgia,serif;font-weight:700;color:#ffe9bd;
+  font-size:clamp(1em,3vw,1.3em);letter-spacing:.08em;text-align:center;margin:0;
+  text-shadow:0 0 18px rgba(255,190,90,.45),0 2px 10px rgba(0,0,0,.95);}
+@media (max-width:900px){
+  #expect .stage{justify-content:flex-start;padding-top:calc(60px + env(safe-area-inset-top,0px));gap:1.6vh;}
+  .exprow{gap:0;}
+  .exp{width:min(340px,74vw);}
+  .exp .eimgw img{max-height:46vh;width:auto;max-width:100%;margin:0 auto;}
+  .exp.dim{display:none;}
+  .exp .ecap{font-size:.82em;}
+  .expnote{flex-direction:column;gap:10px;padding:14px 16px;}
+  .expnote img{width:min(300px,72vw);}
+  .expnote p{font-size:.8em;}
+}
+#lb img.lbimg{max-height:84vh;max-width:94vw;display:none;border:1px solid rgba(227,178,91,.5);
+  box-shadow:0 20px 90px rgba(0,0,0,.8);background:#0d0a08;}
+
 /* ---------- final ---------- */
 #final{position:relative;text-align:center;padding:16vh 20px 14vh;overflow:hidden;}
 #final .fbg{position:absolute;inset:0;background:
@@ -426,7 +476,7 @@ body.nofx #campintro{display:none;}
   <a class="jb" href="https://www.trainerize.me/profile/thestraincoaching/?planGUID=2e71217022634d869aeeeb9c931f1355" target="_blank" rel="noopener">JOIN FREE</a></div>
 
 <div id="lb" role="dialog" aria-modal="true"><button id="lbx" aria-label="Close">&#10005;</button>
-  <video muted loop playsinline></video><div class="lbcap"></div></div>
+  <video muted loop playsinline></video><img class="lbimg" src="" alt=""><div class="lbcap"></div></div>
 
 <div id="evb" role="dialog" aria-modal="true"><button id="evbx" aria-label="Close">&#10005;</button>
   <div class="evoframe"><div class="ephoto"><img class="eb" src="" alt=""><img class="ea" src="" alt=""><div class="eflash"></div></div><img class="fring fb" src="frame_bronze.webp" alt=""><img class="fring fg" src="frame_gold.webp" alt=""></div>
@@ -643,13 +693,44 @@ body.nofx #campintro{display:none;}
   </div>
 </section>
 
+
+<!-- ============ WHAT HAPPENS WHEN YOU CLICK ============ -->
+<section class="pin" id="expect" data-steps="6" data-vhstep="42">
+  <div class="stage">
+    <img class="bgimg" src="map_trail.webp" alt="" style="object-position:center 55%">
+    <div class="veil"></div>
+    <div class="exphead st" data-step="0">
+      <span class="wpk">One last thing</span>
+      <h2>What happens when you click</h2>
+      <p class="esub">the whole quest, so nothing surprises you</p>
+    </div>
+    <div class="exprow">
+      <figure class="exp st" data-step="1"><span class="ek">I &middot; Claim your spot</span>
+        <span class="eimgw"><span class="zoom">&#8599;</span><img src="expect_1.webp" alt="Signup form"></span>
+        <figcaption class="ecap">Name and email. That is the whole form. No card.</figcaption>
+      </figure>
+      <figure class="exp st" data-step="2"><span class="ek">II &middot; Create your login</span>
+        <span class="eimgw"><span class="zoom">&#8599;</span><img src="expect_2.webp" alt="Account created"></span>
+        <figcaption class="ecap">Pick a password, then a quick character sheet: height, weight, activity level. That is how the app calibrates your program to you.</figcaption>
+      </figure>
+      <figure class="exp st" data-step="3"><span class="ek">III &middot; Get the app</span>
+        <span class="eimgw"><span class="zoom">&#8599;</span><img src="expect_3.webp" alt="Download the app"></span>
+        <figcaption class="ecap">The program, the daily quests, and the guild chat all live in the app.</figcaption>
+      </figure>
+    </div>
+    <div class="expnote st" data-step="4">
+      <img src="expect_store.webp" alt="App store listing">
+      <p><b>Heads up:</b> while our Gamer Ascension app finishes store review, the download may show up as <b>The Strain Coaching</b> or <b>Fitness App by Trainerize</b>. Same app. That is us. Log in with your new account and you are home.</p>
+    </div>
+    <p class="expclose st" data-step="5">A few minutes from click to campfire.</p>
+  </div>
+</section>
+
 <!-- ============ 4 · FINAL ============ -->
 <section id="final">
   <div class="fbg"></div>
   <div class="inner">
     <h2 class="fh">Come say hi. Meet your people.</h2>
-    <p>Everything you just walked past is waiting in the app. The fire is lit, the trail is marked, and the guild will see you the moment you land.</p>
-    <p>Come plant your flag at the bottom of the mountain. Then we ascend together.</p>
     <p class="sig">Talk soon. &mdash; Jake</p>
     <a class="cta" id="ctamain" href="https://www.trainerize.me/profile/thestraincoaching/?planGUID=2e71217022634d869aeeeb9c931f1355" target="_blank" rel="noopener">JOIN THE BRONZE RANKS &mdash; FREE</a>
     <div class="ctanote">no card &middot; join in 2 minutes</div>
@@ -710,6 +791,12 @@ body.nofx #campintro{display:none;}
         el.classList.toggle('on',on);
         if(el.classList.contains('l1')){var tm=el.closest('.thrmid');if(tm)tm.classList.toggle('lit',on);}
       });
+      if(p.id==='expect'){
+        var cur=Math.min(Math.max(step,1),3);
+        [].forEach.call(p.querySelectorAll('.exp'),function(c){
+          c.classList.toggle('dim', step>=4 || +c.dataset.step!==cur);
+        });
+      }
       [].forEach.call(p.querySelectorAll('.wp'),function(el){
         el.classList.toggle('on',+el.dataset.step<=step);
       });
@@ -1029,14 +1116,26 @@ body.nofx #campintro{display:none;}
   (function(){
     var lb=document.getElementById('lb'),lbv=lb.querySelector('video'),
         lbc=lb.querySelector('.lbcap'),lbx=document.getElementById('lbx');
+    var lbi=lb.querySelector('img.lbimg');
     [].forEach.call(document.querySelectorAll('.shot'),function(sh){
       sh.addEventListener('click',function(){
         var v=sh.querySelector('video');if(!v)return;
+        lbi.style.display='none';lbv.style.display='block';
         lbv.innerHTML=v.innerHTML;lbv.load();
         var cap=sh.querySelector('figcaption');
         lbc.textContent=cap?cap.textContent:'';
         lb.classList.add('open');document.documentElement.style.overflow='hidden';
         lbv.play().catch(function(){});
+      });
+    });
+    [].forEach.call(document.querySelectorAll('.exp'),function(ex){
+      ex.addEventListener('click',function(){
+        var im=ex.querySelector('.eimgw img');if(!im)return;
+        lbv.pause();lbv.innerHTML='';lbv.style.display='none';
+        lbi.src=im.src;lbi.style.display='block';
+        var cap=ex.querySelector('.ecap');
+        lbc.textContent=cap?cap.textContent:'';
+        lb.classList.add('open');document.documentElement.style.overflow='hidden';
       });
     });
     function close(){lb.classList.remove('open');lbv.pause();lbv.innerHTML='';document.documentElement.style.overflow='';}
