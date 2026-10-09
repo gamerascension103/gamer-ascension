@@ -1,0 +1,44 @@
+/* Ascension app site: shared look for the plain pages (privacy, terms, sms, support).
+   Matches the app's Iron & Gold theme (apps/mobile/src/ui/theme.ts in the app repo). */
+:root {
+  --iron: #1b181d; --iron-hi: #2a2529; --iron-edge: #3b332c;
+  --gold: #d6a646; --gold-hi: #f6d98a; --gold-lo: #7d5a1f;
+  --text: #efe4c8; --text-dim: #a99b7f; --text-faint: #6f6554;
+  --parchment: #efe0bd; --ink: #3a2412; --ink-dim: #6b4a2b;
+  --red: #8e1512;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: #0e0c10 radial-gradient(ellipse at top, #2a2018 0%, #0e0c10 60%) no-repeat;
+  color: var(--text); font: 17px/1.6 "Alegreya Sans", system-ui, sans-serif;
+}
+a { color: var(--gold-hi); }
+a:hover { color: #fff3c9; }
+.top { display: flex; align-items: center; gap: 12px; max-width: 760px; margin: 0 auto; padding: 18px 16px 6px; }
+.top img { width: 40px; height: 40px; border-radius: 9px; border: 1px solid var(--gold-lo); }
+.top a { text-decoration: none; font-family: Cinzel, serif; font-weight: 700; letter-spacing: 2px; color: var(--gold-hi); font-size: 15px; }
+main { max-width: 760px; margin: 0 auto; padding: 8px 16px 40px; }
+.card { background: linear-gradient(#211c20, #17141a); border: 1px solid var(--iron-edge); border-top: 2px solid var(--gold-lo); border-radius: 10px; padding: 22px 20px; }
+h1, h2, h3 { font-family: Cinzel, serif; color: var(--gold-hi); line-height: 1.25; text-shadow: 0 0 8px rgba(214,166,70,.35); }
+h1 { font-size: 28px; margin: 6px 0 4px; letter-spacing: 1px; }
+h2 { font-size: 19px; margin: 28px 0 6px; letter-spacing: .5px; }
+h3 { font-size: 16px; margin: 20px 0 4px; }
+.meta { color: var(--text-dim); font-size: 14px; margin: 0 0 18px; }
+p, li { color: var(--text); }
+li { margin: 4px 0; }
+.dim { color: var(--text-dim); }
+.note { border-left: 3px solid var(--gold); padding: 8px 12px; background: rgba(214,166,70,.08); border-radius: 0 6px 6px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--iron-edge); }
+th { font-family: Cinzel, serif; color: var(--gold); font-weight: 600; font-size: 13px; letter-spacing: .5px; }
+/* a picture of the in-app consent screen, drawn in HTML */
+.phone { max-width: 340px; margin: 14px auto; background: #121014; border: 1px solid var(--iron-edge); border-radius: 22px; padding: 18px 14px; }
+.phone h4 { font-family: Cinzel, serif; color: var(--gold-hi); margin: 0 0 10px; font-size: 15px; text-align: center; letter-spacing: 1px; }
+.field { background: #0b0a0d; border: 1px solid var(--iron-edge); border-radius: 6px; padding: 9px 10px; color: var(--text-dim); font-size: 15px; margin-bottom: 10px; }
+.consent { display: flex; gap: 10px; align-items: flex-start; background: var(--parchment); color: var(--ink); border-radius: 6px; padding: 10px; font-size: 13.5px; line-height: 1.45; margin-bottom: 10px; }
+.box { flex: 0 0 18px; height: 18px; border: 2px solid var(--ink-dim); border-radius: 3px; background: #fff8e6; margin-top: 2px; }
+.btn { display: block; text-align: center; background: var(--red); border: 1px solid var(--gold-hi); color: #fff; border-radius: 6px; padding: 10px; font-family: Cinzel, serif; letter-spacing: 1.5px; font-size: 14px; }
+footer { max-width: 760px; margin: 0 auto; padding: 0 16px 36px; color: var(--text-faint); font-size: 14px; }
+footer a { color: var(--text-dim); margin-right: 14px; }
+@media (max-width: 480px) { h1 { font-size: 24px; } .card { padding: 18px 14px; } }
